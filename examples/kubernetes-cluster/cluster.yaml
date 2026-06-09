@@ -1,0 +1,357 @@
+# Kubernetes Cluster + LiteLLM Proxy Pods — staggered layout reproduction.
+#
+# Reference: a 2.5D iso architecture diagram showing a K8s cluster with
+# 4 Worker Nodes (asymmetrically placed, NOT a grid) + 1 right-column
+# LLM PODS panel, an Ingress Controller, 3 users, and 5 external LLM
+# provider tiles floating right of the cluster.
+#
+# Layout strategy (matches reference vibe):
+#   z=0   cluster ground slab (1140 wide, shallow front-back)
+#   z=14  4 worker-node sub-slabs at staggered positions inside cluster
+#         + 1 tall narrow LLM PODS sub-slab on the right
+#   z=24  pod cubes (white) and LiteLLM Proxy cubes (dark blue) inside
+#         each worker-node panel
+canvas:
+  background: '#F4F6FB'
+
+theme:
+  palette: { top: '#E5ECF6', left: '#7E94B5', right: '#A6B7D2' }
+  stroke:  { color: '#3A4A66', width: 1.2 }
+  text:
+    family: "Inter, sans-serif"
+    size: 11
+    weight: '600'
+    color: '#26324A'
+
+nodes:
+  cluster_scene:
+    shape: composite
+
+    parts:
+      # ── L0: Kubernetes Cluster ground slab (no label — separate
+      # iso_text node lays the title onto the slab below) ────────────
+      - id: cluster
+        shape: rectangle
+        geom: { w: 1140, d: 560, h: 14 }
+        offset: { wx: 0, wy: 0, wz: 0 }
+        style:
+          palette: { top: '#F1F5FB', left: '#6B82A8', right: '#94A7C7' }
+          stroke:  { color: '#3A4A66', width: 1.4 }
+          effects: { cornerRadius: 32 }
+
+      # iso_text titles — pure tilted text on the iso plane.
+      # Placed at the cluster's BACK area floating just above slab top
+      # (wz=30 > worker tops at wz=24) so worker panels in front don't
+      # occlude them. The text reads along world +x (right-down 30°).
+      - id: title_cluster
+        shape: iso_text
+        offset: { wx: 380, wy: 0, wz: 30 }
+        label: KUBERNETES CLUSTER
+        style:
+          text: { family: "Inter, sans-serif", size: 28, weight: '900', color: '#4D5C7C' }
+      - id: title_subtitle
+        shape: iso_text
+        offset: { wx: 460, wy: 30, wz: 30 }
+        label: LiteLLM PROXY PODS
+        style:
+          text: { family: "Inter, sans-serif", size: 17, weight: '700', color: '#7E94B5' }
+
+      # "EXTERNAL LLM PROVIDERS" header above the floating tile column.
+      - id: title_external
+        shape: iso_text
+        offset: { wx: 1180, wy: -30, wz: 120 }
+        label: EXTERNAL LLM PROVIDERS
+        style:
+          text: { family: "Inter, sans-serif", size: 14, weight: '800', color: '#4D5C7C' }
+
+      # ── L1: Worker Nodes (staggered, NOT grid) ────────────────────
+
+      # WN1: small back-far-left panel (deep into the cluster's back)
+      - id: wn1
+        shape: rectangle
+        geom: { w: 220, d: 160, h: 10 }
+        offset: { wx: 80, wy: 20, wz: 14 }
+        label: WORKER NODE
+        style:
+          palette: { top: '#D7DFEE', left: '#7E94B5', right: '#A6B7D2' }
+          stroke:  { color: '#3A4A66', width: 1.2 }
+          text:    { family: "Inter, sans-serif", size: 10, weight: '700', color: '#3A4A66' }
+          effects: { cornerRadius: 16 }
+
+      # WN2: back-center panel (the one near the back-top of the scene)
+      - id: wn2
+        shape: rectangle
+        geom: { w: 240, d: 170, h: 10 }
+        offset: { wx: 360, wy: 50, wz: 14 }
+        label: WORKER NODE
+        style:
+          palette: { top: '#D7DFEE', left: '#7E94B5', right: '#A6B7D2' }
+          stroke:  { color: '#3A4A66', width: 1.2 }
+          text:    { family: "Inter, sans-serif", size: 10, weight: '700', color: '#3A4A66' }
+          effects: { cornerRadius: 16 }
+
+      # WN3: middle-left panel (the one with the K8s helmet pod)
+      - id: wn3
+        shape: rectangle
+        geom: { w: 240, d: 180, h: 10 }
+        offset: { wx: 80, wy: 220, wz: 14 }
+        label: WORKER NODE
+        style:
+          palette: { top: '#D7DFEE', left: '#7E94B5', right: '#A6B7D2' }
+          stroke:  { color: '#3A4A66', width: 1.2 }
+          text:    { family: "Inter, sans-serif", size: 10, weight: '700', color: '#3A4A66' }
+          effects: { cornerRadius: 16 }
+
+      # WN4: front-center panel (closest to camera-front)
+      - id: wn4
+        shape: rectangle
+        geom: { w: 260, d: 190, h: 10 }
+        offset: { wx: 310, wy: 320, wz: 14 }
+        label: WORKER NODE
+        style:
+          palette: { top: '#D7DFEE', left: '#7E94B5', right: '#A6B7D2' }
+          stroke:  { color: '#3A4A66', width: 1.2 }
+          text:    { family: "Inter, sans-serif", size: 10, weight: '700', color: '#3A4A66' }
+          effects: { cornerRadius: 16 }
+
+      # LLM PODS panel: narrow tall panel on the right, separate column
+      - id: llm_pods_panel
+        shape: rectangle
+        geom: { w: 220, d: 320, h: 10 }
+        offset: { wx: 720, wy: 120, wz: 14 }
+        label: LLM PODS
+        style:
+          palette: { top: '#D7DFEE', left: '#7E94B5', right: '#A6B7D2' }
+          stroke:  { color: '#3A4A66', width: 1.2 }
+          text:    { family: "Inter, sans-serif", size: 10, weight: '700', color: '#3A4A66' }
+          effects: { cornerRadius: 16 }
+
+      # ── L2: pod + proxy cubes inside each Worker Node ─────────────
+
+      # WN1 contents
+      - id: pod_1
+        shape: rectangle
+        geom: { w: 50, d: 50, h: 44 }
+        offset: { wx: 105, wy: 45, wz: 24 }
+        label: pod
+        style:
+          palette: { top: '#FFFFFF', left: '#5A6F92', right: '#88A0C2' }
+          stroke:  { color: '#3A4A66', width: 1.2 }
+          text:    { family: "Inter, sans-serif", size: 9, weight: '700', color: '#3A4A66' }
+      - id: proxy_1
+        shape: rectangle
+        geom: { w: 100, d: 50, h: 30 }
+        offset: { wx: 175, wy: 55, wz: 24 }
+        label: LiteLLM Proxy
+        style:
+          palette: { top: '#5A78B5', left: '#2C426C', right: '#3D5990' }
+          stroke:  { color: '#1F2E50', width: 1.2 }
+          text:    { family: "Inter, sans-serif", size: 9, weight: '700', color: '#FFFFFF' }
+
+      # WN2 contents
+      - id: pod_2
+        shape: rectangle
+        geom: { w: 50, d: 50, h: 44 }
+        offset: { wx: 385, wy: 78, wz: 24 }
+        label: pod
+        style:
+          palette: { top: '#FFFFFF', left: '#5A6F92', right: '#88A0C2' }
+          stroke:  { color: '#3A4A66', width: 1.2 }
+          text:    { family: "Inter, sans-serif", size: 9, weight: '700', color: '#3A4A66' }
+      - id: proxy_2
+        shape: rectangle
+        geom: { w: 110, d: 50, h: 30 }
+        offset: { wx: 455, wy: 88, wz: 24 }
+        label: LiteLLM Proxy
+        style:
+          palette: { top: '#5A78B5', left: '#2C426C', right: '#3D5990' }
+          stroke:  { color: '#1F2E50', width: 1.2 }
+          text:    { family: "Inter, sans-serif", size: 9, weight: '700', color: '#FFFFFF' }
+
+      # WN3 contents (the pod here has the K8s helmet in reference)
+      - id: pod_3
+        shape: rectangle
+        geom: { w: 56, d: 56, h: 50 }
+        offset: { wx: 105, wy: 252, wz: 24 }
+        label: pod
+        style:
+          palette: { top: '#FFFFFF', left: '#5A6F92', right: '#88A0C2' }
+          stroke:  { color: '#3A4A66', width: 1.2 }
+          text:    { family: "Inter, sans-serif", size: 9, weight: '700', color: '#3A4A66' }
+      - id: proxy_3
+        shape: rectangle
+        geom: { w: 110, d: 50, h: 32 }
+        offset: { wx: 180, wy: 258, wz: 24 }
+        label: LiteLLM Proxy
+        style:
+          palette: { top: '#5A78B5', left: '#2C426C', right: '#3D5990' }
+          stroke:  { color: '#1F2E50', width: 1.2 }
+          text:    { family: "Inter, sans-serif", size: 9, weight: '700', color: '#FFFFFF' }
+
+      # WN4 contents
+      - id: pod_4
+        shape: rectangle
+        geom: { w: 56, d: 56, h: 50 }
+        offset: { wx: 340, wy: 360, wz: 24 }
+        label: pod
+        style:
+          palette: { top: '#FFFFFF', left: '#5A6F92', right: '#88A0C2' }
+          stroke:  { color: '#3A4A66', width: 1.2 }
+          text:    { family: "Inter, sans-serif", size: 9, weight: '700', color: '#3A4A66' }
+      - id: proxy_4
+        shape: rectangle
+        geom: { w: 110, d: 50, h: 32 }
+        offset: { wx: 420, wy: 366, wz: 24 }
+        label: LiteLLM Proxy
+        style:
+          palette: { top: '#5A78B5', left: '#2C426C', right: '#3D5990' }
+          stroke:  { color: '#1F2E50', width: 1.2 }
+          text:    { family: "Inter, sans-serif", size: 9, weight: '700', color: '#FFFFFF' }
+
+      # LLM PODS panel contents (2 stacked cubes)
+      - id: llm_pod_back
+        shape: rectangle
+        geom: { w: 150, d: 90, h: 50 }
+        offset: { wx: 750, wy: 150, wz: 24 }
+        label: LLM PODS
+        style:
+          palette: { top: '#5A78B5', left: '#2C426C', right: '#3D5990' }
+          stroke:  { color: '#1F2E50', width: 1.2 }
+          text:    { family: "Inter, sans-serif", size: 10, weight: '700', color: '#FFFFFF' }
+      - id: llm_pod_front
+        shape: rectangle
+        geom: { w: 150, d: 90, h: 50 }
+        offset: { wx: 750, wy: 300, wz: 24 }
+        label: LLM PODS
+        style:
+          palette: { top: '#5A78B5', left: '#2C426C', right: '#3D5990' }
+          stroke:  { color: '#1F2E50', width: 1.2 }
+          text:    { family: "Inter, sans-serif", size: 10, weight: '700', color: '#FFFFFF' }
+
+      # ── Ingress Controller (front-left of cluster, hanging) ───────
+      - id: ingress
+        shape: rectangle
+        geom: { w: 170, d: 50, h: 26 }
+        offset: { wx: 140, wy: 470, wz: 14 }
+        label: INGRESS CONTROLLER
+        style:
+          palette: { top: '#FFFFFF', left: '#6B82A8', right: '#94A7C7' }
+          stroke:  { color: '#3A4A66', width: 1.4 }
+          text:    { family: "Inter, sans-serif", size: 8, weight: '700', color: '#3A4A66' }
+          effects: { cornerRadius: 6 }
+
+      # ── User figures (front-left, outside cluster, on ground) ─────
+      # Stout "shoulder + head" silhouette: body wider than tall so the
+      # cylinder torso reads as shoulders, head sphere sits on top.
+      # Body palette: peach top stays for head highlight, sides gray-blue.
+      - id: user_1
+        shape: person
+        geom: { w: 70, d: 70, h: 56 }
+        offset: { wx: 30, wy: 590, wz: 0 }
+        style:
+          palette: { top: '#F4C8A8', left: '#7E8FA8', right: '#A6B7D2' }
+          stroke:  { color: '#26324A', width: 1.4 }
+      - id: user_2
+        shape: person
+        geom: { w: 70, d: 70, h: 58 }
+        offset: { wx: 105, wy: 600, wz: 0 }
+        style:
+          palette: { top: '#F4C8A8', left: '#3A549B', right: '#5478C2' }
+          stroke:  { color: '#1F2E50', width: 1.4 }
+      - id: user_3
+        shape: person
+        geom: { w: 70, d: 70, h: 56 }
+        offset: { wx: 180, wy: 590, wz: 0 }
+        style:
+          palette: { top: '#F4C8A8', left: '#7E8FA8', right: '#A6B7D2' }
+          stroke:  { color: '#26324A', width: 1.4 }
+
+      # ── External LLM Provider tiles ───────────────────────────────
+      # Floating "stack of cards" right of cluster — kept within cluster's
+      # vertical extent (wy 30..400). Each card shifts:
+      #   +15 wx (slightly right)   +95 wy (forward)   −13 wz (down)
+      # giving screen step ≈ 95·sin30 + 13 = 60 px between centres,
+      # comfortably > 40-px tile screen height (no overlap).
+      - id: prov_chatgpt
+        shape: rectangle
+        geom: { w: 80, d: 62, h: 10 }
+        offset: { wx: 1240, wy: 30, wz: 96 }
+        label: ChatGPT
+        style:
+          palette: { top: '#10A37F', left: '#0A6F58', right: '#0E8C6E' }
+          stroke:  { color: '#0A3F32', width: 1.2 }
+          text:    { family: "Inter, sans-serif", size: 10, weight: '800', color: '#FFFFFF' }
+          effects: { cornerRadius: 8 }
+      - id: prov_anthropic
+        shape: rectangle
+        geom: { w: 80, d: 62, h: 10 }
+        offset: { wx: 1225, wy: 125, wz: 83 }
+        label: AI
+        style:
+          palette: { top: '#D97757', left: '#8C4A33', right: '#B1604A' }
+          stroke:  { color: '#5C2F1F', width: 1.2 }
+          text:    { family: "Inter, sans-serif", size: 15, weight: '900', color: '#FFFFFF' }
+          effects: { cornerRadius: 8 }
+      - id: prov_cohere
+        shape: rectangle
+        geom: { w: 80, d: 62, h: 10 }
+        offset: { wx: 1210, wy: 220, wz: 70 }
+        label: cohere
+        style:
+          palette: { top: '#FFFFFF', left: '#A6B7D2', right: '#CCD8E8' }
+          stroke:  { color: '#3A4A66', width: 1.2 }
+          text:    { family: "Inter, sans-serif", size: 10, weight: '700', color: '#26324A' }
+          effects: { cornerRadius: 8 }
+      - id: prov_replicate
+        shape: rectangle
+        geom: { w: 80, d: 62, h: 10 }
+        offset: { wx: 1195, wy: 315, wz: 57 }
+        label: replicate
+        style:
+          palette: { top: '#E5ECF6', left: '#7E94B5', right: '#A6B7D2' }
+          stroke:  { color: '#3A4A66', width: 1.2 }
+          text:    { family: "Inter, sans-serif", size: 10, weight: '700', color: '#3A4A66' }
+          effects: { cornerRadius: 8 }
+      - id: prov_openai
+        shape: rectangle
+        geom: { w: 80, d: 62, h: 10 }
+        offset: { wx: 1180, wy: 410, wz: 44 }
+        label: OpenAI
+        style:
+          palette: { top: '#F1F5FB', left: '#6B82A8', right: '#94A7C7' }
+          stroke:  { color: '#3A4A66', width: 1.2 }
+          text:    { family: "Inter, sans-serif", size: 10, weight: '700', color: '#26324A' }
+          effects: { cornerRadius: 8 }
+
+    connectors:
+      # users → ingress controller
+      - { from: user_2.back-mid, to: ingress.front-mid,
+          stroke: { color: '#3A4A66', width: 1.6 },
+          arrow: triangle, routing: orthogonal }
+
+      # ingress → 2 nearest worker nodes (fan-out)
+      - { from: ingress.back-mid, to: wn3.front-mid,
+          stroke: { color: '#3A4A66', width: 1.6 },
+          arrow: triangle, routing: orthogonal }
+      - { from: ingress.right-mid, to: wn4.left-mid,
+          stroke: { color: '#3A4A66', width: 1.6 },
+          arrow: triangle, routing: orthogonal }
+
+      # 4 proxies → external LLM providers (LiteLLM egress)
+      - { from: proxy_1.right-mid, to: prov_chatgpt.left-mid,
+          stroke: { color: '#3A4A66', width: 1.4 },
+          arrow: triangle, routing: orthogonal }
+      - { from: proxy_2.right-mid, to: prov_anthropic.left-mid,
+          stroke: { color: '#3A4A66', width: 1.4 },
+          arrow: triangle, routing: orthogonal }
+      - { from: proxy_3.right-mid, to: prov_cohere.left-mid,
+          stroke: { color: '#3A4A66', width: 1.4 },
+          arrow: triangle, routing: orthogonal }
+      - { from: proxy_4.right-mid, to: prov_replicate.left-mid,
+          stroke: { color: '#3A4A66', width: 1.4 },
+          arrow: triangle, routing: orthogonal }
+
+      # LLM PODS → OpenAI
+      - { from: llm_pod_front.right-mid, to: prov_openai.left-mid,
+          stroke: { color: '#3A4A66', width: 1.4 },
+          arrow: triangle, routing: orthogonal }

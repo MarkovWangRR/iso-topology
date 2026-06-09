@@ -1,0 +1,25 @@
+theme:
+    palette:
+        top: '#FFFFFF'
+        left: '#9CA3AF'
+        right: '#B7BBC4'
+    stroke:
+        color: '#1F2937'
+        width: 1.2
+    text:
+        family: Inter, sans-serif
+        size: 11
+        weight: "600"
+        color: '#1F2937'
+nodes:
+    user_2:
+        shape: person
+        geom:
+            w: 30
+            d: 30
+            h: 50
+        style:
+            palette:
+                top: '#9CA3AF'
+                left: '#4B5563'
+                right: '#6B7280'

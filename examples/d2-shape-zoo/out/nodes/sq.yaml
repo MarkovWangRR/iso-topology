@@ -1,0 +1,14 @@
+nodes:
+    sq:
+        shape: rectangle
+        geom:
+            w: 95
+            d: 95
+            h: 30
+        style:
+            palette:
+                top: '#F7F8FE'
+            stroke:
+                color: '#0D32B2'
+                width: 2
+        label: Square

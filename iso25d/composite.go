@@ -1,0 +1,245 @@
+package iso25d
+
+import (
+	"fmt"
+	"math"
+	"strings"
+)
+
+// CompositePart describes one sub-element inside a composite node.
+type CompositePart struct {
+	Shape  string
+	Opts   ConvertOpts
+	OffWX  float64
+	OffWY  float64
+	OffWZ  float64
+}
+
+// RenderComposite stacks N parts into one SVG. Each part is rendered
+// independently and placed at its iso-projected offset. Painter order
+// follows the slice order — back-most first.
+//
+// v1.6.4 — coordinate-system unification:
+// The composite's (tx, ty) and the routing layer's (tx, ty) are now
+// computed from the SAME formula: the union of every part's projected
+// 3D world bbox (8 corners projected at z=offWZ and z=offWZ+h). And
+// each part's standalone SVG is OFFSET so its internal centering is
+// undone, making the part's world (offWX, offWY, offWZ) corner land at
+// the standalone's (0, 0). Together these guarantee that any external
+// layer (connectors, screen labels) using world-projected coords
+// renders pixel-aligned with the part's visible silhouette.
+func RenderComposite(parts []CompositePart) string {
+	if len(parts) == 0 {
+		return ""
+	}
+
+	type rendered struct {
+		inner      string
+		sx, sy     float64 // screen projection of (OffWX, OffWY, OffWZ)
+		intTx, intTy float64 // standalone's internal centering offset
+		stdW, stdH float64 // standalone SVG width / height
+	}
+	rs := make([]rendered, 0, len(parts))
+	for _, p := range parts {
+		full := Convert2DTo25D(p.Shape, p.Opts)
+		inner, stdW, stdH := stripOuterSVG(full)
+		sx := p.OffWX*cos30 - p.OffWY*cos30
+		sy := p.OffWX*sin30 + p.OffWY*sin30 - p.OffWZ
+		intTx, intTy := PartOriginOffset(p.Shape, p.Opts)
+		rs = append(rs, rendered{
+			inner: inner, sx: sx, sy: sy,
+			intTx: intTx, intTy: intTy,
+			stdW: stdW, stdH: stdH,
+		})
+	}
+
+	// Composite bbox = union of every part's projected 3D world bbox
+	// corners. Mirrors injectCompositeConnectors / injectScreenLabels so
+	// downstream layers share the same (tx, ty) origin.
+	minX, minY := math.Inf(1), math.Inf(1)
+	maxX, maxY := math.Inf(-1), math.Inf(-1)
+	for _, p := range parts {
+		w, d, h := p.Opts.Width, p.Opts.Depth, p.Opts.Height
+		corners := [8][3]float64{
+			{p.OffWX, p.OffWY, p.OffWZ},
+			{p.OffWX + w, p.OffWY, p.OffWZ},
+			{p.OffWX + w, p.OffWY + d, p.OffWZ},
+			{p.OffWX, p.OffWY + d, p.OffWZ},
+			{p.OffWX, p.OffWY, p.OffWZ + h},
+			{p.OffWX + w, p.OffWY, p.OffWZ + h},
+			{p.OffWX + w, p.OffWY + d, p.OffWZ + h},
+			{p.OffWX, p.OffWY + d, p.OffWZ + h},
+		}
+		for _, c := range corners {
+			sx := c[0]*cos30 - c[1]*cos30
+			sy := c[0]*sin30 + c[1]*sin30 - c[2]
+			if sx < minX {
+				minX = sx
+			}
+			if sx > maxX {
+				maxX = sx
+			}
+			if sy < minY {
+				minY = sy
+			}
+			if sy > maxY {
+				maxY = sy
+			}
+		}
+	}
+	pad := 12.0
+	tx, ty := -minX+pad, -minY+pad
+
+	// v1.6.4b — expand viewBox if any part's standalone SVG extends
+	// past the world-corner bbox (notably iso_text whose text length
+	// isn't captured by world geom). tx/ty stay aligned with the world
+	// bbox so connectors / screen-labels keep coord parity; we only
+	// grow the SVG canvas, not the origin.
+	maxOuterX := maxX
+	maxOuterY := maxY
+	for _, r := range rs {
+		// Where the standalone (0, 0) lands in composite coords:
+		px := r.sx + tx - r.intTx
+		py := r.sy + ty - r.intTy
+		// Composite x at which this part's right edge sits.
+		if rx := px + r.stdW - tx; rx > maxOuterX {
+			maxOuterX = rx
+		}
+		if ry := py + r.stdH - ty; ry > maxOuterY {
+			maxOuterY = ry
+		}
+	}
+	W := (maxOuterX - minX) + 2*pad
+	H := (maxOuterY - minY) + 2*pad
+
+	var sb strings.Builder
+	fmt.Fprintf(&sb,
+		`<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 %.2f %.2f" width="%.2f" height="%.2f">`,
+		W, H, W, H,
+	)
+	for i, r := range rs {
+		// Outer translate places the part's WORLD (offWX, offWY, offWZ)
+		// at composite position (sx + tx, sy + ty). The −intTx / −intTy
+		// pre-shift cancels the part's internal centering so the part's
+		// local (0, 0, 0) inside the standalone SVG aligns with that
+		// translate position — no more per-shape coord mismatch.
+		fmt.Fprintf(&sb, `<g data-part="%d" transform="translate(%.2f %.2f)">%s</g>`,
+			i, r.sx+tx-r.intTx, r.sy+ty-r.intTy, r.inner,
+		)
+	}
+	sb.WriteString(`</svg>`)
+	return sb.String()
+}
+
+// PartOriginOffset returns the (tx, ty) within a part's standalone SVG
+// where the part's WORLD-origin corner (OffWX, OffWY, OffWZ) — i.e.
+// local (0, 0, 0) — renders. Equivalent to inverting the shape
+// renderer's internal `-minX+m, -minY+m` centring. Kept in sync with
+// the shape renderers in shapes.go / rounded.go.
+//
+// Composition layers (RenderComposite + downstream injectors) use this
+// to subtract the centring so the standalone's (0, 0) coincides with
+// project(OffWX, OffWY, OffWZ), making world-projected coords usable
+// directly across all shape types.
+func PartOriginOffset(shape string, opts ConvertOpts) (tx, ty float64) {
+	w, d, h := opts.Width, opts.Depth, opts.Height
+	m := opts.Margin
+	if m <= 0 {
+		m = 24 // matches Default* renderers in shapes.go
+	}
+	switch shape {
+	case "iso_text", "title":
+		// Pure iso-tilted text. World (0, 0, 0) corresponds to the text's
+		// baseline-start (local origin of the iso matrix), which sits at
+		// (m, m + sin30·fontSize) inside the standalone. Use the SAME m
+		// that RenderIsoText sees post applyBox / DefaultIsoBox (24).
+		fontSize := opts.FontSize
+		if fontSize <= 0 {
+			fontSize = 16
+		}
+		return m, m + sin30*fontSize
+
+	case "cylinder", "stored_data", "queue", "oval":
+		rx := w / 2
+		// ry encodes the iso-tilt of the ellipse depth (rx * tan30).
+		ry := rx * sin30 / cos30
+		// Top ellipse centre is drawn at (rx+m, ry+m) and corresponds to
+		// world (w/2, d/2, h). World (0, 0, 0) sits at offset
+		// (−w/2, −d/2, −h); project that delta and add to the centre.
+		dx := (-w/2 + d/2) * cos30
+		dy := -(w/2+d/2)*sin30 + h
+		return rx + m + dx, ry + m + dy
+
+	case "person", "c4-person":
+		// Person body is a cylinder + sphere head; standalone frame puts
+		// the BODY TOP-ELLIPSE centre at local (0, 0). World (0, 0, 0) (=
+		// body bbox back-bottom-left corner) projects to local (0, h −
+		// w/2) when w == d. ty also has to clear the head's vertical
+		// extent so the SVG canvas fully holds the figure.
+		rx := w / 2
+		ry := rx * sin30 / cos30
+		headR := w * 0.27 // matches applyPerson
+		headGap := 4.0
+		dx := (-w/2 + d/2) * cos30
+		return rx + m + dx, ry + headGap + 2*headR + m + h - rx
+	case "circle":
+		// Sphere is a flat disc centred at (r+m, r+m). World (0,0,0) and
+		// world centre (r,r,r) project to the SAME screen point (iso
+		// projection degeneracy along the camera axis), so the offset is
+		// the same as the disc centre.
+		r := math.Min(math.Min(w, d), h) / 2
+		return r + m, r + m
+	case "cloud":
+		// Outline-based; minX of the projected outline is at the trunk's
+		// bottom-left corner (leftX, bottomY). leftX = 0.04w, bottomY =
+		// 0.85d match sampleCloudOutline. minY is at the SMALLEST bump
+		// peak (bump 2 by default, at local (0.5w, 0.06d)) on the top
+		// face (z = h), where the projected y bottoms out.
+		leftX := 0.04 * w
+		bottomY := 0.85 * d
+		minX := (leftX - bottomY) * cos30
+		peakX := 0.5 * w
+		peakY := 0.06 * d
+		minY := (peakX+peakY)*sin30 - h
+		return -minX + m, -minY + m
+	}
+	// Default = box-style extrude (rectangle, document, page, callout,
+	// class, sql_table, hexagon, polygon, step, diamond, text, code,
+	// image, …). Outline = bbox at z = 0 and z = h. minX = (0 − d)·cos30,
+	// minY = −h (smallest y at top-back-left corner (0, 0, h)).
+	return d*cos30 + m, h + m
+}
+
+// stripOuterSVG extracts the inner content + width/height from a full SVG
+// string of the form `<svg ... viewBox="0 0 W H" width="W" height="H">…</svg>`.
+// Conservative parser tuned to our renderer's output format.
+func stripOuterSVG(full string) (inner string, w, h float64) {
+	// Find the first '>' after '<svg'.
+	startTag := strings.Index(full, "<svg")
+	if startTag < 0 {
+		return full, 0, 0
+	}
+	tagEnd := strings.Index(full[startTag:], ">")
+	if tagEnd < 0 {
+		return full, 0, 0
+	}
+	header := full[startTag : startTag+tagEnd+1]
+	// Parse viewBox dimensions.
+	if idx := strings.Index(header, `viewBox="`); idx >= 0 {
+		rest := header[idx+len(`viewBox="`):]
+		end := strings.Index(rest, `"`)
+		if end > 0 {
+			parts := strings.Fields(rest[:end])
+			if len(parts) == 4 {
+				fmt.Sscanf(parts[2], "%f", &w)
+				fmt.Sscanf(parts[3], "%f", &h)
+			}
+		}
+	}
+	bodyStart := startTag + tagEnd + 1
+	closeIdx := strings.LastIndex(full, "</svg>")
+	if closeIdx < 0 {
+		return full[bodyStart:], w, h
+	}
+	return full[bodyStart:closeIdx], w, h
+}

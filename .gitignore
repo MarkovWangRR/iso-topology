@@ -1,0 +1,11 @@
+# macOS / editor noise
+.DS_Store
+*.swp
+*~
+
+# Build output
+isotopo
+/cmd/isotopo/isotopo
+
+# Local dev temp files
+/tmp/

@@ -1,0 +1,519 @@
+package iso25d
+
+import (
+	"fmt"
+	"math"
+	"strings"
+)
+
+// IsoBoxOpts captures every customisable parameter the POC exposes.
+type IsoBoxOpts struct {
+	// Geometry
+	Width, Depth, Height float64
+
+	// Face colours
+	TopFill, LeftFill, RightFill string
+
+	// Border
+	Stroke      string
+	StrokeWidth float64
+
+	// Per-face stroke overrides (v1.2). Empty / zero = inherit base.
+	TopStroke, LeftStroke, RightStroke struct {
+		Color, Dash string
+		Width       float64
+	}
+	// Per-face opacity overrides (v1.2). 0 = inherit base Opacity.
+	TopOpacity, LeftOpacity, RightOpacity float64
+	// Linear-gradient fills per face (v1.2). Non-nil overrides solid fill.
+	TopGradient, LeftGradient, RightGradient *FaceGradient
+
+	// Top-face label
+	Label      string
+	LabelLines []string // multi-line override
+	FontFamily string
+	FontSize   float64
+	FontColor  string
+	FontWeight string
+
+	// Top-face icon
+	Icon       string
+	IconScale  float64
+	IconAnchor string  // center | topLeft | topRight | bottomLeft | bottomRight
+	IconOffX   float64 // fraction of W
+	IconOffY   float64 // fraction of D
+
+	// Padding around the projected shape in viewBox units
+	Margin float64
+	// Rounded-corner radius for the top face (v1.2).
+	CornerRadius float64
+	// Drop shadow filter (v1.2). Zero color = disabled.
+	ShadowDx, ShadowDy, ShadowBlur float64
+	ShadowColor                    string
+
+	// Global presentation knobs — wrap every drawn face in a <g> carrying
+	// these attributes.
+	Opacity         float64 // 0..1; treated as 1 when <= 0 or >= 1
+	StrokeDasharray string  // e.g. "4 2"; empty = solid
+	Background      string  // CSS colour for an underlying background <rect>; empty = transparent
+
+	// v1.3 wiring.
+	Wireframe       bool
+	BackglowColor   string
+	BackglowRadius  float64
+	BackglowOpacity float64
+	GrainIntensity  float64
+	GrainScale      float64
+	PatternKind     string
+	PatternColor    string
+	PatternSpacing  float64
+	PatternAngle    float64
+	Cells           [][]string
+	CellColors      [][]string
+}
+
+func DefaultIsoBox() IsoBoxOpts {
+	return IsoBoxOpts{
+		Width: 140, Depth: 140, Height: 80,
+		TopFill:     "#7FB3FF",
+		LeftFill:    "#3A6FBA",
+		RightFill:   "#5589D6",
+		Stroke:      "#1D3A66",
+		StrokeWidth: 1.5,
+		FontFamily:  "Helvetica Neue, Arial, sans-serif",
+		FontSize:    16,
+		FontColor:   "#0B1F3A",
+		FontWeight:  "600",
+		IconScale:   0.4,
+		Margin:      24,
+	}
+}
+
+const (
+	cos30 = 0.8660254037844387
+	sin30 = 0.5
+)
+
+func project(x, y, z float64) (float64, float64) {
+	return x*cos30 - y*cos30, x*sin30 + y*sin30 - z
+}
+
+// boxGeom holds projected, viewbox-shifted coordinates for the 8 corners of
+// an iso box of given dimensions plus the resulting viewBox size.
+//
+//	   E───────F          z
+//	  /|      /|          |
+//	 H───────G |          o───── x
+//	 | A─────|─B         /
+//	 |/      |/         y
+//	 D───────C
+type boxGeom struct {
+	A, B, C, D, E, F, G, H [2]float64
+	ViewW, ViewH           float64
+	Width, Depth, Height   float64
+	Tx, Ty                 float64 // translation applied to projected coords
+}
+
+func computeBoxGeom(width, depth, height, margin float64) boxGeom {
+	w, d, h, m := width, depth, height, margin
+
+	raw := [8][2]float64{}
+	raw[0] = [2]float64{0, 0}
+	raw[0][0], raw[0][1] = project(0, 0, 0)
+	raw[1][0], raw[1][1] = project(w, 0, 0)
+	raw[2][0], raw[2][1] = project(w, d, 0)
+	raw[3][0], raw[3][1] = project(0, d, 0)
+	raw[4][0], raw[4][1] = project(0, 0, h)
+	raw[5][0], raw[5][1] = project(w, 0, h)
+	raw[6][0], raw[6][1] = project(w, d, h)
+	raw[7][0], raw[7][1] = project(0, d, h)
+
+	minX, maxX := raw[0][0], raw[0][0]
+	minY, maxY := raw[0][1], raw[0][1]
+	for _, p := range raw {
+		minX = math.Min(minX, p[0])
+		maxX = math.Max(maxX, p[0])
+		minY = math.Min(minY, p[1])
+		maxY = math.Max(maxY, p[1])
+	}
+
+	tx, ty := -minX+m, -minY+m
+	shift := func(p [2]float64) [2]float64 { return [2]float64{p[0] + tx, p[1] + ty} }
+
+	return boxGeom{
+		A: shift(raw[0]), B: shift(raw[1]), C: shift(raw[2]), D: shift(raw[3]),
+		E: shift(raw[4]), F: shift(raw[5]), G: shift(raw[6]), H: shift(raw[7]),
+		ViewW: (maxX - minX) + 2*m,
+		ViewH: (maxY - minY) + 2*m,
+		Width: w, Depth: d, Height: h,
+		Tx: tx, Ty: ty,
+	}
+}
+
+// svgHeader returns the opening <svg> tag for a given viewBox.
+func svgHeader(w, h float64) string {
+	return fmt.Sprintf(
+		`<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 %.2f %.2f" width="%.2f" height="%.2f">`,
+		w, h, w, h,
+	)
+}
+
+// openWrapper writes (a) an optional background <rect> covering the viewBox
+// and (b) the opening <g> tag that carries Opacity / StrokeDasharray. The
+// shadowID arg is the id of a previously emitted drop-shadow <filter>; if
+// non-empty, it is applied to the wrapper g via filter="url(#...)".
+// The inverse is closeWrapper(). Both must be paired around the actual face
+// drawing code in every Render* function.
+func openWrapper(sb *strings.Builder, w, h float64, bg string, opacity float64, dasharray, shadowID string) {
+	if strings.TrimSpace(bg) != "" {
+		fmt.Fprintf(sb,
+			`<rect data-face="bg" x="0" y="0" width="%.2f" height="%.2f" fill="%s"/>`,
+			w, h, escapeAttr(bg),
+		)
+	}
+	attrs := ""
+	if opacity > 0 && opacity < 1 {
+		attrs += fmt.Sprintf(` opacity="%.3f"`, opacity)
+	}
+	if strings.TrimSpace(dasharray) != "" {
+		attrs += fmt.Sprintf(` stroke-dasharray="%s"`, escapeAttr(dasharray))
+	}
+	if shadowID != "" {
+		attrs += fmt.Sprintf(` filter="url(#%s)"`, shadowID)
+	}
+	fmt.Fprintf(sb, `<g data-face="wrap"%s>`, attrs)
+}
+
+func closeWrapper(sb *strings.Builder) {
+	sb.WriteString(`</g>`)
+}
+
+// emitLinearGradient writes a <linearGradient> def keyed to a fixed id.
+// Direction strings: "down" (default), "up", "right", "left", "diag".
+func emitLinearGradient(sb *strings.Builder, id string, g *FaceGradient) {
+	x1, y1, x2, y2 := "0%", "0%", "0%", "100%"
+	switch g.Dir {
+	case "up":
+		x1, y1, x2, y2 = "0%", "100%", "0%", "0%"
+	case "right":
+		x1, y1, x2, y2 = "0%", "0%", "100%", "0%"
+	case "left":
+		x1, y1, x2, y2 = "100%", "0%", "0%", "0%"
+	case "diag":
+		x1, y1, x2, y2 = "0%", "0%", "100%", "100%"
+	}
+	fmt.Fprintf(sb,
+		`<linearGradient id="%s" x1="%s" y1="%s" x2="%s" y2="%s"><stop offset="0%%" stop-color="%s"/><stop offset="100%%" stop-color="%s"/></linearGradient>`,
+		id, x1, y1, x2, y2, escapeAttr(g.From), escapeAttr(g.To),
+	)
+}
+
+// emitDropShadowFilter writes a Gaussian-blurred drop shadow filter def.
+func emitDropShadowFilter(sb *strings.Builder, id string, dx, dy, blur float64, color string) {
+	fmt.Fprintf(sb,
+		`<filter id="%s" x="-50%%" y="-50%%" width="200%%" height="200%%">`+
+			`<feGaussianBlur in="SourceAlpha" stdDeviation="%.2f"/>`+
+			`<feOffset dx="%.2f" dy="%.2f" result="offsetblur"/>`+
+			`<feFlood flood-color="%s"/>`+
+			`<feComposite in2="offsetblur" operator="in"/>`+
+			`<feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>`+
+			`</filter>`,
+		id, blur, dx, dy, escapeAttr(color),
+	)
+}
+
+// pickFaceStroke chooses per-face stroke values, falling back to base when
+// the face override is empty / zero.
+func pickFaceStroke(baseColor string, baseWidth float64, baseDash string, face struct {
+	Color, Dash string
+	Width       float64
+}) (string, float64, string) {
+	color := baseColor
+	if face.Color != "" {
+		color = face.Color
+	}
+	width := baseWidth
+	if face.Width > 0 {
+		width = face.Width
+	}
+	dash := baseDash
+	if face.Dash != "" {
+		dash = face.Dash
+	}
+	return color, width, dash
+}
+
+// writeFace emits a face polygon supporting per-face fill/stroke/opacity
+// /dasharray. Use for box-family shapes that want v1.2 overrides; the
+// legacy faceTag stays for shapes that don't need them.
+func writeFace(sb *strings.Builder, name, fill, stroke string, strokeWidth float64, dasharray string, opacity float64, pts ...[2]float64) {
+	parts := make([]string, 0, len(pts))
+	for _, p := range pts {
+		parts = append(parts, fmt.Sprintf("%.2f,%.2f", p[0], p[1]))
+	}
+	attrs := ""
+	if strokeWidth > 0 && stroke != "" {
+		attrs += fmt.Sprintf(` stroke="%s" stroke-width="%.2f" stroke-linejoin="round" stroke-linecap="round"`, escapeAttr(stroke), strokeWidth)
+		if dasharray != "" {
+			attrs += fmt.Sprintf(` stroke-dasharray="%s"`, escapeAttr(dasharray))
+		}
+	} else {
+		attrs += ` stroke="none"`
+	}
+	if opacity > 0 && opacity < 1 {
+		attrs += fmt.Sprintf(` opacity="%.3f"`, opacity)
+	}
+	fmt.Fprintf(sb,
+		`<polygon data-face="%s" points="%s" fill="%s"%s/>`,
+		name, strings.Join(parts, " "), fill, attrs,
+	)
+}
+
+// faceTag writes a <polygon> for an iso face.
+func faceTag(sb *strings.Builder, name string, fill, stroke string, strokeWidth float64, pts ...[2]float64) {
+	parts := make([]string, 0, len(pts))
+	for _, p := range pts {
+		parts = append(parts, fmt.Sprintf("%.2f,%.2f", p[0], p[1]))
+	}
+	if stroke == "" || strokeWidth <= 0 {
+		fmt.Fprintf(sb,
+			`<polygon data-face="%s" points="%s" fill="%s" stroke="none"/>`,
+			name, strings.Join(parts, " "), fill,
+		)
+		return
+	}
+	fmt.Fprintf(sb,
+		`<polygon data-face="%s" points="%s" fill="%s" stroke="%s" stroke-width="%.2f" stroke-linejoin="round" stroke-linecap="round"/>`,
+		name, strings.Join(parts, " "), fill, stroke, strokeWidth,
+	)
+}
+
+// topContentTransform returns the SVG matrix(...) string that maps a local
+// rectangle of size (width, depth) onto the iso top face at the supplied origin.
+func topContentTransform(originX, originY float64) string {
+	return fmt.Sprintf(
+		`matrix(%.4f %.4f %.4f %.4f %.2f %.2f)`,
+		cos30, sin30, -cos30, sin30, originX, originY,
+	)
+}
+
+// writeTopLabelAndIcon emits a <g transform=...> with the icon and label
+// positioned on a face whose local frame has dimensions (faceW, faceD)
+// and whose origin (local 0,0) sits at the projected point (originX, originY).
+func writeTopLabelAndIcon(
+	sb *strings.Builder,
+	originX, originY, faceW, faceD float64,
+	label, icon string, iconScale float64,
+	fontFamily string, fontSize float64, fontWeight, fontColor string,
+) {
+	hasLabel := strings.TrimSpace(label) != ""
+	hasIcon := strings.TrimSpace(icon) != ""
+	if !hasLabel && !hasIcon {
+		return
+	}
+	if iconScale <= 0 {
+		iconScale = 0.4
+	}
+
+	fmt.Fprintf(sb, `<g data-face="top-content" transform="%s">`, topContentTransform(originX, originY))
+
+	if hasIcon {
+		iconSize := math.Min(faceW, faceD) * iconScale
+		ix := (faceW - iconSize) / 2
+		iy := faceD*0.5 - iconSize*0.5
+		if hasLabel {
+			iy = faceD*0.5 - iconSize - 4
+		}
+		fmt.Fprintf(sb,
+			`<image href="%s" xlink:href="%s" x="%.2f" y="%.2f" width="%.2f" height="%.2f" preserveAspectRatio="xMidYMid meet"/>`,
+			escapeAttr(icon), escapeAttr(icon), ix, iy, iconSize, iconSize,
+		)
+	}
+	if hasLabel {
+		lx := faceW / 2
+		ly := faceD * 0.5
+		if hasIcon {
+			ly = faceD*0.5 + math.Min(faceW, faceD)*iconScale*0.5 + fontSize*0.5 + 2
+		}
+		fmt.Fprintf(sb,
+			`<text x="%.2f" y="%.2f" dy=".35em" font-family="%s" font-size="%.2f" font-weight="%s" fill="%s" text-anchor="middle">%s</text>`,
+			lx, ly,
+			escapeAttr(fontFamily), fontSize, escapeAttr(fontWeight),
+			escapeAttr(fontColor),
+			escapeXML(label),
+		)
+	}
+
+	sb.WriteString(`</g>`)
+}
+
+// RenderIsoBox draws a 3-face iso prism with optional top-face label/icon.
+// Supports v1.2 knobs (per-face stroke/opacity/gradient, drop shadow,
+// multi-line labels) and v1.3 (wireframe, backglow, pattern overlay, cells).
+// When CornerRadius > 0 the box becomes a single rounded silhouette via
+// RenderIsoBoxRounded — see that fn for the cushion-badge look.
+func RenderIsoBox(o IsoBoxOpts) string {
+	if o.CornerRadius > 0 {
+		return RenderIsoBoxRounded(o)
+	}
+	g := computeBoxGeom(o.Width, o.Depth, o.Height, o.Margin)
+
+	var sb strings.Builder
+	sb.WriteString(svgHeader(g.ViewW, g.ViewH))
+
+	topFill, leftFill, rightFill, shadowID := emitBoxDefs(&sb, &o)
+
+	openWrapper(&sb, g.ViewW, g.ViewH, o.Background, o.Opacity, o.StrokeDasharray, shadowID)
+
+	leftC, leftW, leftD := pickFaceStroke(o.Stroke, o.StrokeWidth, o.StrokeDasharray, o.LeftStroke)
+	rightC, rightW, rightD := pickFaceStroke(o.Stroke, o.StrokeWidth, o.StrokeDasharray, o.RightStroke)
+	topC, topW, topD := pickFaceStroke(o.Stroke, o.StrokeWidth, o.StrokeDasharray, o.TopStroke)
+
+	writeFace(&sb, "left", leftFill, leftC, leftW, leftD, 0, g.D, g.H, g.G, g.C)
+	writeFace(&sb, "right", rightFill, rightC, rightW, rightD, 0, g.B, g.F, g.G, g.C)
+	writeFace(&sb, "top", topFill, topC, topW, topD, 0, g.E, g.F, g.G, g.H)
+
+	{
+		writeTopLabelAndIconV12(
+			&sb,
+			g.E[0], g.E[1], o.Width, o.Depth,
+			o.Label, o.LabelLines, o.Icon, o.IconScale, o.IconAnchor, o.IconOffX, o.IconOffY,
+			o.FontFamily, o.FontSize, o.FontWeight, o.FontColor,
+		)
+	}
+
+	closeWrapper(&sb)
+	sb.WriteString(`</svg>`)
+	return sb.String()
+}
+
+// emitBoxDefs emits any required <defs> (gradients + shadow filter) onto
+// sb and returns the fill references plus the shadow filter id.
+func emitBoxDefs(sb *strings.Builder, o *IsoBoxOpts) (topFill, leftFill, rightFill, shadowID string) {
+	topFill, leftFill, rightFill = o.TopFill, o.LeftFill, o.RightFill
+	var defs strings.Builder
+	if o.TopGradient != nil {
+		emitLinearGradient(&defs, "grad-top", o.TopGradient)
+		topFill = "url(#grad-top)"
+	}
+	if o.LeftGradient != nil {
+		emitLinearGradient(&defs, "grad-left", o.LeftGradient)
+		leftFill = "url(#grad-left)"
+	}
+	if o.RightGradient != nil {
+		emitLinearGradient(&defs, "grad-right", o.RightGradient)
+		rightFill = "url(#grad-right)"
+	}
+	if strings.TrimSpace(o.ShadowColor) != "" && (o.ShadowDx != 0 || o.ShadowDy != 0 || o.ShadowBlur > 0) {
+		shadowID = "shadow"
+		emitDropShadowFilter(&defs, shadowID, o.ShadowDx, o.ShadowDy, o.ShadowBlur, o.ShadowColor)
+	}
+	if defs.Len() > 0 {
+		sb.WriteString(`<defs>`)
+		sb.WriteString(defs.String())
+		sb.WriteString(`</defs>`)
+	}
+	return
+}
+
+// writeTopLabelAndIconV12 wraps writeTopLabelAndIcon with support for
+// multi-line label (LabelLines or "\n" split) and icon anchor/offset.
+func writeTopLabelAndIconV12(
+	sb *strings.Builder,
+	originX, originY, faceW, faceD float64,
+	label string, labelLines []string,
+	icon string, iconScale float64, iconAnchor string, iconOffX, iconOffY float64,
+	fontFamily string, fontSize float64, fontWeight, fontColor string,
+) {
+	lines := labelLines
+	if len(lines) == 0 && strings.Contains(label, "\n") {
+		lines = strings.Split(label, "\n")
+	}
+	hasMulti := len(lines) > 1
+	hasIcon := strings.TrimSpace(icon) != ""
+	hasLabel := strings.TrimSpace(label) != "" || hasMulti
+
+	if !hasLabel && !hasIcon {
+		return
+	}
+	if iconScale <= 0 {
+		iconScale = 0.4
+	}
+
+	fmt.Fprintf(sb, `<g data-face="top-content" transform="%s">`, topContentTransform(originX, originY))
+
+	if hasIcon {
+		iconSize := math.Min(faceW, faceD) * iconScale
+		// Anchor + offset (offset is fraction of face dim).
+		ix, iy := iconAnchorXY(iconAnchor, faceW, faceD, iconSize)
+		ix += iconOffX * faceW
+		iy += iconOffY * faceD
+		fmt.Fprintf(sb,
+			`<image href="%s" xlink:href="%s" x="%.2f" y="%.2f" width="%.2f" height="%.2f" preserveAspectRatio="xMidYMid meet"/>`,
+			escapeAttr(icon), escapeAttr(icon), ix, iy, iconSize, iconSize,
+		)
+	}
+	if hasLabel {
+		lx := faceW / 2
+		ly := faceD * 0.5
+		if hasIcon && iconAnchor == "" {
+			ly = faceD*0.5 + math.Min(faceW, faceD)*iconScale*0.5 + fontSize*0.5 + 2
+		}
+		if hasMulti {
+			// Centre the block of lines vertically around ly.
+			lineH := fontSize * 1.2
+			start := ly - (float64(len(lines)-1) * lineH / 2)
+			for i, ln := range lines {
+				fmt.Fprintf(sb,
+					`<text x="%.2f" y="%.2f" dy=".35em" font-family="%s" font-size="%.2f" font-weight="%s" fill="%s" text-anchor="middle">%s</text>`,
+					lx, start+float64(i)*lineH,
+					escapeAttr(fontFamily), fontSize, escapeAttr(fontWeight),
+					escapeAttr(fontColor),
+					escapeXML(ln),
+				)
+			}
+		} else {
+			fmt.Fprintf(sb,
+				`<text x="%.2f" y="%.2f" dy=".35em" font-family="%s" font-size="%.2f" font-weight="%s" fill="%s" text-anchor="middle">%s</text>`,
+				lx, ly,
+				escapeAttr(fontFamily), fontSize, escapeAttr(fontWeight),
+				escapeAttr(fontColor),
+				escapeXML(label),
+			)
+		}
+	}
+
+	sb.WriteString(`</g>`)
+}
+
+// iconAnchorXY returns the (x, y) for an icon of size iconSize on a face
+// of (faceW, faceD), anchored to one of: center | topLeft | topRight |
+// bottomLeft | bottomRight. Empty / unknown anchor → center.
+func iconAnchorXY(anchor string, faceW, faceD, iconSize float64) (float64, float64) {
+	pad := 6.0
+	switch anchor {
+	case "topLeft":
+		return pad, pad
+	case "topRight":
+		return faceW - iconSize - pad, pad
+	case "bottomLeft":
+		return pad, faceD - iconSize - pad
+	case "bottomRight":
+		return faceW - iconSize - pad, faceD - iconSize - pad
+	default: // center
+		return (faceW - iconSize) / 2, faceD*0.5 - iconSize*0.5
+	}
+}
+
+func escapeXML(s string) string {
+	s = strings.ReplaceAll(s, "&", "&amp;")
+	s = strings.ReplaceAll(s, "<", "&lt;")
+	s = strings.ReplaceAll(s, ">", "&gt;")
+	return s
+}
+
+func escapeAttr(s string) string {
+	s = escapeXML(s)
+	s = strings.ReplaceAll(s, `"`, "&quot;")
+	return s
+}

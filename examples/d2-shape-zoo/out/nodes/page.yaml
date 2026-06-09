@@ -1,0 +1,14 @@
+nodes:
+    page:
+        shape: rectangle
+        geom:
+            w: 79
+            d: 87
+            h: 15
+        style:
+            palette:
+                top: '#EDF0FD'
+            stroke:
+                color: '#0D32B2'
+                width: 2
+        label: Page

@@ -1,0 +1,23 @@
+theme:
+    palette:
+        top: '#E5ECF6'
+        left: '#7E94B5'
+        right: '#A6B7D2'
+    stroke:
+        color: '#3A4A66'
+        width: 1.2
+    text:
+        family: Inter, sans-serif
+        size: 11
+        weight: "600"
+        color: '#26324A'
+nodes:
+    title_subtitle:
+        shape: iso_text
+        style:
+            text:
+                family: Inter, sans-serif
+                size: 17
+                weight: "700"
+                color: '#7E94B5'
+        label: LiteLLM PROXY PODS
