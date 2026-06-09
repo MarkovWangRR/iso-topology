@@ -1,5 +1,7 @@
 package isotopo
 
+//go:generate go run ./tools/gen-docs
+
 import "sort"
 
 // Capabilities is the agent-facing, structured description of what

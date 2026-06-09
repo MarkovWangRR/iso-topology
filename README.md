@@ -124,8 +124,8 @@ primitives at once. Source:
 
 Both produce the same output structure. Same `Document` model under
 the hood: `.d2` runs through `CompileD2 → Translate`, `.yaml` parses
-directly. See [DSL_D2.md](docs/DSL_D2.md) and
-[DSL_YAML.md](docs/DSL_YAML.md).
+directly. See [DSL_D2.md](docs/reference/dsl-d2.md) and
+[DSL_YAML.md](docs/reference/dsl-yaml.md).
 
 ## Capabilities
 
@@ -160,7 +160,7 @@ out/
 
 Drop `topology.svg` into any markdown / Notion / slide deck. Each
 `nodes/<id>.svg` is a self-contained iso sticker. Embedding recipes
-and troubleshooting: [OUTPUTS.md](docs/OUTPUTS.md).
+and troubleshooting: [OUTPUTS.md](docs/reference/output-layout.md).
 
 ## Use as a Go library
 
@@ -171,19 +171,40 @@ doc, _ := isotopo.Parse(yamlBytes)
 svg := isotopo.RenderWithCanvas(doc.Scene(), doc.Theme, doc.Canvas, doc.Annotations)
 ```
 
-Full library API surface: [USAGE.md](docs/USAGE.md).
+Full library API surface: [USAGE.md](docs/reference/cli.md).
 
 ## Docs
 
-| Doc | Read this when |
+Organized by purpose, not topic — full index at [docs/README.md](docs/README.md).
+
+**Start here:**
+
+- [Tutorial](docs/getting-started/01-install.md) — 5 steps from install to your first published scene
+- [Recipes](docs/agent/RECIPES.md) — task → DSL primitive speed-dial
+- [Troubleshooting](docs/guides/troubleshooting.md) — failure modes by symptom
+
+**Reference:**
+
+| Doc | Read when |
 |---|---|
-| [INSTALL.md](docs/INSTALL.md) | Setting up — `go install`, clone & build, library import |
-| [USAGE.md](docs/USAGE.md) | CLI subcommands + Go library API reference |
-| [DSL_YAML.md](docs/DSL_YAML.md) | YAML composite spec — precise iso placement |
-| [DSL_D2.md](docs/DSL_D2.md) | `.d2` input spec — d2 shape mapping, nested containers |
-| [DSL_THEME.md](docs/DSL_THEME.md) | Style / Theme cascade: Palette, Stroke, Text, Effects |
-| [OUTPUTS.md](docs/OUTPUTS.md) | Output layout + embedding in docs / slides / LLM context |
-| [EXTENDING.md](docs/EXTENDING.md) | Add a new shape, primitive, or layout engine |
+| [CLI + library API](docs/reference/cli.md) | subcommands, library entrypoints, signatures |
+| [YAML DSL](docs/reference/dsl-yaml.md) | precise iso placement — every field |
+| [.d2 DSL](docs/reference/dsl-d2.md) | auto-layout path, d2 shape mapping, nested containers |
+| [Style / Theme](docs/reference/dsl-theme.md) | palette, stroke, text, effects, cascade |
+| [Output layout](docs/reference/output-layout.md) | what's in `out/`, embedding recipes |
+
+**Design:**
+
+- [Why isometric](docs/concepts/why-isometric.md) — design rationale and tradeoffs
+- [Extending](docs/guides/extending.md) — add a new shape, primitive, or layout
+
+**Agent integration:**
+
+| Doc | Read when |
+|---|---|
+| [CAPABILITIES.md](docs/agent/CAPABILITIES.md) | offline-readable capability inventory (generated) |
+| [PROMPT_TEMPLATE.md](docs/agent/PROMPT_TEMPLATE.md) | drop-in system prompt for your LLM |
+| [dsl.schema.json](docs/agent/schema/dsl.schema.json) | JSON Schema for local lint (no CLI roundtrip) |
 
 ## Status
 

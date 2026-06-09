@@ -1,4 +1,7 @@
-# Installation
+# 01 — Install
+
+This is step 1 of 5. By the end of the series you'll have a real
+iso architecture diagram in your repo.
 
 iso-topology is a single Go binary plus an importable Go library. No
 runtime dependencies beyond what the Go toolchain provides — all
@@ -80,7 +83,7 @@ func renderScene(yamlBytes []byte) (string, error) {
 }
 ```
 
-See [USAGE.md](USAGE.md) for the full library API surface.
+See [USAGE.md](../reference/cli.md) for the full library API surface.
 
 ## Dependency note: d2
 
@@ -118,3 +121,8 @@ rm "$(go env GOBIN)/isotopo"   # or: rm $HOME/go/bin/isotopo
 
 The Go module cache for d2 / dependencies lives under
 `$GOPATH/pkg/mod/`; cleaning that is optional (`go clean -modcache`).
+
+## Next step
+
+→ [`02-first-scene.md`](02-first-scene.md) — render your first
+multi-element architecture diagram.

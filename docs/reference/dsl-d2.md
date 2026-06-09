@@ -10,7 +10,7 @@ graph structure (nodes + edges), not pixel-precise layouts. The `.d2`
 path lets them stay in their comfort zone and get an iso scene for
 free.
 
-For pixel-precise authoring, use the YAML path instead: [DSL_YAML.md](DSL_YAML.md).
+For pixel-precise authoring, use the YAML path instead: [DSL_YAML.md](../reference/dsl-yaml.md).
 
 ## Quick example
 
@@ -150,7 +150,7 @@ These d2 features are silently dropped or simplified:
   Workaround: use the YAML path and set `content.rows: [...]`.
 
 If you hit one of these and want it lowered properly, see
-[EXTENDING.md](EXTENDING.md) for the recipe — these are exactly the
+[EXTENDING.md](../guides/extending.md) for the recipe — these are exactly the
 gaps the catalog/translator architecture is designed to absorb.
 
 ## Inspecting the translation
@@ -173,4 +173,4 @@ That fragment is a self-contained iso-topology Document — you can
 feed it to `isotopo render` to get the standalone iso of just that
 proxy. Useful for building icon libraries from a generated topology.
 
-See [OUTPUTS.md](OUTPUTS.md) for the full output layout.
+See [OUTPUTS.md](../reference/output-layout.md) for the full output layout.

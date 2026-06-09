@@ -21,7 +21,7 @@ isotopo render [--layout dagre|elk] <input> <output-dir>
 
 The `--layout` flag is consulted only for `.d2` input (YAML/JSON
 already encode placement). Output structure is documented in
-[OUTPUTS.md](OUTPUTS.md).
+[OUTPUTS.md](../reference/output-layout.md).
 
 Examples:
 
@@ -211,7 +211,7 @@ isotopo.CapabilityReport() Capabilities
 | `Annotation` | screen-space callout with a leader line |
 | `Canvas` | document-level backdrop (`background`, `grid`, `gridColor`, `gridStep`) |
 | `Theme` | document-level default Style with optional per-shape overrides |
-| `Style` | `{palette, stroke, text, effects}` — see [DSL_THEME.md](DSL_THEME.md) |
+| `Style` | `{palette, stroke, text, effects}` — see [DSL_THEME.md](../reference/dsl-theme.md) |
 | `LayoutEngine` | `LayoutDagre` or `LayoutELK` |
 
 ### Iso geometry sub-package

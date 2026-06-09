@@ -4,7 +4,7 @@ The YAML DSL gives you **precise iso placement**: every part has an
 explicit `(wx, wy, wz)` world coordinate. Use this when auto-layout
 won't do — designer-controlled scenes, infographics, fixed templates.
 
-For auto-layout from a textual graph, see [DSL_D2.md](DSL_D2.md)
+For auto-layout from a textual graph, see [DSL_D2.md](../reference/dsl-d2.md)
 instead.
 
 JSON is also accepted (same shape, JSON encoding); the parser
@@ -31,7 +31,7 @@ annotations:   # optional — screen-space callouts
 Every full scene typically has exactly one node named **`scene`** with
 `shape: composite`. That node holds all the visible parts. The library
 also accepts a single-node document with any name — see
-[USAGE.md](USAGE.md) for `doc.Scene()`.
+[USAGE.md](../reference/cli.md) for `doc.Scene()`.
 
 ## Canvas
 
@@ -69,7 +69,7 @@ theme:
 
 Resolution order for any part: **theme.Style → theme.shapes[shape] →
 part.Style** (each step overrides matching fields, nils inherit).
-Full Style field reference: [DSL_THEME.md](DSL_THEME.md).
+Full Style field reference: [DSL_THEME.md](../reference/dsl-theme.md).
 
 ## Node
 
@@ -279,7 +279,7 @@ For every CompositePart with an `id`, the CLI emits
 part. Drop it back into `isotopo render` to get the standalone iso of
 that single element. Useful for building icon libraries from a scene.
 
-See [OUTPUTS.md](OUTPUTS.md) for the full output structure.
+See [OUTPUTS.md](../reference/output-layout.md) for the full output structure.
 
 ## Validating before render
 

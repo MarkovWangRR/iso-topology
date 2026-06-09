@@ -160,8 +160,8 @@ theme. Rarely needed — usually you want some inheritance.
 
 ## See also
 
-- [DSL_YAML.md](DSL_YAML.md) — where `style` blocks slot into a Document
-- [DSL_D2.md](DSL_D2.md) — how d2 styles translate (d2 has its own
+- [DSL_YAML.md](../reference/dsl-yaml.md) — where `style` blocks slot into a Document
+- [DSL_D2.md](../reference/dsl-d2.md) — how d2 styles translate (d2 has its own
   theme system; we map a subset of its fill/stroke into our cascade)
 - `isotopo capabilities | jq '.style_keys'` — programmatic source of
   truth for every field name listed above

@@ -1,0 +1,490 @@
+{
+  "$id": "https://github.com/MarkovWangRR/iso-topology/blob/main/docs/agent/schema/dsl.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "YAML/JSON DSL accepted by isotopo render. Generated for capabilities v0.2.1.",
+  "properties": {
+    "annotations": {
+      "items": {
+        "properties": {
+          "anchor": {
+            "description": "Id of the part the callout points at.",
+            "type": "string"
+          },
+          "bg": {
+            "type": "string"
+          },
+          "border": {
+            "type": "string"
+          },
+          "color": {
+            "type": "string"
+          },
+          "distance": {
+            "type": "number"
+          },
+          "fontSize": {
+            "type": "number"
+          },
+          "side": {
+            "enum": [
+              "top",
+              "right",
+              "bottom",
+              "left"
+            ],
+            "type": "string"
+          },
+          "text": {
+            "description": "Multi-line via \\n.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "anchor",
+          "text"
+        ],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "canvas": {
+      "description": "Document-level backdrop (iso ground grid, solid color, etc.)",
+      "properties": {
+        "background": {
+          "description": "Solid background color (CSS color).",
+          "type": "string"
+        },
+        "grid": {
+          "description": "Backdrop pattern. iso = diamond rhombus lattice.",
+          "enum": [
+            "iso",
+            "dots",
+            "hatch",
+            "solid",
+            "none"
+          ],
+          "type": "string"
+        },
+        "gridColor": {
+          "description": "Pattern stroke / dot color.",
+          "type": "string"
+        },
+        "gridStep": {
+          "description": "Tile size in world units (default 40).",
+          "type": "number"
+        }
+      },
+      "type": "object"
+    },
+    "nodes": {
+      "additionalProperties": {
+        "properties": {
+          "connectors": {
+            "description": "Directed lines between parts (composite only).",
+            "items": {
+              "properties": {
+                "arrow": {
+                  "enum": [
+                    "none",
+                    "triangle"
+                  ],
+                  "type": "string"
+                },
+                "from": {
+                  "description": "Source part id (or id.anchor for a specific face center).",
+                  "type": "string"
+                },
+                "label": {
+                  "type": "string"
+                },
+                "labelBg": {
+                  "type": "string"
+                },
+                "routing": {
+                  "enum": [
+                    "straight",
+                    "orthogonal"
+                  ],
+                  "type": "string"
+                },
+                "stroke": {
+                  "properties": {
+                    "color": {
+                      "type": "string"
+                    },
+                    "dash": {
+                      "description": "SVG stroke-dasharray syntax e.g. \"4 3\".",
+                      "type": "string"
+                    },
+                    "width": {
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                },
+                "to": {
+                  "description": "Destination part id (same syntax).",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "from",
+                "to"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "content": {
+            "type": "object"
+          },
+          "geom": {
+            "properties": {
+              "d": {
+                "description": "Iso world Y (depth) extent.",
+                "type": "number"
+              },
+              "h": {
+                "description": "Iso world Z (height) extrusion.",
+                "type": "number"
+              },
+              "sides": {
+                "description": "Polygon sides (polygon shape only).",
+                "type": "integer"
+              },
+              "w": {
+                "description": "Iso world X extent.",
+                "type": "number"
+              }
+            },
+            "type": "object"
+          },
+          "gridStep": {
+            "description": "Iso grid step for fossflow-style position: {i, j} placement.",
+            "type": "number"
+          },
+          "icon": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "parts": {
+            "description": "Children — only consulted when shape == composite or group.",
+            "items": {
+              "properties": {
+                "content": {
+                  "type": "object"
+                },
+                "geom": {
+                  "properties": {
+                    "d": {
+                      "description": "Iso world Y (depth) extent.",
+                      "type": "number"
+                    },
+                    "h": {
+                      "description": "Iso world Z (height) extrusion.",
+                      "type": "number"
+                    },
+                    "sides": {
+                      "description": "Polygon sides (polygon shape only).",
+                      "type": "integer"
+                    },
+                    "w": {
+                      "description": "Iso world X extent.",
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                },
+                "icon": {
+                  "type": "string"
+                },
+                "id": {
+                  "description": "Stable id — referenced by connectors and annotations.",
+                  "type": "string"
+                },
+                "label": {
+                  "type": "string"
+                },
+                "offset": {
+                  "properties": {
+                    "wx": {
+                      "type": "number"
+                    },
+                    "wy": {
+                      "type": "number"
+                    },
+                    "wz": {
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                },
+                "parts": {
+                  "description": "Nested parts — only honored when shape == group.",
+                  "type": "array"
+                },
+                "position": {
+                  "properties": {
+                    "i": {
+                      "type": "integer"
+                    },
+                    "j": {
+                      "type": "integer"
+                    }
+                  },
+                  "type": "object"
+                },
+                "shape": {
+                  "enum": [
+                    "c4-person",
+                    "c4_person",
+                    "callout",
+                    "circle",
+                    "class",
+                    "cloud",
+                    "code",
+                    "composite",
+                    "cylinder",
+                    "diamond",
+                    "document",
+                    "group",
+                    "hexagon",
+                    "hierarchy",
+                    "image",
+                    "iso_text",
+                    "oval",
+                    "package",
+                    "page",
+                    "parallelogram",
+                    "person",
+                    "queue",
+                    "rectangle",
+                    "sequence-diagram",
+                    "sequence_diagram",
+                    "sql-table",
+                    "sql_table",
+                    "square",
+                    "step",
+                    "stored-data",
+                    "stored_data",
+                    "text"
+                  ],
+                  "type": "string"
+                },
+                "stack": {
+                  "properties": {
+                    "count": {
+                      "description": "Total number of layers.",
+                      "minimum": 1,
+                      "type": "integer"
+                    },
+                    "gap": {
+                      "description": "World-Z step between layers. Defaults to part.geom.h + 4 if omitted.",
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "count"
+                  ],
+                  "type": "object"
+                },
+                "style": {
+                  "description": "Style block (Palette, Stroke, Text, Effects).",
+                  "properties": {
+                    "effects": {
+                      "type": "object"
+                    },
+                    "palette": {
+                      "type": "object"
+                    },
+                    "stroke": {
+                      "type": "object"
+                    },
+                    "text": {
+                      "type": "object"
+                    }
+                  },
+                  "type": "object"
+                }
+              },
+              "required": [
+                "shape"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "shape": {
+            "description": "One of the iso shapes from capabilities.",
+            "enum": [
+              "c4-person",
+              "c4_person",
+              "callout",
+              "circle",
+              "class",
+              "cloud",
+              "code",
+              "composite",
+              "cylinder",
+              "diamond",
+              "document",
+              "group",
+              "hexagon",
+              "hierarchy",
+              "image",
+              "iso_text",
+              "oval",
+              "package",
+              "page",
+              "parallelogram",
+              "person",
+              "queue",
+              "rectangle",
+              "sequence-diagram",
+              "sequence_diagram",
+              "sql-table",
+              "sql_table",
+              "square",
+              "step",
+              "stored-data",
+              "stored_data",
+              "text"
+            ],
+            "type": "string"
+          },
+          "style": {
+            "description": "Style block (Palette, Stroke, Text, Effects).",
+            "properties": {
+              "effects": {
+                "type": "object"
+              },
+              "palette": {
+                "type": "object"
+              },
+              "stroke": {
+                "type": "object"
+              },
+              "text": {
+                "type": "object"
+              }
+            },
+            "type": "object"
+          }
+        },
+        "required": [
+          "shape"
+        ],
+        "type": "object"
+      },
+      "description": "Map of node id → Node. The 'scene' node (or the single node if there's only one) is treated as the topology root and picks up Canvas + Annotations.",
+      "type": "object"
+    },
+    "theme": {
+      "description": "Document-wide default Style plus optional per-shape-type overrides.",
+      "properties": {
+        "effects": {
+          "description": "Visual modifiers.",
+          "properties": {
+            "cornerRadius": {
+              "description": "see reference/dsl-theme.md"
+            },
+            "margin": {
+              "description": "see reference/dsl-theme.md"
+            },
+            "opacity": {
+              "description": "see reference/dsl-theme.md"
+            }
+          },
+          "type": "object"
+        },
+        "palette": {
+          "description": "Face fills (top/left/right).",
+          "properties": {
+            "left": {
+              "description": "see reference/dsl-theme.md"
+            },
+            "right": {
+              "description": "see reference/dsl-theme.md"
+            },
+            "top": {
+              "description": "see reference/dsl-theme.md"
+            }
+          },
+          "type": "object"
+        },
+        "shapes": {
+          "additionalProperties": {
+            "description": "Style block (Palette, Stroke, Text, Effects).",
+            "properties": {
+              "effects": {
+                "type": "object"
+              },
+              "palette": {
+                "type": "object"
+              },
+              "stroke": {
+                "type": "object"
+              },
+              "text": {
+                "type": "object"
+              }
+            },
+            "type": "object"
+          },
+          "description": "Per-shape-type Style overrides. Keys are iso shape names (rectangle, cylinder, …).",
+          "type": "object"
+        },
+        "stroke": {
+          "description": "Silhouette stroke.",
+          "properties": {
+            "color": {
+              "description": "see reference/dsl-theme.md"
+            },
+            "dash": {
+              "description": "see reference/dsl-theme.md"
+            },
+            "width": {
+              "description": "see reference/dsl-theme.md"
+            }
+          },
+          "type": "object"
+        },
+        "text": {
+          "description": "Label typography.",
+          "properties": {
+            "boxBg": {
+              "description": "see reference/dsl-theme.md"
+            },
+            "boxBorder": {
+              "description": "see reference/dsl-theme.md"
+            },
+            "color": {
+              "description": "see reference/dsl-theme.md"
+            },
+            "family": {
+              "description": "see reference/dsl-theme.md"
+            },
+            "orient": {
+              "description": "see reference/dsl-theme.md"
+            },
+            "size": {
+              "description": "see reference/dsl-theme.md"
+            },
+            "weight": {
+              "description": "see reference/dsl-theme.md"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "type": "object"
+    }
+  },
+  "required": [
+    "nodes"
+  ],
+  "title": "iso-topology Document",
+  "type": "object"
+}
