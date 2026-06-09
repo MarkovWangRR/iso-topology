@@ -135,13 +135,14 @@ func renderComposite(n *Node, theme *Theme, canvas *Canvas, anns []*Annotation) 
 }
 
 // RenderDocument renders every node in a Document and returns a map of
-// node-id → SVG string. The "scene" node (canonical convention for the
-// document-level composite) also picks up the document's Canvas and
-// Annotations layers; all other nodes are rendered without them.
+// node-id → SVG string. The scene node (resolved via doc.Scene()) also
+// picks up the document's Canvas and Annotations layers; all other
+// nodes are rendered without them.
 func RenderDocument(doc *Document) map[string]string {
 	out := make(map[string]string, len(doc.Nodes))
+	scene := doc.Scene()
 	for id, n := range doc.Nodes {
-		if id == "scene" {
+		if n == scene {
 			out[id] = RenderWithCanvas(n, doc.Theme, doc.Canvas, doc.Annotations)
 			continue
 		}

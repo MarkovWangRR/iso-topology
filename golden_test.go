@@ -104,13 +104,10 @@ func loadGoldenDoc(ext string, data []byte) (*Document, error) {
 	}
 }
 
-// renderTopology mirrors the CLI's "scene" convention.
+// renderTopology mirrors the CLI's scene resolution.
 func renderTopology(doc *Document) string {
-	if scene := doc.Nodes["scene"]; scene != nil {
+	if scene := doc.Scene(); scene != nil {
 		return RenderWithCanvas(scene, doc.Theme, doc.Canvas, doc.Annotations)
-	}
-	for _, n := range doc.Nodes {
-		return RenderWithCanvas(n, doc.Theme, doc.Canvas, doc.Annotations)
 	}
 	return ""
 }

@@ -255,3 +255,27 @@ type Document struct {
 	Nodes       map[string]*Node `yaml:"nodes" json:"nodes"`
 	Annotations []*Annotation    `yaml:"annotations,omitempty" json:"annotations,omitempty"`
 }
+
+// Scene returns the document-level composite node that should pick up
+// Canvas + Annotations layers when rendered. The canonical convention
+// is a node named "scene" inside Nodes; if there is exactly one node
+// and no "scene" key, that node is treated as the scene. Returns nil
+// if the document is empty.
+//
+// Use this in preference to `doc.Nodes["scene"]` directly — the helper
+// stays correct even for single-node documents that don't bother
+// naming the entry "scene".
+func (d *Document) Scene() *Node {
+	if d == nil || len(d.Nodes) == 0 {
+		return nil
+	}
+	if n := d.Nodes["scene"]; n != nil {
+		return n
+	}
+	if len(d.Nodes) == 1 {
+		for _, n := range d.Nodes {
+			return n
+		}
+	}
+	return nil
+}
