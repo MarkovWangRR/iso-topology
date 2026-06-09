@@ -35,7 +35,7 @@ isotopo capabilities | head
 To pin to a specific release:
 
 ```bash
-go install github.com/MarkovWangRR/iso-topology/cmd/isotopo@v0.2.0
+go install github.com/MarkovWangRR/iso-topology/cmd/isotopo@v0.2.1
 ```
 
 ### B. Clone & build (for hacking on the renderer)

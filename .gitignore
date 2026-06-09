@@ -3,8 +3,8 @@
 *.swp
 *~
 
-# Build output
-isotopo
+# Build output (root-level binary only — NOT the cmd/isotopo source dir)
+/isotopo
 /cmd/isotopo/isotopo
 
 # Local dev temp files
