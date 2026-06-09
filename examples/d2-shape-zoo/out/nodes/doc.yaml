@@ -1,0 +1,14 @@
+nodes:
+    doc:
+        shape: rectangle
+        geom:
+            w: 117
+            d: 76
+            h: 12
+        style:
+            palette:
+                top: '#EDF0FD'
+            stroke:
+                color: '#0D32B2'
+                width: 2
+        label: Document

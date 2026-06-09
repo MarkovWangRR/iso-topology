@@ -1,0 +1,14 @@
+nodes:
+    cluster.wn2.cache2:
+        shape: cylinder
+        geom:
+            w: 88
+            d: 118
+            h: 30
+        style:
+            palette:
+                top: '#F7F8FE'
+            stroke:
+                color: '#0D32B2'
+                width: 2
+        label: Cache

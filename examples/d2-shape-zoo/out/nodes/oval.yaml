@@ -1,0 +1,14 @@
+nodes:
+    oval:
+        shape: circle
+        geom:
+            w: 101
+            d: 69
+            h: 24
+        style:
+            palette:
+                top: '#F7F8FE'
+            stroke:
+                color: '#0D32B2'
+                width: 2
+        label: Oval

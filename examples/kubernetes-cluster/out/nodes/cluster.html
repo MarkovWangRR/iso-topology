@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<title>isotopo · cluster</title>
+<style>
+:root{--bg:#FAFAFB;--fg:#1F2937;--muted:#6B7280;--border:rgba(127,127,127,0.22);--code:#F4F5F7;}
+*{box-sizing:border-box;}
+body{margin:0;padding:32px;background:var(--bg);color:var(--fg);font-family:Inter,"Helvetica Neue",Arial,sans-serif;}
+h1{margin:0 0 4px;font-size:18px;font-family:ui-monospace,Menlo,monospace;}
+h2{margin:24px 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px;}
+.panel{border:1px solid var(--border);border-radius:10px;background:rgba(255,255,255,0.6);}
+.stage{display:flex;align-items:center;justify-content:center;padding:16px;min-height:260px;}
+.stage svg{max-width:100%;height:auto;}
+pre,textarea{font:12.5px/1.55 ui-monospace,Menlo,Consolas,monospace;background:var(--code);border:0;border-radius:8px;padding:12px;width:100%;}
+textarea{min-height:240px;resize:vertical;color:var(--fg);}
+.row{display:flex;gap:8px;align-items:center;margin:6px 0;}
+button{font:12px ui-monospace,Menlo,monospace;border:1px solid var(--border);background:white;padding:6px 10px;border-radius:6px;cursor:pointer;}
+button:hover{background:#F1F3F8;}
+small{color:var(--muted);}
+nav{margin:-12px 0 16px;}
+nav a{color:var(--muted);text-decoration:none;border-bottom:1px dotted var(--muted);}
+</style></head><body>
+<nav><a href="./_index.html">← all nodes</a> · <a href="../topology.html">topology</a></nav>
+<h1>cluster</h1>
+<small>standalone iso element · part of the topology</small>
+
+<div class="grid" style="margin-top:18px;">
+  <div class="panel stage"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1487.78 893.25" width="1487.78" height="893.25"><defs><linearGradient id="rounded-side" x1="50%" y1="0%" x2="50%" y2="100%"><stop offset="0%" stop-color="#94A7C7"/><stop offset="100%" stop-color="#6B82A8"/></linearGradient></defs><g data-face="wrap"><path data-face="side" d="M 1463.78,584.63 L 1463.44,587.58 L 1462.44,590.48 L 1460.79,593.29 L 1458.52,595.94 L 1455.68,598.40 L 1452.30,600.63 L 1428.43,614.41 L 1404.57,628.18 L 1380.71,641.96 L 1356.84,655.74 L 1332.98,669.52 L 1309.11,683.29 L 1285.25,697.07 L 1261.39,710.85 L 1237.52,724.63 L 1213.66,738.41 L 1189.79,752.18 L 1165.93,765.96 L 1142.07,779.74 L 1118.20,793.52 L 1094.34,807.29 L 1070.48,821.07 L 1046.61,834.85 L 1022.75,848.63 L 1018.89,850.58 L 1014.63,852.22 L 1010.03,853.53 L 1005.18,854.48 L 1000.15,855.06 L 995.04,855.25 L 989.92,855.06 L 984.89,854.48 L 980.04,853.53 L 975.44,852.22 L 971.18,850.58 L 967.32,848.63 L 915.55,818.74 L 863.78,788.85 L 812.02,758.96 L 760.25,729.07 L 708.48,699.18 L 656.71,669.29 L 604.94,639.41 L 553.17,609.52 L 501.40,579.63 L 449.63,549.74 L 397.86,519.85 L 346.09,489.96 L 294.32,460.07 L 242.56,430.18 L 190.79,400.29 L 139.02,370.41 L 87.25,340.52 L 35.48,310.63 L 32.10,308.40 L 29.25,305.94 L 26.98,303.29 L 25.34,300.48 L 24.34,297.58 L 24.34,311.58 L 25.34,314.48 L 26.98,317.29 L 29.25,319.94 L 32.10,322.40 L 35.48,324.63 L 87.25,354.52 L 139.02,384.41 L 190.79,414.29 L 242.56,444.18 L 294.32,474.07 L 346.09,503.96 L 397.86,533.85 L 449.63,563.74 L 501.40,593.63 L 553.17,623.52 L 604.94,653.41 L 656.71,683.29 L 708.48,713.18 L 760.25,743.07 L 812.02,772.96 L 863.78,802.85 L 915.55,832.74 L 967.32,862.63 L 971.18,864.58 L 975.44,866.22 L 980.04,867.53 L 984.89,868.48 L 989.92,869.06 L 995.04,869.25 L 1000.15,869.06 L 1005.18,868.48 L 1010.03,867.53 L 1014.63,866.22 L 1018.89,864.58 L 1022.75,862.63 L 1046.61,848.85 L 1070.48,835.07 L 1094.34,821.29 L 1118.20,807.52 L 1142.07,793.74 L 1165.93,779.96 L 1189.79,766.18 L 1213.66,752.41 L 1237.52,738.63 L 1261.39,724.85 L 1285.25,711.07 L 1309.11,697.29 L 1332.98,683.52 L 1356.84,669.74 L 1380.71,655.96 L 1404.57,642.18 L 1428.43,628.41 L 1452.30,614.63 L 1455.68,612.40 L 1458.52,609.94 L 1460.79,607.29 L 1462.44,604.48 L 1463.44,601.58 L 1463.78,598.63 Z" fill="url(#rounded-side)" stroke="none"/><path data-face="top" d="M 520.45,30.63 L 572.22,60.52 L 623.99,90.41 L 675.76,120.29 L 727.53,150.18 L 779.30,180.07 L 831.07,209.96 L 882.84,239.85 L 934.61,269.74 L 986.37,299.63 L 1038.14,329.52 L 1089.91,359.41 L 1141.68,389.29 L 1193.45,419.18 L 1245.22,449.07 L 1296.99,478.96 L 1348.76,508.85 L 1400.53,538.74 L 1452.30,568.63 L 1455.68,570.85 L 1458.52,573.31 L 1460.79,575.97 L 1462.44,578.77 L 1463.44,581.67 L 1463.78,584.63 L 1463.44,587.58 L 1462.44,590.48 L 1460.79,593.29 L 1458.52,595.94 L 1455.68,598.40 L 1452.30,600.63 L 1428.43,614.41 L 1404.57,628.18 L 1380.71,641.96 L 1356.84,655.74 L 1332.98,669.52 L 1309.11,683.29 L 1285.25,697.07 L 1261.39,710.85 L 1237.52,724.63 L 1213.66,738.41 L 1189.79,752.18 L 1165.93,765.96 L 1142.07,779.74 L 1118.20,793.52 L 1094.34,807.29 L 1070.48,821.07 L 1046.61,834.85 L 1022.75,848.63 L 1018.89,850.58 L 1014.63,852.22 L 1010.03,853.53 L 1005.18,854.48 L 1000.15,855.06 L 995.04,855.25 L 989.92,855.06 L 984.89,854.48 L 980.04,853.53 L 975.44,852.22 L 971.18,850.58 L 967.32,848.63 L 915.55,818.74 L 863.78,788.85 L 812.02,758.96 L 760.25,729.07 L 708.48,699.18 L 656.71,669.29 L 604.94,639.41 L 553.17,609.52 L 501.40,579.63 L 449.63,549.74 L 397.86,519.85 L 346.09,489.96 L 294.32,460.07 L 242.56,430.18 L 190.79,400.29 L 139.02,370.41 L 87.25,340.52 L 35.48,310.63 L 32.10,308.40 L 29.25,305.94 L 26.98,303.29 L 25.34,300.48 L 24.34,297.58 L 24.00,294.63 L 24.34,291.67 L 25.34,288.77 L 26.98,285.97 L 29.25,283.31 L 32.10,280.85 L 35.48,278.63 L 59.34,264.85 L 83.21,251.07 L 107.07,237.29 L 130.93,223.52 L 154.80,209.74 L 178.66,195.96 L 202.53,182.18 L 226.39,168.41 L 250.25,154.63 L 274.12,140.85 L 297.98,127.07 L 321.84,113.29 L 345.71,99.52 L 369.57,85.74 L 393.44,71.96 L 417.30,58.18 L 441.16,44.41 L 465.03,30.63 L 468.88,28.68 L 473.14,27.03 L 477.74,25.72 L 482.60,24.77 L 487.62,24.19 L 492.74,24.00 L 497.86,24.19 L 502.88,24.77 L 507.74,25.72 L 512.34,27.03 L 516.60,28.68 L 520.45,30.63 Z" fill="#F1F5FB" stroke="#3A4A66" stroke-width="1.40" stroke-linejoin="round"/><path data-face="silhouette" d="M 1463.78,584.63 L 1463.78,598.63 L 1463.44,601.58 L 1462.44,604.48 L 1460.79,607.29 L 1458.52,609.94 L 1455.68,612.40 L 1452.30,614.63 L 1428.43,628.41 L 1404.57,642.18 L 1380.71,655.96 L 1356.84,669.74 L 1332.98,683.52 L 1309.11,697.29 L 1285.25,711.07 L 1261.39,724.85 L 1237.52,738.63 L 1213.66,752.41 L 1189.79,766.18 L 1165.93,779.96 L 1142.07,793.74 L 1118.20,807.52 L 1094.34,821.29 L 1070.48,835.07 L 1046.61,848.85 L 1022.75,862.63 L 1018.89,864.58 L 1014.63,866.22 L 1010.03,867.53 L 1005.18,868.48 L 1000.15,869.06 L 995.04,869.25 L 989.92,869.06 L 984.89,868.48 L 980.04,867.53 L 975.44,866.22 L 971.18,864.58 L 967.32,862.63 L 915.55,832.74 L 863.78,802.85 L 812.02,772.96 L 760.25,743.07 L 708.48,713.18 L 656.71,683.29 L 604.94,653.41 L 553.17,623.52 L 501.40,593.63 L 449.63,563.74 L 397.86,533.85 L 346.09,503.96 L 294.32,474.07 L 242.56,444.18 L 190.79,414.29 L 139.02,384.41 L 87.25,354.52 L 35.48,324.63 L 32.10,322.40 L 29.25,319.94 L 26.98,317.29 L 25.34,314.48 L 24.34,311.58 L 24.34,297.58" fill="none" stroke="#3A4A66" stroke-width="1.40" stroke-linejoin="round" stroke-linecap="round"/></g></svg></div>
+  <div>
+    <h2>embed</h2>
+    <pre id="embed">&lt;img src="./cluster.svg" alt="cluster"/&gt;</pre>
+    <div class="row"><button onclick="copy('embed')">copy &lt;img&gt;</button></div>
+
+    <h2>fragment · yaml</h2>
+    <textarea id="frag" spellcheck="false">theme:
+    palette:
+        top: &#39;#E5ECF6&#39;
+        left: &#39;#7E94B5&#39;
+        right: &#39;#A6B7D2&#39;
+    stroke:
+        color: &#39;#3A4A66&#39;
+        width: 1.2
+    text:
+        family: Inter, sans-serif
+        size: 11
+        weight: &#34;600&#34;
+        color: &#39;#26324A&#39;
+nodes:
+    cluster:
+        shape: rectangle
+        geom:
+            w: 1140
+            d: 560
+            h: 14
+        style:
+            palette:
+                top: &#39;#F1F5FB&#39;
+                left: &#39;#6B82A8&#39;
+                right: &#39;#94A7C7&#39;
+            stroke:
+                color: &#39;#3A4A66&#39;
+                width: 1.4
+            effects:
+                cornerRadius: 32
+</textarea>
+    <div class="row">
+      <button onclick="copy('frag')">copy</button>
+      <small>standalone DSL — render with <code>isotopo render cluster.yaml out/</code>.</small>
+    </div>
+  </div>
+</div>
+<script>
+function copy(id){
+  const el=document.getElementById(id);
+  const text=el.value!==undefined?el.value:el.innerText;
+  navigator.clipboard.writeText(text);
+}
+</script>
+</body></html>

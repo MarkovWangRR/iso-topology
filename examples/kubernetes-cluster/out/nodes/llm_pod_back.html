@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<title>isotopo · llm_pod_back</title>
+<style>
+:root{--bg:#FAFAFB;--fg:#1F2937;--muted:#6B7280;--border:rgba(127,127,127,0.22);--code:#F4F5F7;}
+*{box-sizing:border-box;}
+body{margin:0;padding:32px;background:var(--bg);color:var(--fg);font-family:Inter,"Helvetica Neue",Arial,sans-serif;}
+h1{margin:0 0 4px;font-size:18px;font-family:ui-monospace,Menlo,monospace;}
+h2{margin:24px 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px;}
+.panel{border:1px solid var(--border);border-radius:10px;background:rgba(255,255,255,0.6);}
+.stage{display:flex;align-items:center;justify-content:center;padding:16px;min-height:260px;}
+.stage svg{max-width:100%;height:auto;}
+pre,textarea{font:12.5px/1.55 ui-monospace,Menlo,Consolas,monospace;background:var(--code);border:0;border-radius:8px;padding:12px;width:100%;}
+textarea{min-height:240px;resize:vertical;color:var(--fg);}
+.row{display:flex;gap:8px;align-items:center;margin:6px 0;}
+button{font:12px ui-monospace,Menlo,monospace;border:1px solid var(--border);background:white;padding:6px 10px;border-radius:6px;cursor:pointer;}
+button:hover{background:#F1F3F8;}
+small{color:var(--muted);}
+nav{margin:-12px 0 16px;}
+nav a{color:var(--muted);text-decoration:none;border-bottom:1px dotted var(--muted);}
+</style></head><body>
+<nav><a href="./_index.html">← all nodes</a> · <a href="../topology.html">topology</a></nav>
+<h1>llm_pod_back</h1>
+<small>standalone iso element · part of the topology</small>
+
+<div class="grid" style="margin-top:18px;">
+  <div class="panel stage"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 255.85 218.00" width="255.85" height="218.00"><g data-face="wrap"><polygon data-face="left" points="24.00,119.00 24.00,69.00 153.90,144.00 153.90,194.00" fill="#2C426C" stroke="#1F2E50" stroke-width="1.20" stroke-linejoin="round" stroke-linecap="round"/><polygon data-face="right" points="231.85,149.00 231.85,99.00 153.90,144.00 153.90,194.00" fill="#3D5990" stroke="#1F2E50" stroke-width="1.20" stroke-linejoin="round" stroke-linecap="round"/><polygon data-face="top" points="101.94,24.00 231.85,99.00 153.90,144.00 24.00,69.00" fill="#5A78B5" stroke="#1F2E50" stroke-width="1.20" stroke-linejoin="round" stroke-linecap="round"/><g data-face="top-content" transform="matrix(0.8660 0.5000 -0.8660 0.5000 101.94 24.00)"><text x="75.00" y="45.00" dy=".35em" font-family="Inter, sans-serif" font-size="10.00" font-weight="700" fill="#FFFFFF" text-anchor="middle">LLM PODS</text></g></g></svg></div>
+  <div>
+    <h2>embed</h2>
+    <pre id="embed">&lt;img src="./llm_pod_back.svg" alt="llm_pod_back"/&gt;</pre>
+    <div class="row"><button onclick="copy('embed')">copy &lt;img&gt;</button></div>
+
+    <h2>fragment · yaml</h2>
+    <textarea id="frag" spellcheck="false">theme:
+    palette:
+        top: &#39;#E5ECF6&#39;
+        left: &#39;#7E94B5&#39;
+        right: &#39;#A6B7D2&#39;
+    stroke:
+        color: &#39;#3A4A66&#39;
+        width: 1.2
+    text:
+        family: Inter, sans-serif
+        size: 11
+        weight: &#34;600&#34;
+        color: &#39;#26324A&#39;
+nodes:
+    llm_pod_back:
+        shape: rectangle
+        geom:
+            w: 150
+            d: 90
+            h: 50
+        style:
+            palette:
+                top: &#39;#5A78B5&#39;
+                left: &#39;#2C426C&#39;
+                right: &#39;#3D5990&#39;
+            stroke:
+                color: &#39;#1F2E50&#39;
+                width: 1.2
+            text:
+                family: Inter, sans-serif
+                size: 10
+                weight: &#34;700&#34;
+                color: &#39;#FFFFFF&#39;
+        label: LLM PODS
+</textarea>
+    <div class="row">
+      <button onclick="copy('frag')">copy</button>
+      <small>standalone DSL — render with <code>isotopo render llm_pod_back.yaml out/</code>.</small>
+    </div>
+  </div>
+</div>
+<script>
+function copy(id){
+  const el=document.getElementById(id);
+  const text=el.value!==undefined?el.value:el.innerText;
+  navigator.clipboard.writeText(text);
+}
+</script>
+</body></html>

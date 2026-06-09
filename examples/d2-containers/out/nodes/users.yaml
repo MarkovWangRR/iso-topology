@@ -1,0 +1,14 @@
+nodes:
+    users:
+        shape: person
+        geom:
+            w: 54
+            d: 66
+            h: 36
+        style:
+            palette:
+                top: '#E3E9FD'
+            stroke:
+                color: '#0D32B2'
+                width: 2
+        label: Users

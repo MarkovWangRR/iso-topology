@@ -1,0 +1,14 @@
+nodes:
+    queue:
+        shape: cylinder
+        geom:
+            w: 172
+            d: 66
+            h: 30
+        style:
+            palette:
+                top: '#DEE1EB'
+            stroke:
+                color: '#0D32B2'
+                width: 2
+        label: Job Queue

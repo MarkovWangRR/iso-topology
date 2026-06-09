@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<title>isotopo · llm_pods_panel</title>
+<style>
+:root{--bg:#FAFAFB;--fg:#1F2937;--muted:#6B7280;--border:rgba(127,127,127,0.22);--code:#F4F5F7;}
+*{box-sizing:border-box;}
+body{margin:0;padding:32px;background:var(--bg);color:var(--fg);font-family:Inter,"Helvetica Neue",Arial,sans-serif;}
+h1{margin:0 0 4px;font-size:18px;font-family:ui-monospace,Menlo,monospace;}
+h2{margin:24px 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px;}
+.panel{border:1px solid var(--border);border-radius:10px;background:rgba(255,255,255,0.6);}
+.stage{display:flex;align-items:center;justify-content:center;padding:16px;min-height:260px;}
+.stage svg{max-width:100%;height:auto;}
+pre,textarea{font:12.5px/1.55 ui-monospace,Menlo,Consolas,monospace;background:var(--code);border:0;border-radius:8px;padding:12px;width:100%;}
+textarea{min-height:240px;resize:vertical;color:var(--fg);}
+.row{display:flex;gap:8px;align-items:center;margin:6px 0;}
+button{font:12px ui-monospace,Menlo,monospace;border:1px solid var(--border);background:white;padding:6px 10px;border-radius:6px;cursor:pointer;}
+button:hover{background:#F1F3F8;}
+small{color:var(--muted);}
+nav{margin:-12px 0 16px;}
+nav a{color:var(--muted);text-decoration:none;border-bottom:1px dotted var(--muted);}
+</style></head><body>
+<nav><a href="./_index.html">← all nodes</a> · <a href="../topology.html">topology</a></nav>
+<h1>llm_pods_panel</h1>
+<small>standalone iso element · part of the topology</small>
+
+<div class="grid" style="margin-top:18px;">
+  <div class="panel stage"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 499.42 318.63" width="499.42" height="318.63"><defs><linearGradient id="rounded-side" x1="50%" y1="0%" x2="50%" y2="100%"><stop offset="0%" stop-color="#A6B7D2"/><stop offset="100%" stop-color="#7E94B5"/></linearGradient></defs><g data-face="wrap"><path data-face="side" d="M 475.42,129.31 L 475.25,130.79 L 474.75,132.24 L 473.93,133.64 L 472.79,134.97 L 471.37,136.20 L 469.68,137.31 L 455.82,145.31 L 441.97,153.31 L 428.11,161.31 L 414.25,169.31 L 400.40,177.31 L 386.54,185.31 L 372.69,193.31 L 358.83,201.31 L 344.97,209.31 L 331.12,217.31 L 317.26,225.31 L 303.40,233.31 L 289.55,241.31 L 275.69,249.31 L 261.83,257.31 L 247.98,265.31 L 234.12,273.31 L 220.27,281.31 L 218.34,282.29 L 216.21,283.11 L 213.91,283.77 L 211.48,284.24 L 208.97,284.53 L 206.41,284.63 L 203.85,284.53 L 201.34,284.24 L 198.91,283.77 L 196.61,283.11 L 194.48,282.29 L 192.55,281.31 L 183.51,276.09 L 174.46,270.87 L 165.42,265.65 L 156.37,260.42 L 147.33,255.20 L 138.28,249.98 L 129.24,244.76 L 120.19,239.54 L 111.15,234.31 L 102.10,229.09 L 93.06,223.87 L 84.01,218.65 L 74.97,213.42 L 65.92,208.20 L 56.87,202.98 L 47.83,197.76 L 38.78,192.54 L 29.74,187.31 L 28.05,186.20 L 26.63,184.97 L 25.49,183.64 L 24.67,182.24 L 24.17,180.79 L 24.17,190.79 L 24.67,192.24 L 25.49,193.64 L 26.63,194.97 L 28.05,196.20 L 29.74,197.31 L 38.78,202.54 L 47.83,207.76 L 56.87,212.98 L 65.92,218.20 L 74.97,223.42 L 84.01,228.65 L 93.06,233.87 L 102.10,239.09 L 111.15,244.31 L 120.19,249.54 L 129.24,254.76 L 138.28,259.98 L 147.33,265.20 L 156.37,270.42 L 165.42,275.65 L 174.46,280.87 L 183.51,286.09 L 192.55,291.31 L 194.48,292.29 L 196.61,293.11 L 198.91,293.77 L 201.34,294.24 L 203.85,294.53 L 206.41,294.63 L 208.97,294.53 L 211.48,294.24 L 213.91,293.77 L 216.21,293.11 L 218.34,292.29 L 220.27,291.31 L 234.12,283.31 L 247.98,275.31 L 261.83,267.31 L 275.69,259.31 L 289.55,251.31 L 303.40,243.31 L 317.26,235.31 L 331.12,227.31 L 344.97,219.31 L 358.83,211.31 L 372.69,203.31 L 386.54,195.31 L 400.40,187.31 L 414.25,179.31 L 428.11,171.31 L 441.97,163.31 L 455.82,155.31 L 469.68,147.31 L 471.37,146.20 L 472.79,144.97 L 473.93,143.64 L 474.75,142.24 L 475.25,140.79 L 475.42,139.31 Z" fill="url(#rounded-side)" stroke="none"/><path data-face="top" d="M 306.87,27.31 L 315.91,32.54 L 324.96,37.76 L 334.00,42.98 L 343.05,48.20 L 352.09,53.42 L 361.14,58.65 L 370.18,63.87 L 379.23,69.09 L 388.27,74.31 L 397.32,79.54 L 406.36,84.76 L 415.41,89.98 L 424.45,95.20 L 433.50,100.42 L 442.54,105.65 L 451.59,110.87 L 460.64,116.09 L 469.68,121.31 L 471.37,122.43 L 472.79,123.66 L 473.93,124.98 L 474.75,126.39 L 475.25,127.84 L 475.42,129.31 L 475.25,130.79 L 474.75,132.24 L 473.93,133.64 L 472.79,134.97 L 471.37,136.20 L 469.68,137.31 L 455.82,145.31 L 441.97,153.31 L 428.11,161.31 L 414.25,169.31 L 400.40,177.31 L 386.54,185.31 L 372.69,193.31 L 358.83,201.31 L 344.97,209.31 L 331.12,217.31 L 317.26,225.31 L 303.40,233.31 L 289.55,241.31 L 275.69,249.31 L 261.83,257.31 L 247.98,265.31 L 234.12,273.31 L 220.27,281.31 L 218.34,282.29 L 216.21,283.11 L 213.91,283.77 L 211.48,284.24 L 208.97,284.53 L 206.41,284.63 L 203.85,284.53 L 201.34,284.24 L 198.91,283.77 L 196.61,283.11 L 194.48,282.29 L 192.55,281.31 L 183.51,276.09 L 174.46,270.87 L 165.42,265.65 L 156.37,260.42 L 147.33,255.20 L 138.28,249.98 L 129.24,244.76 L 120.19,239.54 L 111.15,234.31 L 102.10,229.09 L 93.06,223.87 L 84.01,218.65 L 74.97,213.42 L 65.92,208.20 L 56.87,202.98 L 47.83,197.76 L 38.78,192.54 L 29.74,187.31 L 28.05,186.20 L 26.63,184.97 L 25.49,183.64 L 24.67,182.24 L 24.17,180.79 L 24.00,179.31 L 24.17,177.84 L 24.67,176.39 L 25.49,174.98 L 26.63,173.66 L 28.05,172.43 L 29.74,171.31 L 43.60,163.31 L 57.45,155.31 L 71.31,147.31 L 85.17,139.31 L 99.02,131.31 L 112.88,123.31 L 126.73,115.31 L 140.59,107.31 L 154.45,99.31 L 168.30,91.31 L 182.16,83.31 L 196.02,75.31 L 209.87,67.31 L 223.73,59.31 L 237.59,51.31 L 251.44,43.31 L 265.30,35.31 L 279.15,27.31 L 281.08,26.34 L 283.21,25.52 L 285.51,24.86 L 287.94,24.39 L 290.45,24.10 L 293.01,24.00 L 295.57,24.10 L 298.08,24.39 L 300.51,24.86 L 302.81,25.52 L 304.94,26.34 L 306.87,27.31 Z" fill="#D7DFEE" stroke="#3A4A66" stroke-width="1.20" stroke-linejoin="round"/><path data-face="silhouette" d="M 475.42,129.31 L 475.42,139.31 L 475.25,140.79 L 474.75,142.24 L 473.93,143.64 L 472.79,144.97 L 471.37,146.20 L 469.68,147.31 L 455.82,155.31 L 441.97,163.31 L 428.11,171.31 L 414.25,179.31 L 400.40,187.31 L 386.54,195.31 L 372.69,203.31 L 358.83,211.31 L 344.97,219.31 L 331.12,227.31 L 317.26,235.31 L 303.40,243.31 L 289.55,251.31 L 275.69,259.31 L 261.83,267.31 L 247.98,275.31 L 234.12,283.31 L 220.27,291.31 L 218.34,292.29 L 216.21,293.11 L 213.91,293.77 L 211.48,294.24 L 208.97,294.53 L 206.41,294.63 L 203.85,294.53 L 201.34,294.24 L 198.91,293.77 L 196.61,293.11 L 194.48,292.29 L 192.55,291.31 L 183.51,286.09 L 174.46,280.87 L 165.42,275.65 L 156.37,270.42 L 147.33,265.20 L 138.28,259.98 L 129.24,254.76 L 120.19,249.54 L 111.15,244.31 L 102.10,239.09 L 93.06,233.87 L 84.01,228.65 L 74.97,223.42 L 65.92,218.20 L 56.87,212.98 L 47.83,207.76 L 38.78,202.54 L 29.74,197.31 L 28.05,196.20 L 26.63,194.97 L 25.49,193.64 L 24.67,192.24 L 24.17,190.79 L 24.17,180.79" fill="none" stroke="#3A4A66" stroke-width="1.20" stroke-linejoin="round" stroke-linecap="round"/><g data-face="top-content" transform="matrix(0.8660 0.5000 -0.8660 0.5000 293.01 19.31)"><text x="110.00" y="160.00" dy=".35em" font-family="Inter, sans-serif" font-size="10.00" font-weight="700" fill="#3A4A66" text-anchor="middle">LLM PODS</text></g></g></svg></div>
+  <div>
+    <h2>embed</h2>
+    <pre id="embed">&lt;img src="./llm_pods_panel.svg" alt="llm_pods_panel"/&gt;</pre>
+    <div class="row"><button onclick="copy('embed')">copy &lt;img&gt;</button></div>
+
+    <h2>fragment · yaml</h2>
+    <textarea id="frag" spellcheck="false">theme:
+    palette:
+        top: &#39;#E5ECF6&#39;
+        left: &#39;#7E94B5&#39;
+        right: &#39;#A6B7D2&#39;
+    stroke:
+        color: &#39;#3A4A66&#39;
+        width: 1.2
+    text:
+        family: Inter, sans-serif
+        size: 11
+        weight: &#34;600&#34;
+        color: &#39;#26324A&#39;
+nodes:
+    llm_pods_panel:
+        shape: rectangle
+        geom:
+            w: 220
+            d: 320
+            h: 10
+        style:
+            palette:
+                top: &#39;#D7DFEE&#39;
+                left: &#39;#7E94B5&#39;
+                right: &#39;#A6B7D2&#39;
+            stroke:
+                color: &#39;#3A4A66&#39;
+                width: 1.2
+            text:
+                family: Inter, sans-serif
+                size: 10
+                weight: &#34;700&#34;
+                color: &#39;#3A4A66&#39;
+            effects:
+                cornerRadius: 16
+        label: LLM PODS
+</textarea>
+    <div class="row">
+      <button onclick="copy('frag')">copy</button>
+      <small>standalone DSL — render with <code>isotopo render llm_pods_panel.yaml out/</code>.</small>
+    </div>
+  </div>
+</div>
+<script>
+function copy(id){
+  const el=document.getElementById(id);
+  const text=el.value!==undefined?el.value:el.innerText;
+  navigator.clipboard.writeText(text);
+}
+</script>
+</body></html>

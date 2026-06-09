@@ -1,0 +1,122 @@
+# v2 primitives showcase — exercises every new DSL feature in one scene:
+#
+#   canvas:        iso ground grid + tinted backdrop
+#   stack:         three identical worker pods replicated in one declaration
+#   group:         a "Worker Node" container wrapping the stack
+#   group:         a second "Worker Node" container wrapping more parts
+#   annotations:   two screen-space callouts pinned to specific parts
+#
+# Designed to be the kind of thing an agent could synthesize: every new
+# primitive is a single named field, no per-shape one-offs.
+
+canvas:
+  background: "#FAFBFC"
+  grid: iso
+  gridColor: "#E2E6EE"
+  gridStep: 36
+
+theme:
+  palette:
+    top: "#FFFFFF"
+    left: "#7E94B5"
+    right: "#A6B7D2"
+  stroke:
+    color: "#1F2937"
+    width: 1.3
+  text:
+    family: Inter, sans-serif
+    size: 12
+    weight: "600"
+    color: "#1F2937"
+
+nodes:
+  scene:
+    shape: composite
+    parts:
+      - id: node_a
+        shape: group
+        offset: { wx: 0, wy: 0 }
+        geom: { w: 360, d: 220, h: 6 }
+        label: "Worker Node A"
+        style:
+          palette: { top: "#EEF1F8", left: "#C9D1E5", right: "#D9DFF0" }
+          stroke: { color: "#7C8DB5", width: 1 }
+        parts:
+          - id: pods_a
+            shape: rectangle
+            geom: { w: 110, d: 110, h: 36 }
+            offset: { wx: 28, wy: 28 }
+            label: "Pods"
+            style:
+              palette: { top: "#3B82F6", left: "#1D4ED8", right: "#2563EB" }
+              text: { color: "#FFFFFF", size: 12 }
+            stack: { count: 3, gap: 10 }
+          - id: cache_a
+            shape: cylinder
+            geom: { w: 96, d: 96, h: 38 }
+            offset: { wx: 200, wy: 50 }
+            label: "Cache"
+            style:
+              palette: { top: "#FCD34D", left: "#B45309", right: "#D97706" }
+
+      - id: node_b
+        shape: group
+        offset: { wx: 420, wy: 0 }
+        geom: { w: 360, d: 220, h: 6 }
+        label: "Worker Node B"
+        style:
+          palette: { top: "#EEF1F8", left: "#C9D1E5", right: "#D9DFF0" }
+          stroke: { color: "#7C8DB5", width: 1 }
+        parts:
+          - id: pods_b
+            shape: rectangle
+            geom: { w: 110, d: 110, h: 36 }
+            offset: { wx: 28, wy: 28 }
+            label: "Pods"
+            style:
+              palette: { top: "#3B82F6", left: "#1D4ED8", right: "#2563EB" }
+              text: { color: "#FFFFFF", size: 12 }
+            stack: { count: 3, gap: 10 }
+          - id: cache_b
+            shape: cylinder
+            geom: { w: 96, d: 96, h: 38 }
+            offset: { wx: 200, wy: 50 }
+            label: "Cache"
+            style:
+              palette: { top: "#FCD34D", left: "#B45309", right: "#D97706" }
+
+      - id: ingress
+        shape: rectangle
+        geom: { w: 220, d: 70, h: 30 }
+        offset: { wx: 250, wy: 280 }
+        label: "Ingress Controller"
+        style:
+          palette: { top: "#1F2937", left: "#0B1220", right: "#111827" }
+          text: { color: "#FFFFFF", size: 12 }
+
+    connectors:
+      - from: ingress
+        to: pods_a
+        routing: orthogonal
+        arrow: triangle
+        stroke: { color: "#1F2937", width: 1.2 }
+      - from: ingress
+        to: pods_b
+        routing: orthogonal
+        arrow: triangle
+        stroke: { color: "#1F2937", width: 1.2 }
+
+annotations:
+  - anchor: pods_a~2
+    side: top
+    text: "3× replicas\nrolling update"
+    bg: "#FFFFFF"
+    border: "#1F2937"
+    fontSize: 11
+  - anchor: cache_b
+    side: right
+    distance: 70
+    text: "p95 < 100ms\nregion edge"
+    bg: "#FFFFFF"
+    border: "#1F2937"
+    fontSize: 11
