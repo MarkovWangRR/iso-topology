@@ -39,8 +39,11 @@ type IsoPersonOpts struct {
 
 func DefaultIsoPerson() IsoPersonOpts {
 	return IsoPersonOpts{
+		// Dome-shaped body proportions: roughly 2× wider than tall so the
+		// torso reads as "shoulders" rather than a column. Head radius is
+		// ~0.3× body width, matching the classic user-avatar look.
 		HeadRadius: 36,
-		BodyWidth:  120, BodyDepth: 120, BodyHeight: 95,
+		BodyWidth:  120, BodyDepth: 120, BodyHeight: 50,
 		HeadHighlight: "#FFD9B0", HeadShadow: "#A35F25",
 		BodyTop: "#7FB3FF", BodyLeft: "#3A6FBA", BodyRight: "#5589D6",
 		Stroke: "#1D3A66", StrokeWidth: 1.5,
@@ -61,16 +64,17 @@ func RenderIsoPerson(o IsoPersonOpts) string {
 	ry := rx * sin30 / cos30 // iso ellipse y-radius
 	h := o.BodyHeight
 	headR := o.HeadRadius
-	headGap := 4.0
 	m := o.Margin
 	if m <= 0 {
 		m = 24
 	}
 
 	// Local frame: torso top ellipse centred at (0, 0). Bottom at (0, h).
-	// Sphere head sits ABOVE the top ellipse with a small gap.
+	// Sphere head sits TANGENT to the top ellipse — its bottommost point
+	// touches the top-ellipse's apex (the closest visual point of the
+	// ellipse in iso projection) with zero gap.
 	headCx := 0.0
-	headCy := -ry - headGap - headR
+	headCy := -ry - headR
 
 	// Local bbox extents.
 	minX := -math.Max(rx, headR)
@@ -149,7 +153,7 @@ func RenderIsoPerson(o IsoPersonOpts) string {
 		hh := headR * 0.9
 		mini := computeBoxGeom(hw, hd, hh, 0)
 		anchorX := sx(0) - (mini.A[0]+mini.C[0])/2
-		anchorY := sy(0) - headGap - mini.ViewH
+		anchorY := sy(0) - mini.ViewH
 		off := [2]float64{anchorX, anchorY}
 		shift2 := func(p [2]float64) [2]float64 { return [2]float64{p[0] + off[0], p[1] + off[1]} }
 		mE, mF, mG, mH := shift2(mini.E), shift2(mini.F), shift2(mini.G), shift2(mini.H)
