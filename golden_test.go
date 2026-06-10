@@ -1,8 +1,13 @@
 // Package isotopo's golden-file test suite.
 //
-// Every subdirectory of testdata/ is a self-contained example:
+// The samples/ tree holds two flavors of self-contained example:
 //
-//	testdata/<name>/
+//	samples/node/<name>/        ← one iso primitive, minimum DSL to exercise it
+//	samples/topology/<name>/    ← multi-element scene (the original testdata)
+//
+// Each subdirectory is:
+//
+//	<name>/
 //	├── input.{yaml|json|d2}   ← the source DSL
 //	└── expected.svg           ← the frozen "golden" topology.svg
 //
@@ -29,51 +34,54 @@ import (
 	"testing"
 )
 
-var updateGolden = flag.Bool("update", false, "regenerate testdata/*/expected.svg")
+var updateGolden = flag.Bool("update", false, "regenerate samples/*/*/expected.svg")
 
 func TestGolden(t *testing.T) {
-	entries, err := os.ReadDir("testdata")
-	if err != nil {
-		t.Fatalf("read testdata: %v", err)
-	}
-	for _, e := range entries {
-		if !e.IsDir() {
-			continue
+	for _, category := range []string{"node", "topology"} {
+		root := filepath.Join("samples", category)
+		entries, err := os.ReadDir(root)
+		if err != nil {
+			t.Fatalf("read %s: %v", root, err)
 		}
-		name := e.Name()
-		t.Run(name, func(t *testing.T) {
-			dir := filepath.Join("testdata", name)
-			data, ext, err := readInput(dir)
-			if err != nil {
-				t.Fatal(err)
+		for _, e := range entries {
+			if !e.IsDir() {
+				continue
 			}
-			doc, err := loadGoldenDoc(ext, data)
-			if err != nil {
-				t.Fatalf("load: %v", err)
-			}
-			got := renderTopology(doc)
-
-			goldenPath := filepath.Join(dir, "expected.svg")
-			if *updateGolden {
-				if err := os.WriteFile(goldenPath, []byte(got), 0o644); err != nil {
-					t.Fatalf("write golden: %v", err)
+			name := category + "/" + e.Name()
+			t.Run(name, func(t *testing.T) {
+				dir := filepath.Join(root, e.Name())
+				data, ext, err := readInput(dir)
+				if err != nil {
+					t.Fatal(err)
 				}
-				t.Logf("updated %s (%d bytes)", goldenPath, len(got))
-				return
-			}
-			want, err := os.ReadFile(goldenPath)
-			if err != nil {
-				t.Fatalf("read golden: %v", err)
-			}
-			if !bytes.Equal([]byte(got), want) {
-				// Dump the actual output next to the golden so a human (or
-				// agent) can `diff` / open both in a browser to inspect.
-				actualPath := filepath.Join(dir, "actual.svg")
-				_ = os.WriteFile(actualPath, []byte(got), 0o644)
-				t.Errorf("topology.svg drift\n  golden: %s (%d bytes)\n  actual: %s (%d bytes)\nrun: go test -update -run %q to accept",
-					goldenPath, len(want), actualPath, len(got), name)
-			}
-		})
+				doc, err := loadGoldenDoc(ext, data)
+				if err != nil {
+					t.Fatalf("load: %v", err)
+				}
+				got := renderTopology(doc)
+
+				goldenPath := filepath.Join(dir, "expected.svg")
+				if *updateGolden {
+					if err := os.WriteFile(goldenPath, []byte(got), 0o644); err != nil {
+						t.Fatalf("write golden: %v", err)
+					}
+					t.Logf("updated %s (%d bytes)", goldenPath, len(got))
+					return
+				}
+				want, err := os.ReadFile(goldenPath)
+				if err != nil {
+					t.Fatalf("read golden: %v", err)
+				}
+				if !bytes.Equal([]byte(got), want) {
+					// Dump the actual output next to the golden so a human (or
+					// agent) can `diff` / open both in a browser to inspect.
+					actualPath := filepath.Join(dir, "actual.svg")
+					_ = os.WriteFile(actualPath, []byte(got), 0o644)
+					t.Errorf("topology.svg drift\n  golden: %s (%d bytes)\n  actual: %s (%d bytes)\nrun: go test -update -run %q to accept",
+						goldenPath, len(want), actualPath, len(got), name)
+				}
+			})
+		}
 	}
 }
 

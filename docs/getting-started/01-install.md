@@ -47,7 +47,7 @@ go install github.com/MarkovWangRR/iso-topology/cmd/isotopo@v0.2.1
 git clone https://github.com/MarkovWangRR/iso-topology
 cd iso-topology
 go build -o isotopo ./cmd/isotopo
-./isotopo render testdata/microservice/input.d2 ./out
+./isotopo render samples/topology/microservice/input.d2 ./out
 ```
 
 Run the test suite:
@@ -56,7 +56,7 @@ Run the test suite:
 go test ./...
 ```
 
-All six fixtures in `testdata/` should pass in under a second.
+All fixtures under `samples/` (8 node + 6 topology) should pass in under a second.
 
 ### C. Library import (use as a Go module)
 

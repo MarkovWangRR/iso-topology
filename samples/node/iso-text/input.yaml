@@ -1,0 +1,8 @@
+canvas:
+  background: "#FAFBFC"
+
+nodes:
+  scene:
+    shape: iso_text
+    label: "Production Topology"
+    geom: { w: 240, d: 80, h: 6 }

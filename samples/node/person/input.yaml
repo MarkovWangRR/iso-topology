@@ -1,0 +1,8 @@
+canvas:
+  background: "#FAFBFC"
+
+nodes:
+  scene:
+    shape: person
+    label: "User"
+    geom: { w: 120, d: 120, h: 50 }

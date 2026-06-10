@@ -1,0 +1,8 @@
+canvas:
+  background: "#FAFBFC"
+
+nodes:
+  scene:
+    shape: circle
+    label: "Event"
+    geom: { w: 110, d: 110, h: 30 }

@@ -32,8 +32,9 @@ shape ends up rendered by `iso25d.Convert2DTo25D` after going through
    shapes list in `capabilities.go::buildShapeCaps`), Validate will
    accept the new shape in YAML/D2 inputs.
 
-5. **Add a golden test** — create `testdata/<name>-demo/input.yaml`
-   exercising the shape, then `go test -update -run TestGolden/<name>-demo`
+5. **Add a golden test** — create `samples/node/<name>/input.yaml`
+   (single-primitive) or `samples/topology/<name>-demo/input.yaml`
+   (multi-element scene), then `go test -update -run TestGolden/.*<name>`
    to snapshot the expected SVG.
 
 ## How to add a new DSL primitive
@@ -81,7 +82,7 @@ d2 ships dagre and ELK. To add a third:
 5. Edit `capabilities.go::Layouts` so agents discover it.
 6. Edit `validate.go` if the layout name appears in DSL anywhere
    (today it's CLI-only, so no validate change needed).
-7. Add a golden test under `testdata/<name>-layout/input.d2`.
+7. Add a golden test under `samples/topology/<name>-layout/input.d2`.
 
 ## The agent loop
 
@@ -138,6 +139,6 @@ cmd/isotopo/        the CLI
 - **Don't add new top-level export to the library API casually** —
   every export is part of the public contract. Prefer extending an
   existing function over adding a new one.
-- **Don't modify a testdata golden by hand** — always use
+- **Don't modify a samples/ golden by hand** — always use
   `go test -update -run TestGolden/<name>` so re-generation matches
   the rest of the pipeline.

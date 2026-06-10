@@ -1,0 +1,28 @@
+# group — a low-extrusion translucent substrate that wraps nested parts.
+# group is rendered as a composite part, so the scene root has to be a
+# composite (or a topology) for `parts:` to be expanded.
+canvas:
+  background: "#FAFBFC"
+
+nodes:
+  scene:
+    shape: composite
+    parts:
+      - id: vpc
+        shape: group
+        geom: { w: 360, d: 220, h: 6 }
+        label: "VPC"
+        style:
+          palette: { top: "#EEF1F8", left: "#C9D1E5", right: "#D9DFF0" }
+          stroke: { color: "#7C8DB5", width: 1 }
+        parts:
+          - id: api
+            shape: rectangle
+            geom: { w: 110, d: 90, h: 30 }
+            offset: { wx: 30, wy: 30 }
+            label: "API"
+          - id: db
+            shape: cylinder
+            geom: { w: 100, d: 100, h: 40 }
+            offset: { wx: 210, wy: 30 }
+            label: "DB"

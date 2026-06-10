@@ -95,7 +95,7 @@ worker -> db:    write
 worker -> cache: update
 ```
 
-Source: [testdata/microservice/input.d2](testdata/microservice/input.d2).
+Source: [samples/topology/microservice/input.d2](samples/topology/microservice/input.d2).
 
 ### Kubernetes cluster + LiteLLM proxies (nested groups)
 
@@ -104,7 +104,7 @@ Source: [testdata/microservice/input.d2](testdata/microservice/input.d2).
 Three-level nested `group` primitive: cluster wraps worker nodes,
 each worker node wraps a proxy + a cache. Authored as YAML for
 precise placement. Source:
-[testdata/k8s-litellm/input.yaml](testdata/k8s-litellm/input.yaml).
+[samples/topology/k8s-litellm/input.yaml](samples/topology/k8s-litellm/input.yaml).
 
 ### Four DSL primitives in one scene
 
@@ -113,7 +113,7 @@ precise placement. Source:
 `group` containers + `stack: {count: 3}` replicas + iso ground grid
 + screen-space `annotation` callouts — all four composition
 primitives at once. Source:
-[testdata/v2-showcase/input.yaml](testdata/v2-showcase/input.yaml).
+[samples/topology/v2-showcase/input.yaml](samples/topology/v2-showcase/input.yaml).
 
 ## Two input modes
 
@@ -215,8 +215,8 @@ it. The published `oss.terrastruct.com/d2` dependency is locked at
 ## Contributing
 
 Issues and PRs welcome. Run `go test ./...` before sending —
-`testdata/*/expected.svg` are golden files that catch unintended
-output drift across the rendering pipeline.
+`samples/{node,topology}/*/expected.svg` are golden files that catch
+unintended output drift across the rendering pipeline.
 
 ## License
 

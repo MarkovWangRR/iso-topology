@@ -11,4 +11,4 @@
 /tmp/
 
 # Diagnostic files emitted by golden tests on failure
-testdata/*/actual.svg
+samples/*/*/actual.svg

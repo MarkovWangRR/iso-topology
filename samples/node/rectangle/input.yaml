@@ -1,0 +1,8 @@
+canvas:
+  background: "#FAFBFC"
+
+nodes:
+  scene:
+    shape: rectangle
+    label: "API"
+    geom: { w: 140, d: 100, h: 32 }

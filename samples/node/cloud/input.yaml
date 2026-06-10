@@ -1,0 +1,8 @@
+canvas:
+  background: "#FAFBFC"
+
+nodes:
+  scene:
+    shape: cloud
+    label: "GCP"
+    geom: { w: 160, d: 100, h: 30 }

@@ -54,33 +54,67 @@ func DefaultIsoPerson() IsoPersonOpts {
 	}
 }
 
-// RenderIsoPerson renders a friendly "user figure": rounded-cylinder
-// torso ("shoulders") topped with a sphere head. Matches the iconic
-// 2.5D user-avatar look — wider at the base, soft curves, no legs.
+// RenderIsoPerson renders a friendly "user figure": a hemispherical
+// dome torso (no visible top ellipse — silhouette curves smoothly into
+// the head) capped with a sphere head that sinks slightly into the
+// dome's apex. Matches the iconic 2.5D user-avatar look used in
+// fossflow / draw.io stencils.
+//
+// Geometry (local frame, +y down to match SVG):
+//
+//	Body apex:       (0, 0)
+//	Ground centre:   (0, BodyHeight)  ← bottom ellipse centre
+//	Ground front:    (0, BodyHeight + ry)
+//	Ground left:     (-rx, BodyHeight)
+//	Ground right:    (rx,  BodyHeight)
+//
+// The silhouette is two elliptical arcs glued at the ground left/right:
+// the top arc (rx wide, BodyHeight tall) is the dome; the bottom arc
+// (rx wide, ry tall) is the front half of the ground ellipse. The
+// left/right halves of the dome are split by the iso "ridge" — a
+// vertical line from apex to the ground's front-touch point — so the
+// figure still reads as iso (not a flat egg).
+//
+// The label is rendered in SCREEN SPACE below the figure (not on the
+// dome top) because a curved surface can't host a flat label without
+// colliding with the head when the body is short.
 //
 // HeadStyle "block" still works as a C4-style square head if requested.
 func RenderIsoPerson(o IsoPersonOpts) string {
 	rx := o.BodyWidth / 2
-	ry := rx * sin30 / cos30 // iso ellipse y-radius
-	h := o.BodyHeight
+	ry := rx * sin30 / cos30 // iso ellipse y-radius for the ground
+	h := o.BodyHeight        // dome height (apex to ground centre)
 	headR := o.HeadRadius
 	m := o.Margin
 	if m <= 0 {
 		m = 24
 	}
 
-	// Local frame: torso top ellipse centred at (0, 0). Bottom at (0, h).
-	// Sphere head sits TANGENT to the top ellipse — its bottommost point
-	// touches the top-ellipse's apex (the closest visual point of the
-	// ellipse in iso projection) with zero gap.
+	// Sphere head sits ON TOP of the dome but sinks slightly INTO it so
+	// the silhouette reads as one continuous shape (no visible neck
+	// seam). 0.20 = the bottom 20% of the head disappears into the
+	// dome apex — tuned by eye against fossflow-style references.
+	embed := headR * 0.20
 	headCx := 0.0
-	headCy := -ry - headR
+	headCy := -headR + embed
 
-	// Local bbox extents.
-	minX := -math.Max(rx, headR)
-	maxX := math.Max(rx, headR)
+	// Optional bottom label width estimate (screen space).
+	hasLabel := strings.TrimSpace(o.Label) != ""
+	labelW := 0.0
+	labelGap := 6.0
+	labelH := 0.0
+	if hasLabel {
+		// Rough width estimate: 0.6em per character. Lets the bbox
+		// expand so the label isn't clipped by the viewBox.
+		labelW = float64(len([]rune(o.Label))) * o.FontSize * 0.6
+		labelH = o.FontSize + labelGap
+	}
+
+	// Local bbox: head sphere on top, ground ellipse + label at bottom.
+	minX := math.Min(-math.Max(rx, headR), -labelW/2)
+	maxX := math.Max(math.Max(rx, headR), labelW/2)
 	minY := headCy - headR
-	maxY := h + ry
+	maxY := h + ry + labelH
 
 	W := (maxX - minX) + 2*m
 	H := (maxY - minY) + 2*m
@@ -100,54 +134,75 @@ func RenderIsoPerson(o IsoPersonOpts) string {
 		gradID, escapeAttr(o.HeadHighlight), escapeAttr(o.HeadShadow),
 	)
 
-	// ── Body: stout iso cylinder (rounded shoulders) ─────────────────
-	// Same scheme as RenderIsoCylinder — two non-overlapping front
-	// halves filled with LeftFill / RightFill, plus a stroked outline
-	// and a top ellipse.
-	leftTopX, leftTopY := sx(-rx), sy(0)
-	rightTopX, rightTopY := sx(rx), sy(0)
-	leftBotX, leftBotY := sx(-rx), sy(h)
-	rightBotX, rightBotY := sx(rx), sy(h)
-	topFrontX, topFrontY := sx(0), sy(0+ry)
-	botFrontX, botFrontY := sx(0), sy(h+ry)
+	// Key silhouette points in screen space.
+	apex := [2]float64{sx(0), sy(0)}
+	groundL := [2]float64{sx(-rx), sy(h)}
+	groundR := [2]float64{sx(rx), sy(h)}
+	groundF := [2]float64{sx(0), sy(h + ry)} // front-touch on ground ellipse
+	groundB := [2]float64{sx(0), sy(h - ry)} // back-touch (hidden under dome)
 
+	// ── Dome body ────────────────────────────────────────────────────
+	// Two half-domes split by the iso ridge (apex → groundF). Left
+	// half takes BodyLeft (shadow side), right half takes BodyRight
+	// (lit side), matching the cylinder convention so themes carry over.
+	//
+	// Left half: apex → ground-back-arc → groundL → dome-arc → apex.
+	// The dome arc is half of an ellipse with radii (rx, h).
+	// The ground arc here is the BACK half of the ground ellipse,
+	// invisible behind the dome itself but needed to close the path
+	// for the fill — instead we close apex → groundL directly via the
+	// dome arc and use the iso ridge (apex → groundF) on the front side.
+	// Sweep-flag convention (SVG +y down): sweep=1 = clockwise = increasing θ
+	// when the ellipse is parameterised east(0)→south(π/2)→west(π)→north(3π/2).
+	// Front-bottom of the ground ellipse is at θ=π/2, so:
+	//   groundL(π)  → groundF(π/2): decreasing θ → counterclockwise → sweep=0
+	//   groundR(0)  → groundF(π/2): increasing θ → clockwise         → sweep=1
+	//   groundR(0)  → groundL(π) via front: increasing θ → clockwise → sweep=1
+	// Getting these wrong makes the renderer pick the back arc (through the
+	// hidden top of the ground ellipse), which surfaces as a V-notch at the
+	// bottom + an extra horizontal "shelf" inside the body.
 	fmt.Fprintf(&sb,
-		`<path data-face="body-left" d="M %.2f %.2f L %.2f %.2f A %.2f %.2f 0 0 0 %.2f %.2f L %.2f %.2f A %.2f %.2f 0 0 0 %.2f %.2f Z" fill="%s" stroke="none"/>`,
-		leftTopX, leftTopY, leftBotX, leftBotY,
-		rx, ry, botFrontX, botFrontY,
-		topFrontX, topFrontY,
-		rx, ry, leftTopX, leftTopY,
+		`<path data-face="body-left" d="M %.2f %.2f A %.2f %.2f 0 0 0 %.2f %.2f A %.2f %.2f 0 0 0 %.2f %.2f Z" fill="%s" stroke="none"/>`,
+		apex[0], apex[1],
+		rx, h, groundL[0], groundL[1], // dome arc apex → groundL
+		rx, ry, groundF[0], groundF[1], // ground front-arc groundL → groundF (sweep=0)
 		o.BodyLeft,
 	)
 	fmt.Fprintf(&sb,
-		`<path data-face="body-right" d="M %.2f %.2f L %.2f %.2f A %.2f %.2f 0 0 1 %.2f %.2f L %.2f %.2f A %.2f %.2f 0 0 1 %.2f %.2f Z" fill="%s" stroke="none"/>`,
-		rightTopX, rightTopY, rightBotX, rightBotY,
-		rx, ry, botFrontX, botFrontY,
-		topFrontX, topFrontY,
-		rx, ry, rightTopX, rightTopY,
+		`<path data-face="body-right" d="M %.2f %.2f A %.2f %.2f 0 0 1 %.2f %.2f A %.2f %.2f 0 0 1 %.2f %.2f Z" fill="%s" stroke="none"/>`,
+		apex[0], apex[1],
+		rx, h, groundR[0], groundR[1], // dome arc apex → groundR
+		rx, ry, groundF[0], groundF[1], // ground front-arc groundR → groundF (sweep=1)
 		o.BodyRight,
 	)
 
+	// Subtle iso "ridge" — vertical hairline from apex to front-touch,
+	// reinforces the iso read without the heavy seam of a top ellipse.
 	if strings.TrimSpace(o.Stroke) != "" && o.StrokeWidth > 0 {
 		fmt.Fprintf(&sb,
-			`<path data-face="body-outline" d="M %.2f %.2f L %.2f %.2f A %.2f %.2f 0 0 0 %.2f %.2f L %.2f %.2f" fill="none" stroke="%s" stroke-width="%.2f" stroke-linejoin="round" stroke-linecap="round"/>`,
-			leftTopX, leftTopY,
-			leftBotX, leftBotY,
-			rx, ry, rightBotX, rightBotY,
-			rightTopX, rightTopY,
+			`<line data-face="body-ridge" x1="%.2f" y1="%.2f" x2="%.2f" y2="%.2f" stroke="%s" stroke-width="%.2f" stroke-linecap="round" opacity="0.35"/>`,
+			apex[0], apex[1], groundF[0], groundF[1],
+			escapeAttr(o.Stroke), o.StrokeWidth*0.7,
+		)
+	}
+
+	// Outer silhouette: dome arc (apex → groundR via top) + ground
+	// front arc (groundR → groundL via front) + dome arc back to apex.
+	if strings.TrimSpace(o.Stroke) != "" && o.StrokeWidth > 0 {
+		fmt.Fprintf(&sb,
+			`<path data-face="body-outline" d="M %.2f %.2f A %.2f %.2f 0 0 1 %.2f %.2f A %.2f %.2f 0 0 1 %.2f %.2f A %.2f %.2f 0 0 1 %.2f %.2f Z" fill="none" stroke="%s" stroke-width="%.2f" stroke-linejoin="round" stroke-linecap="round"/>`,
+			apex[0], apex[1],
+			rx, h, groundR[0], groundR[1], // dome apex → groundR
+			rx, ry, groundL[0], groundL[1], // ground front-arc groundR → groundL (sweep=1, through groundF)
+			rx, h, apex[0], apex[1], // dome groundL → apex
 			o.Stroke, o.StrokeWidth,
 		)
 	}
 
-	// Top ellipse — the "shoulder ring".
-	fmt.Fprintf(&sb,
-		`<ellipse data-face="body-top" cx="%.2f" cy="%.2f" rx="%.2f" ry="%.2f" fill="%s" stroke="%s" stroke-width="%.2f"/>`,
-		sx(0), sy(0), rx, ry, o.BodyTop, escapeAttr(o.Stroke), o.StrokeWidth,
-	)
+	_ = groundB // kept named for documentation; not drawn (back of ground is hidden)
 
 	// ── Head ─────────────────────────────────────────────────────────
 	if o.HeadStyle == "block" {
-		// C4-style box head.
 		hw := headR * 1.6
 		hd := headR * 1.6
 		hh := headR * 0.9
@@ -168,14 +223,14 @@ func RenderIsoPerson(o IsoPersonOpts) string {
 		)
 	}
 
-	// Optional label on the body top ellipse.
-	if strings.TrimSpace(o.Label) != "" {
-		s := rx / cos30
-		writeTopLabelAndIcon(
-			&sb,
-			sx(0), sy(0)-s*sin30, s, s,
-			o.Label, "", 0,
-			o.FontFamily, o.FontSize, o.FontWeight, o.FontColor,
+	// Optional label — screen-space, one line under the figure.
+	if hasLabel {
+		fmt.Fprintf(&sb,
+			`<text data-face="label" x="%.2f" y="%.2f" font-family="%s" font-size="%.2f" font-weight="%s" fill="%s" text-anchor="middle">%s</text>`,
+			sx(0), sy(h+ry)+labelGap+o.FontSize*0.85,
+			escapeAttr(o.FontFamily), o.FontSize, escapeAttr(o.FontWeight),
+			escapeAttr(o.FontColor),
+			escapeXML(o.Label),
 		)
 	}
 
