@@ -1,4 +1,4 @@
-# Capabilities — v0.2.1
+# Capabilities — v0.2.2
 
 Generated from `CapabilityReport()`. Do not edit by hand — run
 `go run ./tools/gen-docs` to regenerate after a code change.
@@ -28,14 +28,14 @@ override per-part via `geom.h`.
 
 | Iso shape | Accepted aliases | Height hint | Notes |
 |---|---|---|---|
-| **circle** | `circle`, `oval` | 0.8 |  |
+| **circle** | `circle`, `oval` | 1.0 |  |
 | **cloud** | `cloud` | 0.8 | free-form rounded outline; no per-face palette overrides |
 | **composite** | `composite` | 1.0 | container — holds parts: [] of CompositePart entries |
 | **cylinder** | `cylinder`, `queue`, `stored-data`, `stored_data` | 1.0 |  |
 | **group** | `group` | 1.0 | v2 primitive — translucent labeled substrate wrapping nested parts |
 | **iso_text** | `text` | 0.3 | flat text panel (low extrusion) |
 | **person** | `c4-person`, `c4_person`, `person` | 1.2 |  |
-| **rectangle** | `callout`, `class`, `code`, `diamond`, `document`, `hexagon`, `hierarchy`, `image`, `package`, `page`, `parallelogram`, `rectangle`, `sequence-diagram`, `sequence_diagram`, `sql-table`, `sql_table`, `square`, `step` | 0.7 |  |
+| **rectangle** | `callout`, `class`, `code`, `diamond`, `document`, `hexagon`, `hierarchy`, `image`, `package`, `page`, `parallelogram`, `rectangle`, `sequence-diagram`, `sequence_diagram`, `sql-table`, `sql_table`, `square`, `step` | 1.0 |  |
 
 ## Composition primitives
 
@@ -102,7 +102,7 @@ Screen-space callout pinned to a composite part. Multi-line text is supported vi
 
 **Where:** `node.connectors[*]`
 
-**Syntax:** `{from: <part-id>, to: <part-id>, routing: straight|orthogonal, arrow: none|triangle, label: "…"}`
+**Syntax:** `{from: <part-id>, to: <part-id>, routing: straight|orthogonal|bezier, arrow: none|triangle, label: "…"}`
 
 Directed line between two parts, optionally labeled and orthogonal-routed.
 
@@ -110,8 +110,53 @@ Directed line between two parts, optionally labeled and orthogonal-routed.
 |---|---|
 | `arrow` | none = no head; triangle = filled arrowhead at the dst |
 | `from` | source part id; "id.anchor" picks a specific face-centre (e.g. central.right-mid) |
-| `routing` | straight = single segment; orthogonal = U-shape along iso ground axes |
+| `routing` | straight = single segment; orthogonal = bends along iso ground axes (grid-aligned — prefer for architecture flows); bezier = soft quadratic arc (reads as async/data flow) |
 | `to` | destination part id (same anchor syntax) |
+
+### `layout`
+
+**Where:** `node.layout | node.parts[*].layout (groups)`
+
+**Syntax:** `layout: {mode: row|column|grid, cols: N, gap: 1, padding: 1, align: start|center|end}`
+
+Auto-arrange a container's parts along the iso ground axes — the preferred way to position parts. No hand-computed coordinates: row marches along world +x, column along +y, grid wraps row-major after cols. A layout group's geom.w/d may be omitted; the substrate auto-sizes around the arranged content.
+
+| Field | Meaning |
+|---|---|
+| `align` | cross-axis alignment within each track (default center) |
+| `cols` | grid only; default ceil(sqrt(n)) |
+| `gap` | space between children, in CELLS (1 cell = gridStep, default 40 world units); default 1 |
+| `mode` | row | column | grid |
+| `padding` | content inset from the container edge, in cells; defaults to gap |
+
+### `place`
+
+**Where:** `node.parts[*].place`
+
+**Syntax:** `place: {rightOf: <sibling-id>, inFrontOf: <sibling-id>, gap: 1, align: start|center|end}`
+
+Position a part relative to a SIBLING's footprint — the preferred way to compose free-standing scenes. One constraint per ground axis: rightOf/leftOf pins world x, inFrontOf/behind pins world y (front = toward viewer). With one axis pinned, the other aligns to the referenced sibling per align. Chains are solved topologically (a stair = each tile rightOf+inFrontOf its predecessor). offset degrades to a fine-tune delta.
+
+| Field | Meaning |
+|---|---|
+| `align` | alignment along the unconstrained axis (default center) |
+| `behind` | sibling id — -y side (mutually exclusive with inFrontOf) |
+| `gap` | distance from the sibling's footprint, in cells; default 1 |
+| `inFrontOf` | sibling id — +y side, toward the viewer |
+| `leftOf` | sibling id — -x side (mutually exclusive with rightOf) |
+| `rightOf` | sibling id — this part sits on its +x side |
+
+### `brand-icon`
+
+**Where:** `node.parts[*].icon`
+
+**Syntax:** `icon: "iso://brand/<name>"`
+
+Embed a built-in brand badge (monogram) on a part's top face. Names: spark, hadoop, mysql, postgresql, iceberg, hive, pulsar, kafka, redis, mongo, kubernetes, docker, github, aws, gcp, azure, starrocks, vite, rolldown, oxc. Any other icon value is treated as a URL / data-URI.
+
+| Field | Meaning |
+|---|---|
+| `icon` | iso://brand/<name> | https://… | data:image/… |
 
 ## Style keys
 
@@ -119,10 +164,10 @@ Every field under each `style.*` sub-block.
 
 | Block | Fields |
 |---|---|
-| `palette` | `top`, `left`, `right` |
+| `palette` | `top`, `left`, `right`, `topGradient {from, to, dir}`, `leftGradient {from, to, dir}`, `rightGradient {from, to, dir}` |
 | `stroke` | `color`, `width`, `dash` |
 | `text` | `family`, `size`, `weight`, `color`, `orient`, `boxBg`, `boxBorder` |
-| `effects` | `opacity`, `margin`, `cornerRadius` |
+| `effects` | `opacity`, `margin`, `cornerRadius`, `dropShadow {dx, dy, blur, color}`, `backglow {color, radius, opacity}`, `pattern {kind: hatch|dots, color, spacing, angle}` |
 
 ## See also
 

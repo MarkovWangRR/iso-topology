@@ -40,6 +40,10 @@ func RenderWithCanvas(n *Node, theme *Theme, canvas *Canvas, anns []*Annotation)
 // iso25d.RenderComposite, then layers in canvas / connectors / screen
 // labels / annotations through the injectors in inject.go.
 func renderComposite(n *Node, theme *Theme, canvas *Canvas, anns []*Annotation) string {
+	// v2.2 — solve layout/place declarations into concrete Offsets
+	// before lowering. Issues are render-time-silent; Validate surfaces
+	// the same list to agents via layoutIssues.
+	applyLayout(n, canvas)
 	flat := lowerCompositeParts(n.Parts, 0, 0, 0)
 	if len(flat) == 0 {
 		return ""

@@ -46,6 +46,12 @@ type Node struct {
 	// CompositePart with `position: {i, j}` is placed at world
 	// (i*GridStep, j*GridStep, 0) before applying any free-form offset.
 	GridStep float64 `yaml:"gridStep,omitempty" json:"gridStep,omitempty"`
+
+	// v2.2 — auto-arrangement of this composite's top-level parts. When
+	// set, part positions are SOLVED (row / column / grid along the iso
+	// ground axes) instead of authored; `offset` degrades to a fine-tune
+	// delta on top of the solved position.
+	Layout *Layout `yaml:"layout,omitempty" json:"layout,omitempty"`
 }
 
 // Connector is a directed line between two anchor points on different
@@ -98,6 +104,55 @@ type CompositePart struct {
 	// nested part is laid down on top with its Offset interpreted
 	// relative to the group's own offset.
 	Parts []*CompositePart `yaml:"parts,omitempty" json:"parts,omitempty"`
+
+	// v2.2 — declarative position relative to a SIBLING part (same parts
+	// list). Solved by the layout pass before lowering; Offset becomes a
+	// fine-tune delta added on top of the solved position. Mutually
+	// exclusive with being inside a `layout` container.
+	Place *Place `yaml:"place,omitempty" json:"place,omitempty"`
+
+	// v2.2 — auto-arrangement of nested parts. Only honored when Shape ==
+	// "group". When set, the group's footprint (geom.w/d) may be omitted —
+	// it is derived from the arranged content plus padding.
+	Layout *Layout `yaml:"layout,omitempty" json:"layout,omitempty"`
+}
+
+// Layout arranges a container's parts along the iso ground axes so the
+// author never computes coordinates. All lengths are in CELLS — one cell
+// = the document's grid step (node.gridStep, else canvas.gridStep, else
+// 40 world units) — so arranged parts stay in register with the canvas
+// grid texture and with orthogonal connector channels.
+type Layout struct {
+	// Mode: "row" (children march along world +x), "column" (world +y),
+	// or "grid" (row-major wrap after Cols children).
+	Mode string `yaml:"mode" json:"mode"`
+	// Cols — grid mode only. Defaults to ceil(sqrt(len(parts))).
+	Cols int `yaml:"cols,omitempty" json:"cols,omitempty"`
+	// Gap between adjacent children, in cells. Default 1.
+	Gap *float64 `yaml:"gap,omitempty" json:"gap,omitempty"`
+	// Padding between content and the container edge, in cells.
+	// Defaults to Gap.
+	Padding *float64 `yaml:"padding,omitempty" json:"padding,omitempty"`
+	// Align: cross-axis alignment of children within their row/column
+	// track — "start" | "center" | "end". Default "center".
+	Align string `yaml:"align,omitempty" json:"align,omitempty"`
+}
+
+// Place positions a part relative to a sibling's footprint. Give one
+// constraint per ground axis: RightOf/LeftOf pin world x, InFrontOf/
+// Behind pin world y ("front" = toward the viewer = +y, "behind" = away
+// = -y). With only one axis constrained, the other axis aligns to the
+// referenced sibling per Align. Gap is in cells (default 1).
+type Place struct {
+	RightOf   string   `yaml:"rightOf,omitempty" json:"rightOf,omitempty"`
+	LeftOf    string   `yaml:"leftOf,omitempty" json:"leftOf,omitempty"`
+	InFrontOf string   `yaml:"inFrontOf,omitempty" json:"inFrontOf,omitempty"`
+	Behind    string   `yaml:"behind,omitempty" json:"behind,omitempty"`
+	Gap       *float64 `yaml:"gap,omitempty" json:"gap,omitempty"`
+	// Align: alignment along the unconstrained axis relative to the
+	// (single) referenced sibling — "start" | "center" | "end".
+	// Default "center".
+	Align string `yaml:"align,omitempty" json:"align,omitempty"`
 }
 
 // Stack tells the renderer to replicate a composite part vertically.

@@ -1,7 +1,7 @@
 {
   "$id": "https://github.com/MarkovWangRR/iso-topology/blob/main/docs/agent/schema/dsl.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "description": "YAML/JSON DSL accepted by isotopo render. Generated for capabilities v0.2.1.",
+  "description": "YAML/JSON DSL accepted by isotopo render. Generated for capabilities v0.2.2.",
   "properties": {
     "annotations": {
       "items": {
@@ -101,9 +101,11 @@
                   "type": "string"
                 },
                 "routing": {
+                  "description": "orthogonal bends along iso ground axes (grid-aligned); bezier = soft quadratic arc.",
                   "enum": [
                     "straight",
-                    "orthogonal"
+                    "orthogonal",
+                    "bezier"
                   ],
                   "type": "string"
                 },
@@ -160,7 +162,7 @@
             "type": "object"
           },
           "gridStep": {
-            "description": "Iso grid step for fossflow-style position: {i, j} placement.",
+            "description": "Iso grid step for fossflow-style position: {i, j} placement; also the layout/place cell size.",
             "type": "number"
           },
           "icon": {
@@ -168,6 +170,45 @@
           },
           "label": {
             "type": "string"
+          },
+          "layout": {
+            "description": "Auto-arrange this container's parts along the iso ground axes — no hand-computed coordinates. On a group, geom.w/d may be omitted (substrate auto-sizes around content).",
+            "properties": {
+              "align": {
+                "description": "Cross-axis alignment within each track (default center).",
+                "enum": [
+                  "start",
+                  "center",
+                  "end"
+                ],
+                "type": "string"
+              },
+              "cols": {
+                "description": "Grid mode only. Default ceil(sqrt(n)).",
+                "type": "integer"
+              },
+              "gap": {
+                "description": "Space between children in cells. Default 1.",
+                "type": "number"
+              },
+              "mode": {
+                "description": "row = world +x, column = world +y, grid = row-major wrap.",
+                "enum": [
+                  "row",
+                  "column",
+                  "grid"
+                ],
+                "type": "string"
+              },
+              "padding": {
+                "description": "Content inset from container edge in cells. Defaults to gap.",
+                "type": "number"
+              }
+            },
+            "required": [
+              "mode"
+            ],
+            "type": "object"
           },
           "parts": {
             "description": "Children — only consulted when shape == composite or group.",
@@ -207,6 +248,45 @@
                 "label": {
                   "type": "string"
                 },
+                "layout": {
+                  "description": "Auto-arrange this container's parts along the iso ground axes — no hand-computed coordinates. On a group, geom.w/d may be omitted (substrate auto-sizes around content).",
+                  "properties": {
+                    "align": {
+                      "description": "Cross-axis alignment within each track (default center).",
+                      "enum": [
+                        "start",
+                        "center",
+                        "end"
+                      ],
+                      "type": "string"
+                    },
+                    "cols": {
+                      "description": "Grid mode only. Default ceil(sqrt(n)).",
+                      "type": "integer"
+                    },
+                    "gap": {
+                      "description": "Space between children in cells. Default 1.",
+                      "type": "number"
+                    },
+                    "mode": {
+                      "description": "row = world +x, column = world +y, grid = row-major wrap.",
+                      "enum": [
+                        "row",
+                        "column",
+                        "grid"
+                      ],
+                      "type": "string"
+                    },
+                    "padding": {
+                      "description": "Content inset from container edge in cells. Defaults to gap.",
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "mode"
+                  ],
+                  "type": "object"
+                },
                 "offset": {
                   "properties": {
                     "wx": {
@@ -224,6 +304,41 @@
                 "parts": {
                   "description": "Nested parts — only honored when shape == group.",
                   "type": "array"
+                },
+                "place": {
+                  "description": "Declarative position relative to a SIBLING part — preferred over offset. rightOf/leftOf pin world x, inFrontOf/behind pin world y (front = toward viewer). Chains solve topologically; offset degrades to a fine-tune delta.",
+                  "properties": {
+                    "align": {
+                      "description": "Alignment along the unconstrained axis (default center).",
+                      "enum": [
+                        "start",
+                        "center",
+                        "end"
+                      ],
+                      "type": "string"
+                    },
+                    "behind": {
+                      "description": "Sibling part id — -y side. Mutually exclusive with inFrontOf.",
+                      "type": "string"
+                    },
+                    "gap": {
+                      "description": "Distance from the sibling's footprint in CELLS (1 cell = gridStep, default 40 world units). Default 1.",
+                      "type": "number"
+                    },
+                    "inFrontOf": {
+                      "description": "Sibling part id — +y side (toward viewer).",
+                      "type": "string"
+                    },
+                    "leftOf": {
+                      "description": "Sibling part id — -x side. Mutually exclusive with rightOf.",
+                      "type": "string"
+                    },
+                    "rightOf": {
+                      "description": "Sibling part id — this part sits on its +x side.",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 },
                 "position": {
                   "properties": {
@@ -385,9 +500,15 @@
       "description": "Document-wide default Style plus optional per-shape-type overrides.",
       "properties": {
         "effects": {
-          "description": "Visual modifiers.",
+          "description": "Visual modifiers. dropShadow {dx, dy, blur, color}; backglow {color, radius, opacity}; pattern {kind, color, spacing, angle}.",
           "properties": {
+            "backglow": {
+              "description": "see reference/dsl-theme.md"
+            },
             "cornerRadius": {
+              "description": "see reference/dsl-theme.md"
+            },
+            "dropShadow": {
               "description": "see reference/dsl-theme.md"
             },
             "margin": {
@@ -395,20 +516,32 @@
             },
             "opacity": {
               "description": "see reference/dsl-theme.md"
+            },
+            "pattern": {
+              "description": "see reference/dsl-theme.md"
             }
           },
           "type": "object"
         },
         "palette": {
-          "description": "Face fills (top/left/right).",
+          "description": "Face fills (top/left/right), each optionally a {from, to, dir} gradient via topGradient/leftGradient/rightGradient.",
           "properties": {
             "left": {
+              "description": "see reference/dsl-theme.md"
+            },
+            "leftGradient": {
               "description": "see reference/dsl-theme.md"
             },
             "right": {
               "description": "see reference/dsl-theme.md"
             },
+            "rightGradient": {
+              "description": "see reference/dsl-theme.md"
+            },
             "top": {
+              "description": "see reference/dsl-theme.md"
+            },
+            "topGradient": {
               "description": "see reference/dsl-theme.md"
             }
           },

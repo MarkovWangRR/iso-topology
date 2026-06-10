@@ -172,10 +172,10 @@ func themeSchema() map[string]any {
 		"type":        "object",
 		"description": "Document-wide default Style plus optional per-shape-type overrides.",
 		"properties": map[string]any{
-			"palette": styleBlockSchema("Face fills (top/left/right).", []string{"top", "left", "right"}),
+			"palette": styleBlockSchema("Face fills (top/left/right), each optionally a {from, to, dir} gradient via topGradient/leftGradient/rightGradient.", []string{"top", "left", "right", "topGradient", "leftGradient", "rightGradient"}),
 			"stroke":  styleBlockSchema("Silhouette stroke.", []string{"color", "width", "dash"}),
 			"text":    styleBlockSchema("Label typography.", []string{"family", "size", "weight", "color", "orient", "boxBg", "boxBorder"}),
-			"effects": styleBlockSchema("Visual modifiers.", []string{"opacity", "margin", "cornerRadius"}),
+			"effects": styleBlockSchema("Visual modifiers. dropShadow {dx, dy, blur, color}; backglow {color, radius, opacity}; pattern {kind, color, spacing, angle}.", []string{"opacity", "margin", "cornerRadius", "dropShadow", "backglow", "pattern"}),
 			"shapes": map[string]any{
 				"type":                 "object",
 				"description":          "Per-shape-type Style overrides. Keys are iso shape names (rectangle, cylinder, …).",
@@ -231,7 +231,8 @@ func nodeSchema(shapeEnum []string) map[string]any {
 			"content":    map[string]any{"type": "object"},
 			"parts":      map[string]any{"type": "array", "items": compositePartSchema(shapeEnum), "description": "Children — only consulted when shape == composite or group."},
 			"connectors": map[string]any{"type": "array", "items": connectorSchema(), "description": "Directed lines between parts (composite only)."},
-			"gridStep":   map[string]any{"type": "number", "description": "Iso grid step for fossflow-style position: {i, j} placement."},
+			"gridStep":   map[string]any{"type": "number", "description": "Iso grid step for fossflow-style position: {i, j} placement; also the layout/place cell size."},
+			"layout":     layoutSchema(),
 		},
 	}
 }
@@ -252,6 +253,38 @@ func compositePartSchema(shapeEnum []string) map[string]any {
 			"position": map[string]any{"type": "object", "properties": map[string]any{"i": map[string]any{"type": "integer"}, "j": map[string]any{"type": "integer"}}},
 			"stack":    stackSchema(),
 			"parts":    map[string]any{"type": "array", "description": "Nested parts — only honored when shape == group."},
+			"place":    placeSchema(),
+			"layout":   layoutSchema(),
+		},
+	}
+}
+
+func placeSchema() map[string]any {
+	return map[string]any{
+		"type":        "object",
+		"description": "Declarative position relative to a SIBLING part — preferred over offset. rightOf/leftOf pin world x, inFrontOf/behind pin world y (front = toward viewer). Chains solve topologically; offset degrades to a fine-tune delta.",
+		"properties": map[string]any{
+			"rightOf":   map[string]any{"type": "string", "description": "Sibling part id — this part sits on its +x side."},
+			"leftOf":    map[string]any{"type": "string", "description": "Sibling part id — -x side. Mutually exclusive with rightOf."},
+			"inFrontOf": map[string]any{"type": "string", "description": "Sibling part id — +y side (toward viewer)."},
+			"behind":    map[string]any{"type": "string", "description": "Sibling part id — -y side. Mutually exclusive with inFrontOf."},
+			"gap":       map[string]any{"type": "number", "description": "Distance from the sibling's footprint in CELLS (1 cell = gridStep, default 40 world units). Default 1."},
+			"align":     map[string]any{"type": "string", "enum": []string{"start", "center", "end"}, "description": "Alignment along the unconstrained axis (default center)."},
+		},
+	}
+}
+
+func layoutSchema() map[string]any {
+	return map[string]any{
+		"type":        "object",
+		"description": "Auto-arrange this container's parts along the iso ground axes — no hand-computed coordinates. On a group, geom.w/d may be omitted (substrate auto-sizes around content).",
+		"required":    []string{"mode"},
+		"properties": map[string]any{
+			"mode":    map[string]any{"type": "string", "enum": []string{"row", "column", "grid"}, "description": "row = world +x, column = world +y, grid = row-major wrap."},
+			"cols":    map[string]any{"type": "integer", "description": "Grid mode only. Default ceil(sqrt(n))."},
+			"gap":     map[string]any{"type": "number", "description": "Space between children in cells. Default 1."},
+			"padding": map[string]any{"type": "number", "description": "Content inset from container edge in cells. Defaults to gap."},
+			"align":   map[string]any{"type": "string", "enum": []string{"start", "center", "end"}, "description": "Cross-axis alignment within each track (default center)."},
 		},
 	}
 }
@@ -300,7 +333,7 @@ func connectorSchema() map[string]any {
 			"label":   map[string]any{"type": "string"},
 			"labelBg": map[string]any{"type": "string"},
 			"arrow":   map[string]any{"type": "string", "enum": []string{"none", "triangle"}},
-			"routing": map[string]any{"type": "string", "enum": []string{"straight", "orthogonal"}},
+			"routing": map[string]any{"type": "string", "enum": []string{"straight", "orthogonal", "bezier"}, "description": "orthogonal bends along iso ground axes (grid-aligned); bezier = soft quadratic arc."},
 			"stroke": map[string]any{
 				"type": "object",
 				"properties": map[string]any{

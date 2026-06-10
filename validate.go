@@ -132,6 +132,19 @@ func Validate(doc *Document) []Issue {
 		}
 	}
 
+	// v2.2 — layout/place dry run (dangling refs, cycles, conflicting
+	// constraints → errors; post-solve sibling overlaps → warnings).
+	// Runs against a clone so Validate never mutates the document.
+	for nodeID, n := range doc.Nodes {
+		if n.Shape != "composite" {
+			continue
+		}
+		for _, iss := range layoutIssues(n, doc.Canvas) {
+			iss.Path = strings.Replace(iss.Path, "nodes.scene", "nodes."+nodeID, 1)
+			issues = append(issues, iss)
+		}
+	}
+
 	// Annotations
 	for i, a := range doc.Annotations {
 		aPath := fmt.Sprintf("annotations[%d]", i)

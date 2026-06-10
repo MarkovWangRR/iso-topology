@@ -70,7 +70,7 @@ type StyleKeyGroup struct {
 // Pure function — no IO, no globals.
 func CapabilityReport() Capabilities {
 	return Capabilities{
-		Version: "0.2.1",
+		Version: "0.2.2",
 		Inputs: []InputFormat{
 			{".yaml", "hand-authored iso composite with precise placement", "manual"},
 			{".json", "same shape as .yaml but JSON-encoded", "manual"},
@@ -186,13 +186,49 @@ func buildPrimitiveCaps() []PrimitiveCap {
 		{
 			Name:    "connector",
 			Where:   "node.connectors[*]",
-			Syntax:  "{from: <part-id>, to: <part-id>, routing: straight|orthogonal, arrow: none|triangle, label: \"…\"}",
+			Syntax:  "{from: <part-id>, to: <part-id>, routing: straight|orthogonal|bezier, arrow: none|triangle, label: \"…\"}",
 			Purpose: "Directed line between two parts, optionally labeled and orthogonal-routed.",
 			Fields: map[string]string{
 				"from":    "source part id; \"id.anchor\" picks a specific face-centre (e.g. central.right-mid)",
 				"to":      "destination part id (same anchor syntax)",
-				"routing": "straight = single segment; orthogonal = U-shape along iso ground axes",
+				"routing": "straight = single segment; orthogonal = bends along iso ground axes (grid-aligned — prefer for architecture flows); bezier = soft quadratic arc (reads as async/data flow)",
 				"arrow":   "none = no head; triangle = filled arrowhead at the dst",
+			},
+		},
+		{
+			Name:    "layout",
+			Where:   "node.layout | node.parts[*].layout (groups)",
+			Syntax:  "layout: {mode: row|column|grid, cols: N, gap: 1, padding: 1, align: start|center|end}",
+			Purpose: "Auto-arrange a container's parts along the iso ground axes — the preferred way to position parts. No hand-computed coordinates: row marches along world +x, column along +y, grid wraps row-major after cols. A layout group's geom.w/d may be omitted; the substrate auto-sizes around the arranged content.",
+			Fields: map[string]string{
+				"mode":    "row | column | grid",
+				"cols":    "grid only; default ceil(sqrt(n))",
+				"gap":     "space between children, in CELLS (1 cell = gridStep, default 40 world units); default 1",
+				"padding": "content inset from the container edge, in cells; defaults to gap",
+				"align":   "cross-axis alignment within each track (default center)",
+			},
+		},
+		{
+			Name:    "place",
+			Where:   "node.parts[*].place",
+			Syntax:  "place: {rightOf: <sibling-id>, inFrontOf: <sibling-id>, gap: 1, align: start|center|end}",
+			Purpose: "Position a part relative to a SIBLING's footprint — the preferred way to compose free-standing scenes. One constraint per ground axis: rightOf/leftOf pins world x, inFrontOf/behind pins world y (front = toward viewer). With one axis pinned, the other aligns to the referenced sibling per align. Chains are solved topologically (a stair = each tile rightOf+inFrontOf its predecessor). offset degrades to a fine-tune delta.",
+			Fields: map[string]string{
+				"rightOf":   "sibling id — this part sits on its +x side",
+				"leftOf":    "sibling id — -x side (mutually exclusive with rightOf)",
+				"inFrontOf": "sibling id — +y side, toward the viewer",
+				"behind":    "sibling id — -y side (mutually exclusive with inFrontOf)",
+				"gap":       "distance from the sibling's footprint, in cells; default 1",
+				"align":     "alignment along the unconstrained axis (default center)",
+			},
+		},
+		{
+			Name:    "brand-icon",
+			Where:   "node.parts[*].icon",
+			Syntax:  "icon: \"iso://brand/<name>\"",
+			Purpose: "Embed a built-in brand badge (monogram) on a part's top face. Names: spark, hadoop, mysql, postgresql, iceberg, hive, pulsar, kafka, redis, mongo, kubernetes, docker, github, aws, gcp, azure, starrocks, vite, rolldown, oxc. Any other icon value is treated as a URL / data-URI.",
+			Fields: map[string]string{
+				"icon": "iso://brand/<name> | https://… | data:image/…",
 			},
 		},
 	}
@@ -200,9 +236,17 @@ func buildPrimitiveCaps() []PrimitiveCap {
 
 func buildStyleKeyGroups() []StyleKeyGroup {
 	return []StyleKeyGroup{
-		{"palette", []string{"top", "left", "right"}},
+		{"palette", []string{
+			"top", "left", "right",
+			"topGradient {from, to, dir}", "leftGradient {from, to, dir}", "rightGradient {from, to, dir}",
+		}},
 		{"stroke", []string{"color", "width", "dash"}},
 		{"text", []string{"family", "size", "weight", "color", "orient", "boxBg", "boxBorder"}},
-		{"effects", []string{"opacity", "margin", "cornerRadius"}},
+		{"effects", []string{
+			"opacity", "margin", "cornerRadius",
+			"dropShadow {dx, dy, blur, color}",
+			"backglow {color, radius, opacity}",
+			"pattern {kind: hatch|dots, color, spacing, angle}",
+		}},
 	}
 }

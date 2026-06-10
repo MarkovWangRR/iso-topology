@@ -12,3 +12,4 @@
 
 # Diagnostic files emitted by golden tests on failure
 samples/*/*/actual.svg
+.playwright-mcp/
