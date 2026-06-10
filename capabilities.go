@@ -224,12 +224,12 @@ func buildPrimitiveCaps() []PrimitiveCap {
 			},
 		},
 		{
-			Name:    "brand-icon",
+			Name:    "icon",
 			Where:   "node.parts[*].icon",
-			Syntax:  "icon: \"iso://brand/<name>\"",
-			Purpose: "Embed a built-in brand badge (monogram) on a part's top face. Names: spark, hadoop, mysql, postgresql, iceberg, hive, pulsar, kafka, redis, mongo, kubernetes, docker, github, aws, gcp, azure, starrocks, vite, rolldown, oxc. Any other icon value is treated as a URL / data-URI.",
+			Syntax:  "icon: \"iso://glyph/<name>[/light|/RRGGBB]\" | \"iso://brand/<name>\"",
+			Purpose: "Put an icon on a part's top face instead of text — the preferred look for showcase scenes. Glyphs (generic, stroke style): cloud, database, bolt, chart, globe, shield, lock, gear, cpu, code, layers, rocket, user, mobile, browser, search, bell, queue; default ink, /light = white (dark tops), /RRGGBB = custom. Brands (letter badges): spark, hadoop, mysql, postgresql, iceberg, hive, pulsar, kafka, redis, mongo, kubernetes, docker, github, aws, gcp, azure, starrocks, vite, rolldown, oxc. Any other icon value is treated as a URL / data-URI.",
 			Fields: map[string]string{
-				"icon": "iso://brand/<name> | https://… | data:image/…",
+				"icon": "iso://glyph/<name>[/variant] | iso://brand/<name> | https://… | data:image/…",
 			},
 		},
 	}

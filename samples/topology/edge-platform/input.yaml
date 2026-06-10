@@ -1,0 +1,151 @@
+# edge-platform — dark-mode edge network platform.
+# Design language: near-black canvas with a whisper iso grid, ONE neon
+# accent (cyan), glyph icons on every top face instead of text. The
+# edge board is the hero (cyan halo + dotted texture panel floating
+# behind it); clients flow in from the left, the shielded origin sits
+# back-right with a replica stack. Solid cyan pipes carry sync flow,
+# a dashed white bezier carries async cache-fill. Zero coordinates.
+
+canvas:
+  background: "#0A0A0B"
+  grid: iso
+  gridColor: "#161619"
+  gridStep: 40
+
+theme:
+  text:
+    family: "Inter, system-ui, sans-serif"
+    size: 11
+    weight: "600"
+    color: "#D4D4D8"
+  stroke:
+    color: "#2E2E33"
+    width: 1
+
+nodes:
+  scene:
+    shape: composite
+    parts:
+      # ── Clients (front-left, icon-only dark tiles) ───────────────
+      - id: client_mobile
+        shape: rectangle
+        geom: { w: 90, d: 90, h: 14 }
+        icon: "iso://glyph/mobile/light"
+        style: &client
+          palette: { top: "#1B1B1F", left: "#0E0E11", right: "#141417" }
+          stroke:  { color: "#3F3F46", width: 1 }
+          effects: { cornerRadius: 12 }
+      - id: client_browser
+        shape: rectangle
+        place: { inFrontOf: client_mobile, gap: 1 }
+        geom: { w: 90, d: 90, h: 14 }
+        icon: "iso://glyph/browser/light"
+        style: *client
+
+      # ── Decorative texture panel floating behind the edge board ──
+      - id: mesh_panel
+        shape: rectangle
+        place: { rightOf: client_mobile, behind: client_mobile, gap: 2 }
+        geom: { w: 260, d: 260, h: 6 }
+        style:
+          palette: { top: "#101013", left: "#0A0A0B", right: "#0D0D10" }
+          stroke:  { color: "#1F1F24", width: 1 }
+          effects:
+            cornerRadius: 10
+            pattern: { kind: "dots", color: "#1B7A96", spacing: 9 }
+
+      # ── Edge board (the hero: cyan halo, 2×2 glyph services) ─────
+      - id: edge
+        shape: group
+        place: { rightOf: client_mobile, inFrontOf: mesh_panel, gap: 2.5 }
+        geom: { h: 20 }
+        layout: { mode: grid, cols: 2, gap: 0.6 }
+        style:
+          palette:
+            top: "#141418"
+            leftGradient:  { from: "#155E75", to: "#0E2A33", dir: "down" }
+            rightGradient: { from: "#0E7490", to: "#10333D", dir: "down" }
+          stroke: { color: "#22D3EE", width: 1.1 }
+          effects:
+            cornerRadius: 14
+            backglow:   { color: "#22D3EE", radius: 42, opacity: 0.3 }
+            dropShadow: { dx: 0, dy: 12, blur: 18, color: "rgba(34,211,238,0.22)" }
+        parts:
+          - id: svc_cdn
+            shape: rectangle
+            geom: { w: 84, d: 84, h: 10 }
+            icon: "iso://glyph/globe/22D3EE"
+            style: &svc
+              palette: { top: "#1B1B1F", left: "#0E0E11", right: "#141417" }
+              stroke:  { color: "#155E75", width: 1 }
+              effects: { cornerRadius: 10 }
+          - id: svc_fn
+            shape: rectangle
+            geom: { w: 84, d: 84, h: 10 }
+            icon: "iso://glyph/bolt/22D3EE"
+            style: *svc
+          - id: svc_waf
+            shape: rectangle
+            geom: { w: 84, d: 84, h: 10 }
+            icon: "iso://glyph/shield/22D3EE"
+            style: *svc
+          - id: svc_kv
+            shape: rectangle
+            geom: { w: 84, d: 84, h: 10 }
+            icon: "iso://glyph/layers/22D3EE"
+            style: *svc
+
+      # ── Origin (back-right: gear cube + replica DB stack) ────────
+      - id: origin
+        shape: group
+        place: { rightOf: edge, behind: edge, gap: 2 }
+        geom: { h: 12 }
+        label: "Origin"
+        style:
+          palette: { top: "#121215", left: "#0B0B0D", right: "#0E0E11" }
+          stroke:  { color: "#2E2E33", width: 1 }
+          text:    { color: "#71717A", size: 10 }
+          effects: { cornerRadius: 12 }
+        parts:
+          - id: origin_app
+            shape: rectangle
+            geom: { w: 90, d: 90, h: 56 }
+            icon: "iso://glyph/gear/light"
+            style:
+              palette: { top: "#1B1B1F", left: "#0E0E11", right: "#141417" }
+              stroke:  { color: "#3F3F46", width: 1 }
+              effects: { cornerRadius: 10 }
+          - id: origin_db
+            shape: cylinder
+            place: { rightOf: origin_app, gap: 1, align: end }
+            geom: { w: 80, d: 80, h: 26 }
+            style:
+              palette: { top: "#E4F7FB", left: "#0E7490", right: "#22D3EE" }
+              stroke:  { color: "#0A0A0B", width: 1.1 }
+            stack: { count: 3, gap: 5 }
+
+    connectors:
+      # Sync flow: clients → edge → origin (neon pipes on the grid).
+      - { from: client_mobile,  to: edge, arrow: triangle, routing: orthogonal, stroke: { color: "#22D3EE", width: 1.8 } }
+      - { from: client_browser, to: edge, arrow: triangle, routing: orthogonal, stroke: { color: "#22D3EE", width: 1.8 } }
+      - { from: edge, to: origin,         arrow: triangle, routing: orthogonal, stroke: { color: "#22D3EE", width: 1.8 } }
+      # Async cache-fill: soft dashed arc back from origin to edge.
+      - { from: origin, to: mesh_panel, routing: bezier, stroke: { color: "#E4E4E7", width: 1, dash: "2 5" } }
+
+annotations:
+  - anchor: edge
+    side: bottom
+    distance: 60
+    text: "35 regions\ncold start < 5 ms"
+    bg: "#141418"
+    border: "#2E2E33"
+    color: "#E4E4E7"
+    fontSize: 13
+  - anchor: origin_db~2
+    side: right
+    distance: 55
+    text: "Origin shielded\n99.9% cache hit"
+    bg: "#141418"
+    border: "#2E2E33"
+    color: "#E4E4E7"
+    fontSize: 13

@@ -157,6 +157,8 @@ func RenderIsoBoxRounded(o IsoBoxOpts) string {
 			backglowID, o.BackglowRadius, op,
 		)
 	}
+	// v2.3 — hatch/dots texture overlaid on the top face.
+	patID := emitPatternDef(&defs, "rounded-pattern", o.PatternKind, o.PatternColor, o.PatternSpacing, o.PatternAngle)
 	if defs.Len() > 0 {
 		sb.WriteString(`<defs>`)
 		sb.WriteString(defs.String())
@@ -245,6 +247,10 @@ func RenderIsoBoxRounded(o IsoBoxOpts) string {
 		// 2. Top face filled + stroked (full rounded perimeter at z=h).
 		fmt.Fprintf(&sb, `<path data-face="top" d="%s" fill="%s" stroke="%s" stroke-width="%.2f" stroke-linejoin="round"/>`,
 			perimeterPath(p, false), topFill, escapeAttr(stroke), sw)
+		if patID != "" {
+			fmt.Fprintf(&sb, `<path data-face="top-pattern" d="%s" fill="url(#%s)" stroke="none"/>`,
+				perimeterPath(p, false), patID)
+		}
 		// 3. Silhouette stroke for the parts NOT on the top-face path: two
 		//    vertical edges + the bot-front-arc.
 		if len(frontIdx) >= 2 {

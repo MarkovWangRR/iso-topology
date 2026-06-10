@@ -105,9 +105,10 @@ declarative way with `place:`:
 
 Hand-written `offset: {wx, wy}` coordinates still work — but treat
 them as a fine-tune delta on top of `place`/`layout`, not the
-primary mechanism. The
-[layout-demo sample](../../samples/topology/layout-demo/input.yaml)
-shows every arrangement mode in one coordinate-free scene.
+primary mechanism. Every scene in
+[samples/topology](../../samples/topology) is coordinate-free; the
+[edge-platform sample](../../samples/topology/edge-platform/input.yaml)
+shows grid containers, place chains and auto-sizing in one file.
 
 Full grammar: [`reference/dsl-yaml.md`](../reference/dsl-yaml.md).
 

@@ -26,13 +26,8 @@ description matches your task, imitate its structure, then check
 
 | Fixture | Demonstrates |
 |---|---|
-| [`d2-containers`](../../samples/topology/d2-containers/input.d2) | d2 nested containers → iso group, automatic. |
-| [`d2-shape-zoo`](../../samples/topology/d2-shape-zoo/input.d2) | Shape zoo — every d2 shape the catalog maps, all in one .d2 source. |
-| [`k8s-litellm`](../../samples/topology/k8s-litellm/input.yaml) | k8s-litellm — Kubernetes cluster running LiteLLM proxy pods, routing to external LLM providers (replica of a reference diagram). |
-| [`kubernetes-cluster`](../../samples/topology/kubernetes-cluster/input.yaml) | Kubernetes Cluster + LiteLLM Proxy Pods — staggered layout reproduction. |
-| [`layout-demo`](../../samples/topology/layout-demo/input.yaml) | layout-demo — the v2.2 declarative layout primitives, end to end, with ZERO hand-authored coordinates. |
+| [`build-metrics`](../../samples/topology/build-metrics/input.yaml) | build-metrics — "engineering time" ghost-volume bar chart. |
+| [`edge-platform`](../../samples/topology/edge-platform/input.yaml) | edge-platform — dark-mode edge network platform. |
+| [`integration-hub`](../../samples/topology/integration-hub/input.yaml) | integration-hub — hub-and-spoke integrations ring. |
 | [`microservice`](../../samples/topology/microservice/input.d2) | microservice — minimal .d2 auto-layout path: person → services → database. |
-| [`multi-region`](../../samples/topology/multi-region/input.yaml) | Multi-region — replica of a dark-mode multi-region database architecture diagram (green accent on near-black background, Region A / Region B substrates each … |
-| [`starrocks`](../../samples/topology/starrocks/input.yaml) | StarRocks — replica of the unified-lakehouse marketing diagram. |
-| [`v2-showcase`](../../samples/topology/v2-showcase/input.yaml) | v2 primitives showcase — exercises every new DSL feature in one scene: |
-| [`vite-plus`](../../samples/topology/vite-plus/input.yaml) | VITE+ — replica of the official VITE+ dev-tool board. |
+| [`vpc-peering`](../../samples/topology/vpc-peering/input.yaml) | vpc-peering — dark-mode private peering between two VPCs. |

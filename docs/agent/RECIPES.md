@@ -55,8 +55,9 @@ corner-to-corner):
 - {id: s3, shape: rectangle, place: {rightOf: s2, inFrontOf: s2, gap: 0}, geom: {w: 120, d: 120, h: 70}}
 ```
 
-See [`samples/topology/starrocks`](../../samples/topology/starrocks/input.yaml)
-for this pattern anchoring a full marketing scene.
+See [`samples/topology/vpc-peering`](../../samples/topology/vpc-peering/input.yaml)
+for a two-step stair anchoring a full scene (substrates along the
+iso diagonal).
 
 ### I want a grid / dashboard of cells
 
@@ -74,8 +75,8 @@ One container, `layout: grid` — the substrate auto-sizes:
 ```
 
 `mode: row` marches along world +x, `column` along +y. See
-[`samples/topology/vite-plus`](../../samples/topology/vite-plus/input.yaml)
-for a 3×3 board with an extra wordmark row.
+[`samples/topology/edge-platform`](../../samples/topology/edge-platform/input.yaml)
+for a 2×2 service board carrying glyph icons.
 
 ### I want to nudge one part a few pixels
 
@@ -274,19 +275,26 @@ All three lower to the iso cylinder:
 
 Low-extrusion panel, just text on the top face. Good for titles.
 
-### I want a brand logo on a part
+### I want an icon on the top face instead of text
+
+The preferred look for showcase scenes — keep top faces visual,
+push words into screen-space labels or annotations.
 
 ```yaml
-- id: ingest
-  shape: rectangle
-  geom: {w: 60, d: 60, h: 8}
-  icon: "iso://brand/kafka"
+- {id: fn,    icon: "iso://glyph/bolt", shape: rectangle, geom: {w: 84, d: 84, h: 10}}
+- {id: cdn,   icon: "iso://glyph/globe/light", ...}     # white, for dark tops
+- {id: waf,   icon: "iso://glyph/shield/22D3EE", ...}   # any hex color
+- {id: queue, icon: "iso://brand/kafka", ...}           # brand letter badge
 ```
 
-Built-in badge names: spark, hadoop, mysql, postgresql, iceberg,
-hive, pulsar, kafka, redis, mongo, kubernetes, docker, github, aws,
-gcp, azure, starrocks, vite, rolldown, oxc. Any other `icon:` value
-is treated as a URL / data-URI.
+Glyph names (generic, stroke style): cloud, database, bolt, chart,
+globe, shield, lock, gear, cpu, code, layers, rocket, user, mobile,
+browser, search, bell, queue.
+
+Brand badge names: spark, hadoop, mysql, postgresql, iceberg, hive,
+pulsar, kafka, redis, mongo, kubernetes, docker, github, aws, gcp,
+azure, starrocks, vite, rolldown, oxc. Any other `icon:` value is
+treated as a URL / data-URI.
 
 ### I want flat / low / tall extrusion
 
@@ -417,10 +425,10 @@ nodes:
 
 Pick the central element, give it no `place` (it anchors the world
 origin), chain every satellite off it. See
-[`samples/topology/starrocks`](../../samples/topology/starrocks/input.yaml) /
-[`multi-region`](../../samples/topology/multi-region/input.yaml) /
-[`layout-demo`](../../samples/topology/layout-demo/input.yaml) — all
-three are coordinate-free.
+[`samples/topology/integration-hub`](../../samples/topology/integration-hub/input.yaml) /
+[`edge-platform`](../../samples/topology/edge-platform/input.yaml) /
+[`build-metrics`](../../samples/topology/build-metrics/input.yaml) —
+all coordinate-free.
 
 ## Validation
 

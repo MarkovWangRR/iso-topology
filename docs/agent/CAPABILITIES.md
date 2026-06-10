@@ -28,14 +28,14 @@ override per-part via `geom.h`.
 
 | Iso shape | Accepted aliases | Height hint | Notes |
 |---|---|---|---|
-| **circle** | `circle`, `oval` | 0.8 |  |
+| **circle** | `circle`, `oval` | 1.0 |  |
 | **cloud** | `cloud` | 0.8 | free-form rounded outline; no per-face palette overrides |
 | **composite** | `composite` | 1.0 | container — holds parts: [] of CompositePart entries |
 | **cylinder** | `cylinder`, `queue`, `stored-data`, `stored_data` | 1.0 |  |
 | **group** | `group` | 1.0 | v2 primitive — translucent labeled substrate wrapping nested parts |
 | **iso_text** | `text` | 0.3 | flat text panel (low extrusion) |
 | **person** | `c4-person`, `c4_person`, `person` | 1.2 |  |
-| **rectangle** | `callout`, `class`, `code`, `diamond`, `document`, `hexagon`, `hierarchy`, `image`, `package`, `page`, `parallelogram`, `rectangle`, `sequence-diagram`, `sequence_diagram`, `sql-table`, `sql_table`, `square`, `step` | 0.7 |  |
+| **rectangle** | `callout`, `class`, `code`, `diamond`, `document`, `hexagon`, `hierarchy`, `image`, `package`, `page`, `parallelogram`, `rectangle`, `sequence-diagram`, `sequence_diagram`, `sql-table`, `sql_table`, `square`, `step` | 0.3 |  |
 
 ## Composition primitives
 
@@ -147,17 +147,17 @@ Position a part relative to a SIBLING's footprint — the preferred way to compo
 | `leftOf` | sibling id — -x side (mutually exclusive with rightOf) |
 | `rightOf` | sibling id — this part sits on its +x side |
 
-### `brand-icon`
+### `icon`
 
 **Where:** `node.parts[*].icon`
 
-**Syntax:** `icon: "iso://brand/<name>"`
+**Syntax:** `icon: "iso://glyph/<name>[/light|/RRGGBB]" | "iso://brand/<name>"`
 
-Embed a built-in brand badge (monogram) on a part's top face. Names: spark, hadoop, mysql, postgresql, iceberg, hive, pulsar, kafka, redis, mongo, kubernetes, docker, github, aws, gcp, azure, starrocks, vite, rolldown, oxc. Any other icon value is treated as a URL / data-URI.
+Put an icon on a part's top face instead of text — the preferred look for showcase scenes. Glyphs (generic, stroke style): cloud, database, bolt, chart, globe, shield, lock, gear, cpu, code, layers, rocket, user, mobile, browser, search, bell, queue; default ink, /light = white (dark tops), /RRGGBB = custom. Brands (letter badges): spark, hadoop, mysql, postgresql, iceberg, hive, pulsar, kafka, redis, mongo, kubernetes, docker, github, aws, gcp, azure, starrocks, vite, rolldown, oxc. Any other icon value is treated as a URL / data-URI.
 
 | Field | Meaning |
 |---|---|
-| `icon` | iso://brand/<name> | https://… | data:image/… |
+| `icon` | iso://glyph/<name>[/variant] | iso://brand/<name> | https://… | data:image/… |
 
 ## Style keys
 

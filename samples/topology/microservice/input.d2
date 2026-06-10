@@ -1,23 +1,14 @@
 # microservice — minimal .d2 auto-layout path: person → services → database.
-user: User {
-  shape: person
-}
-
-api: API Gateway
-queue: Job Queue {
-  shape: queue
-}
+user:   User { shape: person }
+api:    API Gateway
+queue:  Job Queue { shape: queue }
 worker: Worker
-db: Database {
-  shape: cylinder
-}
-cache: Cache {
-  shape: cylinder
-}
+db:     Database { shape: cylinder }
+cache:  Cache    { shape: cylinder }
 
-user -> api: request
-api -> queue: enqueue
-api -> cache: lookup
-queue -> worker
-worker -> db: write
+user   -> api:   request
+api    -> queue: enqueue
+api    -> cache: lookup
+queue  -> worker
+worker -> db:    write
 worker -> cache: update

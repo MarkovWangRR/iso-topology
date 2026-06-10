@@ -2,7 +2,7 @@
 
 **Text in. Isometric SVG out. Architecture diagrams your agent can generate, validate, and diff.**
 
-![iso-topology hero — Kubernetes cluster running LiteLLM proxies with external LLM providers](docs/assets/kubernetes-cluster.png)
+![iso-topology hero — integration hub with eight satellite tiles in a ring](docs/assets/integration-hub.png)
 
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![Go 1.25](https://img.shields.io/badge/Go-1.25-00ADD8?logo=go&logoColor=white)](https://go.dev)
@@ -75,6 +75,47 @@ iso SVG out, source-controlled, agent-generatable.
 
 ## Gallery
 
+Every scene below is positioned entirely by `place` relations and
+`layout` containers — not a single hand-computed coordinate.
+
+### Integration hub (light · hub-and-spoke)
+
+![integration-hub](docs/assets/integration-hub.png)
+
+One violet hero with gradient flanks and a halo; eight icon-only
+satellite tiles ringed around it by `place` constraints, hairline
+spokes underneath. Source:
+[samples/topology/integration-hub/input.yaml](samples/topology/integration-hub/input.yaml).
+
+### Edge platform (dark · layered flow)
+
+![edge-platform](docs/assets/edge-platform.png)
+
+Near-black canvas, one neon accent. A `layout: grid` service board
+with cyan glyph icons, a dotted texture panel floating behind it,
+clients flowing in on orthogonal pipes and a replica origin stack
+shielded at the back. Source:
+[samples/topology/edge-platform/input.yaml](samples/topology/edge-platform/input.yaml).
+
+### VPC peering (dark · dual substrate)
+
+![vpc-peering](docs/assets/vpc-peering.png)
+
+Two auto-sized `group` substrates stacked along the iso diagonal —
+control plane behind, data plane in front — joined by a dashed
+bezier peering link. White-topped emerald cubes, glyph icons, SDK
+replica stack. Source:
+[samples/topology/vpc-peering/input.yaml](samples/topology/vpc-peering/input.yaml).
+
+### Build metrics (light · ghost volumes)
+
+![build-metrics](docs/assets/build-metrics.png)
+
+An iso bar chart: solid gradient bars with dashed wireframe "ghost"
+volumes above them showing reclaimable headroom, captions in screen
+space. Source:
+[samples/topology/build-metrics/input.yaml](samples/topology/build-metrics/input.yaml).
+
 ### Microservice (.d2 → dagre auto-layout)
 
 ![microservice topology](docs/assets/microservice.png)
@@ -96,23 +137,6 @@ worker -> cache: update
 ```
 
 Source: [samples/topology/microservice/input.d2](samples/topology/microservice/input.d2).
-
-### Kubernetes cluster + LiteLLM proxies (nested groups)
-
-![k8s-litellm](docs/assets/k8s-litellm.png)
-
-Three-level nested `group` primitive: cluster wraps worker nodes,
-each worker node wraps a proxy + a cache. Authored as YAML. Source:
-[samples/topology/k8s-litellm/input.yaml](samples/topology/k8s-litellm/input.yaml).
-
-### Four DSL primitives in one scene
-
-![v2-showcase](docs/assets/v2-showcase.png)
-
-`group` containers + `stack: {count: 3}` replicas + iso ground grid
-+ screen-space `annotation` callouts — all four composition
-primitives at once. Source:
-[samples/topology/v2-showcase/input.yaml](samples/topology/v2-showcase/input.yaml).
 
 ## Two input modes
 

@@ -1,0 +1,126 @@
+# vpc-peering — dark-mode private peering between two VPCs.
+# Design language: near-black canvas, ONE emerald accent. Two
+# auto-sized substrates stacked along the iso diagonal: the provider
+# VPC (back) runs the control plane, your VPC (front) runs the app
+# with an SDK replica stack and a cache. White-topped emerald-flanked
+# cubes, glyph icons on every top face, a dashed white bezier for the
+# peering link and solid emerald pipes for data flow. Zero coordinates.
+
+canvas:
+  background: "#0B0D0C"
+  grid: iso
+  gridColor: "#151A17"
+  gridStep: 40
+
+theme:
+  text:
+    family: "Inter, system-ui, sans-serif"
+    size: 11
+    weight: "600"
+    color: "#D1FAE5"
+  stroke:
+    color: "#2E3833"
+    width: 1
+
+nodes:
+  scene:
+    shape: composite
+    parts:
+      # ── Provider VPC (back substrate, control plane) ─────────────
+      - id: vpc_provider
+        shape: group
+        geom: { h: 14 }
+        label: "Cloud VPC"
+        layout: { mode: row, gap: 1.5 }
+        style: &vpc
+          palette: { top: "#15191B", left: "#0D0F10", right: "#111416" }
+          stroke:  { color: "#2E3833", width: 1 }
+          text:    { color: "#86EFAC", weight: "600", size: 11 }
+          effects: { cornerRadius: 14 }
+        parts:
+          - id: control_api
+            shape: rectangle
+            geom: { w: 96, d: 96, h: 62 }
+            icon: "iso://glyph/cloud/10B981"
+            style: &cube
+              palette:
+                top: "#FFFFFF"
+                leftGradient:  { from: "#10B981", to: "#065F46", dir: "down" }
+                rightGradient: { from: "#34D399", to: "#047857", dir: "down" }
+              stroke: { color: "#065F46", width: 1.1 }
+              effects:
+                cornerRadius: 8
+                dropShadow: { dx: 0, dy: 9, blur: 14, color: "rgba(16,185,129,0.25)" }
+          - id: control_db
+            shape: cylinder
+            geom: { w: 84, d: 84, h: 26 }
+            style:
+              palette: { top: "#ECFDF5", left: "#065F46", right: "#10B981" }
+              stroke:  { color: "#0B0D0C", width: 1.1 }
+            stack: { count: 3, gap: 5 }
+
+      # ── Your VPC (front substrate, data plane) ───────────────────
+      - id: vpc_yours
+        shape: group
+        place: { rightOf: vpc_provider, inFrontOf: vpc_provider, gap: 2 }
+        geom: { h: 14 }
+        label: "Your VPC"
+        layout: { mode: row, gap: 1.5 }
+        style: *vpc
+        parts:
+          - id: your_app
+            shape: rectangle
+            geom: { w: 96, d: 96, h: 62 }
+            icon: "iso://glyph/user/10B981"
+            style: *cube
+          - id: sdk
+            shape: rectangle
+            geom: { w: 84, d: 84, h: 16 }
+            icon: "iso://glyph/code/10B981"
+            style:
+              palette: { top: "#FFFFFF", left: "#065F46", right: "#059669" }
+              stroke:  { color: "#065F46", width: 1 }
+              effects: { cornerRadius: 8 }
+            stack: { count: 3, gap: 6 }
+          - id: cache
+            shape: cylinder
+            geom: { w: 84, d: 84, h: 30 }
+            style:
+              palette: { top: "#ECFDF5", left: "#065F46", right: "#10B981" }
+              stroke:  { color: "#0B0D0C", width: 1.1 }
+
+      # ── Decorative pedestal (depth cue, far front-left) ──────────
+      - id: pedestal
+        shape: rectangle
+        place: { leftOf: vpc_yours, inFrontOf: vpc_yours, gap: 1.5 }
+        geom: { w: 80, d: 80, h: 18 }
+        style:
+          palette: { top: "#15191B", left: "#0D0F10", right: "#111416" }
+          stroke:  { color: "#22291F", width: 1 }
+          effects: { cornerRadius: 10 }
+
+    connectors:
+      # Data flow inside each VPC (solid emerald, grid-aligned).
+      - { from: control_api, to: control_db, arrow: triangle, routing: orthogonal, stroke: { color: "#34D399", width: 1.6 } }
+      - { from: your_app, to: sdk,   arrow: triangle, routing: orthogonal, stroke: { color: "#34D399", width: 1.6 } }
+      - { from: sdk,      to: cache, arrow: triangle, routing: orthogonal, stroke: { color: "#34D399", width: 1.6 } }
+      # The peering link: dashed white arc between the two planes.
+      - { from: sdk, to: control_api, arrow: triangle, routing: bezier, stroke: { color: "#ECFDF5", width: 1.2, dash: "3 5" } }
+
+annotations:
+  - anchor: control_api
+    side: top
+    distance: 55
+    text: "Control plane\nstays in our VPC"
+    bg: "#15191B"
+    border: "#2E3833"
+    color: "#D1FAE5"
+    fontSize: 13
+  - anchor: sdk~2
+    side: right
+    distance: 60
+    text: "Private peering\nno public egress"
+    bg: "#15191B"
+    border: "#2E3833"
+    color: "#D1FAE5"
+    fontSize: 13

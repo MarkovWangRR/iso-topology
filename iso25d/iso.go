@@ -361,7 +361,7 @@ func RenderIsoBox(o IsoBoxOpts) string {
 	var sb strings.Builder
 	sb.WriteString(svgHeader(g.ViewW, g.ViewH))
 
-	topFill, leftFill, rightFill, shadowID := emitBoxDefs(&sb, &o)
+	topFill, leftFill, rightFill, shadowID, patID := emitBoxDefs(&sb, &o)
 
 	openWrapper(&sb, g.ViewW, g.ViewH, o.Background, o.Opacity, o.StrokeDasharray, shadowID)
 
@@ -372,6 +372,9 @@ func RenderIsoBox(o IsoBoxOpts) string {
 	writeFace(&sb, "left", leftFill, leftC, leftW, leftD, 0, g.D, g.H, g.G, g.C)
 	writeFace(&sb, "right", rightFill, rightC, rightW, rightD, 0, g.B, g.F, g.G, g.C)
 	writeFace(&sb, "top", topFill, topC, topW, topD, 0, g.E, g.F, g.G, g.H)
+	if patID != "" {
+		writeFace(&sb, "top-pattern", "url(#"+patID+")", "", 0, "", 0, g.E, g.F, g.G, g.H)
+	}
 
 	{
 		writeTopLabelAndIconV12(
@@ -387,9 +390,10 @@ func RenderIsoBox(o IsoBoxOpts) string {
 	return sb.String()
 }
 
-// emitBoxDefs emits any required <defs> (gradients + shadow filter) onto
-// sb and returns the fill references plus the shadow filter id.
-func emitBoxDefs(sb *strings.Builder, o *IsoBoxOpts) (topFill, leftFill, rightFill, shadowID string) {
+// emitBoxDefs emits any required <defs> (gradients + shadow filter +
+// pattern tile) onto sb and returns the fill references plus the shadow
+// filter and pattern ids.
+func emitBoxDefs(sb *strings.Builder, o *IsoBoxOpts) (topFill, leftFill, rightFill, shadowID, patID string) {
 	topFill, leftFill, rightFill = o.TopFill, o.LeftFill, o.RightFill
 	var defs strings.Builder
 	if o.TopGradient != nil {
@@ -408,12 +412,40 @@ func emitBoxDefs(sb *strings.Builder, o *IsoBoxOpts) (topFill, leftFill, rightFi
 		shadowID = "shadow"
 		emitDropShadowFilter(&defs, shadowID, o.ShadowDx, o.ShadowDy, o.ShadowBlur, o.ShadowColor)
 	}
+	patID = emitPatternDef(&defs, "pat-top", o.PatternKind, o.PatternColor, o.PatternSpacing, o.PatternAngle)
 	if defs.Len() > 0 {
 		sb.WriteString(`<defs>`)
 		sb.WriteString(defs.String())
 		sb.WriteString(`</defs>`)
 	}
 	return
+}
+
+// emitPatternDef writes a hatch/dots <pattern> tile def and returns its
+// id, or "" when the kind is empty/unknown so callers skip the overlay.
+func emitPatternDef(defs *strings.Builder, id, kind, color string, spacing, angle float64) string {
+	kind = strings.ToLower(strings.TrimSpace(kind))
+	if kind == "" || strings.TrimSpace(color) == "" {
+		return ""
+	}
+	if spacing <= 0 {
+		spacing = 8
+	}
+	switch kind {
+	case "hatch":
+		fmt.Fprintf(defs,
+			`<pattern id="%s" patternUnits="userSpaceOnUse" width="%.2f" height="%.2f" patternTransform="rotate(%.1f)">`+
+				`<line x1="0" y1="0" x2="0" y2="%.2f" stroke="%s" stroke-width="1" stroke-opacity="0.55"/></pattern>`,
+			id, spacing, spacing, angle, spacing, escapeAttr(color))
+	case "dots":
+		fmt.Fprintf(defs,
+			`<pattern id="%s" patternUnits="userSpaceOnUse" width="%.2f" height="%.2f">`+
+				`<circle cx="%.2f" cy="%.2f" r="1.1" fill="%s" fill-opacity="0.8"/></pattern>`,
+			id, spacing, spacing, spacing/2, spacing/2, escapeAttr(color))
+	default:
+		return ""
+	}
+	return id
 }
 
 // writeTopLabelAndIconV12 wraps writeTopLabelAndIcon with support for
