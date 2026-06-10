@@ -36,6 +36,22 @@ For shapes without three distinct faces (cylinder, sphere, cloud,
 person), `top` and `left`/`right` cover the lit and shadowed sides
 respectively.
 
+Each face can also take a **linear gradient** instead of a solid
+fill — the gradient wins when both are set:
+
+```yaml
+palette:
+  topGradient:   {from: "#FFE188", to: "#F59E0B", dir: down}
+  leftGradient:  {from: "#F4F4F8", to: "#D8DAE3", dir: down}
+  rightGradient: {from: "#FFFFFF", to: "#E8E8EE", dir: down}
+```
+
+`dir` is the gradient direction across the face (`down` is the
+common choice — lit top edge falling to a darker base). On
+`cornerRadius` parts, the rounded silhouette has one continuous side
+band: it runs `rightGradient.from` at the top to `leftGradient.to`
+at the bottom.
+
 ### `stroke`
 
 ```yaml
@@ -75,7 +91,18 @@ effects:
   opacity: 0.9            # 0-1, multiplied across the whole part
   margin:  4              # padding inside the iso box (for content shapes)
   cornerRadius: 8         # rounded corners on box-family parts
+  dropShadow: {dx: 0, dy: 10, blur: 16, color: "rgba(45,10,100,0.25)"}
+  backglow:   {color: "#FFC857", radius: 80, opacity: 0.55}
+  pattern:    {kind: hatch, color: "#FFFFFF", spacing: 8, angle: 30}
 ```
+
+- `dropShadow` — Gaussian-blurred offset shadow under the part
+  (screen units; positive dy = down). Use to lift heroes off the
+  canvas.
+- `backglow` — a blurred halo behind the silhouette. ONE per scene:
+  it marks "the" central element.
+- `pattern` — `hatch` or `dots` texture overlaid on the faces
+  (box and sphere today; cylinder sides not yet).
 
 ## The Theme block
 

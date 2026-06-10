@@ -62,10 +62,13 @@ iso-topology emits one translucent substrate per level — outer
 faded, inner stronger. Connectors reference full dot-paths:
 `cluster.region_a.pod -> cluster.region_b.pod`.
 
-## YAML equivalent (precise placement)
+## YAML equivalent (manual composition)
 
-If you need pixel-precise control, the YAML composite DSL has the
-same primitive — `shape: group`:
+When you want control over composition that auto-layout can't give
+(styled boards, stairs, hero scenes), switch to the YAML DSL. Same
+primitive — `shape: group` — but you still don't compute
+coordinates: give the group a `layout` and it arranges the children
+and sizes its own substrate around them:
 
 ```yaml
 nodes:
@@ -74,20 +77,37 @@ nodes:
     parts:
       - id: vpc
         shape: group
-        offset: {wx: 100, wy: 80}
-        geom:   {w: 480, d: 280, h: 6}
         label:  "AWS VPC"
+        layout: {mode: row, gap: 1.5}
         parts:
           - id: api
             shape: rectangle
-            offset: {wx: 40, wy: 40}
-            geom:   {w: 120, d: 80, h: 30}
-            label:  API
+            geom:  {w: 120, d: 80, h: 30}
+            label: API
+          - id: db
+            shape: cylinder
+            geom:  {w: 100, d: 100, h: 36}
+            label: DB
 ```
 
-Children's `offset` is interpreted **relative to the group's
-offset** — so `api` lands at world (140, 120) in the parent
-composite.
+`mode: row` marches the children along the iso x-axis; `gap` is in
+**cells** (1 cell = the canvas `gridStep`, default 40 world units).
+Free-standing parts outside a group are positioned the same
+declarative way with `place:`:
+
+```yaml
+      - id: monitor
+        shape: rectangle
+        place: {rightOf: vpc, gap: 2}
+        geom:  {w: 100, d: 100, h: 40}
+        label: Monitoring
+```
+
+Hand-written `offset: {wx, wy}` coordinates still work — but treat
+them as a fine-tune delta on top of `place`/`layout`, not the
+primary mechanism. The
+[layout-demo sample](../../samples/topology/layout-demo/input.yaml)
+shows every arrangement mode in one coordinate-free scene.
 
 Full grammar: [`reference/dsl-yaml.md`](../reference/dsl-yaml.md).
 

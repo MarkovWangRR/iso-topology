@@ -102,8 +102,7 @@ Source: [samples/topology/microservice/input.d2](samples/topology/microservice/i
 ![k8s-litellm](docs/assets/k8s-litellm.png)
 
 Three-level nested `group` primitive: cluster wraps worker nodes,
-each worker node wraps a proxy + a cache. Authored as YAML for
-precise placement. Source:
+each worker node wraps a proxy + a cache. Authored as YAML. Source:
 [samples/topology/k8s-litellm/input.yaml](samples/topology/k8s-litellm/input.yaml).
 
 ### Four DSL primitives in one scene
@@ -120,7 +119,7 @@ primitives at once. Source:
 | Path | Strength | Use when |
 |---|---|---|
 | `.d2` graph source | auto-layout via dagre or ELK | agents generating topology from graph data, dynamic scenes |
-| `.yaml` composite | precise iso world coordinates | designer-controlled scenes, fixed templates, infographics |
+| `.yaml` composite | declarative composition — `layout` containers + `place` relations, no hand-computed coordinates | designer-controlled scenes, fixed templates, infographics |
 
 Both produce the same output structure. Same `Document` model under
 the hood: `.d2` runs through `CompileD2 → Translate`, `.yaml` parses
@@ -131,10 +130,17 @@ directly. See [DSL_D2.md](docs/reference/dsl-d2.md) and
 
 - **23 d2 shapes** mapped to iso primitives (rectangle, cylinder,
   cloud, person, hexagon, queue, oval, …)
-- **2 layout engines**: dagre (polyline edges), ELK (orthogonal,
-  obstacle-avoidance)
-- **4 composition primitives**: `group`, `stack`, `canvas.grid`,
-  `annotation`
+- **2 layout engines** for `.d2`: dagre (polyline edges), ELK
+  (orthogonal, obstacle-avoidance)
+- **Declarative YAML positioning**: `layout: {mode: row|column|grid}`
+  containers and `place: {rightOf|inFrontOf: sibling}` relations —
+  the solver computes coordinates, validates references, and warns
+  on overlaps
+- **8 composition primitives**: `group`, `stack`, `layout`, `place`,
+  `canvas.grid`, `annotation`, `connector` (orthogonal/bezier),
+  brand icons (`iso://brand/kafka` …)
+- **Face styling**: per-face gradients, dropShadow, backglow,
+  hatch/dot patterns, cornerRadius
 - **3 input formats**: `.d2`, `.yaml`, `.json`
 - **Two-tier output**: topology SVG + per-element standalone SVG
 
@@ -188,7 +194,7 @@ Organized by purpose, not topic — full index at [docs/README.md](docs/README.m
 | Doc | Read when |
 |---|---|
 | [CLI + library API](docs/reference/cli.md) | subcommands, library entrypoints, signatures |
-| [YAML DSL](docs/reference/dsl-yaml.md) | precise iso placement — every field |
+| [YAML DSL](docs/reference/dsl-yaml.md) | declarative composition (layout/place) — every field |
 | [.d2 DSL](docs/reference/dsl-d2.md) | auto-layout path, d2 shape mapping, nested containers |
 | [Style / Theme](docs/reference/dsl-theme.md) | palette, stroke, text, effects, cascade |
 | [Output layout](docs/reference/output-layout.md) | what's in `out/`, embedding recipes |

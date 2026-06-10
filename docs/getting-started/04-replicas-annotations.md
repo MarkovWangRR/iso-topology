@@ -94,7 +94,6 @@ nodes:
     parts:
       - id: pod
         shape: rectangle
-        offset: {wx: 100, wy: 100}
         geom:   {w: 100, d: 100, h: 36}
         label:  "API Pod"
         style:

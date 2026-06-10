@@ -70,7 +70,7 @@ Most "wrong layout" complaints come from one of:
 
 | Symptom | Likely cause | Fix |
 |---|---|---|
-| Parts overlap inside a group | nested offset coordinates too tight | space children further; check `offset` is relative-to-parent in groups |
+| Parts overlap inside a group | hand-written offsets too tight | switch the group to `layout: {mode: row\|grid}` or `place` the children — the solver spaces them; `validate` warns with the exact colliding pair |
 | Connector skips a face | default anchor is centroid | use `from: api.right-mid` to pin an anchor face |
 | Stack only shows one layer | `stack.count` is ≤ 1 (no-op) | set `count: 3, gap: 10` |
 | Annotation invisible | anchor id doesn't resolve | run `validate` — it shows "did you mean" |
@@ -85,7 +85,8 @@ obstacle avoidance:
 isotopo render --layout elk scene.d2 ./out
 ```
 
-For more layout control, switch to YAML (precise placement) — see
+For more layout control, switch to YAML — declarative `layout`/`place`
+composition without hand-computed coordinates; see
 [`../reference/dsl-yaml.md`](../reference/dsl-yaml.md).
 
 ## Validation messages

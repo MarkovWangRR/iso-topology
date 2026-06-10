@@ -56,7 +56,9 @@ order — each step builds on the last.
   capability inventory (same as `isotopo capabilities`)
 - [`RECIPES.md`](agent/RECIPES.md) — task → DSL primitive lookup
 - [`PROMPT_TEMPLATE.md`](agent/PROMPT_TEMPLATE.md) — drop-in system
-  prompt
+  prompt (capability block auto-generated)
+- [`SAMPLES.md`](agent/SAMPLES.md) — generated index of the golden
+  fixtures: the few-shot library, one entry per worked scene
 - [`schema/dsl.schema.json`](agent/schema/dsl.schema.json) — JSON
   Schema for local lint (no CLI roundtrip)
 
@@ -67,6 +69,8 @@ order — each step builds on the last.
 | "How do I install it?" | [getting-started/01-install.md](getting-started/01-install.md) |
 | "Where do I start?" | [getting-started/02-first-scene.md](getting-started/02-first-scene.md) |
 | "How do I express N replicas?" | [agent/RECIPES.md](agent/RECIPES.md) |
+| "How do I position parts without coordinates?" | [agent/RECIPES.md](agent/RECIPES.md) § Positioning |
+| "Is there a full example like my task?" | [agent/SAMPLES.md](agent/SAMPLES.md) |
 | "Why isn't my callout showing?" | [guides/troubleshooting.md](guides/troubleshooting.md) |
 | "What does palette.left do?" | [reference/dsl-theme.md](reference/dsl-theme.md) |
 | "What's the difference between .d2 and .yaml?" | [concepts/why-isometric.md](concepts/why-isometric.md) |

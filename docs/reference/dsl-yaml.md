@@ -1,8 +1,11 @@
 # YAML composite DSL
 
-The YAML DSL gives you **precise iso placement**: every part has an
-explicit `(wx, wy, wz)` world coordinate. Use this when auto-layout
-won't do — designer-controlled scenes, infographics, fixed templates.
+The YAML DSL gives you **designer-grade iso composition** — styled
+boards, hero scenes, stairs, infographics — without hand-computed
+coordinates: parts are positioned **declaratively** with `layout`
+(container arrangement) and `place` (sibling relations), and the
+solver turns relations into world coordinates. Explicit
+`(wx, wy, wz)` offsets remain available as a fine-tune escape hatch.
 
 For auto-layout from a textual graph, see [DSL_D2.md](../reference/dsl-d2.md)
 instead.
@@ -40,12 +43,16 @@ canvas:
   background: "#FAFBFC"   # solid color behind the scene
   grid: iso               # iso | dots | hatch | solid | none
   gridColor: "#E2E6EE"    # pattern stroke / dot color
-  gridStep: 36            # tile size in world units (default 40)
+  gridStep: 40            # tile size in world units (default 40)
 ```
 
 `grid: iso` draws a dashed-diamond ground plane that aligns with the
 iso projection — gives the scene a sense of place. Skip the field
 entirely to get a transparent background.
+
+`gridStep` doubles as the **cell** unit used by `layout`/`place`
+gaps, so arranged parts and orthogonal connectors land exactly on
+the grid texture.
 
 ## Theme
 
@@ -100,24 +107,32 @@ One entry inside `nodes.scene.parts`:
     w: 140       # iso world X extent
     d: 90        # iso world Y extent (depth into screen)
     h: 30        # iso world Z extent (extrusion height)
-  offset:
-    wx: 200      # iso world X position
-    wy: 80       # iso world Y position
-    wz: 0        # iso world Z position (height above ground)
+  place:
+    rightOf: gateway   # position = solved from a sibling relation
+    gap: 2             # in cells
   label: "API Gateway"
-  icon: "https://…/icon.svg"   # optional embedded icon
+  icon: "iso://brand/kafka"    # optional icon (brand badge / URL / data-URI)
   style:
     palette: {top: "#3B82F6"}
     text:    {color: "#FFFFFF"}
 ```
 
+Sizes (`geom`) are explicit and semantic — heroes big, tiles small.
+Positions come from `place`/`layout` (next section); an `offset:
+{wx, wy, wz}` field is applied as a **delta on top** of the solved
+position (or as the absolute position when no relation is given —
+legacy documents render unchanged).
+
 The world axes form a left-handed iso frame:
-- **wx** runs to the right and down (after projection),
-- **wy** runs to the left and down,
+- **wx** runs to the right and down (after projection) — `rightOf`
+  moves along +wx,
+- **wy** runs to the left and down — `inFrontOf` moves along +wy
+  (toward the viewer),
 - **wz** is vertical screen up.
 
-For a beginner, just remember: bigger wx + wy = further back in the
-scene. Bigger wz = taller.
+For a beginner, just remember: `behind` = away from the viewer
+(smaller wy), `inFrontOf` = toward the viewer (bigger wy), and
+bigger wz = higher off the ground.
 
 ## Shapes
 
@@ -136,29 +151,82 @@ Native iso shapes (see `isotopo capabilities`):
 
 ## Composition primitives
 
+### `place` — position relative to a sibling
+
+The default way to position free-standing parts. One constraint per
+ground axis; the solver resolves chains topologically:
+
+```yaml
+- id: gateway
+  shape: rectangle                       # no place → anchors the scene
+  geom: {w: 100, d: 100, h: 90}
+- id: api
+  shape: rectangle
+  place: {rightOf: gateway, gap: 2}      # 2 cells to gateway's +x side
+  geom: {w: 120, d: 80, h: 30}
+- id: s2
+  shape: rectangle
+  place: {rightOf: api, inFrontOf: api, gap: 0}   # corner-to-corner stair
+  geom: {w: 120, d: 80, h: 30}
+```
+
+| Field | Meaning |
+|---|---|
+| `rightOf` / `leftOf` | pin world x to the sibling's +x / −x side (mutually exclusive) |
+| `inFrontOf` / `behind` | pin world y toward / away from the viewer (mutually exclusive) |
+| `gap` | distance from the sibling's footprint, in cells (default 1) |
+| `align` | `start` \| `center` \| `end` — alignment along the unconstrained axis (default center) |
+
+References must be **siblings** (same `parts:` list). Dangling refs
+and cycles are validation errors; if the solved scene still has
+overlapping siblings you get a warning naming the exact pair.
+
+### `layout` — auto-arrange a container's children
+
+On a `group` (or the root composite). Children need no positions at
+all; a layout group's substrate **auto-sizes** around the content,
+so its `geom.w/d` may be omitted:
+
+```yaml
+- id: board
+  shape: group
+  label: "Dashboard"
+  geom: {h: 20}                          # thickness only
+  layout: {mode: grid, cols: 3, gap: 0.5, padding: 0.7}
+  parts:
+    - {id: c1, shape: rectangle, geom: {w: 90, d: 90, h: 4}, label: test}
+    - {id: c2, shape: rectangle, geom: {w: 90, d: 90, h: 4}, label: dev}
+    # …
+```
+
+| Field | Meaning |
+|---|---|
+| `mode` | `row` (world +x) \| `column` (world +y) \| `grid` (row-major wrap) |
+| `cols` | grid only; default ceil(√n) |
+| `gap` | space between children, in cells (default 1) |
+| `padding` | content inset from the container edge, in cells (defaults to gap) |
+| `align` | cross-axis alignment within each track (default center) |
+
 ### `group` — labeled translucent container
 
 Wrap N parts in a translucent rounded substrate with a corner label.
-Children's `offset` is interpreted **relative to the group's offset**.
+Position children with `layout` (above) or per-child `place`; the
+substrate auto-sizes around the solved content:
 
 ```yaml
 - id: cluster
   shape: group
-  offset: {wx: 100, wy: 60}
-  geom:   {w: 500, d: 320, h: 6}   # H is the substrate thickness
   label:  "Kubernetes Cluster"
+  layout: {mode: row, gap: 1.5}
   parts:
-    - id: api
-      shape: rectangle
-      offset: {wx: 40, wy: 40}     # 40,40 inside the cluster
-      ...
-    - id: worker
-      shape: rectangle
-      offset: {wx: 200, wy: 40}
-      ...
+    - {id: api,    shape: rectangle, geom: {w: 120, d: 80, h: 30}}
+    - {id: worker, shape: rectangle, geom: {w: 120, d: 80, h: 30}}
 ```
 
-Groups nest unboundedly — a group inside a group inside a group works.
+Groups nest unboundedly — a group inside a group inside a group
+works; inner groups are solved first so outer layouts see their
+final footprint. Hand-positioned children (`offset` relative to the
+group, no auto-size) remain supported for legacy documents.
 
 ### `stack` — auto-replicate N times
 
@@ -193,11 +261,16 @@ nodes:
     connectors:
       - from: api               # part id (or "id.anchor" — see below)
         to:   db
-        routing: orthogonal     # straight (default) | orthogonal
+        routing: orthogonal     # straight (default) | orthogonal | bezier
         arrow:   triangle       # none (default) | triangle
         label:   "query"
         stroke:  {color: "#1F2937", width: 1.2, dash: "4 3"}
 ```
+
+`orthogonal` bends along the iso ground axes (every segment projects
+to exactly ±30°, in register with `canvas.grid: iso`) — prefer it
+for architecture flows. `bezier` draws a single soft quadratic arc —
+reads as async/replication traffic.
 
 Anchor selectors: `"api.right-mid"`, `"api.top-back"`, etc. — pick a
 specific face-center on the source/target part. Default is the part
@@ -223,11 +296,14 @@ to the anchor part. Multi-line text is supported via `\n`.
 
 ## Worked example
 
+Note: not a single hand-written coordinate.
+
 ```yaml
 canvas:
   background: "#FAFBFC"
   grid: iso
   gridColor: "#E2E6EE"
+  gridStep: 40
 
 theme:
   palette: {top: "#FFFFFF", left: "#7E94B5", right: "#A6B7D2"}
@@ -240,22 +316,25 @@ nodes:
     parts:
       - id: cluster
         shape: group
-        offset: {wx: 0, wy: 0}
-        geom:   {w: 480, d: 280, h: 6}
         label:  "Cluster"
+        layout: {mode: row, gap: 1.5}
         parts:
           - id: api
             shape: rectangle
-            offset: {wx: 40, wy: 40}
-            geom:   {w: 120, d: 80, h: 30}
-            label:  "API"
+            geom:  {w: 120, d: 80, h: 30}
+            label: "API"
           - id: pods
             shape: rectangle
-            offset: {wx: 220, wy: 40}
-            geom:   {w: 100, d: 100, h: 30}
-            label:  "Pods"
-            stack:  {count: 3, gap: 10}
+            geom:  {w: 100, d: 100, h: 30}
+            label: "Pods"
+            stack: {count: 3, gap: 10}
+      - id: ingress
+        shape: cloud
+        place: {behind: cluster, gap: 2}
+        geom:  {w: 120, d: 80, h: 24}
+        label: "Ingress"
     connectors:
+      - {from: ingress, to: cluster, routing: orthogonal, arrow: triangle}
       - {from: api, to: pods, routing: orthogonal, arrow: triangle}
 
 annotations:
@@ -289,4 +368,9 @@ isotopo validate scene.yaml
 
 Catches: unknown shape names ("did you mean cylinder?"), annotation
 anchors that don't resolve, missing connector targets, bad grid mode
-names. JSON output with paths is ready for agent self-correction.
+names — plus the layout solver's dry run: dangling `place` refs
+(with nearest-id suggestion), `place` cycles, conflicting
+constraints, and post-solve sibling overlaps (warning naming the
+exact pair and overlap size). JSON output with paths is ready for
+agent self-correction. Exit codes: 0 clean, 2 warnings only, 3
+errors.

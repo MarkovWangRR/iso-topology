@@ -28,14 +28,14 @@ override per-part via `geom.h`.
 
 | Iso shape | Accepted aliases | Height hint | Notes |
 |---|---|---|---|
-| **circle** | `circle`, `oval` | 1.0 |  |
+| **circle** | `circle`, `oval` | 0.8 |  |
 | **cloud** | `cloud` | 0.8 | free-form rounded outline; no per-face palette overrides |
 | **composite** | `composite` | 1.0 | container — holds parts: [] of CompositePart entries |
 | **cylinder** | `cylinder`, `queue`, `stored-data`, `stored_data` | 1.0 |  |
 | **group** | `group` | 1.0 | v2 primitive — translucent labeled substrate wrapping nested parts |
 | **iso_text** | `text` | 0.3 | flat text panel (low extrusion) |
 | **person** | `c4-person`, `c4_person`, `person` | 1.2 |  |
-| **rectangle** | `callout`, `class`, `code`, `diamond`, `document`, `hexagon`, `hierarchy`, `image`, `package`, `page`, `parallelogram`, `rectangle`, `sequence-diagram`, `sequence_diagram`, `sql-table`, `sql_table`, `square`, `step` | 1.0 |  |
+| **rectangle** | `callout`, `class`, `code`, `diamond`, `document`, `hexagon`, `hierarchy`, `image`, `package`, `page`, `parallelogram`, `rectangle`, `sequence-diagram`, `sequence_diagram`, `sql-table`, `sql_table`, `square`, `step` | 0.7 |  |
 
 ## Composition primitives
 
@@ -43,14 +43,15 @@ override per-part via `geom.h`.
 
 **Where:** `node.parts[*]`
 
-**Syntax:** `{shape: group, parts: [...], label: "…", geom: {w, d, h}, offset: {wx, wy}}`
+**Syntax:** `{shape: group, layout: {mode: row|column|grid}, parts: [...], label: "…", geom: {h}}`
 
-Wrap N parts in a translucent labeled iso substrate. Children's offsets are interpreted relative to the group's offset.
+Wrap N parts in a translucent labeled iso substrate. Position children with layout (or per-child place) — the substrate then auto-sizes around them, so geom.w/d may be omitted. Child offsets are fine-tune deltas relative to the group.
 
 | Field | Meaning |
 |---|---|
-| `geom` | substrate W × D footprint; H is the substrate thickness (low, default 6) |
+| `geom` | h = substrate thickness (low, default 6); w/d only when overriding the auto-sized footprint |
 | `label` | rendered on the top face of the substrate (or screen-space if style.text.orient=screen) |
+| `layout` | auto-arrangement of the children — preferred over per-child coordinates |
 | `parts` | list of CompositePart (other groups OK — supports unlimited nesting) |
 
 ### `stack`

@@ -1,5 +1,5 @@
-# Replica of /Users/markovwong/Desktop/25d-sample/微信图片_20260608214505_42_38.jpg
-# (Kubernetes Cluster running LiteLLM Proxy Pods, routing to external LLM providers)
+# k8s-litellm — Kubernetes cluster running LiteLLM proxy pods,
+# routing to external LLM providers (replica of a reference diagram).
 #
 # Goal: prove the v2 DSL primitives can express a 3-level nested-group
 # topology with cross-group connectors and side panels.

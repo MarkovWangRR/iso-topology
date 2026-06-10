@@ -139,12 +139,13 @@ func buildPrimitiveCaps() []PrimitiveCap {
 		{
 			Name:    "group",
 			Where:   "node.parts[*]",
-			Syntax:  "{shape: group, parts: [...], label: \"…\", geom: {w, d, h}, offset: {wx, wy}}",
-			Purpose: "Wrap N parts in a translucent labeled iso substrate. Children's offsets are interpreted relative to the group's offset.",
+			Syntax:  "{shape: group, layout: {mode: row|column|grid}, parts: [...], label: \"…\", geom: {h}}",
+			Purpose: "Wrap N parts in a translucent labeled iso substrate. Position children with layout (or per-child place) — the substrate then auto-sizes around them, so geom.w/d may be omitted. Child offsets are fine-tune deltas relative to the group.",
 			Fields: map[string]string{
-				"parts": "list of CompositePart (other groups OK — supports unlimited nesting)",
-				"label": "rendered on the top face of the substrate (or screen-space if style.text.orient=screen)",
-				"geom":  "substrate W × D footprint; H is the substrate thickness (low, default 6)",
+				"parts":  "list of CompositePart (other groups OK — supports unlimited nesting)",
+				"layout": "auto-arrangement of the children — preferred over per-child coordinates",
+				"label":  "rendered on the top face of the substrate (or screen-space if style.text.orient=screen)",
+				"geom":   "h = substrate thickness (low, default 6); w/d only when overriding the auto-sized footprint",
 			},
 		},
 		{

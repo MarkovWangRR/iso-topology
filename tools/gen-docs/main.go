@@ -17,6 +17,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 
@@ -32,7 +33,192 @@ func main() {
 		fmt.Fprintln(os.Stderr, "dsl.schema.json:", err)
 		os.Exit(1)
 	}
-	fmt.Fprintln(os.Stderr, "ok: wrote docs/agent/CAPABILITIES.md and docs/agent/schema/dsl.schema.json")
+	if err := updatePromptTemplate(); err != nil {
+		fmt.Fprintln(os.Stderr, "PROMPT_TEMPLATE.md:", err)
+		os.Exit(1)
+	}
+	if err := writeSamplesIndex(); err != nil {
+		fmt.Fprintln(os.Stderr, "SAMPLES.md:", err)
+		os.Exit(1)
+	}
+	fmt.Fprintln(os.Stderr, "ok: wrote CAPABILITIES.md, dsl.schema.json, SAMPLES.md; patched PROMPT_TEMPLATE.md")
+}
+
+// updatePromptTemplate splices a freshly generated "minimal template"
+// block (the drop-in system prompt, capability lines included) between
+// sentinel comments in docs/agent/PROMPT_TEMPLATE.md. The narrative
+// sections around it stay hand-written; the part that restates the
+// capability surface is generated so it CANNOT drift from
+// CapabilityReport() — the failure mode where the agent prompt taught
+// a stale DSL is mechanically impossible now.
+func updatePromptTemplate() error {
+	const (
+		path  = "docs/agent/PROMPT_TEMPLATE.md"
+		begin = "<!-- BEGIN GENERATED: minimal-template (gen-docs) -->"
+		end   = "<!-- END GENERATED: minimal-template -->"
+	)
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		return err
+	}
+	s := string(raw)
+	bi := strings.Index(s, begin)
+	ei := strings.Index(s, end)
+	if bi < 0 || ei < 0 || ei < bi {
+		return fmt.Errorf("sentinels %q / %q not found in %s", begin, end, path)
+	}
+	block := begin + "\n" + renderMinimalTemplate(isotopo.CapabilityReport()) + "\n" + end
+	out := s[:bi] + block + s[ei+len(end):]
+	return os.WriteFile(path, []byte(out), 0o644)
+}
+
+func renderMinimalTemplate(cap isotopo.Capabilities) string {
+	var b strings.Builder
+	b.WriteString("```text\n")
+	b.WriteString("You are an assistant that produces iso-topology DSL. iso-topology\n")
+	b.WriteString("renders 2.5D isometric architecture diagrams from textual DSL.\n\n")
+
+	fmt.Fprintf(&b, "CAPABILITIES v%s (the only DSL you may emit):\n", cap.Version)
+	b.WriteString("- Input formats: .yaml (manual composition) or .d2 (auto-layout).\n")
+	isoNames := make([]string, 0, len(cap.Shapes))
+	for _, sh := range cap.Shapes {
+		isoNames = append(isoNames, sh.IsoName)
+	}
+	sort.Strings(isoNames)
+	fmt.Fprintf(&b, "- Shapes: %s.\n", strings.Join(isoNames, ", "))
+	b.WriteString("  (d2 aliases like queue/stored_data/hexagon also accepted — see CAPABILITIES.md.)\n")
+	b.WriteString("- Composition primitives (YAML):\n")
+	for _, p := range cap.Primitives {
+		fmt.Fprintf(&b, "    %-11s %s\n", p.Name+":", p.Syntax)
+	}
+	b.WriteString("- Style sub-blocks:\n")
+	for _, g := range cap.StyleKeys {
+		fmt.Fprintf(&b, "    %-9s %s\n", g.Block+":", strings.Join(g.Fields, ", "))
+	}
+
+	b.WriteString(`
+POSITIONING RULES:
+- NEVER hand-compute coordinates. Pick ONE anchor part per scene and
+  chain everything else off it with place; arrange container children
+  with layout. All gaps/padding are in CELLS (1 cell = gridStep).
+- A stair = each tile {rightOf: prev, inFrontOf: prev}. A dashboard
+  grid = one group with layout {mode: grid}. Region substrates with
+  layout or place children auto-size — omit their geom.w/d.
+- offset is a fine-tune delta on top of a solved position. Reach for
+  it last, never as the primary mechanism.
+- Sizes stay explicit and semantic: hero parts big (geom 200+),
+  supporting tiles small (60-130).
+
+OUTPUT CONTRACT:
+- Emit exactly one fenced code block containing valid YAML (or .d2).
+- The YAML must have a top-level nodes: map with a node named scene
+  whose shape is composite.
+- Use ids that are short, lowercase, and snake_case.
+- Validate mentally before emitting: every place/connector/annotation
+  reference must name an existing part id; place refs must be
+  SIBLINGS (same parts list); no place cycles.
+
+VALIDATION LOOP:
+- The harness runs isotopo validate (exit 0 clean / 2 warnings only /
+  3 errors) and may send the JSON issues back. Each issue has:
+    severity, path (JSONPath into your DSL), message, suggest.
+- Overlap warnings name the exact colliding pair — raise that place
+  gap or rearrange, then re-emit the COMPLETE corrected YAML.
+
+WHEN UNSURE:
+- Prefer .d2 input for plain box-and-arrow graphs; use .yaml when the
+  scene needs composition (groups, stairs, stacks, styled boards).
+- Default shapes: rectangle = compute, cylinder = data, person =
+  human actor, cloud = external system.
+- Default canvas: {background: "#FAFBFC", grid: iso, gridColor: "#E2E6EE", gridStep: 40}.
+- Connectors: routing orthogonal for architecture flow (rides the iso
+  grid), bezier for async/replication links.
+
+<TASK>
+{user's actual prompt here}
+</TASK>
+` + "```")
+	return b.String()
+}
+
+// writeSamplesIndex generates docs/agent/SAMPLES.md from the header
+// comment of every samples/*/*/input.* fixture — the golden corpus
+// doubles as a few-shot library, and this index is how a human or an
+// agent finds the fixture that demonstrates a given primitive.
+func writeSamplesIndex() error {
+	var b strings.Builder
+	b.WriteString("# Samples index\n\n")
+	b.WriteString("Generated from `samples/*/*/input.*` header comments — run\n")
+	b.WriteString("`go run ./tools/gen-docs` to refresh. Every fixture is a\n")
+	b.WriteString("golden-tested, copy-paste-ready example; `expected.svg` next to\n")
+	b.WriteString("each input is the rendered output.\n\n")
+	b.WriteString("Reading order for agents: start with the fixture whose\n")
+	b.WriteString("description matches your task, imitate its structure, then check\n")
+	b.WriteString("[`RECIPES.md`](RECIPES.md) for the primitive-level grammar.\n")
+
+	for _, category := range []string{"node", "topology"} {
+		fmt.Fprintf(&b, "\n## samples/%s\n\n", category)
+		b.WriteString("| Fixture | Demonstrates |\n|---|---|\n")
+		root := filepath.Join("samples", category)
+		entries, err := os.ReadDir(root)
+		if err != nil {
+			return err
+		}
+		for _, e := range entries {
+			if !e.IsDir() {
+				continue
+			}
+			desc, input := sampleHeader(filepath.Join(root, e.Name()))
+			if input == "" {
+				continue
+			}
+			fmt.Fprintf(&b, "| [`%s`](../../samples/%s/%s/%s) | %s |\n",
+				e.Name(), category, e.Name(), input, desc)
+		}
+	}
+	return os.WriteFile("docs/agent/SAMPLES.md", []byte(b.String()), 0o644)
+}
+
+// sampleHeader returns the fixture's one-line description (the first
+// comment lines of its input file, joined until the first blank/non-
+// comment line) and the input filename.
+func sampleHeader(dir string) (desc, input string) {
+	for _, name := range []string{"input.yaml", "input.d2", "input.json"} {
+		raw, err := os.ReadFile(filepath.Join(dir, name))
+		if err != nil {
+			continue
+		}
+		var lines []string
+		for _, l := range strings.Split(string(raw), "\n") {
+			t := strings.TrimSpace(l)
+			if !strings.HasPrefix(t, "#") {
+				break
+			}
+			t = strings.TrimSpace(strings.TrimPrefix(t, "#"))
+			if t == "" {
+				break
+			}
+			lines = append(lines, t)
+			// Stop at the end of the first sentence, or after 4 lines.
+			if strings.HasSuffix(t, ".") || len(lines) == 4 {
+				break
+			}
+		}
+		d := strings.Join(lines, " ")
+		if i := strings.Index(d, ". "); i >= 0 {
+			d = d[:i+1]
+		}
+		if len(d) > 160 {
+			if cut := strings.LastIndex(d[:160], " "); cut > 0 {
+				d = d[:cut] + " …"
+			}
+		}
+		if d == "" {
+			d = "(no header comment)"
+		}
+		return d, name
+	}
+	return "", ""
 }
 
 // writeCapabilitiesMarkdown renders CapabilityReport() into a

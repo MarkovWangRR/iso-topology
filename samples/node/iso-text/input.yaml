@@ -1,3 +1,4 @@
+# iso_text — flat text panel (near-zero extrusion); good for titles and captions.
 canvas:
   background: "#FAFBFC"
 

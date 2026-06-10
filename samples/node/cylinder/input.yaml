@@ -1,3 +1,4 @@
+# cylinder — the database/queue primitive: elliptical top, curved side wall.
 canvas:
   background: "#FAFBFC"
 
