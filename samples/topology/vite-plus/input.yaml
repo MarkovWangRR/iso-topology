@@ -11,6 +11,10 @@
 #   - companion tools VITE/ROLLDOWN/OXC: same rounded card shape
 #   - file extension tiles: white rounded cards, 1px black stroke
 #   - hairline connectors must follow iso axes (orthogonal routing)
+#
+# v2.2 — ZERO hand-authored coordinates. The board is a `layout: grid`
+# container (cells + wordmark as a fourth row); everything else chains
+# off the board with `place` relations. One cell = 40 world units.
 
 canvas:
   background: "#FFFFFF"
@@ -29,11 +33,11 @@ nodes:
   scene:
     shape: composite
     parts:
-      # ── Central VITE+ board (purple slab) ─────────────────────────
+      # ── Central VITE+ board (purple slab, auto-sized 3×3 grid) ────
       - id: board
         shape: group
-        offset: { wx: 0, wy: 0 }
-        geom: { w: 380, d: 380, h: 22 }
+        geom: { h: 22 }
+        layout: { mode: grid, cols: 3, gap: 0.3, padding: 0.7 }
         style:
           palette:
             topGradient:   { from: "#9F7AEA", to: "#5B21B6", dir: "down" }
@@ -50,7 +54,6 @@ nodes:
           - id: c00
             shape: rectangle
             geom: { w: 90, d: 90, h: 4 }
-            offset: { wx: 28, wy: 28 }
             label: "test"
             style:
               palette: { top: "#FAFAFC", left: "#D8DAE3", right: "#E8EAF1" }
@@ -60,7 +63,6 @@ nodes:
           - id: c01_dev
             shape: rectangle
             geom: { w: 90, d: 90, h: 18 }
-            offset: { wx: 130, wy: 28 }
             label: "dev"
             style:
               palette: { top: "#FFFFFF", left: "#5B21B6", right: "#6D28D9" }
@@ -72,7 +74,6 @@ nodes:
           - id: c02_run
             shape: rectangle
             geom: { w: 90, d: 90, h: 4 }
-            offset: { wx: 232, wy: 28 }
             label: "run"
             style:
               palette: { top: "#FAFAFC", left: "#D8DAE3", right: "#E8EAF1" }
@@ -84,7 +85,6 @@ nodes:
           - id: c10
             shape: rectangle
             geom: { w: 90, d: 90, h: 4 }
-            offset: { wx: 28, wy: 130 }
             label: ""
             style:
               palette: { top: "#FAFAFC", left: "#D8DAE3", right: "#E8EAF1" }
@@ -93,7 +93,6 @@ nodes:
           - id: c11_build
             shape: rectangle
             geom: { w: 90, d: 90, h: 18 }
-            offset: { wx: 130, wy: 130 }
             label: "build"
             style:
               palette: { top: "#FFFFFF", left: "#5B21B6", right: "#6D28D9" }
@@ -105,7 +104,6 @@ nodes:
           - id: c12_format
             shape: rectangle
             geom: { w: 90, d: 90, h: 4 }
-            offset: { wx: 232, wy: 130 }
             label: "format"
             style:
               palette: { top: "#FAFAFC", left: "#D8DAE3", right: "#E8EAF1" }
@@ -117,7 +115,6 @@ nodes:
           - id: c20_lint
             shape: rectangle
             geom: { w: 90, d: 90, h: 4 }
-            offset: { wx: 28, wy: 232 }
             label: "lint"
             style:
               palette: { top: "#FAFAFC", left: "#D8DAE3", right: "#E8EAF1" }
@@ -127,7 +124,6 @@ nodes:
           - id: c21_ui
             shape: rectangle
             geom: { w: 90, d: 90, h: 4 }
-            offset: { wx: 130, wy: 232 }
             label: "ui"
             style:
               palette: { top: "#FAFAFC", left: "#D8DAE3", right: "#E8EAF1" }
@@ -137,7 +133,6 @@ nodes:
           - id: c22_lib
             shape: rectangle
             geom: { w: 90, d: 90, h: 4 }
-            offset: { wx: 232, wy: 232 }
             label: "lib"
             style:
               palette: { top: "#FAFAFC", left: "#D8DAE3", right: "#E8EAF1" }
@@ -145,11 +140,10 @@ nodes:
               text: { color: "#4C4C5C", weight: "500", size: 10 }
               effects: { cornerRadius: 10 }
 
-          # VITE+ wordmark sits on the slab's front-left rim
+          # ── Row 3: VITE+ wordmark on the slab's front-left rim ──
           - id: vitep_logo
             shape: iso_text
             geom: { w: 90, d: 26, h: 1 }
-            offset: { wx: 28, wy: 340 }
             label: "VITE+"
             style:
               palette: { top: "#7C3AED" }
@@ -158,7 +152,7 @@ nodes:
       # ── Bottom companion tools (VITE / ROLLDOWN / OXC) ────────────
       - id: vite_tile
         shape: rectangle
-        offset: { wx: 30, wy: 460 }
+        place: { inFrontOf: board, gap: 2, align: start }
         geom: { w: 110, d: 100, h: 18 }
         label: "VITE"
         style:
@@ -168,7 +162,7 @@ nodes:
           effects: { cornerRadius: 14 }
       - id: rolldown_tile
         shape: rectangle
-        offset: { wx: 175, wy: 460 }
+        place: { rightOf: vite_tile, gap: 0.9 }
         geom: { w: 110, d: 100, h: 18 }
         label: "ROLLDOWN"
         style:
@@ -178,7 +172,7 @@ nodes:
           effects: { cornerRadius: 14 }
       - id: oxc_tile
         shape: rectangle
-        offset: { wx: 320, wy: 460 }
+        place: { rightOf: rolldown_tile, gap: 0.9 }
         geom: { w: 110, d: 100, h: 4 }
         label: "OXC"
         style:
@@ -188,9 +182,10 @@ nodes:
           effects: { cornerRadius: 14 }
 
       # ── Left-side file extensions (.TS / .VUE / .MTS / .JSON) ────
+      # A staggered cascade falling down the board's left flank.
       - id: ts
         shape: rectangle
-        offset: { wx: -240, wy: 80 }
+        place: { leftOf: board, gap: 4, align: start }
         geom: { w: 80, d: 70, h: 5 }
         label: ".TS"
         style:
@@ -200,7 +195,7 @@ nodes:
           effects: { cornerRadius: 10 }
       - id: vue
         shape: rectangle
-        offset: { wx: -180, wy: 160 }
+        place: { rightOf: ts, inFrontOf: ts, gap: 0.5 }
         geom: { w: 80, d: 70, h: 5 }
         label: ".VUE"
         style:
@@ -210,7 +205,7 @@ nodes:
           effects: { cornerRadius: 10 }
       - id: mts
         shape: rectangle
-        offset: { wx: -260, wy: 280 }
+        place: { leftOf: vue, inFrontOf: vue, gap: 1 }
         geom: { w: 80, d: 70, h: 5 }
         label: ".MTS"
         style:
@@ -220,7 +215,7 @@ nodes:
           effects: { cornerRadius: 10 }
       - id: jsonf
         shape: rectangle
-        offset: { wx: -260, wy: 440 }
+        place: { inFrontOf: mts, gap: 1.5, align: start }
         geom: { w: 80, d: 70, h: 5 }
         label: ".JSON"
         style:
@@ -232,7 +227,7 @@ nodes:
       # ── Right-side file extensions (.HTML / .JS / .CSS) ──────────
       - id: html
         shape: rectangle
-        offset: { wx: 510, wy: -120 }
+        place: { rightOf: board, behind: board, gap: 1.5 }
         geom: { w: 80, d: 70, h: 5 }
         label: ".HTML"
         style:
@@ -242,7 +237,7 @@ nodes:
           effects: { cornerRadius: 10 }
       - id: js
         shape: rectangle
-        offset: { wx: 510, wy: 20 }
+        place: { inFrontOf: html, gap: 1, align: start }
         geom: { w: 80, d: 70, h: 5 }
         label: ".JS"
         style:
@@ -252,7 +247,7 @@ nodes:
           effects: { cornerRadius: 10 }
       - id: css
         shape: rectangle
-        offset: { wx: 560, wy: 130 }
+        place: { rightOf: js, inFrontOf: js, gap: 0.3 }
         geom: { w: 80, d: 70, h: 5 }
         label: ".CSS"
         style:

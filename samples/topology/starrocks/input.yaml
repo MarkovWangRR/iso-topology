@@ -8,9 +8,13 @@
 #     Federated Analytics in front-left), each with brand glyphs
 #   - front: Real-time Ingestion cube
 #   - right: 4 step-stair tiles (Ad-Hoc / BI / Customer / SQL Agents)
-#     each carrying an emoji icon, climbing along the iso right axis
-#   - ALL pipes use ORTHOGONAL routing so they travel along iso
-#     axes (no diagonal lines across the grid)
+#     climbing along the iso right axis
+#   - ALL pipes use ORTHOGONAL routing so they travel along iso axes
+#
+# v2.2 — ZERO hand-authored coordinates. The StarRocks cube anchors the
+# scene; sources, stair tiles and pedestals chain off it with `place`;
+# brand tiles inside each source group are staggered with `place` and
+# the substrates auto-size around them. One cell = gridStep = 40.
 
 canvas:
   background: "#F2F4F6"
@@ -33,9 +37,9 @@ nodes:
     shape: composite
     parts:
       # ── Central StarRocks cube (tall, yellow top w/ backglow halo) ──
+      # The scene anchor: everything else is placed relative to it.
       - id: starrocks
         shape: rectangle
-        offset: { wx: 500, wy: 500 }
         geom: { w: 220, d: 220, h: 200 }
         label: "⚡\nStarRocks"
         style:
@@ -50,11 +54,11 @@ nodes:
             backglow:   { color: "#FFC857", radius: 80, opacity: 0.55 }
             dropShadow: { dx: 0, dy: 14, blur: 22, color: "rgba(245,158,11,0.30)" }
 
-      # ── Back-left: Batch Ingestion (small, behind StarRocks) ─────
+      # ── Back-left: Batch Ingestion (behind StarRocks) ─────────────
       - id: batch_ingestion
         shape: group
-        offset: { wx: 200, wy: 180 }
-        geom: { w: 220, d: 180, h: 70 }
+        place: { leftOf: starrocks, behind: starrocks, gap: 2 }
+        geom: { h: 70 }
         label: "Batch Ingestion"
         style:
           palette: { top: "#FFFFFF", left: "#E0E2E8", right: "#F0F1F5" }
@@ -65,7 +69,6 @@ nodes:
           - id: bi_spark
             shape: rectangle
             geom: { w: 60, d: 60, h: 8 }
-            offset: { wx: 30, wy: 25 }
             icon: "iso://brand/spark"
             style:
               palette: { top: "#FFFFFF", left: "#E0E2E8", right: "#F0F1F5" }
@@ -73,19 +76,19 @@ nodes:
               effects: { cornerRadius: 8 }
           - id: bi_hadoop
             shape: rectangle
+            place: { rightOf: bi_spark, inFrontOf: bi_spark, gap: 0.5 }
             geom: { w: 60, d: 60, h: 8 }
-            offset: { wx: 120, wy: 70 }
             icon: "iso://brand/hadoop"
             style:
               palette: { top: "#FFFFFF", left: "#E0E2E8", right: "#F0F1F5" }
               stroke: { color: "#65B832", width: 1 }
               effects: { cornerRadius: 8 }
 
-      # ── Front-left: Federated Analytics (big, low extrusion) ─────
+      # ── Front-left: Federated Analytics (staggered brand quad) ────
       - id: federated_analytics
         shape: group
-        offset: { wx: 30, wy: 500 }
-        geom: { w: 320, d: 240, h: 80 }
+        place: { leftOf: starrocks, gap: 3.5, align: start }
+        geom: { h: 80 }
         label: "Federated Analytics"
         style:
           palette: { top: "#FFFFFF", left: "#E0E2E8", right: "#F0F1F5" }
@@ -96,7 +99,6 @@ nodes:
           - id: fa_mysql
             shape: rectangle
             geom: { w: 60, d: 60, h: 8 }
-            offset: { wx: 30, wy: 30 }
             icon: "iso://brand/mysql"
             style:
               palette: { top: "#FFFFFF", left: "#E0E2E8", right: "#F0F1F5" }
@@ -104,8 +106,8 @@ nodes:
               effects: { cornerRadius: 8 }
           - id: fa_pg
             shape: rectangle
+            place: { rightOf: fa_mysql, inFrontOf: fa_mysql, gap: 0.5 }
             geom: { w: 60, d: 60, h: 8 }
-            offset: { wx: 170, wy: 60 }
             icon: "iso://brand/postgresql"
             style:
               palette: { top: "#FFFFFF", left: "#E0E2E8", right: "#F0F1F5" }
@@ -113,8 +115,8 @@ nodes:
               effects: { cornerRadius: 8 }
           - id: fa_iceberg
             shape: rectangle
+            place: { inFrontOf: fa_mysql, gap: 1.5, align: start }
             geom: { w: 60, d: 60, h: 8 }
-            offset: { wx: 40, wy: 130 }
             icon: "iso://brand/iceberg"
             style:
               palette: { top: "#FFFFFF", left: "#E0E2E8", right: "#F0F1F5" }
@@ -122,8 +124,8 @@ nodes:
               effects: { cornerRadius: 8 }
           - id: fa_hive
             shape: rectangle
+            place: { rightOf: fa_pg, inFrontOf: fa_iceberg, gap: 0.5 }
             geom: { w: 60, d: 60, h: 8 }
-            offset: { wx: 190, wy: 170 }
             icon: "iso://brand/hive"
             style:
               palette: { top: "#FFFFFF", left: "#E0E2E8", right: "#F0F1F5" }
@@ -133,8 +135,8 @@ nodes:
       # ── Front: Real-time Ingestion ───────────────────────────────
       - id: realtime_ingestion
         shape: group
-        offset: { wx: 520, wy: 820 }
-        geom: { w: 280, d: 180, h: 70 }
+        place: { inFrontOf: starrocks, gap: 2.5, align: start }
+        geom: { h: 70 }
         label: "Real-time Ingestion And\nSynchronization"
         style:
           palette: { top: "#FFFFFF", left: "#E0E2E8", right: "#F0F1F5" }
@@ -145,7 +147,6 @@ nodes:
           - id: ri_pulsar
             shape: rectangle
             geom: { w: 60, d: 60, h: 8 }
-            offset: { wx: 40, wy: 30 }
             icon: "iso://brand/pulsar"
             style:
               palette: { top: "#FFFFFF", left: "#E0E2E8", right: "#F0F1F5" }
@@ -153,8 +154,8 @@ nodes:
               effects: { cornerRadius: 8 }
           - id: ri_kafka
             shape: rectangle
+            place: { rightOf: ri_pulsar, inFrontOf: ri_pulsar, gap: 0.5 }
             geom: { w: 60, d: 60, h: 8 }
-            offset: { wx: 160, wy: 90 }
             icon: "iso://brand/kafka"
             style:
               palette: { top: "#FFFFFF", left: "#E0E2E8", right: "#F0F1F5" }
@@ -162,9 +163,11 @@ nodes:
               effects: { cornerRadius: 8 }
 
       # ── Right step-stair: Ad-Hoc / BI / Customer / SQL Agents ────
+      # Each tile is rightOf + inFrontOf its predecessor with gap 0 —
+      # the corner-to-corner staircase climbing the iso right axis.
       - id: ad_hoc
         shape: rectangle
-        offset: { wx: 820, wy: 100 }
+        place: { rightOf: starrocks, behind: starrocks, gap: 2.5 }
         geom: { w: 130, d: 130, h: 80 }
         label: "📈\nAd-Hoc\nAnalysis"
         style:
@@ -174,7 +177,7 @@ nodes:
           effects: { cornerRadius: 8 }
       - id: bi_reporting
         shape: rectangle
-        offset: { wx: 950, wy: 230 }
+        place: { rightOf: ad_hoc, inFrontOf: ad_hoc, gap: 0 }
         geom: { w: 130, d: 130, h: 80 }
         label: "📊\nBI\nReporting"
         style:
@@ -184,7 +187,7 @@ nodes:
           effects: { cornerRadius: 8 }
       - id: customer_dashboards
         shape: rectangle
-        offset: { wx: 1080, wy: 360 }
+        place: { rightOf: bi_reporting, inFrontOf: bi_reporting, gap: 0 }
         geom: { w: 140, d: 130, h: 80 }
         label: "🎯\nCustomer-Facing\nDashboards"
         style:
@@ -194,7 +197,7 @@ nodes:
           effects: { cornerRadius: 8 }
       - id: sql_agents
         shape: rectangle
-        offset: { wx: 1210, wy: 490 }
+        place: { rightOf: customer_dashboards, inFrontOf: customer_dashboards, gap: 0 }
         geom: { w: 130, d: 130, h: 80 }
         label: "🤖\nSQL\nAgents"
         style:
@@ -206,7 +209,7 @@ nodes:
       # ── Background decorative pedestals (small flat blocks) ──────
       - id: pedestal_back
         shape: rectangle
-        offset: { wx: 100, wy: 30 }
+        place: { leftOf: batch_ingestion, behind: batch_ingestion, gap: 1.5 }
         geom: { w: 90, d: 90, h: 25 }
         style:
           palette: { top: "#FFFFFF", left: "#E0E2E8", right: "#F0F1F5" }
@@ -214,7 +217,7 @@ nodes:
           effects: { cornerRadius: 8 }
       - id: pedestal_far_right
         shape: rectangle
-        offset: { wx: 1100, wy: 780 }
+        place: { inFrontOf: customer_dashboards, gap: 2 }
         geom: { w: 90, d: 90, h: 25 }
         style:
           palette: { top: "#FFFFFF", left: "#E0E2E8", right: "#F0F1F5" }
@@ -222,7 +225,7 @@ nodes:
           effects: { cornerRadius: 8 }
       - id: pedestal_front_left
         shape: rectangle
-        offset: { wx: 420, wy: 1000 }
+        place: { inFrontOf: realtime_ingestion, gap: 1.5, align: start }
         geom: { w: 90, d: 90, h: 25 }
         style:
           palette: { top: "#FFFFFF", left: "#E0E2E8", right: "#F0F1F5" }

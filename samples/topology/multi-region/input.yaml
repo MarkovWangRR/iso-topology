@@ -3,6 +3,11 @@
 # Region A / Region B substrates each carrying an API cloud + DB
 # stack, a free-standing replication ring on the right, three
 # screen-space callouts explaining the design).
+#
+# v2.2 — ZERO hand-authored coordinates. "Your App" anchors the scene;
+# CDN sits behind it, the regions chain right/front, the replication
+# ring stairs down the right flank. Region substrates auto-size around
+# their API cloud + DB stack. One cell = gridStep = 40.
 
 canvas:
   background: "#0A0A0B"
@@ -24,10 +29,9 @@ nodes:
   scene:
     shape: composite
     parts:
-      # ── Your App (front-left green cube) ──────────────────────────
+      # ── Your App (front-left green cube — the scene anchor) ───────
       - id: app
         shape: rectangle
-        offset: { wx: -20, wy: 360 }
         geom: { w: 90, d: 90, h: 80 }
         label: "Your App"
         style:
@@ -41,7 +45,7 @@ nodes:
       # ── CDN (green sphere with mesh hatch overlay) ───────────────
       - id: cdn
         shape: circle
-        offset: { wx: 20, wy: 160 }
+        place: { behind: app, gap: 2.5 }
         geom: { w: 100, d: 100, h: 100 }
         label: "CDN"
         style:
@@ -52,11 +56,11 @@ nodes:
             pattern:    { kind: "hatch", color: "#FFFFFF", spacing: 8, angle: 30 }
             dropShadow: { dx: 0, dy: 10, blur: 14, color: "rgba(168,212,95,0.3)" }
 
-      # ── Region A substrate ───────────────────────────────────────
+      # ── Region A substrate (auto-sized around API + DB stack) ────
       - id: region_a
         shape: group
-        offset: { wx: 180, wy: 200 }
-        geom: { w: 380, d: 160, h: 14 }
+        place: { rightOf: cdn, gap: 1.5, align: start }
+        geom: { h: 14 }
         label: "Region A"
         style:
           palette: { top: "#1F1F23", left: "#0F0F12", right: "#17171B" }
@@ -65,7 +69,6 @@ nodes:
         parts:
           - id: api_a
             shape: cloud
-            offset: { wx: 30, wy: 40 }
             geom: { w: 110, d: 70, h: 24 }
             label: "API"
             style:
@@ -74,7 +77,7 @@ nodes:
               text: { color: "#1F1F2A", weight: "700", size: 10 }
           - id: db_a
             shape: cylinder
-            offset: { wx: 200, wy: 30 }
+            place: { rightOf: api_a, gap: 1.5, align: start }
             geom: { w: 90, d: 90, h: 36 }
             label: "{ }"
             style:
@@ -86,8 +89,8 @@ nodes:
       # ── Region B substrate ───────────────────────────────────────
       - id: region_b
         shape: group
-        offset: { wx: 260, wy: 410 }
-        geom: { w: 380, d: 160, h: 14 }
+        place: { inFrontOf: region_a, gap: 1.25 }
+        geom: { h: 14 }
         label: "Region B"
         style:
           palette: { top: "#1F1F23", left: "#0F0F12", right: "#17171B" }
@@ -96,7 +99,6 @@ nodes:
         parts:
           - id: api_b
             shape: cloud
-            offset: { wx: 30, wy: 40 }
             geom: { w: 110, d: 70, h: 24 }
             label: "API"
             style:
@@ -105,7 +107,7 @@ nodes:
               text: { color: "#1F1F2A", weight: "700", size: 10 }
           - id: db_b
             shape: cylinder
-            offset: { wx: 200, wy: 30 }
+            place: { rightOf: api_b, gap: 1.5, align: start }
             geom: { w: 90, d: 90, h: 36 }
             label: "{ }"
             style:
@@ -114,10 +116,10 @@ nodes:
               text: { color: "#1F1F2A", weight: "700", size: 12 }
             stack: { count: 3, gap: 6 }
 
-      # ── Replication ring (free-standing DBs on the right) ─────────
+      # ── Replication ring (free-standing DBs stair-stepping right) ─
       - id: repl_top
         shape: cylinder
-        offset: { wx: 560, wy: 60 }
+        place: { rightOf: region_a, behind: region_a, gap: 1 }
         geom: { w: 90, d: 90, h: 40 }
         label: "{ }"
         style:
@@ -127,7 +129,7 @@ nodes:
         stack: { count: 3, gap: 6 }
       - id: repl_mid
         shape: cylinder
-        offset: { wx: 700, wy: 230 }
+        place: { rightOf: repl_top, inFrontOf: repl_top, gap: 1.25 }
         geom: { w: 90, d: 90, h: 40 }
         label: "{ }"
         style:
@@ -137,7 +139,7 @@ nodes:
         stack: { count: 3, gap: 6 }
       - id: repl_bot
         shape: cylinder
-        offset: { wx: 770, wy: 460 }
+        place: { rightOf: repl_mid, inFrontOf: repl_mid, gap: 1.5 }
         geom: { w: 90, d: 90, h: 40 }
         label: "{ }"
         style:
