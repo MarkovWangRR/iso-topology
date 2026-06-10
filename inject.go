@@ -461,6 +461,20 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo)
 	srcSideIdx := map[string]int{}
 	tgtSideIdx := map[string]int{}
 
+	// v2.3 — connector geometry participates in the viewBox. The part
+	// bbox alone is NOT enough: orthogonal stubs/staggers and bezier
+	// control points can swing past the lowest part and get clipped at
+	// the SVG edge. Track the extremes of every emitted waypoint and
+	// grow the viewBox afterwards.
+	cMinX, cMinY := math.Inf(1), math.Inf(1)
+	cMaxX, cMaxY := math.Inf(-1), math.Inf(-1)
+	trackPt := func(x, y float64) {
+		cMinX = math.Min(cMinX, x)
+		cMinY = math.Min(cMinY, y)
+		cMaxX = math.Max(cMaxX, x)
+		cMaxY = math.Max(cMaxY, y)
+	}
+
 	var sb strings.Builder
 	sb.WriteString(`<g data-layer="connectors">`)
 	for ci, c := range conns {
@@ -647,6 +661,10 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo)
 			pts = [][2]float64{{x1, y1}, {x2, y2}}
 		}
 
+		for _, p := range pts {
+			trackPt(p[0], p[1])
+		}
+
 		// Emit path. Bezier routing emits a single quadratic curve
 		// (M start Q ctrl end); everything else lays down a polyline.
 		// Arrow + label still consume `pts[0]` and `pts[len-1]` so they
@@ -696,6 +714,8 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo)
 				bg = "#FFFFFFEE"
 			}
 			textW := float64(len(c.Label))*7 + 12
+			trackPt(mx-textW/2, my-10)
+			trackPt(mx+textW/2, my+10)
 			fmt.Fprintf(&sb,
 				`<rect x="%.2f" y="%.2f" width="%.2f" height="20" rx="4" ry="4" fill="%s"/>`,
 				mx-textW/2, my-10, textW, bg,
@@ -707,6 +727,17 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo)
 		}
 	}
 	sb.WriteString(`</g>`)
+
+	// Grow the viewBox to cover every connector waypoint (plus a pad
+	// for stroke width + arrowheads) BEFORE splicing the layer in, so
+	// routes that bend past the part bbox are never clipped.
+	if cMinX <= cMaxX {
+		const pad = 10.0
+		svg = growViewBoxAround(svg, minSvgRect{
+			minX: cMinX - pad, minY: cMinY - pad,
+			maxX: cMaxX + pad, maxY: cMaxY + pad,
+		})
+	}
 
 	// v1.6.5 — splice the connector layer IMMEDIATELY AFTER the opening
 	// <svg ...> tag, BEFORE the <g data-part="..."> blocks. SVG paint
