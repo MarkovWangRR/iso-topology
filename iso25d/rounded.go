@@ -119,6 +119,31 @@ func RenderIsoBoxRounded(o IsoBoxOpts) string {
 			gradID, escapeAttr(topStop), escapeAttr(botStop),
 		)
 	}
+	// v2.1 — author-specified top-face linear gradient. When set, it
+	// overrides the solid TopFill and is referenced via url(#grad-top).
+	topGradID := ""
+	if o.TopGradient != nil && strings.TrimSpace(o.TopGradient.From) != "" {
+		topGradID = "rounded-top"
+		emitLinearGradient(&defs, topGradID, o.TopGradient)
+	}
+	// v2.1 — backglow filter: an oversized blur that gets painted as a
+	// halo behind the silhouette. We use feGaussianBlur on a flood so the
+	// halo respects the part's footprint without requiring an extra path.
+	backglowID := ""
+	if strings.TrimSpace(o.BackglowColor) != "" && o.BackglowRadius > 0 {
+		backglowID = "rounded-backglow"
+		op := o.BackglowOpacity
+		if op <= 0 {
+			op = 0.6
+		}
+		fmt.Fprintf(&defs,
+			`<filter id="%s" x="-50%%" y="-50%%" width="200%%" height="200%%">`+
+				`<feGaussianBlur in="SourceGraphic" stdDeviation="%.2f"/>`+
+				`<feComponentTransfer><feFuncA type="linear" slope="%.2f"/></feComponentTransfer>`+
+				`</filter>`,
+			backglowID, o.BackglowRadius, op,
+		)
+	}
 	if defs.Len() > 0 {
 		sb.WriteString(`<defs>`)
 		sb.WriteString(defs.String())
@@ -133,6 +158,15 @@ func RenderIsoBoxRounded(o IsoBoxOpts) string {
 	if shadowID != "" {
 		wrapAttrs += fmt.Sprintf(` filter="url(#%s)"`, shadowID)
 	}
+	// v2.1 — paint the backglow halo first, so it sits behind every
+	// visible face. We re-use the top-face perimeter as the halo shape
+	// and rely on the SVG filter chain to blur + fade it.
+	if backglowID != "" {
+		fmt.Fprintf(&sb,
+			`<path data-face="backglow" d="%s" fill="%s" stroke="none" filter="url(#%s)"/>`,
+			perimeterPath(p, false), escapeAttr(o.BackglowColor), backglowID,
+		)
+	}
 	fmt.Fprintf(&sb, `<g data-face="wrap"%s>`, wrapAttrs)
 
 	stroke := o.Stroke
@@ -146,6 +180,9 @@ func RenderIsoBoxRounded(o IsoBoxOpts) string {
 	topFill := o.TopFill
 	if topFill == "" {
 		topFill = "#FFFFFF"
+	}
+	if topGradID != "" {
+		topFill = "url(#" + topGradID + ")"
 	}
 	sideFill := "none"
 	if wantGradient && gradID != "" {

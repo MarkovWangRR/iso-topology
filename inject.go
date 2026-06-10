@@ -618,6 +618,26 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo)
 				}
 				pts = append(pts, [2]float64{sx, sy})
 			}
+		case "bezier":
+			// v2.1 — single quadratic curve from c.From to c.To, control
+			// point sits on the perpendicular bisector ¼ of the chord's
+			// length away. Produces a natural S-free arc that reads as
+			// "data flow" instead of the rigid L-corner of orthogonal.
+			x1, y1, ok1 := anchorScreen(c.From)
+			x2, y2, ok2 := anchorScreen(c.To)
+			if !ok1 || !ok2 {
+				continue
+			}
+			dx, dy := x2-x1, y2-y1
+			dist := math.Sqrt(dx*dx + dy*dy)
+			if dist > 0 {
+				nx, ny := -dy/dist, dx/dist
+				bend := dist * 0.25
+				cx, cy := (x1+x2)/2+nx*bend, (y1+y2)/2+ny*bend
+				pts = [][2]float64{{x1, y1}, {cx, cy}, {x2, y2}}
+			} else {
+				pts = [][2]float64{{x1, y1}, {x2, y2}}
+			}
 		default: // "straight" or empty
 			x1, y1, ok1 := anchorScreen(c.From)
 			x2, y2, ok2 := anchorScreen(c.To)
@@ -627,13 +647,21 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo)
 			pts = [][2]float64{{x1, y1}, {x2, y2}}
 		}
 
-		// Emit polyline (M ... L ...).
+		// Emit path. Bezier routing emits a single quadratic curve
+		// (M start Q ctrl end); everything else lays down a polyline.
+		// Arrow + label still consume `pts[0]` and `pts[len-1]` so they
+		// stay correct in both modes.
 		var d strings.Builder
-		for i, p := range pts {
-			if i == 0 {
-				fmt.Fprintf(&d, "M %.2f,%.2f", p[0], p[1])
-			} else {
-				fmt.Fprintf(&d, " L %.2f,%.2f", p[0], p[1])
+		if c.Routing == "bezier" && len(pts) == 3 {
+			fmt.Fprintf(&d, "M %.2f,%.2f Q %.2f,%.2f %.2f,%.2f",
+				pts[0][0], pts[0][1], pts[1][0], pts[1][1], pts[2][0], pts[2][1])
+		} else {
+			for i, p := range pts {
+				if i == 0 {
+					fmt.Fprintf(&d, "M %.2f,%.2f", p[0], p[1])
+				} else {
+					fmt.Fprintf(&d, " L %.2f,%.2f", p[0], p[1])
+				}
 			}
 		}
 		fmt.Fprintf(&sb,

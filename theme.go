@@ -53,7 +53,19 @@ func mergePalette(b, o *Palette) *Palette {
 		Top:   firstNonEmpty(o.Top, b.Top),
 		Left:  firstNonEmpty(o.Left, b.Left),
 		Right: firstNonEmpty(o.Right, b.Right),
+		// v2.1 — per-face gradients flow through the same precedence as
+		// solid fills: the more-specific layer wins as a whole struct.
+		TopGradient:   firstNonNilGradient(o.TopGradient, b.TopGradient),
+		LeftGradient:  firstNonNilGradient(o.LeftGradient, b.LeftGradient),
+		RightGradient: firstNonNilGradient(o.RightGradient, b.RightGradient),
 	}
+}
+
+func firstNonNilGradient(a, b *FaceGradient) *FaceGradient {
+	if a != nil {
+		return a
+	}
+	return b
 }
 
 func mergeStroke(b, o *Stroke) *Stroke {
@@ -104,11 +116,30 @@ func mergeEffects(b, o *Effects) *Effects {
 	if o == nil {
 		o = &Effects{}
 	}
-	return &Effects{
+	out := &Effects{
 		Opacity:      firstNonNilFloat(o.Opacity, b.Opacity),
 		Margin:       firstNonNilFloat(o.Margin, b.Margin),
 		CornerRadius: firstNonNilFloat(o.CornerRadius, b.CornerRadius),
 	}
+	// v2.1 — DropShadow / Backglow / Pattern follow the same all-or-nothing
+	// override semantics as the rest of Style: a non-nil override wins
+	// the whole struct.
+	if o.DropShadow != nil {
+		out.DropShadow = o.DropShadow
+	} else {
+		out.DropShadow = b.DropShadow
+	}
+	if o.Backglow != nil {
+		out.Backglow = o.Backglow
+	} else {
+		out.Backglow = b.Backglow
+	}
+	if o.Pattern != nil {
+		out.Pattern = o.Pattern
+	} else {
+		out.Pattern = b.Pattern
+	}
+	return out
 }
 
 func firstNonEmpty(a, b string) string {

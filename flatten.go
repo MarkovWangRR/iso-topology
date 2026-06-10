@@ -21,6 +21,17 @@ func Flatten(n *Node, theme *Theme) (string, iso25d.ConvertOpts) {
 	if merged != nil {
 		if p := merged.Palette; p != nil {
 			o.TopFill, o.LeftFill, o.RightFill = p.Top, p.Left, p.Right
+			// v2.1 — per-face gradient overrides solid fill (mirrors
+			// iso25d.IsoBoxOpts behavior).
+			if g := p.TopGradient; g != nil {
+				o.TopGradient = &iso25d.FaceGradient{From: g.From, To: g.To, Dir: g.Dir}
+			}
+			if g := p.LeftGradient; g != nil {
+				o.LeftGradient = &iso25d.FaceGradient{From: g.From, To: g.To, Dir: g.Dir}
+			}
+			if g := p.RightGradient; g != nil {
+				o.RightGradient = &iso25d.FaceGradient{From: g.From, To: g.To, Dir: g.Dir}
+			}
 		}
 		if s := merged.Stroke; s != nil {
 			o.Stroke = s.Color
@@ -47,6 +58,18 @@ func Flatten(n *Node, theme *Theme) (string, iso25d.ConvertOpts) {
 			if e.CornerRadius != nil {
 				o.CornerRadius = *e.CornerRadius
 			}
+			// v2.1 — wire DropShadow / Backglow / Pattern through to the
+			// renderer. These are all 0/empty-defaulted in ConvertOpts so
+			// existing fixtures don't drift unless the DSL opts in.
+			if ds := e.DropShadow; ds != nil {
+				o.ShadowDx, o.ShadowDy, o.ShadowBlur, o.ShadowColor = ds.Dx, ds.Dy, ds.Blur, ds.Color
+			}
+			if bg := e.Backglow; bg != nil {
+				o.BackglowColor, o.BackglowRadius, o.BackglowOpacity = bg.Color, bg.Radius, bg.Opacity
+			}
+			if pt := e.Pattern; pt != nil {
+				o.PatternKind, o.PatternColor, o.PatternSpacing, o.PatternAngle = pt.Kind, pt.Color, pt.Spacing, pt.Angle
+			}
 		}
 	}
 
@@ -54,7 +77,9 @@ func Flatten(n *Node, theme *Theme) (string, iso25d.ConvertOpts) {
 	if strings.Contains(n.Label, "\n") {
 		o.LabelLines = strings.Split(n.Label, "\n")
 	}
-	o.Icon = n.Icon
+	// v2.1 — "iso://brand/<name>" Icon URIs get expanded into a
+	// data-URI badge; any other value passes through untouched.
+	o.Icon = iso25d.ResolveBrandIcon(n.Icon)
 
 	if c := n.Content; c != nil {
 		o.Header = c.Header

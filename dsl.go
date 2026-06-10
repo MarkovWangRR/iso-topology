@@ -142,11 +142,29 @@ type Style struct {
 	Effects *Effects `yaml:"effects,omitempty" json:"effects,omitempty"`
 }
 
-// Palette assigns the three iso-face fills.
+// Palette assigns the three iso-face fills. Each face may be either a
+// solid colour (Top / Left / Right) or a linear gradient (TopGradient
+// etc.); when a gradient is set it OVERRIDES the matching solid fill.
 type Palette struct {
 	Top   string `yaml:"top,omitempty" json:"top,omitempty"`
 	Left  string `yaml:"left,omitempty" json:"left,omitempty"`
 	Right string `yaml:"right,omitempty" json:"right,omitempty"`
+
+	// v2.1 — per-face linear gradients (face goes from From → To along Dir).
+	TopGradient   *FaceGradient `yaml:"topGradient,omitempty" json:"topGradient,omitempty"`
+	LeftGradient  *FaceGradient `yaml:"leftGradient,omitempty" json:"leftGradient,omitempty"`
+	RightGradient *FaceGradient `yaml:"rightGradient,omitempty" json:"rightGradient,omitempty"`
+}
+
+// FaceGradient is a linear gradient applied to one iso face.
+//
+//	from: start colour (any CSS colour, e.g. "#FFE188" or "rgba(...)")
+//	to:   end colour
+//	dir:  "down" (default) | "up" | "left" | "right" | "diag"
+type FaceGradient struct {
+	From string `yaml:"from" json:"from"`
+	To   string `yaml:"to" json:"to"`
+	Dir  string `yaml:"dir,omitempty" json:"dir,omitempty"`
 }
 
 // Stroke describes the wireframe. Dash uses SVG stroke-dasharray syntax.
@@ -176,10 +194,55 @@ type Text struct {
 }
 
 // Effects holds compositional knobs that aren't tied to a single face.
+// v2.1 — DropShadow / Backglow / Pattern lift the existing iso25d-internal
+// features into the DSL so authors and agents can opt into them.
 type Effects struct {
 	Opacity      *float64 `yaml:"opacity,omitempty" json:"opacity,omitempty"`
 	Margin       *float64 `yaml:"margin,omitempty" json:"margin,omitempty"`
 	CornerRadius *float64 `yaml:"cornerRadius,omitempty" json:"cornerRadius,omitempty"`
+
+	// v2.1 — soft drop shadow under the projected silhouette.
+	DropShadow *DropShadow `yaml:"dropShadow,omitempty" json:"dropShadow,omitempty"`
+	// v2.1 — diffuse halo behind the part (use for "glowing" focal nodes).
+	Backglow *Backglow `yaml:"backglow,omitempty" json:"backglow,omitempty"`
+	// v2.1 — repeating surface texture overlaid on the top face
+	// (hatch lines, dot grid, square grid).
+	Pattern *Pattern `yaml:"pattern,omitempty" json:"pattern,omitempty"`
+}
+
+// DropShadow describes a Gaussian-blurred offset shadow under the part.
+//
+//	dx, dy: offset in screen units (positive y = down)
+//	blur:   Gaussian stdDeviation (0 = crisp)
+//	color:  any CSS colour; rgba("...") gets you semi-transparent shadows
+type DropShadow struct {
+	Dx    float64 `yaml:"dx,omitempty" json:"dx,omitempty"`
+	Dy    float64 `yaml:"dy,omitempty" json:"dy,omitempty"`
+	Blur  float64 `yaml:"blur,omitempty" json:"blur,omitempty"`
+	Color string  `yaml:"color,omitempty" json:"color,omitempty"`
+}
+
+// Backglow is the soft radial halo painted BEHIND the part's silhouette.
+//
+//	radius:  blur radius in screen units (typical: 40–120)
+//	opacity: 0..1, defaults to 0.6 when 0
+type Backglow struct {
+	Color   string  `yaml:"color,omitempty" json:"color,omitempty"`
+	Radius  float64 `yaml:"radius,omitempty" json:"radius,omitempty"`
+	Opacity float64 `yaml:"opacity,omitempty" json:"opacity,omitempty"`
+}
+
+// Pattern is a repeating texture overlay on the top face. Use to suggest
+// "data surface" or "mesh" without drawing per-pixel content.
+//
+//	kind:    "hatch" | "dots" | "grid"
+//	spacing: distance between repeats in local units (default ~10)
+//	angle:   degrees, only relevant for hatch (default 0)
+type Pattern struct {
+	Kind    string  `yaml:"kind,omitempty" json:"kind,omitempty"`
+	Color   string  `yaml:"color,omitempty" json:"color,omitempty"`
+	Spacing float64 `yaml:"spacing,omitempty" json:"spacing,omitempty"`
+	Angle   float64 `yaml:"angle,omitempty" json:"angle,omitempty"`
 }
 
 // Content is the structural payload for shapes whose visual is composed of
