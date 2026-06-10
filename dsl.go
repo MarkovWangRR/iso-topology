@@ -139,16 +139,21 @@ type Layout struct {
 }
 
 // Place positions a part relative to a sibling's footprint. Give one
-// constraint per ground axis: RightOf/LeftOf pin world x, InFrontOf/
-// Behind pin world y ("front" = toward the viewer = +y, "behind" = away
-// = -y). With only one axis constrained, the other axis aligns to the
-// referenced sibling per Align. Gap is in cells (default 1).
+// constraint per axis: RightOf/LeftOf pin world x, InFrontOf/Behind
+// pin world y ("front" = toward the viewer = +y, "behind" = away =
+// -y), Above pins world z (the part sits ON TOP of the sibling —
+// z = sibling.z + sibling.h). With an axis unconstrained, it aligns
+// to the referenced sibling per Align. Gaps are in cells (default 1);
+// GapX/GapY override Gap per ground axis. Above is flush (no gap).
 type Place struct {
 	RightOf   string   `yaml:"rightOf,omitempty" json:"rightOf,omitempty"`
 	LeftOf    string   `yaml:"leftOf,omitempty" json:"leftOf,omitempty"`
 	InFrontOf string   `yaml:"inFrontOf,omitempty" json:"inFrontOf,omitempty"`
 	Behind    string   `yaml:"behind,omitempty" json:"behind,omitempty"`
+	Above     string   `yaml:"above,omitempty" json:"above,omitempty"`
 	Gap       *float64 `yaml:"gap,omitempty" json:"gap,omitempty"`
+	GapX      *float64 `yaml:"gapX,omitempty" json:"gapX,omitempty"`
+	GapY      *float64 `yaml:"gapY,omitempty" json:"gapY,omitempty"`
 	// Align: alignment along the unconstrained axis relative to the
 	// (single) referenced sibling — "start" | "center" | "end".
 	// Default "center".

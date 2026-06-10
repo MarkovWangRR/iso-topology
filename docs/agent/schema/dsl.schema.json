@@ -192,11 +192,12 @@
                 "type": "number"
               },
               "mode": {
-                "description": "row = world +x, column = world +y, grid = row-major wrap.",
+                "description": "row = world +x, column = world +y, grid = row-major wrap, ring = first child at the centre with the rest on a circle around it.",
                 "enum": [
                   "row",
                   "column",
-                  "grid"
+                  "grid",
+                  "ring"
                 ],
                 "type": "string"
               },
@@ -269,11 +270,12 @@
                       "type": "number"
                     },
                     "mode": {
-                      "description": "row = world +x, column = world +y, grid = row-major wrap.",
+                      "description": "row = world +x, column = world +y, grid = row-major wrap, ring = first child at the centre with the rest on a circle around it.",
                       "enum": [
                         "row",
                         "column",
-                        "grid"
+                        "grid",
+                        "ring"
                       ],
                       "type": "string"
                     },
@@ -308,6 +310,10 @@
                 "place": {
                   "description": "Declarative position relative to a SIBLING part — preferred over offset. rightOf/leftOf pin world x, inFrontOf/behind pin world y (front = toward viewer). Chains solve topologically; offset degrades to a fine-tune delta.",
                   "properties": {
+                    "above": {
+                      "description": "Sibling part id — this part sits flush ON TOP of it (z = its top), centred on its footprint unless x/y are also pinned.",
+                      "type": "string"
+                    },
                     "align": {
                       "description": "Alignment along the unconstrained axis (default center).",
                       "enum": [
@@ -323,6 +329,14 @@
                     },
                     "gap": {
                       "description": "Distance from the sibling's footprint in CELLS (1 cell = gridStep, default 40 world units). Default 1.",
+                      "type": "number"
+                    },
+                    "gapX": {
+                      "description": "Overrides gap on the x axis only.",
+                      "type": "number"
+                    },
+                    "gapY": {
+                      "description": "Overrides gap on the y axis only.",
                       "type": "number"
                     },
                     "inFrontOf": {

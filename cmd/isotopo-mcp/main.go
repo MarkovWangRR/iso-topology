@@ -250,24 +250,13 @@ func loadFromArgs(raw json.RawMessage) (*isotopo.Document, *toolArgs, string) {
 	if a.Format == "" {
 		a.Format = "yaml"
 	}
-	switch a.Format {
-	case "yaml", "json":
-		doc, err := isotopo.Parse([]byte(a.DSL))
-		if err != nil {
-			return nil, nil, "parse: " + err.Error()
-		}
-		return doc, &a, ""
-	case "d2":
-		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-		defer cancel()
-		diag, err := isotopo.CompileD2(ctx, a.DSL, isotopo.LayoutDagre)
-		if err != nil {
-			return nil, nil, "d2 compile: " + err.Error()
-		}
-		return isotopo.Translate(diag, isotopo.DefaultRenderOpts()), &a, ""
-	default:
-		return nil, nil, "unknown format " + a.Format + " (yaml | d2 | json)"
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	doc, err := isotopo.LoadInput(ctx, a.Format, []byte(a.DSL), isotopo.LayoutDagre)
+	if err != nil {
+		return nil, nil, "load: " + err.Error()
 	}
+	return doc, &a, ""
 }
 
 // renderAll mirrors `isotopo render`: topology.svg + topology.html +

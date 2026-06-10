@@ -35,7 +35,7 @@ override per-part via `geom.h`.
 | **group** | `group` | 1.0 | v2 primitive — translucent labeled substrate wrapping nested parts |
 | **iso_text** | `text` | 0.3 | flat text panel (low extrusion) |
 | **person** | `c4-person`, `c4_person`, `person` | 1.2 |  |
-| **rectangle** | `callout`, `class`, `code`, `diamond`, `document`, `hexagon`, `hierarchy`, `image`, `package`, `page`, `parallelogram`, `rectangle`, `sequence-diagram`, `sequence_diagram`, `sql-table`, `sql_table`, `square`, `step` | 1.0 |  |
+| **rectangle** | `callout`, `class`, `code`, `diamond`, `document`, `hexagon`, `hierarchy`, `image`, `package`, `page`, `parallelogram`, `rectangle`, `sequence-diagram`, `sequence_diagram`, `sql-table`, `sql_table`, `square`, `step` | 1.4 |  |
 
 ## Composition primitives
 
@@ -118,31 +118,34 @@ Directed line between two parts, optionally labeled and orthogonal-routed.
 
 **Where:** `node.layout | node.parts[*].layout (groups)`
 
-**Syntax:** `layout: {mode: row|column|grid, cols: N, gap: 1, padding: 1, align: start|center|end}`
+**Syntax:** `layout: {mode: row|column|grid|ring, cols: N, gap: 1, padding: 1, align: start|center|end}`
 
-Auto-arrange a container's parts along the iso ground axes — the preferred way to position parts. No hand-computed coordinates: row marches along world +x, column along +y, grid wraps row-major after cols. A layout group's geom.w/d may be omitted; the substrate auto-sizes around the arranged content.
+Auto-arrange a container's parts along the iso ground axes — the preferred way to position parts. No hand-computed coordinates: row marches along world +x, column along +y, grid wraps row-major after cols, ring puts the FIRST child at the centre and distributes the rest on a circle around it (hub-and-spoke in one rule). A layout group's geom.w/d may be omitted; the substrate auto-sizes around the arranged content.
 
 | Field | Meaning |
 |---|---|
 | `align` | cross-axis alignment within each track (default center) |
 | `cols` | grid only; default ceil(sqrt(n)) |
-| `gap` | space between children, in CELLS (1 cell = gridStep, default 40 world units); default 1 |
-| `mode` | row | column | grid |
+| `gap` | space between children (ring: hub-to-satellite clearance), in CELLS (1 cell = gridStep, default 40 world units); default 1 |
+| `mode` | row | column | grid | ring (first child = hub, rest clockwise from the back) |
 | `padding` | content inset from the container edge, in cells; defaults to gap |
 
 ### `place`
 
 **Where:** `node.parts[*].place`
 
-**Syntax:** `place: {rightOf: <sibling-id>, inFrontOf: <sibling-id>, gap: 1, align: start|center|end}`
+**Syntax:** `place: {rightOf: <sibling-id>, inFrontOf: <sibling-id>, above: <sibling-id>, gap: 1, gapX: 2, gapY: 0, align: start|center|end}`
 
-Position a part relative to a SIBLING's footprint — the preferred way to compose free-standing scenes. One constraint per ground axis: rightOf/leftOf pins world x, inFrontOf/behind pins world y (front = toward viewer). With one axis pinned, the other aligns to the referenced sibling per align. Chains are solved topologically (a stair = each tile rightOf+inFrontOf its predecessor). offset degrades to a fine-tune delta.
+Position a part relative to a SIBLING — the preferred way to compose free-standing scenes. One constraint per axis: rightOf/leftOf pins world x, inFrontOf/behind pins world y (front = toward viewer), above pins world z (the part sits flush ON TOP of the sibling, centred on its footprint — stacked plinths, ghost volumes, toppers). Unpinned ground axes align to the referenced sibling per align. Chains are solved topologically (a stair = each tile rightOf+inFrontOf its predecessor). offset degrades to a fine-tune delta.
 
 | Field | Meaning |
 |---|---|
+| `above` | sibling id — flush on its top face (z = its top), x/y centred unless also pinned |
 | `align` | alignment along the unconstrained axis (default center) |
 | `behind` | sibling id — -y side (mutually exclusive with inFrontOf) |
 | `gap` | distance from the sibling's footprint, in cells; default 1 |
+| `gapX` | overrides gap on the x axis only |
+| `gapY` | overrides gap on the y axis only |
 | `inFrontOf` | sibling id — +y side, toward the viewer |
 | `leftOf` | sibling id — -x side (mutually exclusive with rightOf) |
 | `rightOf` | sibling id — this part sits on its +x side |

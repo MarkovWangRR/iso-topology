@@ -22,6 +22,7 @@ theme:
 nodes:
   scene:
     shape: composite
+    layout: { mode: ring, gap: 2.6 }   # hub first, satellites clockwise from the back
     parts:
       # ── The AI core (hero: gradient flanks, halo, soft shadow) ───
       - id: core
@@ -44,7 +45,6 @@ nodes:
       # ── Capability ring (icon + caption on every top face) ───────
       - id: llm
         shape: rectangle
-        place: { behind: core, gap: 2.6 }
         geom: { w: 118, d: 118, h: 12 }
         icon: "iso://glyph/chat"
         label: "LLM Gateway"
@@ -56,49 +56,42 @@ nodes:
             dropShadow: { dx: 0, dy: 7, blur: 10, color: "rgba(63,63,70,0.14)" }
       - id: vector_store
         shape: rectangle
-        place: { rightOf: core, behind: core, gap: 1.4 }
         geom: { w: 118, d: 118, h: 12 }
         icon: "iso://glyph/vector"
         label: "Vector Store"
         style: *sat
       - id: gpu_pool
         shape: rectangle
-        place: { rightOf: core, gap: 2.6 }
         geom: { w: 118, d: 118, h: 12 }
         icon: "iso://glyph/gpu"
         label: "GPU Pool"
         style: *sat
       - id: agents
         shape: rectangle
-        place: { rightOf: core, inFrontOf: core, gap: 1.4 }
         geom: { w: 118, d: 118, h: 12 }
         icon: "iso://glyph/agent"
         label: "Agents"
         style: *sat
       - id: data_lake
         shape: rectangle
-        place: { inFrontOf: core, gap: 2.6 }
         geom: { w: 118, d: 118, h: 12 }
         icon: "iso://glyph/lake"
         label: "Data Lake"
         style: *sat
       - id: streaming
         shape: rectangle
-        place: { leftOf: core, inFrontOf: core, gap: 1.4 }
         geom: { w: 118, d: 118, h: 12 }
         icon: "iso://glyph/stream"
         label: "Streaming"
         style: *sat
       - id: warehouse
         shape: rectangle
-        place: { leftOf: core, gap: 2.6 }
         geom: { w: 118, d: 118, h: 12 }
         icon: "iso://glyph/warehouse"
         label: "Warehouse"
         style: *sat
       - id: observability
         shape: rectangle
-        place: { leftOf: core, behind: core, gap: 1.4 }
         geom: { w: 118, d: 118, h: 12 }
         icon: "iso://glyph/gauge"
         label: "Observability"

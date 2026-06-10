@@ -78,6 +78,47 @@ One container, `layout: grid` — the substrate auto-sizes:
 [`samples/topology/llm-serving`](../../samples/topology/llm-serving/input.yaml)
 for a 2×2 service board carrying glyph icons.
 
+### I want a part stacked ON TOP of another (plinth, ghost volume)
+
+`above` pins world z — flush on the sibling's top, centred on its
+footprint, no copied heights:
+
+```yaml
+- {id: bar,   shape: rectangle, geom: {w: 116, d: 116, h: 36}}
+- {id: ghost, shape: rectangle, place: {above: bar}, geom: {w: 116, d: 116, h: 114},
+   style: {palette: {top: "none", left: "none", right: "none"},
+           stroke: {color: "#A5B4FC", width: 1.2, dash: "4 4"}}}
+```
+
+See [`samples/topology/training-compute`](../../samples/topology/training-compute/input.yaml).
+
+### I want a hub with satellites around it
+
+One rule — `ring`: first child is the hub, the rest distribute
+clockwise from the back:
+
+```yaml
+nodes:
+  scene:
+    shape: composite
+    layout: { mode: ring, gap: 2.6 }
+    parts:
+      - { id: core, ... }        # the hub
+      - { id: sat1, ... }        # straight behind the hub
+      - { id: sat2, ... }        # …and around, clockwise
+```
+
+See [`samples/topology/ai-platform`](../../samples/topology/ai-platform/input.yaml)
+— the eight-tile ring is exactly this.
+
+### I want different gaps per axis
+
+`gapX` / `gapY` override `gap` independently:
+
+```yaml
+- {id: b, place: {rightOf: a, inFrontOf: a, gapX: 3, gapY: 0}}
+```
+
 ### I want to nudge one part a few pixels
 
 Keep the `place`/`layout`, add an `offset` — it's applied as a delta
@@ -351,8 +392,9 @@ full three-layer cascade.
 ```
 
 `pattern: {kind: hatch|dots, color, spacing, angle}` overlays a
-texture on the faces (box and sphere). Use ONE hero treatment per
-scene — backglow on everything reads as noise.
+texture on box top faces, cylinder top ellipses, and sphere discs.
+Use ONE hero treatment per scene — backglow on everything reads as
+noise.
 
 ## Canvas / backdrop
 
@@ -454,9 +496,7 @@ These are the recurring asks. If you hit one:
 |---|---|---|
 | custom polygon (n-sided) | use rectangle with explicit palette | extending iso25d/ — see [`../guides/extending.md`](../guides/extending.md) |
 | wireframe / line-art look | manual stroke + transparent palette | tracked: line-only render mode |
-| radial / hub-and-spoke layout | hero anchor + place satellites on 4 diagonals | tracked: layout mode "ring" |
-| per-axis place gap (gapX ≠ gapY) | two-hop chain via an invisible spacer part | tracked: place.gapX/gapY |
-| pattern on cylinder/sphere sides | pattern on box faces only today | tracked: extend pattern support |
+| pattern on cylinder/sphere SIDE walls | top-face/disc patterns ship today | tracked: side-wall patterns |
 | swimlane / sequence | author with `iso_text` rows | tracked: sequence_diagram lowering |
 
 For everything else, search this file. If it's not here and not in

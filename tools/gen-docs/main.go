@@ -495,7 +495,10 @@ func placeSchema() map[string]any {
 			"leftOf":    map[string]any{"type": "string", "description": "Sibling part id — -x side. Mutually exclusive with rightOf."},
 			"inFrontOf": map[string]any{"type": "string", "description": "Sibling part id — +y side (toward viewer)."},
 			"behind":    map[string]any{"type": "string", "description": "Sibling part id — -y side. Mutually exclusive with inFrontOf."},
+			"above":     map[string]any{"type": "string", "description": "Sibling part id — this part sits flush ON TOP of it (z = its top), centred on its footprint unless x/y are also pinned."},
 			"gap":       map[string]any{"type": "number", "description": "Distance from the sibling's footprint in CELLS (1 cell = gridStep, default 40 world units). Default 1."},
+			"gapX":      map[string]any{"type": "number", "description": "Overrides gap on the x axis only."},
+			"gapY":      map[string]any{"type": "number", "description": "Overrides gap on the y axis only."},
 			"align":     map[string]any{"type": "string", "enum": []string{"start", "center", "end"}, "description": "Alignment along the unconstrained axis (default center)."},
 		},
 	}
@@ -507,7 +510,7 @@ func layoutSchema() map[string]any {
 		"description": "Auto-arrange this container's parts along the iso ground axes — no hand-computed coordinates. On a group, geom.w/d may be omitted (substrate auto-sizes around content).",
 		"required":    []string{"mode"},
 		"properties": map[string]any{
-			"mode":    map[string]any{"type": "string", "enum": []string{"row", "column", "grid"}, "description": "row = world +x, column = world +y, grid = row-major wrap."},
+			"mode":    map[string]any{"type": "string", "enum": []string{"row", "column", "grid", "ring"}, "description": "row = world +x, column = world +y, grid = row-major wrap, ring = first child at the centre with the rest on a circle around it."},
 			"cols":    map[string]any{"type": "integer", "description": "Grid mode only. Default ceil(sqrt(n))."},
 			"gap":     map[string]any{"type": "number", "description": "Space between children in cells. Default 1."},
 			"padding": map[string]any{"type": "number", "description": "Content inset from container edge in cells. Defaults to gap."},

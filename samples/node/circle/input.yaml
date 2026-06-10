@@ -7,3 +7,6 @@ nodes:
     shape: circle
     label: "Event"
     geom: { w: 110, d: 110, h: 30 }
+    style:
+      effects:
+        pattern: { kind: dots, color: "#FFFFFF", spacing: 7 }

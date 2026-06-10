@@ -151,6 +151,13 @@ func arrangeContainer(parts []*CompositePart, lay *Layout, owner *CompositePart,
 		if cols <= 0 {
 			cols = int(math.Ceil(math.Sqrt(float64(len(kids)))))
 		}
+	case "ring":
+		// v2.4 — hub-and-spoke: kids[0] is the hub at the centre,
+		// kids[1..] sit on a world-space circle around it, starting at
+		// the back (-y) and proceeding clockwise. The radius keeps one
+		// `gap` between the hub's footprint and each satellite's.
+		arrangeRing(kids, gapW, padW, owner, path, issues)
+		return
 	case "row", "":
 		cols = len(kids)
 	default:
@@ -158,7 +165,7 @@ func arrangeContainer(parts []*CompositePart, lay *Layout, owner *CompositePart,
 			Severity: SeverityError,
 			Path:     path + ".layout.mode",
 			Message:  fmt.Sprintf("unknown layout mode %q", lay.Mode),
-			Suggest:  nearest(lay.Mode, []string{"row", "column", "grid"}),
+			Suggest:  nearest(lay.Mode, []string{"row", "column", "grid", "ring"}),
 		})
 		cols = len(kids)
 	}
@@ -201,6 +208,55 @@ func arrangeContainer(parts []*CompositePart, lay *Layout, owner *CompositePart,
 		contentW := padW*2 - gapW + sumPlusGaps(colW, gapW)
 		contentD := padW*2 - gapW + sumPlusGaps(rowD, gapW)
 		ensureFootprint(owner, contentW, contentD)
+	}
+}
+
+// arrangeRing places kids[0] at the centre and kids[1..] on a circle
+// of radius (hubSpan + satSpan)/2 + gap around it, equally spaced,
+// first satellite at the back (-y). Positions are normalised so the
+// content bbox starts at padding, then the owner auto-sizes.
+func arrangeRing(kids []*CompositePart, gapW, padW float64, owner *CompositePart, path string, issues *[]Issue) {
+	if len(kids) < 2 {
+		*issues = append(*issues, Issue{
+			Severity: SeverityWarning,
+			Path:     path + ".layout",
+			Message:  "ring layout needs a hub plus at least one satellite; falling back to centre placement",
+		})
+		if len(kids) == 1 {
+			bakeOffset(kids[0], padW, padW)
+		}
+		return
+	}
+	hw, hd := partFootprint(kids[0])
+	maxSat := 0.0
+	for _, k := range kids[1:] {
+		w, d := partFootprint(k)
+		maxSat = math.Max(maxSat, math.Max(w, d))
+	}
+	radius := (math.Max(hw, hd)+maxSat)/2 + gapW
+	n := len(kids) - 1
+
+	// Top-left positions relative to the hub centre at (0, 0).
+	xs := make([]float64, len(kids))
+	ys := make([]float64, len(kids))
+	minX, minY := math.Inf(1), math.Inf(1)
+	maxX, maxY := math.Inf(-1), math.Inf(-1)
+	for i, k := range kids {
+		w, d := partFootprint(k)
+		cx, cy := 0.0, 0.0
+		if i > 0 {
+			theta := -math.Pi/2 + 2*math.Pi*float64(i-1)/float64(n)
+			cx, cy = radius*math.Cos(theta), radius*math.Sin(theta)
+		}
+		xs[i], ys[i] = cx-w/2, cy-d/2
+		minX, minY = math.Min(minX, xs[i]), math.Min(minY, ys[i])
+		maxX, maxY = math.Max(maxX, xs[i]+w), math.Max(maxY, ys[i]+d)
+	}
+	for i, k := range kids {
+		bakeOffset(k, xs[i]-minX+padW, ys[i]-minY+padW)
+	}
+	if owner != nil {
+		ensureFootprint(owner, (maxX-minX)+2*padW, (maxY-minY)+2*padW)
 	}
 }
 
@@ -279,9 +335,9 @@ func placeSiblings(parts []*CompositePart, cell float64, path string, issues *[]
 	}
 
 	// DFS solve with memo + on-stack cycle detection. pos holds each
-	// part's FINAL ground position (solved constraint + author delta),
-	// so dependents follow when the author fine-tunes a reference part.
-	pos := map[*CompositePart][2]float64{}
+	// part's FINAL position (solved constraint + author delta), so
+	// dependents follow when the author fine-tunes a reference part.
+	pos := map[*CompositePart][3]float64{}
 	const (
 		stUnseen = 0
 		stOnPath = 1
@@ -289,8 +345,8 @@ func placeSiblings(parts []*CompositePart, cell float64, path string, issues *[]
 	)
 	state := map[*CompositePart]int{}
 
-	var solve func(p *CompositePart) [2]float64
-	solve = func(p *CompositePart) [2]float64 {
+	var solve func(p *CompositePart) [3]float64
+	solve = func(p *CompositePart) [3]float64 {
 		if state[p] == stDone {
 			return pos[p]
 		}
@@ -300,7 +356,7 @@ func placeSiblings(parts []*CompositePart, cell float64, path string, issues *[]
 			dx, dy, dz = p.Offset.WX, p.Offset.WY, p.Offset.WZ
 		}
 		if p.Place == nil {
-			pos[p] = [2]float64{dx, dy}
+			pos[p] = [3]float64{dx, dy, dz}
 			state[p] = stDone
 			return pos[p]
 		}
@@ -310,7 +366,7 @@ func placeSiblings(parts []*CompositePart, cell float64, path string, issues *[]
 				Path:     ppath,
 				Message:  "place relations form a cycle; falling back to offset for this part",
 			})
-			pos[p] = [2]float64{dx, dy}
+			pos[p] = [3]float64{dx, dy, dz}
 			state[p] = stDone
 			return pos[p]
 		}
@@ -321,7 +377,14 @@ func placeSiblings(parts []*CompositePart, cell float64, path string, issues *[]
 		if pl.Gap != nil && *pl.Gap >= 0 {
 			gap = *pl.Gap
 		}
-		gapW := gap * cell
+		gapX, gapY := gap, gap
+		if pl.GapX != nil && *pl.GapX >= 0 {
+			gapX = *pl.GapX
+		}
+		if pl.GapY != nil && *pl.GapY >= 0 {
+			gapY = *pl.GapY
+		}
+		gapXW, gapYW := gapX*cell, gapY*cell
 		align := pl.Align
 		if align == "" {
 			align = "center"
@@ -367,21 +430,21 @@ func placeSiblings(parts []*CompositePart, cell float64, path string, issues *[]
 		}
 
 		w, d := partFootprint(p)
-		x, y := 0.0, 0.0
-		xConstrained, yConstrained := false, false
-		var xRef, yRef *CompositePart
+		x, y, z := 0.0, 0.0, 0.0
+		xConstrained, yConstrained, zConstrained := false, false, false
+		var xRef, yRef, zRef *CompositePart
 
 		if pl.RightOf != "" {
 			if r := resolveRef("rightOf", pl.RightOf); r != nil {
 				rp := solve(r)
 				rw, _ := partFootprint(r)
-				x = rp[0] + rw + gapW
+				x = rp[0] + rw + gapXW
 				xConstrained, xRef = true, r
 			}
 		} else if pl.LeftOf != "" {
 			if r := resolveRef("leftOf", pl.LeftOf); r != nil {
 				rp := solve(r)
-				x = rp[0] - gapW - w
+				x = rp[0] - gapXW - w
 				xConstrained, xRef = true, r
 			}
 		}
@@ -389,27 +452,41 @@ func placeSiblings(parts []*CompositePart, cell float64, path string, issues *[]
 			if r := resolveRef("inFrontOf", pl.InFrontOf); r != nil {
 				rp := solve(r)
 				_, rd := partFootprint(r)
-				y = rp[1] + rd + gapW
+				y = rp[1] + rd + gapYW
 				yConstrained, yRef = true, r
 			}
 		} else if pl.Behind != "" {
 			if r := resolveRef("behind", pl.Behind); r != nil {
 				rp := solve(r)
-				y = rp[1] - gapW - d
+				y = rp[1] - gapYW - d
 				yConstrained, yRef = true, r
 			}
 		}
-
-		// One axis pinned → other axis aligns to that constraint's ref.
-		if xConstrained && !yConstrained && xRef != nil {
-			rp := solve(xRef)
-			_, rd := partFootprint(xRef)
-			y = rp[1] + alignTrack(align, rd, d)
+		// v2.4 — above: sit flush ON TOP of the sibling (z = its top).
+		if pl.Above != "" {
+			if r := resolveRef("above", pl.Above); r != nil {
+				rp := solve(r)
+				z = rp[2] + partHeight(r)
+				zConstrained, zRef = true, r
+			}
 		}
-		if yConstrained && !xConstrained && yRef != nil {
-			rp := solve(yRef)
-			rw, _ := partFootprint(yRef)
-			x = rp[0] + alignTrack(align, rw, w)
+
+		// Unpinned ground axes align to a reference: prefer the
+		// same-plane constraint's ref, else the above-ref (so a bare
+		// `above:` centres the part on its base).
+		if !xConstrained {
+			if ref := firstRef(yRef, zRef); ref != nil {
+				rp := solve(ref)
+				rw, _ := partFootprint(ref)
+				x = rp[0] + alignTrack(align, rw, w)
+			}
+		}
+		if !yConstrained {
+			if ref := firstRef(xRef, zRef); ref != nil {
+				rp := solve(ref)
+				_, rd := partFootprint(ref)
+				y = rp[1] + alignTrack(align, rd, d)
+			}
 		}
 
 		// Author offset degrades to a fine-tune delta on top of the
@@ -418,10 +495,12 @@ func placeSiblings(parts []*CompositePart, cell float64, path string, issues *[]
 		// pre-place behavior.
 		x += dx
 		y += dy
+		z += dz
+		_ = zConstrained
 
-		pos[p] = [2]float64{x, y}
+		pos[p] = [3]float64{x, y, z}
 		state[p] = stDone
-		p.Offset = &WorldPoint{WX: x, WY: y, WZ: dz}
+		p.Offset = &WorldPoint{WX: x, WY: y, WZ: z}
 		p.Place = nil
 		return pos[p]
 	}
@@ -432,6 +511,15 @@ func placeSiblings(parts []*CompositePart, cell float64, path string, issues *[]
 		}
 	}
 	return true
+}
+
+func firstRef(refs ...*CompositePart) *CompositePart {
+	for _, r := range refs {
+		if r != nil {
+			return r
+		}
+	}
+	return nil
 }
 
 func alignTrack(align string, refSpan, span float64) float64 {

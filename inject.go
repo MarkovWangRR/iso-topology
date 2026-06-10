@@ -14,6 +14,39 @@ import (
 	"strings"
 )
 
+// partsScreenOrigin projects every part's 8 world-bbox corners and
+// returns the (tx, ty) translation that maps world-projected coords
+// into the composite's screen space — the same math
+// iso25d.RenderComposite applies internally, shared by every injector
+// so they can't drift from each other.
+func partsScreenOrigin(infos []partInfo) (tx, ty float64) {
+	minX, minY := math.Inf(1), math.Inf(1)
+	for _, p := range infos {
+		corners := [8][3]float64{
+			{p.offWX, p.offWY, p.offWZ},
+			{p.offWX + p.w, p.offWY, p.offWZ},
+			{p.offWX + p.w, p.offWY + p.d, p.offWZ},
+			{p.offWX, p.offWY + p.d, p.offWZ},
+			{p.offWX, p.offWY, p.offWZ + p.h},
+			{p.offWX + p.w, p.offWY, p.offWZ + p.h},
+			{p.offWX + p.w, p.offWY + p.d, p.offWZ + p.h},
+			{p.offWX, p.offWY + p.d, p.offWZ + p.h},
+		}
+		for _, c := range corners {
+			sx := c[0]*cos30 - c[1]*cos30
+			sy := c[0]*sin30 + c[1]*sin30 - c[2]
+			minX = math.Min(minX, sx)
+			minY = math.Min(minY, sy)
+		}
+	}
+	const pad = 12.0
+	return -minX + pad, -minY + pad
+}
+
+func projectIso(wx, wy, wz float64) (float64, float64) {
+	return wx*cos30 - wy*cos30, wx*sin30 + wy*sin30 - wz
+}
+
 func injectCanvasBackground(svg string, c *Canvas) string {
 	if c == nil {
 		return svg
@@ -88,53 +121,18 @@ func injectCanvasBackground(svg string, c *Canvas) string {
 // horizontally on the part's projected (top-face centre) and slightly
 // below the iso shape's projected bounding box.
 func injectScreenLabels(svg string, infos []partInfo) string {
-	const (
-		cos30 = 0.8660254037844387
-		sin30 = 0.5
-	)
-	project := func(wx, wy, wz float64) (float64, float64) {
-		return wx*cos30 - wy*cos30, wx*sin30 + wy*sin30 - wz
-	}
-	// Same bbox math as injectCompositeConnectors so the (tx, ty) shift
-	// matches what iso25d.RenderComposite applied internally.
-	minX, maxX := math.Inf(1), math.Inf(-1)
-	minY, maxY := math.Inf(1), math.Inf(-1)
+	project := projectIso
 	any := false
 	for _, p := range infos {
 		if p.screenLabel != "" {
 			any = true
-		}
-		corners := [8][3]float64{
-			{p.offWX, p.offWY, p.offWZ},
-			{p.offWX + p.w, p.offWY, p.offWZ},
-			{p.offWX + p.w, p.offWY + p.d, p.offWZ},
-			{p.offWX, p.offWY + p.d, p.offWZ},
-			{p.offWX, p.offWY, p.offWZ + p.h},
-			{p.offWX + p.w, p.offWY, p.offWZ + p.h},
-			{p.offWX + p.w, p.offWY + p.d, p.offWZ + p.h},
-			{p.offWX, p.offWY + p.d, p.offWZ + p.h},
-		}
-		for _, c := range corners {
-			sx, sy := project(c[0], c[1], c[2])
-			if sx < minX {
-				minX = sx
-			}
-			if sx > maxX {
-				maxX = sx
-			}
-			if sy < minY {
-				minY = sy
-			}
-			if sy > maxY {
-				maxY = sy
-			}
+			break
 		}
 	}
 	if !any {
 		return svg
 	}
-	pad := 12.0
-	tx, ty := -minX+pad, -minY+pad
+	tx, ty := partsScreenOrigin(infos)
 
 	var sb strings.Builder
 	sb.WriteString(`<g data-layer="screen-labels">`)
@@ -193,6 +191,7 @@ func injectScreenLabels(svg string, infos []partInfo) string {
 	if idx < 0 {
 		return svg
 	}
+	const pad = 12.0
 	return growViewBox(svg[:idx]+sb.String()+svg[idx:], maxLabelX+pad, maxLabelY+pad)
 }
 
@@ -201,46 +200,8 @@ func injectScreenLabels(svg string, infos []partInfo) string {
 // clipped. Idempotent — shrinks to a no-op when the current viewBox is
 
 func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo) string {
-	const (
-		cos30 = 0.8660254037844387
-		sin30 = 0.5
-	)
-	project := func(wx, wy, wz float64) (float64, float64) {
-		return wx*cos30 - wy*cos30, wx*sin30 + wy*sin30 - wz
-	}
-
-	// Build the same bbox iso25d.RenderComposite uses for its (tx, ty).
-	minX, maxX := math.Inf(1), math.Inf(-1)
-	minY, maxY := math.Inf(1), math.Inf(-1)
-	for _, p := range infos {
-		corners := [8][3]float64{
-			{p.offWX, p.offWY, p.offWZ},
-			{p.offWX + p.w, p.offWY, p.offWZ},
-			{p.offWX + p.w, p.offWY + p.d, p.offWZ},
-			{p.offWX, p.offWY + p.d, p.offWZ},
-			{p.offWX, p.offWY, p.offWZ + p.h},
-			{p.offWX + p.w, p.offWY, p.offWZ + p.h},
-			{p.offWX + p.w, p.offWY + p.d, p.offWZ + p.h},
-			{p.offWX, p.offWY + p.d, p.offWZ + p.h},
-		}
-		for _, c := range corners {
-			sx, sy := project(c[0], c[1], c[2])
-			if sx < minX {
-				minX = sx
-			}
-			if sx > maxX {
-				maxX = sx
-			}
-			if sy < minY {
-				minY = sy
-			}
-			if sy > maxY {
-				maxY = sy
-			}
-		}
-	}
-	pad := 12.0
-	tx, ty := -minX+pad, -minY+pad
+	project := projectIso
+	tx, ty := partsScreenOrigin(infos)
 
 	byID := map[string]partInfo{}
 	for _, p := range infos {
@@ -765,40 +726,8 @@ func injectAnnotations(svg string, anns []*Annotation, infos []partInfo) string 
 	if len(anns) == 0 || len(infos) == 0 {
 		return svg
 	}
-	project := func(wx, wy, wz float64) (float64, float64) {
-		return wx*cos30 - wy*cos30, wx*sin30 + wy*sin30 - wz
-	}
-	minX, maxX := math.Inf(1), math.Inf(-1)
-	minY, maxY := math.Inf(1), math.Inf(-1)
-	for _, p := range infos {
-		corners := [8][3]float64{
-			{p.offWX, p.offWY, p.offWZ},
-			{p.offWX + p.w, p.offWY, p.offWZ},
-			{p.offWX + p.w, p.offWY + p.d, p.offWZ},
-			{p.offWX, p.offWY + p.d, p.offWZ},
-			{p.offWX, p.offWY, p.offWZ + p.h},
-			{p.offWX + p.w, p.offWY, p.offWZ + p.h},
-			{p.offWX + p.w, p.offWY + p.d, p.offWZ + p.h},
-			{p.offWX, p.offWY + p.d, p.offWZ + p.h},
-		}
-		for _, c := range corners {
-			sx, sy := project(c[0], c[1], c[2])
-			if sx < minX {
-				minX = sx
-			}
-			if sx > maxX {
-				maxX = sx
-			}
-			if sy < minY {
-				minY = sy
-			}
-			if sy > maxY {
-				maxY = sy
-			}
-		}
-	}
-	pad := 12.0
-	tx, ty := -minX+pad, -minY+pad
+	project := projectIso
+	tx, ty := partsScreenOrigin(infos)
 
 	byID := make(map[string]partInfo, len(infos))
 	for _, p := range infos {

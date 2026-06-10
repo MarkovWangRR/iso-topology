@@ -7,3 +7,6 @@ nodes:
     shape: cylinder
     label: "Database"
     geom: { w: 120, d: 120, h: 44 }
+    style:
+      effects:
+        pattern: { kind: hatch, color: "#1D3A66", spacing: 8, angle: 30 }

@@ -21,6 +21,12 @@ type IsoSphereOpts struct {
 	Opacity         float64
 	StrokeDasharray string
 	Background      string
+
+	// v2.4 — hatch/dots texture overlaid on the sphere disc.
+	PatternKind    string
+	PatternColor   string
+	PatternSpacing float64
+	PatternAngle   float64
 }
 
 func DefaultIsoSphere() IsoSphereOpts {
@@ -57,6 +63,14 @@ func RenderIsoSphere(o IsoSphereOpts) string {
 		`<circle data-face="sphere" cx="%.2f" cy="%.2f" r="%.2f" fill="url(#%s)" stroke="%s" stroke-width="%.2f"/>`,
 		cx, cy, r, gradID, escapeAttr(o.Stroke), o.StrokeWidth,
 	)
+	// v2.4 — texture overlay clipped to the sphere disc.
+	{
+		var defs strings.Builder
+		if patID := emitPatternDef(&defs, "sphere-pattern", o.PatternKind, o.PatternColor, o.PatternSpacing, o.PatternAngle); patID != "" {
+			fmt.Fprintf(&sb, `<defs>%s</defs><circle data-face="sphere-pattern" cx="%.2f" cy="%.2f" r="%.2f" fill="url(#%s)" stroke="none"/>`,
+				defs.String(), cx, cy, r, patID)
+		}
+	}
 	if strings.TrimSpace(o.Label) != "" {
 		fmt.Fprintf(&sb,
 			`<text x="%.2f" y="%.2f" font-family="%s" font-size="%.2f" font-weight="%s" fill="%s" text-anchor="middle" dy=".35em">%s</text>`,
@@ -76,6 +90,8 @@ func RenderIsoSphere(o IsoSphereOpts) string {
 
 
 func applySphere(o ConvertOpts, s *IsoSphereOpts) {
+	s.PatternKind, s.PatternColor = o.PatternKind, o.PatternColor
+	s.PatternSpacing, s.PatternAngle = o.PatternSpacing, o.PatternAngle
 	if o.Width > 0 {
 		s.Radius = o.Width / 2
 	}

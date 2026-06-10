@@ -4,8 +4,8 @@
 # top face, with a dashed wireframe "ghost" volume above showing the
 # budgeted ceiling — all ghosts align at one height. The hero tile
 # (gradient-descent glyph) anchors the scene. Pure white canvas, one
-# indigo accent. The only authored numbers are sizes and each
-# ghost's vertical lift (offset.wz = its bar's own height).
+# indigo accent. Each ghost rides `place: {above: <its bar>}` — flush
+# on the bar's top, centred on its footprint, no copied heights.
 
 canvas:
   background: "#FFFFFF"
@@ -61,8 +61,7 @@ nodes:
             dropShadow: { dx: 0, dy: 8, blur: 12, color: "rgba(67,56,202,0.18)" }
       - id: ghost_prep
         shape: rectangle
-        place: { rightOf: run, gap: 2.5 }
-        offset: { wz: 36 }
+        place: { above: bar_prep }
         geom: { w: 116, d: 116, h: 114 }
         style: &ghost
           palette: { top: "none", left: "none", right: "none" }
@@ -78,8 +77,7 @@ nodes:
         style: *bar
       - id: ghost_pretrain
         shape: rectangle
-        place: { rightOf: bar_prep, gap: 1.4 }
-        offset: { wz: 120 }
+        place: { above: bar_pretrain }
         geom: { w: 116, d: 116, h: 30 }
         style: *ghost
 
@@ -93,8 +91,7 @@ nodes:
         style: *bar
       - id: ghost_finetune
         shape: rectangle
-        place: { rightOf: bar_pretrain, gap: 1.4 }
-        offset: { wz: 64 }
+        place: { above: bar_finetune }
         geom: { w: 116, d: 116, h: 86 }
         style: *ghost
 

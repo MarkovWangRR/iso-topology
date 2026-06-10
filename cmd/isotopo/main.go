@@ -280,18 +280,11 @@ func renderTopologySVG(doc *isotopo.Document) string {
 // composite document. The layout engine comes from the --layout CLI
 // flag (default dagre).
 func loadDocument(lang string, data []byte) (*isotopo.Document, error) {
-	if lang == "d2" {
-		engine := isotopo.LayoutDagre
-		if flagLayout == "elk" {
-			engine = isotopo.LayoutELK
-		}
-		diagram, err := isotopo.CompileD2(context.Background(), string(data), engine)
-		if err != nil {
-			return nil, err
-		}
-		return isotopo.Translate(diagram, isotopo.DefaultRenderOpts()), nil
+	engine := isotopo.LayoutDagre
+	if flagLayout == "elk" {
+		engine = isotopo.LayoutELK
 	}
-	return isotopo.Parse(data)
+	return isotopo.LoadInput(context.Background(), lang, data, engine)
 }
 
 // classifyInput maps an input path to (sourceLang, fileExtension). The

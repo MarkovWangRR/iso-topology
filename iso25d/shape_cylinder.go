@@ -36,6 +36,12 @@ type IsoCylinderOpts struct {
 	Opacity         float64
 	StrokeDasharray string
 	Background      string
+
+	// v2.4 — hatch/dots texture overlaid on the top ellipse.
+	PatternKind    string
+	PatternColor   string
+	PatternSpacing float64
+	PatternAngle   float64
 }
 
 func DefaultIsoCylinder() IsoCylinderOpts {
@@ -129,6 +135,14 @@ func RenderIsoCylinder(o IsoCylinderOpts) string {
 		`<ellipse data-face="top" cx="%.2f" cy="%.2f" rx="%.2f" ry="%.2f" fill="%s" stroke="%s" stroke-width="%.2f"/>`,
 		sx(topCx), sy(topCy), rx, ry, o.TopFill, o.Stroke, o.StrokeWidth,
 	)
+	// v2.4 — texture overlay on the top ellipse.
+	{
+		var defs strings.Builder
+		if patID := emitPatternDef(&defs, "cyl-pattern", o.PatternKind, o.PatternColor, o.PatternSpacing, o.PatternAngle); patID != "" {
+			fmt.Fprintf(&sb, `<defs>%s</defs><ellipse data-face="top-pattern" cx="%.2f" cy="%.2f" rx="%.2f" ry="%.2f" fill="url(#%s)" stroke="none"/>`,
+				defs.String(), sx(topCx), sy(topCy), rx, ry, patID)
+		}
+	}
 
 	// Label + icon on the top circle, using the inscribed square (in 3D) as
 	// the local frame so the icon/text sit cleanly inside the top ellipse.
@@ -154,6 +168,8 @@ func RenderIsoCylinder(o IsoCylinderOpts) string {
 
 // applyCylinder lowers a ConvertOpts into an IsoCylinderOpts.
 func applyCylinder(o ConvertOpts, c *IsoCylinderOpts) {
+	c.PatternKind, c.PatternColor = o.PatternKind, o.PatternColor
+	c.PatternSpacing, c.PatternAngle = o.PatternSpacing, o.PatternAngle
 	if o.Width > 0 {
 		c.Radius = o.Width / 2
 	}

@@ -174,7 +174,9 @@ ground axis; the solver resolves chains topologically:
 |---|---|
 | `rightOf` / `leftOf` | pin world x to the sibling's +x / −x side (mutually exclusive) |
 | `inFrontOf` / `behind` | pin world y toward / away from the viewer (mutually exclusive) |
+| `above` | pin world z — sit flush ON TOP of the sibling, centred on its footprint unless x/y are also pinned |
 | `gap` | distance from the sibling's footprint, in cells (default 1) |
+| `gapX` / `gapY` | override `gap` per ground axis |
 | `align` | `start` \| `center` \| `end` — alignment along the unconstrained axis (default center) |
 
 References must be **siblings** (same `parts:` list). Dangling refs
@@ -201,7 +203,7 @@ so its `geom.w/d` may be omitted:
 
 | Field | Meaning |
 |---|---|
-| `mode` | `row` (world +x) \| `column` (world +y) \| `grid` (row-major wrap) |
+| `mode` | `row` (world +x) \| `column` (world +y) \| `grid` (row-major wrap) \| `ring` (first child = hub at the centre, rest on a circle) |
 | `cols` | grid only; default ceil(√n) |
 | `gap` | space between children, in cells (default 1) |
 | `padding` | content inset from the container edge, in cells (defaults to gap) |
