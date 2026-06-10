@@ -1,0 +1,241 @@
+# StarRocks — replica of the unified-lakehouse marketing diagram.
+# Reference: https://starrocks.io
+# Key visual traits per pixel-level review:
+#   - very light grey background with subtle iso grid
+#   - all cubes WHITE with grey side walls (E0E2E8 / F0F1F5)
+#   - central StarRocks cube TALL with vivid orange-yellow top
+#   - left: TWO cubes stacked iso-wise (Batch Ingestion behind,
+#     Federated Analytics in front-left), each with brand glyphs
+#   - front: Real-time Ingestion cube
+#   - right: 4 step-stair tiles (Ad-Hoc / BI / Customer / SQL Agents)
+#     each carrying an emoji icon, climbing along the iso right axis
+#   - ALL pipes use ORTHOGONAL routing so they travel along iso
+#     axes (no diagonal lines across the grid)
+
+canvas:
+  background: "#F2F4F6"
+  grid: iso
+  gridColor: "#E5E7EB"
+  gridStep: 40
+
+theme:
+  text:
+    family: "Inter, system-ui, sans-serif"
+    size: 11
+    weight: "500"
+    color: "#1F2937"
+  stroke:
+    color: "#C4C7CF"
+    width: 1
+
+nodes:
+  scene:
+    shape: composite
+    parts:
+      # ── Central StarRocks cube (tall, yellow top w/ backglow halo) ──
+      - id: starrocks
+        shape: rectangle
+        offset: { wx: 500, wy: 500 }
+        geom: { w: 220, d: 220, h: 200 }
+        label: "⚡\nStarRocks"
+        style:
+          palette:
+            topGradient:   { from: "#FFE188", to: "#F59E0B", dir: "down" }
+            leftGradient:  { from: "#F4F4F8", to: "#D8DAE3", dir: "down" }
+            rightGradient: { from: "#FFFFFF", to: "#E8E8EE", dir: "down" }
+          stroke: { color: "#D1D5DB", width: 1 }
+          text: { color: "#92400E", weight: "700", size: 15 }
+          effects:
+            cornerRadius: 8
+            backglow:   { color: "#FFC857", radius: 80, opacity: 0.55 }
+            dropShadow: { dx: 0, dy: 14, blur: 22, color: "rgba(245,158,11,0.30)" }
+
+      # ── Back-left: Batch Ingestion (small, behind StarRocks) ─────
+      - id: batch_ingestion
+        shape: group
+        offset: { wx: 200, wy: 180 }
+        geom: { w: 220, d: 180, h: 70 }
+        label: "Batch Ingestion"
+        style:
+          palette: { top: "#FFFFFF", left: "#E0E2E8", right: "#F0F1F5" }
+          stroke: { color: "#C4C7CF", width: 1 }
+          text: { color: "#1F2937", weight: "600", size: 12 }
+          effects: { cornerRadius: 8 }
+        parts:
+          - id: bi_spark
+            shape: rectangle
+            geom: { w: 60, d: 60, h: 8 }
+            offset: { wx: 30, wy: 25 }
+            icon: "iso://brand/spark"
+            style:
+              palette: { top: "#FFFFFF", left: "#E0E2E8", right: "#F0F1F5" }
+              stroke: { color: "#E25A2C", width: 1 }
+              effects: { cornerRadius: 8 }
+          - id: bi_hadoop
+            shape: rectangle
+            geom: { w: 60, d: 60, h: 8 }
+            offset: { wx: 120, wy: 70 }
+            icon: "iso://brand/hadoop"
+            style:
+              palette: { top: "#FFFFFF", left: "#E0E2E8", right: "#F0F1F5" }
+              stroke: { color: "#65B832", width: 1 }
+              effects: { cornerRadius: 8 }
+
+      # ── Front-left: Federated Analytics (big, low extrusion) ─────
+      - id: federated_analytics
+        shape: group
+        offset: { wx: 30, wy: 500 }
+        geom: { w: 320, d: 240, h: 80 }
+        label: "Federated Analytics"
+        style:
+          palette: { top: "#FFFFFF", left: "#E0E2E8", right: "#F0F1F5" }
+          stroke: { color: "#C4C7CF", width: 1 }
+          text: { color: "#1F2937", weight: "600", size: 12 }
+          effects: { cornerRadius: 8 }
+        parts:
+          - id: fa_mysql
+            shape: rectangle
+            geom: { w: 60, d: 60, h: 8 }
+            offset: { wx: 30, wy: 30 }
+            icon: "iso://brand/mysql"
+            style:
+              palette: { top: "#FFFFFF", left: "#E0E2E8", right: "#F0F1F5" }
+              stroke: { color: "#00618A", width: 1 }
+              effects: { cornerRadius: 8 }
+          - id: fa_pg
+            shape: rectangle
+            geom: { w: 60, d: 60, h: 8 }
+            offset: { wx: 170, wy: 60 }
+            icon: "iso://brand/postgresql"
+            style:
+              palette: { top: "#FFFFFF", left: "#E0E2E8", right: "#F0F1F5" }
+              stroke: { color: "#336791", width: 1 }
+              effects: { cornerRadius: 8 }
+          - id: fa_iceberg
+            shape: rectangle
+            geom: { w: 60, d: 60, h: 8 }
+            offset: { wx: 40, wy: 130 }
+            icon: "iso://brand/iceberg"
+            style:
+              palette: { top: "#FFFFFF", left: "#E0E2E8", right: "#F0F1F5" }
+              stroke: { color: "#2486C0", width: 1 }
+              effects: { cornerRadius: 8 }
+          - id: fa_hive
+            shape: rectangle
+            geom: { w: 60, d: 60, h: 8 }
+            offset: { wx: 190, wy: 170 }
+            icon: "iso://brand/hive"
+            style:
+              palette: { top: "#FFFFFF", left: "#E0E2E8", right: "#F0F1F5" }
+              stroke: { color: "#D4B106", width: 1 }
+              effects: { cornerRadius: 8 }
+
+      # ── Front: Real-time Ingestion ───────────────────────────────
+      - id: realtime_ingestion
+        shape: group
+        offset: { wx: 520, wy: 820 }
+        geom: { w: 280, d: 180, h: 70 }
+        label: "Real-time Ingestion And\nSynchronization"
+        style:
+          palette: { top: "#FFFFFF", left: "#E0E2E8", right: "#F0F1F5" }
+          stroke: { color: "#C4C7CF", width: 1 }
+          text: { color: "#1F2937", weight: "600", size: 12 }
+          effects: { cornerRadius: 8 }
+        parts:
+          - id: ri_pulsar
+            shape: rectangle
+            geom: { w: 60, d: 60, h: 8 }
+            offset: { wx: 40, wy: 30 }
+            icon: "iso://brand/pulsar"
+            style:
+              palette: { top: "#FFFFFF", left: "#E0E2E8", right: "#F0F1F5" }
+              stroke: { color: "#D63341", width: 1 }
+              effects: { cornerRadius: 8 }
+          - id: ri_kafka
+            shape: rectangle
+            geom: { w: 60, d: 60, h: 8 }
+            offset: { wx: 160, wy: 90 }
+            icon: "iso://brand/kafka"
+            style:
+              palette: { top: "#FFFFFF", left: "#E0E2E8", right: "#F0F1F5" }
+              stroke: { color: "#231F20", width: 1 }
+              effects: { cornerRadius: 8 }
+
+      # ── Right step-stair: Ad-Hoc / BI / Customer / SQL Agents ────
+      - id: ad_hoc
+        shape: rectangle
+        offset: { wx: 820, wy: 100 }
+        geom: { w: 130, d: 130, h: 80 }
+        label: "📈\nAd-Hoc\nAnalysis"
+        style:
+          palette: { top: "#FFFFFF", left: "#E0E2E8", right: "#F0F1F5" }
+          stroke: { color: "#C4C7CF", width: 1 }
+          text: { color: "#2563EB", weight: "700", size: 11 }
+          effects: { cornerRadius: 8 }
+      - id: bi_reporting
+        shape: rectangle
+        offset: { wx: 950, wy: 230 }
+        geom: { w: 130, d: 130, h: 80 }
+        label: "📊\nBI\nReporting"
+        style:
+          palette: { top: "#FFFFFF", left: "#E0E2E8", right: "#F0F1F5" }
+          stroke: { color: "#C4C7CF", width: 1 }
+          text: { color: "#2563EB", weight: "700", size: 11 }
+          effects: { cornerRadius: 8 }
+      - id: customer_dashboards
+        shape: rectangle
+        offset: { wx: 1080, wy: 360 }
+        geom: { w: 140, d: 130, h: 80 }
+        label: "🎯\nCustomer-Facing\nDashboards"
+        style:
+          palette: { top: "#FFFFFF", left: "#E0E2E8", right: "#F0F1F5" }
+          stroke: { color: "#C4C7CF", width: 1 }
+          text: { color: "#2563EB", weight: "700", size: 10 }
+          effects: { cornerRadius: 8 }
+      - id: sql_agents
+        shape: rectangle
+        offset: { wx: 1210, wy: 490 }
+        geom: { w: 130, d: 130, h: 80 }
+        label: "🤖\nSQL\nAgents"
+        style:
+          palette: { top: "#FFFFFF", left: "#E0E2E8", right: "#F0F1F5" }
+          stroke: { color: "#C4C7CF", width: 1 }
+          text: { color: "#2563EB", weight: "700", size: 11 }
+          effects: { cornerRadius: 8 }
+
+      # ── Background decorative pedestals (small flat blocks) ──────
+      - id: pedestal_back
+        shape: rectangle
+        offset: { wx: 100, wy: 30 }
+        geom: { w: 90, d: 90, h: 25 }
+        style:
+          palette: { top: "#FFFFFF", left: "#E0E2E8", right: "#F0F1F5" }
+          stroke: { color: "#D1D5DB", width: 1 }
+          effects: { cornerRadius: 8 }
+      - id: pedestal_far_right
+        shape: rectangle
+        offset: { wx: 1100, wy: 780 }
+        geom: { w: 90, d: 90, h: 25 }
+        style:
+          palette: { top: "#FFFFFF", left: "#E0E2E8", right: "#F0F1F5" }
+          stroke: { color: "#D1D5DB", width: 1 }
+          effects: { cornerRadius: 8 }
+      - id: pedestal_front_left
+        shape: rectangle
+        offset: { wx: 420, wy: 1000 }
+        geom: { w: 90, d: 90, h: 25 }
+        style:
+          palette: { top: "#FFFFFF", left: "#E0E2E8", right: "#F0F1F5" }
+          stroke: { color: "#D1D5DB", width: 1 }
+          effects: { cornerRadius: 8 }
+
+    connectors:
+      # ── Golden pipes into StarRocks (sources → centre) ───────────
+      - { from: batch_ingestion,     to: starrocks, arrow: triangle, routing: orthogonal, stroke: { color: "#F7B500", width: 3.5 } }
+      - { from: federated_analytics, to: starrocks, arrow: triangle, routing: orthogonal, stroke: { color: "#F7B500", width: 3.5 } }
+      - { from: realtime_ingestion,  to: starrocks, arrow: triangle, routing: orthogonal, stroke: { color: "#F7B500", width: 3.5 } }
+      # ── Golden pipes out of StarRocks (centre → analytics tiles) ─
+      - { from: starrocks, to: ad_hoc,              arrow: triangle, routing: orthogonal, stroke: { color: "#F7B500", width: 3.5 } }
+      - { from: starrocks, to: bi_reporting,        arrow: triangle, routing: orthogonal, stroke: { color: "#F7B500", width: 3.5 } }
+      - { from: starrocks, to: customer_dashboards, arrow: triangle, routing: orthogonal, stroke: { color: "#F7B500", width: 3.5 } }
+      - { from: starrocks, to: sql_agents,          arrow: triangle, routing: orthogonal, stroke: { color: "#F7B500", width: 3.5 } }
