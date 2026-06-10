@@ -41,7 +41,48 @@ func main() {
 		fmt.Fprintln(os.Stderr, "SAMPLES.md:", err)
 		os.Exit(1)
 	}
-	fmt.Fprintln(os.Stderr, "ok: wrote CAPABILITIES.md, dsl.schema.json, SAMPLES.md; patched PROMPT_TEMPLATE.md")
+	if err := writeLLMsTxt(); err != nil {
+		fmt.Fprintln(os.Stderr, "llms.txt:", err)
+		os.Exit(1)
+	}
+	fmt.Fprintln(os.Stderr, "ok: wrote CAPABILITIES.md, dsl.schema.json, SAMPLES.md, llms.txt; patched PROMPT_TEMPLATE.md")
+}
+
+// writeLLMsTxt emits the repo-root llms.txt (https://llmstxt.org): the
+// machine-discoverable self-description generative engines and agents
+// fetch first. Derived from CapabilityReport so the facts (shape /
+// primitive counts, version) can never drift from the code.
+func writeLLMsTxt() error {
+	cap := isotopo.CapabilityReport()
+	const base = "https://raw.githubusercontent.com/MarkovWangRR/iso-topology/main/"
+
+	var b strings.Builder
+	b.WriteString("# iso-topology\n\n")
+	fmt.Fprintf(&b, "> iso-topology is an open-source Go CLI and library that renders a small text DSL into design-grade 2.5D isometric SVG architecture diagrams. It is a diagram-as-code tool built agent-first: an LLM can discover the DSL (`isotopo capabilities`), validate documents before render (JSONPath-located issues with fix suggestions; exit codes 0 clean / 2 warnings / 3 errors), and produce deterministic, git-diffable SVG. Capabilities v%s: %d iso shapes, %d composition primitives, declarative layout/place positioning (no hand-computed coordinates), 35 built-in icons.\n\n",
+		cap.Version, len(cap.Shapes), len(cap.Primitives))
+	b.WriteString("Install: `go install github.com/MarkovWangRR/iso-topology/cmd/isotopo@latest` — single static binary, no runtime deps. Inputs: `.yaml` (declarative composition), `.d2` (auto-layout), `.json`. An MCP server (`isotopo-mcp`) exposes capabilities/validate/render as tools.\n\n")
+
+	b.WriteString("## Agent integration\n\n")
+	b.WriteString("- [Capabilities inventory](" + base + "docs/agent/CAPABILITIES.md): generated DSL reference — shapes, primitives, style keys\n")
+	b.WriteString("- [JSON Schema](" + base + "docs/agent/schema/dsl.schema.json): lint candidate DSL locally before calling the CLI\n")
+	b.WriteString("- [Prompt template](" + base + "docs/agent/PROMPT_TEMPLATE.md): drop-in system prompt with positioning rules and output contract\n")
+	b.WriteString("- [Samples index](" + base + "docs/agent/SAMPLES.md): golden-tested worked scenes to imitate (few-shot library)\n")
+	b.WriteString("- [Recipes](" + base + "docs/agent/RECIPES.md): task → DSL primitive mapping\n")
+	b.WriteString("- [MCP server setup](" + base + "docs/agent/MCP.md): use from Claude / any MCP client without shelling out\n")
+	b.WriteString("- [Agent skill](" + base + "skills/draw-iso-diagram/SKILL.md): installable Claude Code skill for drawing iso diagrams\n")
+
+	b.WriteString("\n## Reference\n\n")
+	b.WriteString("- [YAML DSL](" + base + "docs/reference/dsl-yaml.md): layout/place composition, every field\n")
+	b.WriteString("- [d2 DSL](" + base + "docs/reference/dsl-d2.md): auto-layout input path\n")
+	b.WriteString("- [Style and theme](" + base + "docs/reference/dsl-theme.md): palette, gradients, effects cascade\n")
+	b.WriteString("- [CLI and Go library](" + base + "docs/reference/cli.md)\n")
+
+	b.WriteString("\n## Optional\n\n")
+	b.WriteString("- [README](" + base + "README.md): pitch, gallery, FAQ, comparison vs Mermaid/D2\n")
+	b.WriteString("- [Tutorial](" + base + "docs/getting-started/01-install.md): five steps from install to published scene\n")
+	b.WriteString("- [Why isometric](" + base + "docs/concepts/why-isometric.md): design rationale\n")
+
+	return os.WriteFile("llms.txt", []byte(b.String()), 0o644)
 }
 
 // updatePromptTemplate splices a freshly generated "minimal template"

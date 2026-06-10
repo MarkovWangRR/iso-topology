@@ -1,0 +1,28 @@
+# iso-topology
+
+> iso-topology is an open-source Go CLI and library that renders a small text DSL into design-grade 2.5D isometric SVG architecture diagrams. It is a diagram-as-code tool built agent-first: an LLM can discover the DSL (`isotopo capabilities`), validate documents before render (JSONPath-located issues with fix suggestions; exit codes 0 clean / 2 warnings / 3 errors), and produce deterministic, git-diffable SVG. Capabilities v0.2.2: 8 iso shapes, 8 composition primitives, declarative layout/place positioning (no hand-computed coordinates), 35 built-in icons.
+
+Install: `go install github.com/MarkovWangRR/iso-topology/cmd/isotopo@latest` — single static binary, no runtime deps. Inputs: `.yaml` (declarative composition), `.d2` (auto-layout), `.json`. An MCP server (`isotopo-mcp`) exposes capabilities/validate/render as tools.
+
+## Agent integration
+
+- [Capabilities inventory](https://raw.githubusercontent.com/MarkovWangRR/iso-topology/main/docs/agent/CAPABILITIES.md): generated DSL reference — shapes, primitives, style keys
+- [JSON Schema](https://raw.githubusercontent.com/MarkovWangRR/iso-topology/main/docs/agent/schema/dsl.schema.json): lint candidate DSL locally before calling the CLI
+- [Prompt template](https://raw.githubusercontent.com/MarkovWangRR/iso-topology/main/docs/agent/PROMPT_TEMPLATE.md): drop-in system prompt with positioning rules and output contract
+- [Samples index](https://raw.githubusercontent.com/MarkovWangRR/iso-topology/main/docs/agent/SAMPLES.md): golden-tested worked scenes to imitate (few-shot library)
+- [Recipes](https://raw.githubusercontent.com/MarkovWangRR/iso-topology/main/docs/agent/RECIPES.md): task → DSL primitive mapping
+- [MCP server setup](https://raw.githubusercontent.com/MarkovWangRR/iso-topology/main/docs/agent/MCP.md): use from Claude / any MCP client without shelling out
+- [Agent skill](https://raw.githubusercontent.com/MarkovWangRR/iso-topology/main/skills/draw-iso-diagram/SKILL.md): installable Claude Code skill for drawing iso diagrams
+
+## Reference
+
+- [YAML DSL](https://raw.githubusercontent.com/MarkovWangRR/iso-topology/main/docs/reference/dsl-yaml.md): layout/place composition, every field
+- [d2 DSL](https://raw.githubusercontent.com/MarkovWangRR/iso-topology/main/docs/reference/dsl-d2.md): auto-layout input path
+- [Style and theme](https://raw.githubusercontent.com/MarkovWangRR/iso-topology/main/docs/reference/dsl-theme.md): palette, gradients, effects cascade
+- [CLI and Go library](https://raw.githubusercontent.com/MarkovWangRR/iso-topology/main/docs/reference/cli.md)
+
+## Optional
+
+- [README](https://raw.githubusercontent.com/MarkovWangRR/iso-topology/main/README.md): pitch, gallery, FAQ, comparison vs Mermaid/D2
+- [Tutorial](https://raw.githubusercontent.com/MarkovWangRR/iso-topology/main/docs/getting-started/01-install.md): five steps from install to published scene
+- [Why isometric](https://raw.githubusercontent.com/MarkovWangRR/iso-topology/main/docs/concepts/why-isometric.md): design rationale

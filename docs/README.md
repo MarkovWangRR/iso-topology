@@ -59,8 +59,14 @@ order — each step builds on the last.
   prompt (capability block auto-generated)
 - [`SAMPLES.md`](agent/SAMPLES.md) — generated index of the golden
   fixtures: the few-shot library, one entry per worked scene
+- [`MCP.md`](agent/MCP.md) — the `isotopo-mcp` server: capabilities /
+  validate / render as MCP tools for Claude-family clients
+- [`../skills/`](../skills/README.md) — installable Claude Code skill
+  encoding the full drawing workflow
 - [`schema/dsl.schema.json`](agent/schema/dsl.schema.json) — JSON
   Schema for local lint (no CLI roundtrip)
+- [`../llms.txt`](../llms.txt) — generated repo-root self-description
+  for generative engines (llmstxt.org)
 
 ## How to navigate by question
 

@@ -12,6 +12,8 @@
 
 Single static binary · zero runtime deps · renders in milliseconds · 35 built-in icons · every sample golden-tested
 
+English · [简体中文](README.zh-CN.md)
+
 </div>
 
 ---
@@ -119,6 +121,23 @@ docs/agent/SAMPLES.md that best matches the task. Use
 A full battle-tested system prompt (with positioning rules and output
 contract) lives at [docs/agent/PROMPT_TEMPLATE.md](docs/agent/PROMPT_TEMPLATE.md)
 — its capability section is generated from code, so it can't go stale.
+
+Two deeper integrations ship in this repo:
+
+- **MCP server** — `isotopo-mcp` exposes `iso_capabilities` /
+  `iso_validate` / `iso_render` as MCP tools over stdio, so Claude
+  Code, Claude Desktop, or Cursor can draw without shelling out:
+  `claude mcp add isotopo -- isotopo-mcp`. Setup:
+  [docs/agent/MCP.md](docs/agent/MCP.md).
+- **Agent skill** — [`skills/draw-iso-diagram`](skills/draw-iso-diagram/SKILL.md)
+  is an installable Claude Code skill encoding the whole workflow
+  (discover → imitate a sample → author → validate loop → render)
+  plus the visual-quality rules the gallery follows:
+  `cp -r skills/draw-iso-diagram ~/.claude/skills/`.
+
+There is also a repo-root [`llms.txt`](llms.txt) (generated, like
+every other contract surface) for generative engines and agent
+crawlers.
 
 ## Gallery
 
@@ -304,16 +323,15 @@ Organized by purpose — full index at [docs/README.md](docs/README.md).
 
 - **Start here:** [Tutorial](docs/getting-started/01-install.md) · [Recipes](docs/agent/RECIPES.md) · [Troubleshooting](docs/guides/troubleshooting.md)
 - **Reference:** [CLI + library](docs/reference/cli.md) · [YAML DSL](docs/reference/dsl-yaml.md) · [d2 DSL](docs/reference/dsl-d2.md) · [Style/Theme](docs/reference/dsl-theme.md) · [Output layout](docs/reference/output-layout.md)
-- **Agent integration:** [CAPABILITIES.md](docs/agent/CAPABILITIES.md) · [PROMPT_TEMPLATE.md](docs/agent/PROMPT_TEMPLATE.md) · [SAMPLES.md](docs/agent/SAMPLES.md) · [dsl.schema.json](docs/agent/schema/dsl.schema.json)
+- **Agent integration:** [CAPABILITIES.md](docs/agent/CAPABILITIES.md) · [PROMPT_TEMPLATE.md](docs/agent/PROMPT_TEMPLATE.md) · [SAMPLES.md](docs/agent/SAMPLES.md) · [dsl.schema.json](docs/agent/schema/dsl.schema.json) · [MCP server](docs/agent/MCP.md) · [skills/](skills/README.md)
 - **Design:** [Why isometric](docs/concepts/why-isometric.md) · [Extending](docs/guides/extending.md)
 
 ## Roadmap
 
-- **MCP server** — `capabilities` / `validate` / `render` as tools, so
-  Claude-family agents can draw without shelling out
 - Pattern textures on curved shapes (cylinder / sphere sides)
 - Per-axis `place` gaps; `ring` layout mode
 - More domain glyph packs
+- Render-time visual lint (overlap/clipping diagnostics as JSON)
 
 ## Status
 
