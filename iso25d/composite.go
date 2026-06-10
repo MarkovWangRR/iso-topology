@@ -124,11 +124,25 @@ func RenderComposite(parts []CompositePart) string {
 		// local (0, 0, 0) inside the standalone SVG aligns with that
 		// translate position — no more per-shape coord mismatch.
 		fmt.Fprintf(&sb, `<g data-part="%d" transform="translate(%.2f %.2f)">%s</g>`,
-			i, r.sx+tx-r.intTx, r.sy+ty-r.intTy, r.inner,
+			i, r.sx+tx-r.intTx, r.sy+ty-r.intTy, namespaceSVGIDs(r.inner, fmt.Sprintf("p%d-", i)),
 		)
 	}
 	sb.WriteString(`</svg>`)
 	return sb.String()
+}
+
+// namespaceSVGIDs prefixes every id definition and reference inside one
+// part's standalone markup. Shape renderers use FIXED def ids (e.g.
+// "rounded-side"); concatenating N parts verbatim made every part
+// resolve url(#...) against the FIRST part's defs — document-wide id
+// collision, so e.g. every rounded part inherited part 0's side fill
+// regardless of its own palette. Standalone part SVGs only ever use
+// ids for their own defs, so a blanket prefix is safe.
+func namespaceSVGIDs(inner, prefix string) string {
+	inner = strings.ReplaceAll(inner, `id="`, `id="`+prefix)
+	inner = strings.ReplaceAll(inner, `url(#`, `url(#`+prefix)
+	inner = strings.ReplaceAll(inner, `href="#`, `href="#`+prefix)
+	return inner
 }
 
 // PartOriginOffset returns the (tx, ty) within a part's standalone SVG

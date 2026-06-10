@@ -100,8 +100,26 @@ func RenderIsoBoxRounded(o IsoBoxOpts) string {
 		shadowID = "rounded-shadow"
 	}
 
-	// Side gradient def — vertical, RightFill (lighter) at top → LeftFill at bottom.
-	wantGradient := !o.Wireframe && o.LeftFill != ""
+	// Side gradient def — vertical, RightFill (lighter) at top → LeftFill
+	// at bottom. v2.2 — author Left/RightGradient win over solid fills:
+	// the rounded silhouette has a single continuous side band, so the
+	// two face gradients collapse onto it as (right.from → left.to),
+	// mirroring the solid right-top/left-bottom convention.
+	topStop := o.RightFill
+	botStop := o.LeftFill
+	if o.RightGradient != nil && strings.TrimSpace(o.RightGradient.From) != "" {
+		topStop = o.RightGradient.From
+	}
+	if o.LeftGradient != nil && strings.TrimSpace(o.LeftGradient.To) != "" {
+		botStop = o.LeftGradient.To
+	}
+	if topStop == "" {
+		topStop = botStop
+	}
+	if botStop == "" {
+		botStop = topStop
+	}
+	wantGradient := !o.Wireframe && botStop != ""
 	var defs strings.Builder
 	if hasShadow {
 		emitDropShadowFilter(&defs, shadowID, o.ShadowDx, o.ShadowDy, o.ShadowBlur, o.ShadowColor)
@@ -109,11 +127,6 @@ func RenderIsoBoxRounded(o IsoBoxOpts) string {
 	gradID := ""
 	if wantGradient {
 		gradID = "rounded-side"
-		topStop := o.RightFill
-		if topStop == "" {
-			topStop = o.LeftFill
-		}
-		botStop := o.LeftFill
 		fmt.Fprintf(&defs,
 			`<linearGradient id="%s" x1="50%%" y1="0%%" x2="50%%" y2="100%%"><stop offset="0%%" stop-color="%s"/><stop offset="100%%" stop-color="%s"/></linearGradient>`,
 			gradID, escapeAttr(topStop), escapeAttr(botStop),
