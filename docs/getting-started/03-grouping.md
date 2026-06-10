@@ -107,7 +107,7 @@ Hand-written `offset: {wx, wy}` coordinates still work — but treat
 them as a fine-tune delta on top of `place`/`layout`, not the
 primary mechanism. Every scene in
 [samples/topology](../../samples/topology) is coordinate-free; the
-[edge-platform sample](../../samples/topology/edge-platform/input.yaml)
+[llm-serving sample](../../samples/topology/llm-serving/input.yaml)
 shows grid containers, place chains and auto-sizing in one file.
 
 Full grammar: [`reference/dsl-yaml.md`](../reference/dsl-yaml.md).

@@ -1,0 +1,112 @@
+# training-compute — where the GPU hours of a training run go.
+# An iso bar chart: three gradient bars (data prep / pretraining /
+# finetuning), each carrying a GPU glyph and its hour count on the
+# top face, with a dashed wireframe "ghost" volume above showing the
+# budgeted ceiling — all ghosts align at one height. The hero tile
+# (gradient-descent glyph) anchors the scene. Pure white canvas, one
+# indigo accent. The only authored numbers are sizes and each
+# ghost's vertical lift (offset.wz = its bar's own height).
+
+canvas:
+  background: "#FFFFFF"
+
+theme:
+  text:
+    family: "Inter, system-ui, sans-serif"
+    size: 11
+    weight: "700"
+    color: "#312E81"
+  stroke:
+    color: "#C7CAD4"
+    width: 1
+
+nodes:
+  scene:
+    shape: composite
+    parts:
+      # ── Hero tile ────────────────────────────────────────────────
+      - id: run
+        shape: rectangle
+        geom: { w: 170, d: 170, h: 22 }
+        icon: "iso://glyph/training/4F46E5"
+        label: "Training Run #42"
+        style:
+          palette:
+            top: "#FFFFFF"
+            leftGradient:  { from: "#6366F1", to: "#312E81", dir: "down" }
+            rightGradient: { from: "#818CF8", to: "#3730A3", dir: "down" }
+          stroke: { color: "#4338CA", width: 1.2 }
+          text:   { color: "#312E81", size: 11, weight: "800" }
+          effects:
+            cornerRadius: 14
+            backglow:   { color: "#A5B4FC", radius: 40, opacity: 0.35 }
+            dropShadow: { dx: 0, dy: 12, blur: 18, color: "rgba(67,56,202,0.25)" }
+
+      # ── Bar 1: data prep (small spend, big headroom) ─────────────
+      - id: bar_prep
+        shape: rectangle
+        place: { rightOf: run, gap: 2.5 }
+        geom: { w: 116, d: 116, h: 36 }
+        icon: "iso://glyph/etl/312E81"
+        label: "Data prep\n0.4k GPU·h"
+        style: &bar
+          palette:
+            top: "#FFFFFF"
+            leftGradient:  { from: "#6366F1", to: "#3730A3", dir: "down" }
+            rightGradient: { from: "#A5B4FC", to: "#4F46E5", dir: "down" }
+          stroke: { color: "#4338CA", width: 1.1 }
+          text:   { color: "#312E81", size: 9.5, weight: "700" }
+          effects:
+            cornerRadius: 8
+            dropShadow: { dx: 0, dy: 8, blur: 12, color: "rgba(67,56,202,0.18)" }
+      - id: ghost_prep
+        shape: rectangle
+        place: { rightOf: run, gap: 2.5 }
+        offset: { wz: 36 }
+        geom: { w: 116, d: 116, h: 114 }
+        style: &ghost
+          palette: { top: "none", left: "none", right: "none" }
+          stroke:  { color: "#A5B4FC", width: 1.2, dash: "4 4" }
+
+      # ── Bar 2: pretraining (the big one) ─────────────────────────
+      - id: bar_pretrain
+        shape: rectangle
+        place: { rightOf: bar_prep, gap: 1.4 }
+        geom: { w: 116, d: 116, h: 120 }
+        icon: "iso://glyph/gpu/312E81"
+        label: "Pretraining\n4.8k GPU·h"
+        style: *bar
+      - id: ghost_pretrain
+        shape: rectangle
+        place: { rightOf: bar_prep, gap: 1.4 }
+        offset: { wz: 120 }
+        geom: { w: 116, d: 116, h: 30 }
+        style: *ghost
+
+      # ── Bar 3: finetuning (medium) ───────────────────────────────
+      - id: bar_finetune
+        shape: rectangle
+        place: { rightOf: bar_pretrain, gap: 1.4 }
+        geom: { w: 116, d: 116, h: 64 }
+        icon: "iso://glyph/model/312E81"
+        label: "Finetuning\n1.1k GPU·h"
+        style: *bar
+      - id: ghost_finetune
+        shape: rectangle
+        place: { rightOf: bar_pretrain, gap: 1.4 }
+        offset: { wz: 64 }
+        geom: { w: 116, d: 116, h: 86 }
+        style: *ghost
+
+    connectors:
+      - { from: run.right-mid, to: bar_prep.left-mid, routing: orthogonal, stroke: { color: "#6366F1", width: 1.2 } }
+
+annotations:
+  - anchor: ghost_pretrain
+    side: top
+    distance: 45
+    text: "Budget ceiling\n6.5k GPU·h / stage"
+    bg: "#FFFFFF"
+    border: "#A5B4FC"
+    color: "#4338CA"
+    fontSize: 12

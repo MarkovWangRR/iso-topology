@@ -1,0 +1,162 @@
+# llm-serving — a dark-mode LLM inference platform. Requests flow
+# from a chat app and a CLI through the serving gateway (the hero
+# board: router, guardrails, semantic cache, auth — each cell carries
+# a cyan glyph AND an iso caption) into the model plane at the back:
+# a GPU pool cube and a model-registry replica stack. A dotted
+# texture panel floats behind the board for depth; a dashed white
+# bezier carries async model sync. One neon accent. Zero coordinates.
+
+canvas:
+  background: "#0A0A0B"
+  grid: iso
+  gridColor: "#161619"
+  gridStep: 40
+
+theme:
+  text:
+    family: "Inter, system-ui, sans-serif"
+    size: 10
+    weight: "600"
+    color: "#A1E8F5"
+  stroke:
+    color: "#2E2E33"
+    width: 1
+
+nodes:
+  scene:
+    shape: composite
+    parts:
+      # ── Clients (front-left, icon + caption) ─────────────────────
+      - id: chat_app
+        shape: rectangle
+        geom: { w: 100, d: 100, h: 14 }
+        icon: "iso://glyph/chat/light"
+        label: "Chat App"
+        style: &client
+          palette: { top: "#1B1B1F", left: "#0E0E11", right: "#141417" }
+          stroke:  { color: "#3F3F46", width: 1 }
+          text:    { color: "#D4D4D8", size: 10 }
+          effects: { cornerRadius: 12 }
+      - id: cli
+        shape: rectangle
+        place: { inFrontOf: chat_app, gap: 1 }
+        geom: { w: 100, d: 100, h: 14 }
+        icon: "iso://glyph/terminal/light"
+        label: "CLI"
+        style: *client
+
+      # ── Texture panel floating behind the gateway ────────────────
+      - id: mesh_panel
+        shape: rectangle
+        place: { rightOf: chat_app, behind: chat_app, gap: 2 }
+        geom: { w: 260, d: 260, h: 6 }
+        style:
+          palette: { top: "#101013", left: "#0A0A0B", right: "#0D0D10" }
+          stroke:  { color: "#1F1F24", width: 1 }
+          effects:
+            cornerRadius: 10
+            pattern: { kind: "dots", color: "#1B7A96", spacing: 9 }
+
+      # ── Serving gateway (hero: cyan halo, 2×2 cells) ─────────────
+      - id: gateway
+        shape: group
+        place: { rightOf: chat_app, inFrontOf: mesh_panel, gap: 2.5 }
+        geom: { h: 20 }
+        layout: { mode: grid, cols: 2, gap: 0.6 }
+        style:
+          palette:
+            top: "#141418"
+            leftGradient:  { from: "#155E75", to: "#0E2A33", dir: "down" }
+            rightGradient: { from: "#0E7490", to: "#10333D", dir: "down" }
+          stroke: { color: "#22D3EE", width: 1.1 }
+          effects:
+            cornerRadius: 14
+            backglow:   { color: "#22D3EE", radius: 42, opacity: 0.3 }
+            dropShadow: { dx: 0, dy: 12, blur: 18, color: "rgba(34,211,238,0.22)" }
+        parts:
+          - id: router
+            shape: rectangle
+            geom: { w: 96, d: 96, h: 10 }
+            icon: "iso://glyph/bolt/22D3EE"
+            label: "Router"
+            style: &cell
+              palette: { top: "#1B1B1F", left: "#0E0E11", right: "#141417" }
+              stroke:  { color: "#155E75", width: 1 }
+              effects: { cornerRadius: 10 }
+          - id: guardrails
+            shape: rectangle
+            geom: { w: 96, d: 96, h: 10 }
+            icon: "iso://glyph/shield/22D3EE"
+            label: "Guardrails"
+            style: *cell
+          - id: semantic_cache
+            shape: rectangle
+            geom: { w: 96, d: 96, h: 10 }
+            icon: "iso://glyph/layers/22D3EE"
+            label: "Cache"
+            style: *cell
+          - id: auth
+            shape: rectangle
+            geom: { w: 96, d: 96, h: 10 }
+            icon: "iso://glyph/key/22D3EE"
+            label: "Auth"
+            style: *cell
+
+      # ── Model plane (back-right: GPU pool + model registry) ──────
+      - id: model_plane
+        shape: group
+        place: { rightOf: gateway, behind: gateway, gap: 2 }
+        geom: { h: 12 }
+        label: "Model Plane"
+        style:
+          palette: { top: "#121215", left: "#0B0B0D", right: "#0E0E11" }
+          stroke:  { color: "#2E2E33", width: 1 }
+          text:    { color: "#71717A", size: 10 }
+          effects: { cornerRadius: 12 }
+        parts:
+          - id: gpu_pool
+            shape: rectangle
+            geom: { w: 96, d: 96, h: 56 }
+            icon: "iso://glyph/gpu/light"
+            label: "GPU Pool"
+            style:
+              palette: { top: "#1B1B1F", left: "#0E0E11", right: "#141417" }
+              stroke:  { color: "#3F3F46", width: 1 }
+              text:    { color: "#D4D4D8", size: 10 }
+              effects: { cornerRadius: 10 }
+          - id: registry
+            shape: cylinder
+            place: { rightOf: gpu_pool, gap: 1, align: end }
+            geom: { w: 80, d: 80, h: 26 }
+            label: "Models"
+            style:
+              palette: { top: "#E4F7FB", left: "#0E7490", right: "#22D3EE" }
+              stroke:  { color: "#0A0A0B", width: 1.1 }
+              text:    { color: "#155E75", size: 9, weight: "700" }
+            stack: { count: 3, gap: 5 }
+
+    connectors:
+      # Request path: clients → gateway → GPU pool (neon, grid-aligned).
+      - { from: chat_app, to: gateway, arrow: triangle, routing: orthogonal, stroke: { color: "#22D3EE", width: 1.8 } }
+      - { from: cli,      to: gateway, arrow: triangle, routing: orthogonal, stroke: { color: "#22D3EE", width: 1.8 } }
+      - { from: gateway,  to: model_plane, arrow: triangle, routing: orthogonal, stroke: { color: "#22D3EE", width: 1.8 } }
+      # Async model sync: dashed arc from the registry to the board.
+      - { from: model_plane, to: mesh_panel, routing: bezier, stroke: { color: "#E4E4E7", width: 1, dash: "2 5" } }
+
+annotations:
+  - anchor: gateway
+    side: bottom
+    distance: 115
+    text: "Token streaming\np95 TTFT < 180 ms"
+    bg: "#141418"
+    border: "#2E2E33"
+    color: "#E4E4E7"
+    fontSize: 13
+  - anchor: registry~2
+    side: right
+    distance: 55
+    text: "Weights synced\nfrom the registry"
+    bg: "#141418"
+    border: "#2E2E33"
+    color: "#E4E4E7"
+    fontSize: 13

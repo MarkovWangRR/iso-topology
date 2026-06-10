@@ -2,7 +2,7 @@
 
 **Text in. Isometric SVG out. Architecture diagrams your agent can generate, validate, and diff.**
 
-![iso-topology hero — integration hub with eight satellite tiles in a ring](docs/assets/integration-hub.png)
+![iso-topology hero — an AI platform core ringed by eight capability tiles](docs/assets/ai-platform.png)
 
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![Go 1.25](https://img.shields.io/badge/Go-1.25-00ADD8?logo=go&logoColor=white)](https://go.dev)
@@ -78,43 +78,46 @@ iso SVG out, source-controlled, agent-generatable.
 Every scene below is positioned entirely by `place` relations and
 `layout` containers — not a single hand-computed coordinate.
 
-### Integration hub (light · hub-and-spoke)
+### AI platform (light · hub-and-spoke)
 
-![integration-hub](docs/assets/integration-hub.png)
+![ai-platform](docs/assets/ai-platform.png)
 
-One violet hero with gradient flanks and a halo; eight icon-only
-satellite tiles ringed around it by `place` constraints, hairline
-spokes underneath. Source:
-[samples/topology/integration-hub/input.yaml](samples/topology/integration-hub/input.yaml).
+The AI core ringed by eight capabilities, each top face carrying a
+domain glyph plus an iso-projected caption — LLM gateway, vector
+store, GPU pool, agents, data lake, streaming, warehouse,
+observability. Solid spokes = serving path, dashed = data path.
+Source:
+[samples/topology/ai-platform/input.yaml](samples/topology/ai-platform/input.yaml).
 
-### Edge platform (dark · layered flow)
+### LLM serving (dark · layered flow)
 
-![edge-platform](docs/assets/edge-platform.png)
+![llm-serving](docs/assets/llm-serving.png)
 
-Near-black canvas, one neon accent. A `layout: grid` service board
-with cyan glyph icons, a dotted texture panel floating behind it,
-clients flowing in on orthogonal pipes and a replica origin stack
-shielded at the back. Source:
-[samples/topology/edge-platform/input.yaml](samples/topology/edge-platform/input.yaml).
+Chat app and CLI flow through the serving gateway — a `layout: grid`
+hero board whose cells (router / guardrails / cache / auth) carry
+cyan glyphs and captions — into the model plane: a GPU pool and a
+model-registry replica stack, with a dotted texture panel floating
+behind. Source:
+[samples/topology/llm-serving/input.yaml](samples/topology/llm-serving/input.yaml).
 
-### VPC peering (dark · dual substrate)
+### RAG pipeline (dark · dual plane)
 
-![vpc-peering](docs/assets/vpc-peering.png)
+![rag-pipeline](docs/assets/rag-pipeline.png)
 
-Two auto-sized `group` substrates stacked along the iso diagonal —
-control plane behind, data plane in front — joined by a dashed
-bezier peering link. White-topped emerald cubes, glyph icons, SDK
-replica stack. Source:
-[samples/topology/vpc-peering/input.yaml](samples/topology/vpc-peering/input.yaml).
+Ingest & index on the back plane (docs → ETL → embeddings), serving
+on the front plane (app → retriever → LLM), the shared vector
+database standing between them as a replica stack — the retriever's
+ANN query rides a dashed bezier. Source:
+[samples/topology/rag-pipeline/input.yaml](samples/topology/rag-pipeline/input.yaml).
 
-### Build metrics (light · ghost volumes)
+### Training compute (light · ghost volumes)
 
-![build-metrics](docs/assets/build-metrics.png)
+![training-compute](docs/assets/training-compute.png)
 
-An iso bar chart: solid gradient bars with dashed wireframe "ghost"
-volumes above them showing reclaimable headroom, captions in screen
-space. Source:
-[samples/topology/build-metrics/input.yaml](samples/topology/build-metrics/input.yaml).
+Where a training run's GPU hours go: gradient bars carrying glyphs
+and hour counts on their top faces, dashed wireframe "ghost" volumes
+above showing the per-stage budget ceiling. Source:
+[samples/topology/training-compute/input.yaml](samples/topology/training-compute/input.yaml).
 
 ### Microservice (.d2 → dagre auto-layout)
 

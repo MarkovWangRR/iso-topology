@@ -26,8 +26,8 @@ description matches your task, imitate its structure, then check
 
 | Fixture | Demonstrates |
 |---|---|
-| [`build-metrics`](../../samples/topology/build-metrics/input.yaml) | build-metrics — "engineering time" ghost-volume bar chart. |
-| [`edge-platform`](../../samples/topology/edge-platform/input.yaml) | edge-platform — dark-mode edge network platform. |
-| [`integration-hub`](../../samples/topology/integration-hub/input.yaml) | integration-hub — hub-and-spoke integrations ring. |
+| [`ai-platform`](../../samples/topology/ai-platform/input.yaml) | ai-platform — an AI platform core and its eight capabilities, as a hub-and-spoke ring. |
+| [`llm-serving`](../../samples/topology/llm-serving/input.yaml) | llm-serving — a dark-mode LLM inference platform. |
 | [`microservice`](../../samples/topology/microservice/input.d2) | microservice — minimal .d2 auto-layout path: person → services → database. |
-| [`vpc-peering`](../../samples/topology/vpc-peering/input.yaml) | vpc-peering — dark-mode private peering between two VPCs. |
+| [`rag-pipeline`](../../samples/topology/rag-pipeline/input.yaml) | rag-pipeline — a RAG system on two planes. |
+| [`training-compute`](../../samples/topology/training-compute/input.yaml) | training-compute — where the GPU hours of a training run go. |

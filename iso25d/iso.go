@@ -474,12 +474,24 @@ func writeTopLabelAndIconV12(
 
 	fmt.Fprintf(sb, `<g data-face="top-content" transform="%s">`, topContentTransform(originX, originY))
 
+	// v2.3 — icon + label together on the top face: treat them as one
+	// vertically-centred block (icon above, text below) instead of
+	// pinning the icon at the face centre and hanging the text past it.
+	blockLift := 0.0
+	if hasIcon && hasLabel && iconAnchor == "" {
+		nLines := 1
+		if hasMulti {
+			nLines = len(lines)
+		}
+		blockLift = (fontSize*1.2*float64(nLines) + 4) / 2
+	}
+
 	if hasIcon {
 		iconSize := math.Min(faceW, faceD) * iconScale
 		// Anchor + offset (offset is fraction of face dim).
 		ix, iy := iconAnchorXY(iconAnchor, faceW, faceD, iconSize)
 		ix += iconOffX * faceW
-		iy += iconOffY * faceD
+		iy += iconOffY*faceD - blockLift
 		fmt.Fprintf(sb,
 			`<image href="%s" xlink:href="%s" x="%.2f" y="%.2f" width="%.2f" height="%.2f" preserveAspectRatio="xMidYMid meet"/>`,
 			escapeAttr(icon), escapeAttr(icon), ix, iy, iconSize, iconSize,
@@ -489,7 +501,7 @@ func writeTopLabelAndIconV12(
 		lx := faceW / 2
 		ly := faceD * 0.5
 		if hasIcon && iconAnchor == "" {
-			ly = faceD*0.5 + math.Min(faceW, faceD)*iconScale*0.5 + fontSize*0.5 + 2
+			ly = faceD*0.5 + math.Min(faceW, faceD)*iconScale*0.5 + fontSize*0.7 + 3 - blockLift
 		}
 		if hasMulti {
 			// Centre the block of lines vertically around ly.

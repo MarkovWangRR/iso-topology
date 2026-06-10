@@ -55,7 +55,7 @@ corner-to-corner):
 - {id: s3, shape: rectangle, place: {rightOf: s2, inFrontOf: s2, gap: 0}, geom: {w: 120, d: 120, h: 70}}
 ```
 
-See [`samples/topology/vpc-peering`](../../samples/topology/vpc-peering/input.yaml)
+See [`samples/topology/rag-pipeline`](../../samples/topology/rag-pipeline/input.yaml)
 for a two-step stair anchoring a full scene (substrates along the
 iso diagonal).
 
@@ -75,7 +75,7 @@ One container, `layout: grid` — the substrate auto-sizes:
 ```
 
 `mode: row` marches along world +x, `column` along +y. See
-[`samples/topology/edge-platform`](../../samples/topology/edge-platform/input.yaml)
+[`samples/topology/llm-serving`](../../samples/topology/llm-serving/input.yaml)
 for a 2×2 service board carrying glyph icons.
 
 ### I want to nudge one part a few pixels
@@ -425,9 +425,9 @@ nodes:
 
 Pick the central element, give it no `place` (it anchors the world
 origin), chain every satellite off it. See
-[`samples/topology/integration-hub`](../../samples/topology/integration-hub/input.yaml) /
-[`edge-platform`](../../samples/topology/edge-platform/input.yaml) /
-[`build-metrics`](../../samples/topology/build-metrics/input.yaml) —
+[`samples/topology/ai-platform`](../../samples/topology/ai-platform/input.yaml) /
+[`llm-serving`](../../samples/topology/llm-serving/input.yaml) /
+[`training-compute`](../../samples/topology/training-compute/input.yaml) —
 all coordinate-free.
 
 ## Validation

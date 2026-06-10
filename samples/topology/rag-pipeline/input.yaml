@@ -1,0 +1,135 @@
+# rag-pipeline — a RAG system on two planes. The back substrate
+# ingests & indexes (docs → ETL → embeddings); the front substrate
+# serves (app → retriever → LLM); the shared vector database stands
+# between them as a replica stack. Every cube has a white top with a
+# glyph AND an iso caption; emerald pipes carry the synchronous
+# paths, a dashed white bezier carries the retriever's vector query.
+# Near-black canvas, one emerald accent. Zero coordinates.
+
+canvas:
+  background: "#0B0D0C"
+  grid: iso
+  gridColor: "#151A17"
+  gridStep: 40
+
+theme:
+  text:
+    family: "Inter, system-ui, sans-serif"
+    size: 10
+    weight: "600"
+    color: "#1F2937"
+  stroke:
+    color: "#2E3833"
+    width: 1
+
+nodes:
+  scene:
+    shape: composite
+    parts:
+      # ── Ingest & index plane (back substrate) ────────────────────
+      - id: ingest_plane
+        shape: group
+        geom: { h: 14 }
+        label: "Ingest & Index"
+        layout: { mode: row, gap: 1.4 }
+        style: &plane
+          palette: { top: "#15191B", left: "#0D0F10", right: "#111416" }
+          stroke:  { color: "#2E3833", width: 1 }
+          text:    { color: "#86EFAC", weight: "600", size: 11 }
+          effects: { cornerRadius: 14 }
+        parts:
+          - id: docs
+            shape: rectangle
+            geom: { w: 96, d: 96, h: 22 }
+            icon: "iso://glyph/doc"
+            label: "Docs"
+            style: &tile
+              palette:
+                top: "#FFFFFF"
+                leftGradient:  { from: "#10B981", to: "#065F46", dir: "down" }
+                rightGradient: { from: "#34D399", to: "#047857", dir: "down" }
+              stroke: { color: "#065F46", width: 1.1 }
+              effects:
+                cornerRadius: 8
+                dropShadow: { dx: 0, dy: 9, blur: 14, color: "rgba(16,185,129,0.25)" }
+          - id: etl
+            shape: rectangle
+            geom: { w: 96, d: 96, h: 22 }
+            icon: "iso://glyph/etl"
+            label: "ETL"
+            style: *tile
+          - id: embedder
+            shape: rectangle
+            geom: { w: 96, d: 96, h: 22 }
+            icon: "iso://glyph/vector"
+            label: "Embeddings"
+            style: *tile
+
+      # ── The shared vector DB, standing between the planes ────────
+      - id: vector_db
+        shape: cylinder
+        place: { rightOf: ingest_plane, gap: 1.5, align: end }
+        geom: { w: 96, d: 96, h: 30 }
+        label: "Vector DB"
+        style:
+          palette: { top: "#ECFDF5", left: "#065F46", right: "#10B981" }
+          stroke:  { color: "#0B0D0C", width: 1.1 }
+          text:    { color: "#065F46", size: 9, weight: "700" }
+        stack: { count: 3, gap: 6 }
+
+      # ── Serve plane (front substrate) ────────────────────────────
+      - id: serve_plane
+        shape: group
+        place: { inFrontOf: ingest_plane, gap: 2, align: start }
+        geom: { h: 14 }
+        label: "Serve"
+        layout: { mode: row, gap: 1.4 }
+        style: *plane
+        parts:
+          - id: app
+            shape: rectangle
+            geom: { w: 96, d: 96, h: 22 }
+            icon: "iso://glyph/user"
+            label: "App"
+            style: *tile
+          - id: retriever
+            shape: rectangle
+            geom: { w: 96, d: 96, h: 22 }
+            icon: "iso://glyph/search"
+            label: "Retriever"
+            style: *tile
+          - id: llm
+            shape: rectangle
+            geom: { w: 96, d: 96, h: 36 }
+            icon: "iso://glyph/sparkles"
+            label: "LLM"
+            style: *tile
+
+    connectors:
+      # Index path (back plane, left to right).
+      - { from: docs, to: etl,      arrow: triangle, routing: orthogonal, stroke: { color: "#34D399", width: 1.6 } }
+      - { from: etl,  to: embedder, arrow: triangle, routing: orthogonal, stroke: { color: "#34D399", width: 1.6 } }
+      - { from: embedder, to: vector_db, arrow: triangle, routing: orthogonal, stroke: { color: "#34D399", width: 1.6 } }
+      # Serve path (front plane).
+      - { from: app,       to: retriever, arrow: triangle, routing: orthogonal, stroke: { color: "#34D399", width: 1.6 } }
+      - { from: retriever, to: llm,       arrow: triangle, routing: orthogonal, stroke: { color: "#34D399", width: 1.6 } }
+      # The vector query: dashed arc from retriever up to the DB stack.
+      - { from: retriever, to: vector_db, arrow: triangle, routing: bezier, stroke: { color: "#ECFDF5", width: 1.2, dash: "3 5" } }
+
+annotations:
+  - anchor: embedder
+    side: top
+    distance: 95
+    text: "Nightly batch\nre-index"
+    bg: "#15191B"
+    border: "#2E3833"
+    color: "#D1FAE5"
+    fontSize: 13
+  - anchor: vector_db~2
+    side: right
+    distance: 85
+    text: "ANN search\np95 < 12 ms"
+    bg: "#15191B"
+    border: "#2E3833"
+    color: "#D1FAE5"
+    fontSize: 13

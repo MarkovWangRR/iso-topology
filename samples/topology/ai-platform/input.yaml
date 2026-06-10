@@ -1,0 +1,116 @@
+# ai-platform — an AI platform core and its eight capabilities, as a
+# hub-and-spoke ring. One hero, one accent: the violet AI core sits at
+# the centre with a halo; the capabilities ring around it, every top
+# face carrying a domain glyph AND an iso-projected caption (LLM
+# gateway, vector store, GPU pool, agents, data lake, streaming,
+# warehouse, observability). Hairline spokes underneath: solid for
+# the serving path, dashed for the data path. Zero coordinates.
+
+canvas:
+  background: "#F5F6F8"
+
+theme:
+  text:
+    family: "Inter, system-ui, sans-serif"
+    size: 10
+    weight: "600"
+    color: "#3F3F46"
+  stroke:
+    color: "#D6D9E0"
+    width: 1
+
+nodes:
+  scene:
+    shape: composite
+    parts:
+      # ── The AI core (hero: gradient flanks, halo, soft shadow) ───
+      - id: core
+        shape: rectangle
+        geom: { w: 170, d: 170, h: 24 }
+        icon: "iso://glyph/sparkles/7C5CFC"
+        label: "AI Core"
+        style:
+          palette:
+            top: "#FFFFFF"
+            leftGradient:  { from: "#7C3AED", to: "#4C1D95", dir: "down" }
+            rightGradient: { from: "#8B5CF6", to: "#5B21B6", dir: "down" }
+          stroke: { color: "#5B21B6", width: 1.2 }
+          text:   { color: "#4C1D95", size: 12, weight: "700" }
+          effects:
+            cornerRadius: 14
+            backglow:   { color: "#A78BFA", radius: 46, opacity: 0.4 }
+            dropShadow: { dx: 0, dy: 12, blur: 18, color: "rgba(91,33,182,0.28)" }
+
+      # ── Capability ring (icon + caption on every top face) ───────
+      - id: llm
+        shape: rectangle
+        place: { behind: core, gap: 2.6 }
+        geom: { w: 118, d: 118, h: 12 }
+        icon: "iso://glyph/chat"
+        label: "LLM Gateway"
+        style: &sat
+          palette: { top: "#FFFFFF", left: "#E2E4EA", right: "#EEF0F4" }
+          stroke:  { color: "#D6D9E0", width: 1 }
+          effects:
+            cornerRadius: 12
+            dropShadow: { dx: 0, dy: 7, blur: 10, color: "rgba(63,63,70,0.14)" }
+      - id: vector_store
+        shape: rectangle
+        place: { rightOf: core, behind: core, gap: 1.4 }
+        geom: { w: 118, d: 118, h: 12 }
+        icon: "iso://glyph/vector"
+        label: "Vector Store"
+        style: *sat
+      - id: gpu_pool
+        shape: rectangle
+        place: { rightOf: core, gap: 2.6 }
+        geom: { w: 118, d: 118, h: 12 }
+        icon: "iso://glyph/gpu"
+        label: "GPU Pool"
+        style: *sat
+      - id: agents
+        shape: rectangle
+        place: { rightOf: core, inFrontOf: core, gap: 1.4 }
+        geom: { w: 118, d: 118, h: 12 }
+        icon: "iso://glyph/agent"
+        label: "Agents"
+        style: *sat
+      - id: data_lake
+        shape: rectangle
+        place: { inFrontOf: core, gap: 2.6 }
+        geom: { w: 118, d: 118, h: 12 }
+        icon: "iso://glyph/lake"
+        label: "Data Lake"
+        style: *sat
+      - id: streaming
+        shape: rectangle
+        place: { leftOf: core, inFrontOf: core, gap: 1.4 }
+        geom: { w: 118, d: 118, h: 12 }
+        icon: "iso://glyph/stream"
+        label: "Streaming"
+        style: *sat
+      - id: warehouse
+        shape: rectangle
+        place: { leftOf: core, gap: 2.6 }
+        geom: { w: 118, d: 118, h: 12 }
+        icon: "iso://glyph/warehouse"
+        label: "Warehouse"
+        style: *sat
+      - id: observability
+        shape: rectangle
+        place: { leftOf: core, behind: core, gap: 1.4 }
+        geom: { w: 118, d: 118, h: 12 }
+        icon: "iso://glyph/gauge"
+        label: "Observability"
+        style: *sat
+
+    connectors:
+      # Serving path (solid) vs data path (dashed) — all hairline.
+      - { from: core, to: llm,           stroke: { color: "#8B5CF6", width: 1.1 } }
+      - { from: core, to: gpu_pool,      stroke: { color: "#8B5CF6", width: 1.1 } }
+      - { from: core, to: agents,        stroke: { color: "#8B5CF6", width: 1.1 } }
+      - { from: core, to: vector_store,  stroke: { color: "#8B5CF6", width: 1.1 } }
+      - { from: core, to: data_lake,     stroke: { color: "#8B5CF6", width: 1.1, dash: "1.5 4" } }
+      - { from: core, to: streaming,     stroke: { color: "#8B5CF6", width: 1.1, dash: "1.5 4" } }
+      - { from: core, to: warehouse,     stroke: { color: "#8B5CF6", width: 1.1, dash: "1.5 4" } }
+      - { from: core, to: observability, stroke: { color: "#8B5CF6", width: 1.1, dash: "1.5 4" } }
