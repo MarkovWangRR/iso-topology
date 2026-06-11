@@ -99,6 +99,31 @@ var glyphIcons = map[string]string{
 	"lake":      `<path d="M12 3.8c3.2 3.7 5.3 6.4 5.3 9a5.3 5.3 0 0 1-10.6 0c0-2.6 2.1-5.3 5.3-9z"/>`,
 }
 
+// brandToSI upgrades legacy letter badges to the REAL vendored logo
+// where Simple Icons carries the mark — rendered in the badge's
+// curated brand color. Marks absent upstream (typically removed at
+// the trademark holder's request, e.g. AWS and Azure) keep the
+// letter-badge fallback.
+var brandToSI = map[string]string{
+	"spark":      "apachespark",
+	"hadoop":     "apachehadoop",
+	"mysql":      "mysql",
+	"postgresql": "postgresql",
+	"postgres":   "postgresql",
+	"hive":       "apachehive",
+	"pulsar":     "apachepulsar",
+	"kafka":      "apachekafka",
+	"redis":      "redis",
+	"mongo":      "mongodb",
+	"kubernetes": "kubernetes",
+	"docker":     "docker",
+	"github":     "github",
+	"gcp":        "googlecloud",
+	"vite":       "vite",
+	"rolldown":   "rolldown",
+	"oxc":        "oxc",
+}
+
 // ResolveBrandIcon turns "iso://brand/<name>" and "iso://glyph/<name>"
 // URIs into data-URI SVGs. Anything else (https://, data:, "", …) is
 // returned unchanged, so callers can pass any Icon value through this
@@ -115,6 +140,13 @@ func ResolveBrandIcon(uri string) string {
 		b, ok := brandBadges[name]
 		if !ok {
 			return uri
+		}
+		// Upgrade to the real logo (in the curated brand color) when
+		// Simple Icons carries the mark; letters are the fallback.
+		if slug := brandToSI[name]; slug != "" {
+			if _, has := siIcons[slug]; has {
+				return "data:image/svg+xml;base64," + base64.StdEncoding.EncodeToString([]byte(siSVG(slug, b.color)))
+			}
 		}
 		return "data:image/svg+xml;base64," + base64.StdEncoding.EncodeToString([]byte(brandSVG(b)))
 
@@ -257,12 +289,19 @@ func IconCatalog() []IconInfo {
 	sort.Strings(names)
 	for _, n := range names {
 		b := brandBadges[n]
-		out = append(out, IconInfo{
+		info := IconInfo{
 			Kind: "brand", Name: n,
 			URI:         "iso://brand/" + n,
-			Description: fmt.Sprintf("letter badge %q in brand color %s — prefer iso://si/<slug> when the real logo is vendored", b.glyph, b.color),
+			Description: fmt.Sprintf("letter badge %q in brand color %s (mark not vendorable — e.g. removed from Simple Icons at the trademark holder's request)", b.glyph, b.color),
 			SVG:         brandSVG(b),
-		})
+		}
+		if slug := brandToSI[n]; slug != "" {
+			if _, has := siIcons[slug]; has {
+				info.Description = fmt.Sprintf("real %s logo in brand color %s (alias of iso://si/%s)", siTitle(slug), b.color, slug)
+				info.SVG = siSVG(slug, b.color)
+			}
+		}
+		out = append(out, info)
 	}
 	return out
 }

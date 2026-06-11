@@ -160,6 +160,7 @@ color. Curate the set in `tools/import-icons/allowlist.txt`.
 | <img src="../assets/icons/si-opentelemetry.svg" width="22"> | `opentelemetry` | `iso://si/opentelemetry` | OpenTelemetry logo (Simple Icons, CC0) |
 | <img src="../assets/icons/si-oracle.svg" width="22"> | `oracle` | `iso://si/oracle` | Oracle logo (Simple Icons, CC0) |
 | <img src="../assets/icons/si-ovh.svg" width="22"> | `ovh` | `iso://si/ovh` | OVH logo (Simple Icons, CC0) |
+| <img src="../assets/icons/si-oxc.svg" width="22"> | `oxc` | `iso://si/oxc` | Oxc logo (Simple Icons, CC0) |
 | <img src="../assets/icons/si-pagerduty.svg" width="22"> | `pagerduty` | `iso://si/pagerduty` | PagerDuty logo (Simple Icons, CC0) |
 | <img src="../assets/icons/si-pandas.svg" width="22"> | `pandas` | `iso://si/pandas` | pandas logo (Simple Icons, CC0) |
 | <img src="../assets/icons/si-php.svg" width="22"> | `php` | `iso://si/php` | PHP logo (Simple Icons, CC0) |
@@ -178,6 +179,7 @@ color. Curate the set in `tools/import-icons/allowlist.txt`.
 | <img src="../assets/icons/si-redis.svg" width="22"> | `redis` | `iso://si/redis` | Redis logo (Simple Icons, CC0) |
 | <img src="../assets/icons/si-remix.svg" width="22"> | `remix` | `iso://si/remix` | Remix logo (Simple Icons, CC0) |
 | <img src="../assets/icons/si-replicate.svg" width="22"> | `replicate` | `iso://si/replicate` | Replicate logo (Simple Icons, CC0) |
+| <img src="../assets/icons/si-rolldown.svg" width="22"> | `rolldown` | `iso://si/rolldown` | Rolldown logo (Simple Icons, CC0) |
 | <img src="../assets/icons/si-ruby.svg" width="22"> | `ruby` | `iso://si/ruby` | Ruby logo (Simple Icons, CC0) |
 | <img src="../assets/icons/si-rubyonrails.svg" width="22"> | `rubyonrails` | `iso://si/rubyonrails` | Ruby on Rails logo (Simple Icons, CC0) |
 | <img src="../assets/icons/si-rust.svg" width="22"> | `rust` | `iso://si/rust` | Rust logo (Simple Icons, CC0) |
@@ -206,6 +208,7 @@ color. Curate the set in `tools/import-icons/allowlist.txt`.
 | <img src="../assets/icons/si-vault.svg" width="22"> | `vault` | `iso://si/vault` | Vault logo (Simple Icons, CC0) |
 | <img src="../assets/icons/si-vercel.svg" width="22"> | `vercel` | `iso://si/vercel` | Vercel logo (Simple Icons, CC0) |
 | <img src="../assets/icons/si-victoriametrics.svg" width="22"> | `victoriametrics` | `iso://si/victoriametrics` | VictoriaMetrics logo (Simple Icons, CC0) |
+| <img src="../assets/icons/si-vite.svg" width="22"> | `vite` | `iso://si/vite` | Vite logo (Simple Icons, CC0) |
 | <img src="../assets/icons/si-vuedotjs.svg" width="22"> | `vuedotjs` | `iso://si/vuedotjs` | Vue.js logo (Simple Icons, CC0) |
 | <img src="../assets/icons/si-zig.svg" width="22"> | `zig` | `iso://si/zig` | Zig logo (Simple Icons, CC0) |
 
@@ -215,27 +218,27 @@ Generated monogram fallbacks for marks that are not vendored.
 
 | | Name | URI | Description |
 |---|---|---|---|
-| <img src="../assets/icons/brand-aws.svg" width="22"> | `aws` | `iso://brand/aws` | letter badge "AW" in brand color #FF9900 — prefer iso://si/<slug> when the real logo is vendored |
-| <img src="../assets/icons/brand-azure.svg" width="22"> | `azure` | `iso://brand/azure` | letter badge "Az" in brand color #0078D4 — prefer iso://si/<slug> when the real logo is vendored |
-| <img src="../assets/icons/brand-docker.svg" width="22"> | `docker` | `iso://brand/docker` | letter badge "D" in brand color #2496ED — prefer iso://si/<slug> when the real logo is vendored |
-| <img src="../assets/icons/brand-gcp.svg" width="22"> | `gcp` | `iso://brand/gcp` | letter badge "GC" in brand color #4285F4 — prefer iso://si/<slug> when the real logo is vendored |
-| <img src="../assets/icons/brand-github.svg" width="22"> | `github` | `iso://brand/github` | letter badge "G" in brand color #181717 — prefer iso://si/<slug> when the real logo is vendored |
-| <img src="../assets/icons/brand-hadoop.svg" width="22"> | `hadoop` | `iso://brand/hadoop` | letter badge "H" in brand color #65B832 — prefer iso://si/<slug> when the real logo is vendored |
-| <img src="../assets/icons/brand-hive.svg" width="22"> | `hive` | `iso://brand/hive` | letter badge "Hv" in brand color #D4B106 — prefer iso://si/<slug> when the real logo is vendored |
-| <img src="../assets/icons/brand-iceberg.svg" width="22"> | `iceberg` | `iso://brand/iceberg` | letter badge "I" in brand color #2486C0 — prefer iso://si/<slug> when the real logo is vendored |
-| <img src="../assets/icons/brand-kafka.svg" width="22"> | `kafka` | `iso://brand/kafka` | letter badge "K" in brand color #231F20 — prefer iso://si/<slug> when the real logo is vendored |
-| <img src="../assets/icons/brand-kubernetes.svg" width="22"> | `kubernetes` | `iso://brand/kubernetes` | letter badge "K8" in brand color #326CE5 — prefer iso://si/<slug> when the real logo is vendored |
-| <img src="../assets/icons/brand-mongo.svg" width="22"> | `mongo` | `iso://brand/mongo` | letter badge "M" in brand color #4FAA41 — prefer iso://si/<slug> when the real logo is vendored |
-| <img src="../assets/icons/brand-mysql.svg" width="22"> | `mysql` | `iso://brand/mysql` | letter badge "M" in brand color #00618A — prefer iso://si/<slug> when the real logo is vendored |
-| <img src="../assets/icons/brand-oxc.svg" width="22"> | `oxc` | `iso://brand/oxc` | letter badge "OX" in brand color #6B7280 — prefer iso://si/<slug> when the real logo is vendored |
-| <img src="../assets/icons/brand-postgres.svg" width="22"> | `postgres` | `iso://brand/postgres` | letter badge "P" in brand color #336791 — prefer iso://si/<slug> when the real logo is vendored |
-| <img src="../assets/icons/brand-postgresql.svg" width="22"> | `postgresql` | `iso://brand/postgresql` | letter badge "P" in brand color #336791 — prefer iso://si/<slug> when the real logo is vendored |
-| <img src="../assets/icons/brand-pulsar.svg" width="22"> | `pulsar` | `iso://brand/pulsar` | letter badge "P" in brand color #D63341 — prefer iso://si/<slug> when the real logo is vendored |
-| <img src="../assets/icons/brand-redis.svg" width="22"> | `redis` | `iso://brand/redis` | letter badge "R" in brand color #DC382D — prefer iso://si/<slug> when the real logo is vendored |
-| <img src="../assets/icons/brand-rolldown.svg" width="22"> | `rolldown` | `iso://brand/rolldown` | letter badge "R" in brand color #C2410C — prefer iso://si/<slug> when the real logo is vendored |
-| <img src="../assets/icons/brand-spark.svg" width="22"> | `spark` | `iso://brand/spark` | letter badge "S" in brand color #E25A2C — prefer iso://si/<slug> when the real logo is vendored |
-| <img src="../assets/icons/brand-starrocks.svg" width="22"> | `starrocks` | `iso://brand/starrocks` | letter badge "⚡" in brand color #F59E0B — prefer iso://si/<slug> when the real logo is vendored |
-| <img src="../assets/icons/brand-vite.svg" width="22"> | `vite` | `iso://brand/vite` | letter badge "V" in brand color #646CFF — prefer iso://si/<slug> when the real logo is vendored |
+| <img src="../assets/icons/brand-aws.svg" width="22"> | `aws` | `iso://brand/aws` | letter badge "AW" in brand color #FF9900 (mark not vendorable — e.g. removed from Simple Icons at the trademark holder's request) |
+| <img src="../assets/icons/brand-azure.svg" width="22"> | `azure` | `iso://brand/azure` | letter badge "Az" in brand color #0078D4 (mark not vendorable — e.g. removed from Simple Icons at the trademark holder's request) |
+| <img src="../assets/icons/brand-docker.svg" width="22"> | `docker` | `iso://brand/docker` | real Docker logo in brand color #2496ED (alias of iso://si/docker) |
+| <img src="../assets/icons/brand-gcp.svg" width="22"> | `gcp` | `iso://brand/gcp` | real Google Cloud logo in brand color #4285F4 (alias of iso://si/googlecloud) |
+| <img src="../assets/icons/brand-github.svg" width="22"> | `github` | `iso://brand/github` | real GitHub logo in brand color #181717 (alias of iso://si/github) |
+| <img src="../assets/icons/brand-hadoop.svg" width="22"> | `hadoop` | `iso://brand/hadoop` | real Apache Hadoop logo in brand color #65B832 (alias of iso://si/apachehadoop) |
+| <img src="../assets/icons/brand-hive.svg" width="22"> | `hive` | `iso://brand/hive` | real Apache Hive logo in brand color #D4B106 (alias of iso://si/apachehive) |
+| <img src="../assets/icons/brand-iceberg.svg" width="22"> | `iceberg` | `iso://brand/iceberg` | letter badge "I" in brand color #2486C0 (mark not vendorable — e.g. removed from Simple Icons at the trademark holder's request) |
+| <img src="../assets/icons/brand-kafka.svg" width="22"> | `kafka` | `iso://brand/kafka` | real Apache Kafka logo in brand color #231F20 (alias of iso://si/apachekafka) |
+| <img src="../assets/icons/brand-kubernetes.svg" width="22"> | `kubernetes` | `iso://brand/kubernetes` | real Kubernetes logo in brand color #326CE5 (alias of iso://si/kubernetes) |
+| <img src="../assets/icons/brand-mongo.svg" width="22"> | `mongo` | `iso://brand/mongo` | real MongoDB logo in brand color #4FAA41 (alias of iso://si/mongodb) |
+| <img src="../assets/icons/brand-mysql.svg" width="22"> | `mysql` | `iso://brand/mysql` | real MySQL logo in brand color #00618A (alias of iso://si/mysql) |
+| <img src="../assets/icons/brand-oxc.svg" width="22"> | `oxc` | `iso://brand/oxc` | real Oxc logo in brand color #6B7280 (alias of iso://si/oxc) |
+| <img src="../assets/icons/brand-postgres.svg" width="22"> | `postgres` | `iso://brand/postgres` | real PostgreSQL logo in brand color #336791 (alias of iso://si/postgresql) |
+| <img src="../assets/icons/brand-postgresql.svg" width="22"> | `postgresql` | `iso://brand/postgresql` | real PostgreSQL logo in brand color #336791 (alias of iso://si/postgresql) |
+| <img src="../assets/icons/brand-pulsar.svg" width="22"> | `pulsar` | `iso://brand/pulsar` | real Apache Pulsar logo in brand color #D63341 (alias of iso://si/apachepulsar) |
+| <img src="../assets/icons/brand-redis.svg" width="22"> | `redis` | `iso://brand/redis` | real Redis logo in brand color #DC382D (alias of iso://si/redis) |
+| <img src="../assets/icons/brand-rolldown.svg" width="22"> | `rolldown` | `iso://brand/rolldown` | real Rolldown logo in brand color #C2410C (alias of iso://si/rolldown) |
+| <img src="../assets/icons/brand-spark.svg" width="22"> | `spark` | `iso://brand/spark` | real Apache Spark logo in brand color #E25A2C (alias of iso://si/apachespark) |
+| <img src="../assets/icons/brand-starrocks.svg" width="22"> | `starrocks` | `iso://brand/starrocks` | letter badge "⚡" in brand color #F59E0B (mark not vendorable — e.g. removed from Simple Icons at the trademark holder's request) |
+| <img src="../assets/icons/brand-vite.svg" width="22"> | `vite` | `iso://brand/vite` | real Vite logo in brand color #646CFF (alias of iso://si/vite) |
 
 ## Adding an icon
 

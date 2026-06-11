@@ -174,3 +174,8 @@ twilio
 auth0
 okta
 temporal
+
+# ── brand-badge upgrades ──
+vite
+rolldown
+oxc

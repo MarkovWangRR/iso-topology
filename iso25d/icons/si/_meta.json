@@ -99,6 +99,7 @@
   "opentelemetry": "OpenTelemetry",
   "oracle": "Oracle",
   "ovh": "OVH",
+  "oxc": "Oxc",
   "pagerduty": "PagerDuty",
   "pandas": "pandas",
   "php": "PHP",
@@ -117,6 +118,7 @@
   "redis": "Redis",
   "remix": "Remix",
   "replicate": "Replicate",
+  "rolldown": "Rolldown",
   "ruby": "Ruby",
   "rubyonrails": "Ruby on Rails",
   "rust": "Rust",
@@ -145,6 +147,7 @@
   "vault": "Vault",
   "vercel": "Vercel",
   "victoriametrics": "VictoriaMetrics",
+  "vite": "Vite",
   "vuedotjs": "Vue.js",
   "zig": "Zig"
 }
