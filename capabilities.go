@@ -174,7 +174,7 @@ func buildPrimitiveCaps() []PrimitiveCap {
 			Name:    "annotation",
 			Where:   "document.annotations[*]",
 			Syntax:  "{anchor: <part-id>, text: \"…\", side: top|right|bottom|left, distance: 60}",
-			Purpose: "Screen-space callout pinned to a composite part. Multi-line text is supported via \\n.",
+			Purpose: "Screen-space callout pinned to a composite part. Multi-line text is supported via \\n. Placement is collision-managed: the box never crosses or touches any part projection (6px clearance) and never overlaps other text; side/distance are the FIRST candidate, and the box slides to the nearest free peripheral position when occupied.",
 			Fields: map[string]string{
 				"anchor":   "id of the part to point at",
 				"text":     "multi-line text (split on \\n)",

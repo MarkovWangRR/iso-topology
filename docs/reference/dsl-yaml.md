@@ -296,6 +296,13 @@ annotations:
 The renderer draws a rounded text box with a dashed leader line back
 to the anchor part. Multi-line text is supported via `\n`.
 
+Annotation boxes and `orient: screen` labels are
+**collision-managed**: they never cross or touch a part's projected
+silhouette (6px clearance), never overlap each other, and when the
+requested spot is occupied they slide to the nearest free position
+toward the picture's periphery. `side`/`distance` are treated as the
+preferred candidate, not an absolute position.
+
 ## Worked example
 
 Note: not a single hand-written coordinate.
