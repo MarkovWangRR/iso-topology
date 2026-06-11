@@ -255,7 +255,7 @@ func buildStyleKeyGroups() []StyleKeyGroup {
 			"topGradient {from, to, dir}", "leftGradient {from, to, dir}", "rightGradient {from, to, dir}",
 		}},
 		{"stroke", []string{"color", "width", "dash"}},
-		{"text", []string{"family", "size", "weight", "color", "orient", "boxBg", "boxBorder"}},
+		{"text", []string{"family", "size (a MAXIMUM — top-face labels auto-wrap at word boundaries and auto-shrink so they never overflow the face; icons are clamped to the face too)", "weight", "color", "orient", "boxBg", "boxBorder"}},
 		{"effects", []string{
 			"opacity", "margin", "cornerRadius",
 			"dropShadow {dx, dy, blur, color}",

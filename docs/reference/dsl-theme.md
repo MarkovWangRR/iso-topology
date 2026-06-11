@@ -79,6 +79,12 @@ text:
   boxBorder: "#1F2937"
 ```
 
+Top-face content is **adaptive by contract**: the icon is clamped so
+it can never overflow the face, and the label auto-wraps at word
+boundaries and auto-shrinks (down to 5px; CJK wraps by rune) so it
+never overflows either — `size` is a maximum, not a promise. Content
+that already fits renders exactly as authored.
+
 `orient: iso` paints the label on the iso-tilted top face. `orient:
 screen` paints a horizontal label box BELOW the part's projected
 bounding box — useful for parts that need a readable caption even

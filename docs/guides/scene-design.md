@@ -29,7 +29,8 @@ Reference palettes:
 
 **3. Top faces are canvases.** A glyph plus a 1–3 word caption,
 nothing more (`icon: "iso://glyph/gpu"` + `label: "GPU Pool"` — the
-renderer centres them as one block). Paragraphs go to screen space:
+renderer centres them as one block, auto-wraps and auto-shrinks so
+nothing ever overflows the face). Paragraphs go to screen space:
 `style.text.orient: screen` puts the label under the part;
 `annotations` add callouts with leader lines.
 

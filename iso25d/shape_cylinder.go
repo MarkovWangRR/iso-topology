@@ -168,10 +168,10 @@ func RenderIsoCylinder(o IsoCylinderOpts) string {
 	s := rx / cos30
 	e := sx(topCx)
 	f := sy(topCy) - s*sin30
-	writeTopLabelAndIcon(
+	writeTopLabelAndIconV12(
 		&sb,
 		e, f, s, s,
-		o.Label, o.Icon, o.IconScale,
+		o.Label, nil, o.Icon, o.IconScale, "", 0, 0,
 		o.FontFamily, o.FontSize, o.FontWeight, o.FontColor,
 	)
 

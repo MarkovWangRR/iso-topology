@@ -32,7 +32,7 @@ CAPABILITIES v0.2.2 (the only DSL you may emit):
 - Style sub-blocks:
     palette:  top, left, right, topGradient {from, to, dir}, leftGradient {from, to, dir}, rightGradient {from, to, dir}
     stroke:   color, width, dash
-    text:     family, size, weight, color, orient, boxBg, boxBorder
+    text:     family, size (a MAXIMUM — top-face labels auto-wrap at word boundaries and auto-shrink so they never overflow the face; icons are clamped to the face too), weight, color, orient, boxBg, boxBorder
     effects:  opacity, margin, cornerRadius, dropShadow {dx, dy, blur, color}, backglow {color, radius, opacity}, pattern {kind: hatch|dots, color, spacing, angle}, wireframe (bool — line-art: strokes only, no fills; ghost parts are exempt from overlap warnings), grain {intensity 0..1, scale} (film-grain noise on the faces)
 
 POSITIONING RULES:

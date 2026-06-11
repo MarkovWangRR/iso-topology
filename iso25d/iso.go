@@ -499,9 +499,8 @@ func writeTopLabelAndIconV12(
 	if len(lines) == 0 && strings.Contains(label, "\n") {
 		lines = strings.Split(label, "\n")
 	}
-	hasMulti := len(lines) > 1
 	hasIcon := strings.TrimSpace(icon) != ""
-	hasLabel := strings.TrimSpace(label) != "" || hasMulti
+	hasLabel := strings.TrimSpace(label) != "" || len(lines) > 1
 
 	if !hasLabel && !hasIcon {
 		return
@@ -509,6 +508,37 @@ func writeTopLabelAndIconV12(
 	if iconScale <= 0 {
 		iconScale = 0.4
 	}
+
+	// v2.7 — adaptive fit: icons must never overflow the top face;
+	// labels wrap and shrink to stay inside. Author-positioned icons
+	// (explicit anchor/offset) opt out of the adaptive path. When the
+	// legacy geometry already fits, fitTopContent reports
+	// Adjusted=false and the original math below runs verbatim.
+	if hasLabel && len(lines) == 0 {
+		lines = []string{label}
+	}
+	if hasIcon && (iconAnchor != "" || iconOffX != 0 || iconOffY != 0) {
+		// legacy path only
+	} else if fit := fitTopContent(faceW, faceD, lines, hasIcon, iconScale, fontSize); fit.Adjusted {
+		fmt.Fprintf(sb, `<g data-face="top-content" transform="%s">`, topContentTransform(originX, originY))
+		if hasIcon {
+			fmt.Fprintf(sb,
+				`<image href="%s" xlink:href="%s" x="%.2f" y="%.2f" width="%.2f" height="%.2f" preserveAspectRatio="xMidYMid meet"/>`,
+				escapeAttr(icon), escapeAttr(icon), (faceW-fit.IconSize)/2, fit.IconTop, fit.IconSize, fit.IconSize,
+			)
+		}
+		for i, ln := range fit.Lines {
+			fmt.Fprintf(sb,
+				`<text x="%.2f" y="%.2f" dy=".35em" font-family="%s" font-size="%.2f" font-weight="%s" fill="%s" text-anchor="middle">%s</text>`,
+				faceW/2, fit.FirstLineY+float64(i)*fit.FontSize*lineHeightK,
+				escapeAttr(fontFamily), fit.FontSize, escapeAttr(fontWeight),
+				escapeAttr(fontColor), escapeXML(ln),
+			)
+		}
+		sb.WriteString(`</g>`)
+		return
+	}
+	hasMulti := len(lines) > 1
 
 	fmt.Fprintf(sb, `<g data-face="top-content" transform="%s">`, topContentTransform(originX, originY))
 
