@@ -102,6 +102,60 @@ const svgKept=document.getElementById('zoomer').innerHTML.includes('GPU FARM 42'
 return JSON.stringify({shown, svgKept});})()
 """), lambda v: json.loads(v)=={"shown":True,"svgKept":True})
 
+# T5b broken render → stale badge over the canvas
+check("stale-badge", ev("!document.getElementById('stale').hidden"))
+
+# T7 dirty state: edits flip the unsaved flag and arm the download button
+check("dirty-flag", ev("""
+(()=>{return JSON.stringify({
+  dirtyShown: !document.getElementById('dirty').hidden,
+  discardShown: !document.getElementById('discard').hidden,
+  dlEnabled: !document.getElementById('dl').disabled});})()
+"""), lambda v: json.loads(v)=={"dirtyShown":True,"discardShown":True,"dlEnabled":True})
+
+# T8 Tab inserts indentation instead of moving focus
+check("tab-indent", ev("""
+(()=>{const src=document.getElementById('src');
+src.focus(); src.selectionStart=src.selectionEnd=0;
+const before=src.value;
+src.dispatchEvent(new KeyboardEvent('keydown',{key:'Tab',bubbles:true,cancelable:true}));
+return src.value==='  '+before && src.selectionStart===2;})()
+"""))
+
+# T9 copy button gives transient feedback (clipboard may be denied headless — either label is fine)
+check("copy-feedback", ev("""
+(async()=>{const b=document.getElementById('copybtn');
+b.click();
+await new Promise(r=>setTimeout(r,200));
+const during=b.textContent;
+await new Promise(r=>setTimeout(r,1400));
+return JSON.stringify({changed: during!=='copy YAML', restored: b.textContent==='copy YAML'});})()
+"""), lambda v: json.loads(v)=={"changed":True,"restored":True})
+
+# T10 draft survives a reload (localStorage), original untouched on disk
+ev("location.reload()", timeout=30)
+time.sleep(3)
+check("draft-restored", ev("""
+(()=>{const src=document.getElementById('src');
+return JSON.stringify({
+  draftKept: src.value.includes('GPU FARM 42'),
+  dirtyShown: !document.getElementById('dirty').hidden});})()
+"""), lambda v: json.loads(v)=={"draftKept":True,"dirtyShown":True})
+with open("samples/topology/ai-platform/input.yaml") as f:
+    check("original-untouched", "GPU FARM 42" not in f.read())
+
+# T11 discard returns to the original and clears the flag
+check("discard-draft", ev("""
+(async()=>{document.getElementById('discard').click();
+await new Promise(r=>setTimeout(r,1200));
+const src=document.getElementById('src');
+return JSON.stringify({
+  restored: src.value.includes('GPU Pool') && !src.value.includes('GPU FARM 42'),
+  clean: document.getElementById('dirty').hidden,
+  dlDisabled: document.getElementById('dl').disabled,
+  draftGone: localStorage.getItem('isotopo-draft:/:'+FILENAME)===null});})()
+"""), lambda v: json.loads(v)=={"restored":True,"clean":True,"dlDisabled":True,"draftGone":True})
+
 ws.close(); proc.terminate()
 
 # T6 degradation: static server without /api

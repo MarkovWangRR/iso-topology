@@ -157,6 +157,13 @@ footer a{color:var(--accent-deep);text-decoration:none;}
 footer a:hover{text-decoration:underline;}
 kbd{font:10px ui-monospace,Menlo,monospace;border:1px solid var(--border);border-bottom-width:2px;
   border-radius:4px;padding:1px 5px;background:white;color:#475569;}
+#render{min-width:96px;}
+.filetab #dirty{color:#D97706;font-weight:600;font-family:Inter,sans-serif;font-size:10.5px;}
+.filetab #discard{color:var(--accent-deep);cursor:pointer;font-family:Inter,sans-serif;font-size:10.5px;}
+.filetab #discard:hover{text-decoration:underline;}
+.stale{position:absolute;top:14px;left:50%;transform:translateX(-50%);z-index:4;
+  background:#FFF7ED;border:1px solid #FDBA74;color:#9A3412;
+  font:11px Inter,sans-serif;padding:5px 13px;border-radius:999px;box-shadow:var(--shadow);}
 svg g[data-part-id]{transition:filter .12s;}
 svg g[data-part-id].hi{filter:drop-shadow(0 0 6px rgba(16,174,185,.9));}
 </style></head><body>
@@ -191,6 +198,7 @@ svg g[data-part-id].hi{filter:drop-shadow(0 0 6px rgba(16,174,185,.9));}
 <div class="grid">
   <div class="stage-wrap">
     <div id="viewport"><div id="zoomer">{{SVG}}</div></div>
+    <div id="stale" class="stale" hidden>edits not rendered — showing last good result</div>
     <div class="zoomctl">
       <button onclick="zoomBy(1.25)">+</button>
       <button onclick="zoomBy(0.8)">−</button>
@@ -200,12 +208,12 @@ svg g[data-part-id].hi{filter:drop-shadow(0 0 6px rgba(16,174,185,.9));}
   <div class="side">
     <div class="toolbar">
       <button id="render" onclick="rerender()" title="Cmd/Ctrl+Enter">re-render</button>
-      <label class="auto"><input type="checkbox" id="auto" checked>auto</label>
+      <label class="auto"><input type="checkbox" id="auto" checked>auto re-render</label>
       <span class="spacer" style="flex:1"></span>
-      <button onclick="copySrc()">copy</button>
-      <button onclick="downloadCopy()">save edited copy</button>
+      <button id="copybtn" onclick="copySrc()">copy YAML</button>
+      <button id="dl" onclick="downloadCopy()" disabled title="enabled once you edit">download copy</button>
     </div>
-    <div class="filetab"><span class="dot"></span><b>{{FILE}}</b><span>· editing a copy — the original is never written</span></div>
+    <div class="filetab"><span class="dot"></span><b>{{FILE}}</b><span>· editing a copy — the original is never written</span><span class="spacer" style="flex:1"></span><span id="dirty" hidden>● unsaved edits</span><a id="discard" hidden onclick="discardDraft()">discard</a></div>
     <div class="editor">
       <div class="hl" id="hl"></div>
       <textarea id="src" spellcheck="false">{{SRC}}</textarea>
@@ -225,6 +233,21 @@ svg g[data-part-id].hi{filter:drop-shadow(0 0 6px rgba(16,174,185,.9));}
 "use strict";
 const LANG={{LANGQ}}, FILENAME={{FILEQ}};
 const srcEl=document.getElementById('src'), hlEl=document.getElementById('hl');
+const ORIGINAL=srcEl.value, DRAFTKEY='isotopo-draft:'+location.pathname+':'+FILENAME;
+const staleEl=document.getElementById('stale');
+let dirty=false;
+function setDirty(d){
+  dirty=d;
+  document.getElementById('dirty').hidden=!d;
+  document.getElementById('discard').hidden=!d;
+  document.getElementById('dl').disabled=!d;
+}
+function discardDraft(){
+  try{localStorage.removeItem(DRAFTKEY);}catch(_){}
+  srcEl.value=ORIGINAL; setDirty(false);
+  buildMap(); paint(null);
+  if(serverOK) rerender();
+}
 const zoomer=document.getElementById('zoomer'), viewport=document.getElementById('viewport');
 
 /* ── editor backdrop + SVG↔source hover map ────────────────────── */
@@ -321,8 +344,15 @@ async function rerender(){
     if(data.svg){
       zoomer.innerHTML=data.svg;
       buildMap(); paint(null); wireHover();
+      staleEl.hidden=true;
+    }else{
+      staleEl.hidden=false;
     }
-  }catch(e){showIssues([{severity:'error',path:'$',message:String(e)}]);}
+  }catch(e){
+    showIssues([{severity:'error',path:'$',message:String(e)}]);
+    staleEl.hidden=false;
+    probe();
+  }
   renderBtn.textContent='re-render';
 }
 function showIssues(list){
@@ -334,6 +364,12 @@ function showIssues(list){
 }
 srcEl.addEventListener('input',()=>{
   buildMap(); paint(null);
+  const edited=srcEl.value!==ORIGINAL;
+  setDirty(edited);
+  try{
+    if(edited) localStorage.setItem(DRAFTKEY,srcEl.value);
+    else localStorage.removeItem(DRAFTKEY);
+  }catch(_){}
   if(document.getElementById('auto').checked && serverOK){
     clearTimeout(timer); timer=setTimeout(rerender,600);
   }
@@ -341,9 +377,21 @@ srcEl.addEventListener('input',()=>{
 window.addEventListener('keydown',e=>{
   if((e.metaKey||e.ctrlKey)&&e.key==='Enter'){e.preventDefault();rerender();}
 });
+srcEl.addEventListener('keydown',e=>{
+  if(e.key==='Tab'&&!e.shiftKey){
+    e.preventDefault();
+    srcEl.setRangeText('  ',srcEl.selectionStart,srcEl.selectionEnd,'end');
+    srcEl.dispatchEvent(new Event('input'));
+  }
+});
 
 /* ── misc ───────────────────────────────────────────────────────── */
-function copySrc(){navigator.clipboard.writeText(srcEl.value);}
+async function copySrc(){
+  const b=document.getElementById('copybtn');
+  try{await navigator.clipboard.writeText(srcEl.value);b.textContent='copied ✓';}
+  catch(_){b.textContent='copy failed';}
+  setTimeout(()=>{b.textContent='copy YAML';},1200);
+}
 function downloadCopy(){
   const blob=new Blob([srcEl.value],{type:'text/plain'});
   const a=document.createElement('a');
@@ -351,7 +399,13 @@ function downloadCopy(){
   a.download=FILENAME.replace(/(\.[a-z0-9]+)$/i,'.edited$1');
   a.click();
 }
-buildMap(); paint(null); wireHover(); probe();
+try{
+  const d=localStorage.getItem(DRAFTKEY);
+  if(d&&d!==ORIGINAL){srcEl.value=d;setDirty(true);}
+}catch(_){}
+buildMap(); paint(null); wireHover();
+probe().then(()=>{if(serverOK&&dirty)rerender();});
+if(location.protocol.startsWith('http')) setInterval(probe,5000);
 </script>
 </body></html>`
 	r := strings.NewReplacer(
