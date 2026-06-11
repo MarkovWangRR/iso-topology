@@ -26,7 +26,7 @@ import (
 	isotopo "github.com/MarkovWangRR/iso-topology"
 )
 
-const serverVersion = "0.3.0"
+const serverVersion = "0.3.1"
 
 // ── JSON-RPC plumbing ────────────────────────────────────────────────
 

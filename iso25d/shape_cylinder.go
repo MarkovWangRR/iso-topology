@@ -30,6 +30,9 @@ type IsoCylinderOpts struct {
 
 	Icon      string
 	IconScale float64
+	// v3.1 — vertical side gradients (were silently dropped before).
+	LeftGradient  *FaceGradient
+	RightGradient *FaceGradient
 
 	Margin float64
 
@@ -88,10 +91,23 @@ func RenderIsoCylinder(o IsoCylinderOpts) string {
 	var sb strings.Builder
 	sb.WriteString(svgHeader(W, H))
 	grainID := ""
+	leftFill, rightFill := o.LeftFill, o.RightFill
 	{
 		var defs strings.Builder
 		if id := emitGrainFilter(&defs, "cyl-grain", o.GrainIntensity, o.GrainScale); id != "" {
 			grainID = id
+		}
+		if g := o.LeftGradient; g != nil && strings.TrimSpace(g.From) != "" {
+			fmt.Fprintf(&defs, `<linearGradient id="cyl-grad-l" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="%s"/><stop offset="1" stop-color="%s"/></linearGradient>`,
+				escapeAttr(g.From), escapeAttr(g.To))
+			leftFill = "url(#cyl-grad-l)"
+		}
+		if g := o.RightGradient; g != nil && strings.TrimSpace(g.From) != "" {
+			fmt.Fprintf(&defs, `<linearGradient id="cyl-grad-r" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="%s"/><stop offset="1" stop-color="%s"/></linearGradient>`,
+				escapeAttr(g.From), escapeAttr(g.To))
+			rightFill = "url(#cyl-grad-r)"
+		}
+		if defs.Len() > 0 {
 			fmt.Fprintf(&sb, `<defs>%s</defs>`, defs.String())
 		}
 	}
@@ -119,7 +135,7 @@ func RenderIsoCylinder(o IsoCylinderOpts) string {
 		rx, ry, botFrontX, botFrontY,
 		topFrontX, topFrontY,
 		rx, ry, leftTopX, leftTopY,
-		o.LeftFill,
+		leftFill,
 	)
 	fmt.Fprintf(&sb,
 		`<path data-face="side-right" d="M %.2f %.2f L %.2f %.2f A %.2f %.2f 0 0 1 %.2f %.2f L %.2f %.2f A %.2f %.2f 0 0 1 %.2f %.2f Z" fill="%s" stroke="none"/>`,
@@ -128,7 +144,7 @@ func RenderIsoCylinder(o IsoCylinderOpts) string {
 		rx, ry, botFrontX, botFrontY,
 		topFrontX, topFrontY,
 		rx, ry, rightTopX, rightTopY,
-		o.RightFill,
+		rightFill,
 	)
 
 	// Body silhouette: left edge + full front-bottom arc + right edge.
@@ -184,7 +200,6 @@ func RenderIsoCylinder(o IsoCylinderOpts) string {
 // Sphere (circle, person head)
 // ---------------------------------------------------------------------------
 
-
 // applyCylinder lowers a ConvertOpts into an IsoCylinderOpts.
 func applyCylinder(o ConvertOpts, c *IsoCylinderOpts) {
 	c.PatternKind, c.PatternColor = o.PatternKind, o.PatternColor
@@ -205,6 +220,8 @@ func applyCylinder(o ConvertOpts, c *IsoCylinderOpts) {
 	if o.RightFill != "" {
 		c.RightFill = o.RightFill
 	}
+	c.LeftGradient = o.LeftGradient
+	c.RightGradient = o.RightGradient
 	if o.Stroke != "" {
 		c.Stroke = o.Stroke
 	}
@@ -245,4 +262,3 @@ func applyCylinder(o ConvertOpts, c *IsoCylinderOpts) {
 		c.Background = o.Background
 	}
 }
-

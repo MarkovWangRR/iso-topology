@@ -70,7 +70,7 @@ type StyleKeyGroup struct {
 // Pure function — no IO, no globals.
 func CapabilityReport() Capabilities {
 	return Capabilities{
-		Version: "0.3.0",
+		Version: "0.3.1",
 		Inputs: []InputFormat{
 			{".yaml", "hand-authored iso composite with precise placement", "manual"},
 			{".json", "same shape as .yaml but JSON-encoded", "manual"},
@@ -168,11 +168,12 @@ func buildPrimitiveCaps() []PrimitiveCap {
 				"grid":       "iso | dots | hatch | solid | none",
 				"gridColor":  "pattern stroke / dot color",
 				"gridStep":   "tile size in world units (default 40)",
+				"padding":    "v3.1 — uniform breathing margin in px around the final composition; use 40-80 for sparse hero shots",
 			},
 		},
 		{
 			Name:    "annotation",
-			Where:   "document.annotations[*]",
+			Where:   "document.annotations[*] | node.annotations[*] (v3.0)",
 			Syntax:  "{anchor: <part-id>, text: \"…\", side: top|right|bottom|left, distance: 60}",
 			Purpose: "Screen-space callout pinned to a composite part. Multi-line text is supported via \\n. Placement is collision-managed: the box never crosses or touches any part projection (6px clearance) and never overlaps other text; side/distance are the FIRST candidate, and the box slides to the nearest free peripheral position when occupied.",
 			Fields: map[string]string{
@@ -190,10 +191,14 @@ func buildPrimitiveCaps() []PrimitiveCap {
 			Syntax:  "{from: <part-id>, to: <part-id>, routing: straight|orthogonal|bezier, arrow: none|triangle, label: \"…\"}",
 			Purpose: "Directed line between two parts, optionally labeled and orthogonal-routed.",
 			Fields: map[string]string{
-				"from":    "source part id; \"id.anchor\" picks a specific face-centre (e.g. central.right-mid)",
-				"to":      "destination part id (same anchor syntax)",
-				"routing": "ALWAYS use orthogonal — every segment rides the iso ground axes, flush with the 2.5D grid (collinear endpoints collapse to one on-axis segment). straight/bezier cut across the grid and are reserved for non-iso freeform sketches.",
-				"arrow":   "none = no head; triangle = filled arrowhead at the dst",
+				"from":          "source part id; \"id.anchor\" picks a specific face-centre (e.g. central.right-mid). Bare ids auto-pick the face FACING the other endpoint.",
+				"to":            "destination part id (same anchor syntax)",
+				"routing":       "ALWAYS use orthogonal — every segment rides the iso ground axes, flush with the 2.5D grid (collinear endpoints collapse to one on-axis segment). straight/bezier cut across the grid and are reserved for non-iso freeform sketches.",
+				"arrow":         "none = no head; triangle = filled arrowhead at the dst",
+				"elbow":         "v3.1 — orthogonal elbow bias: xFirst | yFirst (default: the axis the source face exits along)",
+				"labelBg":       "pill background (default #FFFFFFEE)",
+				"labelColor":    "v3.1 — pill ink (default #1F2433); dim it for dark scenes",
+				"labelFontSize": "v3.1 — pill font size (default 11)",
 			},
 		},
 		{

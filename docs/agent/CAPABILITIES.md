@@ -1,4 +1,4 @@
-# Capabilities — v0.3.0
+# Capabilities — v0.3.1
 
 Generated from `CapabilityReport()`. Do not edit by hand — run
 `go run ./tools/gen-docs` to regenerate after a code change.
@@ -35,7 +35,7 @@ override per-part via `geom.h`.
 | **group** | `group` | 1.0 | v2 primitive — translucent labeled substrate wrapping nested parts |
 | **iso_text** | `text` | 0.3 | flat text panel (low extrusion) |
 | **person** | `c4-person`, `c4_person`, `person` | 1.2 |  |
-| **rectangle** | `callout`, `class`, `code`, `diamond`, `document`, `hexagon`, `hierarchy`, `image`, `package`, `page`, `parallelogram`, `rectangle`, `sequence-diagram`, `sequence_diagram`, `sql-table`, `sql_table`, `square`, `step` | 0.3 |  |
+| **rectangle** | `callout`, `class`, `code`, `diamond`, `document`, `hexagon`, `hierarchy`, `image`, `package`, `page`, `parallelogram`, `rectangle`, `sequence-diagram`, `sequence_diagram`, `sql-table`, `sql_table`, `square`, `step` | 0.4 |  |
 
 ## Composition primitives
 
@@ -81,10 +81,11 @@ Paint an iso-aware backdrop under the scene. grid: iso draws a diamond rhombus l
 | `grid` | iso | dots | hatch | solid | none |
 | `gridColor` | pattern stroke / dot color |
 | `gridStep` | tile size in world units (default 40) |
+| `padding` | v3.1 — uniform breathing margin in px around the final composition; use 40-80 for sparse hero shots |
 
 ### `annotation`
 
-**Where:** `document.annotations[*]`
+**Where:** `document.annotations[*] | node.annotations[*] (v3.0)`
 
 **Syntax:** `{anchor: <part-id>, text: "…", side: top|right|bottom|left, distance: 60}`
 
@@ -110,7 +111,11 @@ Directed line between two parts, optionally labeled and orthogonal-routed.
 | Field | Meaning |
 |---|---|
 | `arrow` | none = no head; triangle = filled arrowhead at the dst |
-| `from` | source part id; "id.anchor" picks a specific face-centre (e.g. central.right-mid) |
+| `elbow` | v3.1 — orthogonal elbow bias: xFirst | yFirst (default: the axis the source face exits along) |
+| `from` | source part id; "id.anchor" picks a specific face-centre (e.g. central.right-mid). Bare ids auto-pick the face FACING the other endpoint. |
+| `labelBg` | pill background (default #FFFFFFEE) |
+| `labelColor` | v3.1 — pill ink (default #1F2433); dim it for dark scenes |
+| `labelFontSize` | v3.1 — pill font size (default 11) |
 | `routing` | ALWAYS use orthogonal — every segment rides the iso ground axes, flush with the 2.5D grid (collinear endpoints collapse to one on-axis segment). straight/bezier cut across the grid and are reserved for non-iso freeform sketches. |
 | `to` | destination part id (same anchor syntax) |
 

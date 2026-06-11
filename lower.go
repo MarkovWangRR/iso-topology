@@ -17,6 +17,8 @@ type partInfo struct {
 	labelBg       string
 	labelBorder   string
 	labelColor    string
+	labelFamily   string
+	labelWeight   string
 	labelFontSize float64
 	isSubstrate   bool
 }
@@ -139,6 +141,12 @@ func groupSubstrate(p *CompositePart) *CompositePart {
 	}
 	if cp.Style == nil {
 		cp.Style = &Style{}
+	}
+	// v3.1 — a preset on the group must win: the fallback palette/stroke
+	// below used to land in part.Style, which OUTRANKS the preset in the
+	// style cascade and silently clobbered it.
+	if cp.Preset != "" {
+		return &cp
 	}
 	if cp.Style.Palette == nil {
 		cp.Style.Palette = &Palette{Top: "#EEF1F8", Left: "#C9D1E5", Right: "#D9DFF0"}

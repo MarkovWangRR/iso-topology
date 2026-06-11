@@ -202,3 +202,33 @@ func ceilOuterDims(svg string) string {
 	}
 	return svg[:start] + out + svg[start+tagEnd+1:]
 }
+
+// padViewBox grows the root viewBox (and width/height) uniformly by pad
+// on every side. Used for canvas.padding and backglow halo reserve.
+func padViewBox(svg string, pad float64) string {
+	start := strings.Index(svg, "<svg")
+	if start < 0 {
+		return svg
+	}
+	tagEnd := strings.Index(svg[start:], ">")
+	if tagEnd < 0 {
+		return svg
+	}
+	tag := svg[start : start+tagEnd+1]
+	i := strings.Index(tag, `viewBox="`)
+	if i < 0 {
+		return svg
+	}
+	j := strings.Index(tag[i+9:], `"`)
+	if j < 0 {
+		return svg
+	}
+	var x, y, w, h float64
+	if _, err := fmt.Sscanf(tag[i+9:i+9+j], "%f %f %f %f", &x, &y, &w, &h); err != nil {
+		return svg
+	}
+	return growViewBoxAround(svg, minSvgRect{
+		minX: x - pad, minY: y - pad,
+		maxX: x + w + pad, maxY: y + h + pad,
+	})
+}

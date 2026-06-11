@@ -12,6 +12,9 @@
 package isotopo
 
 import (
+	"math"
+	"strings"
+
 	"github.com/MarkovWangRR/iso-topology/iso25d"
 )
 
@@ -56,9 +59,61 @@ func renderComposite(n *Node, theme *Theme, canvas *Canvas, anns []*Annotation) 
 	// the connector layer can splice in directly above it.
 	nSubstrates := 0
 	{
+		// v3.1 — "platforms" join the hoist: a THIN part (h ≤ 24) whose
+		// top face has other parts standing on it behaves like a group
+		// slab (a board carrying chips), so routes between the parts it
+		// carries must paint above it too. Group slabs keep going first.
+		dims := func(p *CompositePart) (x, y, z, w, d, h float64) {
+			w, d, h = 140, 140, 80
+			if p.Geom != nil {
+				if p.Geom.W > 0 {
+					w = p.Geom.W
+				}
+				if p.Geom.D > 0 {
+					d = p.Geom.D
+				}
+				if p.Geom.H > 0 {
+					h = p.Geom.H
+				}
+			}
+			if p.Offset != nil {
+				x, y, z = p.Offset.WX, p.Offset.WY, p.Offset.WZ
+			}
+			return
+		}
+		isPlatform := make([]bool, len(flat))
+		for i, p := range flat {
+			if p.isSubstrate {
+				continue
+			}
+			px, py, pz, pw, pd, ph := dims(p)
+			if ph > 24 {
+				continue
+			}
+			for j, q := range flat {
+				if i == j || q.isSubstrate {
+					continue
+				}
+				qx, qy, qz, qw, qd, _ := dims(q)
+				if math.Abs(qz-(pz+ph)) > 0.5 {
+					continue
+				}
+				cx, cy := qx+qw/2, qy+qd/2
+				if cx > px && cx < px+pw && cy > py && cy < py+pd {
+					isPlatform[i] = true
+					break
+				}
+			}
+		}
 		ordered := make([]*CompositePart, 0, len(flat))
 		for _, p := range flat {
 			if p.isSubstrate {
+				ordered = append(ordered, p)
+			}
+		}
+		for i, p := range flat {
+			if !p.isSubstrate && isPlatform[i] {
+				p.isSubstrate = true // downstream layers treat it like a slab
 				ordered = append(ordered, p)
 			}
 		}
@@ -72,6 +127,7 @@ func renderComposite(n *Node, theme *Theme, canvas *Canvas, anns []*Annotation) 
 	}
 
 	infos := make([]partInfo, len(flat))
+	glowPad := 0.0
 
 	parts := make([]iso25d.CompositePart, 0, len(flat))
 	for i, p := range flat {
@@ -81,15 +137,28 @@ func renderComposite(n *Node, theme *Theme, canvas *Canvas, anns []*Annotation) 
 		// the *merged* style (theme → per-shape → part) so theme-level
 		// `text.orient: screen` propagates to every part.
 		mergedForLabel := ResolveStyle(theme, p.Shape, p.Preset, p.Style)
+		if mergedForLabel != nil && mergedForLabel.Effects != nil && mergedForLabel.Effects.Backglow != nil {
+			// Halo blur extends well past the silhouette; reserve room so
+			// the glow gradient never terminates at the canvas edge.
+			glowPad = 36
+		}
 		isoLabel := p.Label
 		var screenLabel, labelBg, labelBorder, labelColor string
+		var labelFamily, labelWeight string
 		var labelSize float64 = 11
 		if mergedForLabel != nil && mergedForLabel.Text != nil && mergedForLabel.Text.Orient == "screen" {
 			screenLabel = p.Label
+			// v3.1 — stack clones (id~1, id~2, …) repeat the base part's
+			// label; one screen label per stack, on the base copy only.
+			if strings.Contains(p.ID, "~") {
+				screenLabel = ""
+			}
 			isoLabel = ""
 			labelBg = mergedForLabel.Text.BoxBg
 			labelBorder = mergedForLabel.Text.BoxBorder
 			labelColor = mergedForLabel.Text.Color
+			labelFamily = mergedForLabel.Text.Family
+			labelWeight = mergedForLabel.Text.Weight
 			if mergedForLabel.Text.Size != nil && *mergedForLabel.Text.Size > 0 {
 				labelSize = *mergedForLabel.Text.Size
 			}
@@ -135,8 +204,9 @@ func renderComposite(n *Node, theme *Theme, canvas *Canvas, anns []*Annotation) 
 			id: p.ID, shape: p.Shape,
 			w: w, d: d, h: h, offWX: ox, offWY: oy, offWZ: oz,
 			screenLabel: screenLabel, labelBg: labelBg, labelBorder: labelBorder,
-			labelColor: labelColor, labelFontSize: labelSize,
-			isSubstrate: p.isSubstrate,
+			labelColor: labelColor, labelFamily: labelFamily, labelWeight: labelWeight,
+			labelFontSize: labelSize,
+			isSubstrate:   p.isSubstrate,
 		}
 	}
 
@@ -162,6 +232,16 @@ func renderComposite(n *Node, theme *Theme, canvas *Canvas, anns []*Annotation) 
 	allAnns := append(append([]*Annotation(nil), anns...), n.Annotations...)
 	if len(allAnns) > 0 {
 		svg = injectAnnotations(svg, allAnns, infos, append(labelRects, connRects...))
+	}
+	// v3.1 — breathing margin: explicit canvas.padding plus implicit glow
+	// reserve, applied uniformly so backglow halos and sparse hero shots
+	// don't kiss the frame.
+	pad := glowPad
+	if canvas != nil && canvas.Padding > 0 {
+		pad = math.Max(pad, canvas.Padding)
+	}
+	if pad > 0 {
+		svg = padViewBox(svg, pad)
 	}
 	// v3.0 — integer outer dimensions: fractional width/height attrs make
 	// 1:1 raster captures grow scrollbars and clip the bottom row.

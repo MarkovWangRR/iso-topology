@@ -72,6 +72,12 @@ type Connector struct {
 	Arrow   string  `yaml:"arrow,omitempty" json:"arrow,omitempty"` // none | triangle (v1.4)
 	Label   string  `yaml:"label,omitempty" json:"label,omitempty"`
 	LabelBg string  `yaml:"labelBg,omitempty" json:"labelBg,omitempty"`
+	// v3.1 — pill ink + size so dark scenes can run dim mid-route labels.
+	LabelColor    string  `yaml:"labelColor,omitempty" json:"labelColor,omitempty"`
+	LabelFontSize float64 `yaml:"labelFontSize,omitempty" json:"labelFontSize,omitempty"`
+	// v3.1 — elbow bias for the orthogonal router: xFirst | yFirst.
+	// Default picks the axis the source face exits along.
+	Elbow string `yaml:"elbow,omitempty" json:"elbow,omitempty"`
 
 	// v1.5 — routing strategy:
 	//   "straight"   — single segment from anchor to anchor (default)
@@ -382,6 +388,10 @@ type Canvas struct {
 	Grid       string  `yaml:"grid,omitempty" json:"grid,omitempty"`
 	GridColor  string  `yaml:"gridColor,omitempty" json:"gridColor,omitempty"`
 	GridStep   float64 `yaml:"gridStep,omitempty" json:"gridStep,omitempty"`
+	// v3.1 — uniform breathing margin (px) added around the final
+	// composition. Sparse hero shots need air the content bbox can't
+	// describe; default 0 keeps the tight crop.
+	Padding float64 `yaml:"padding,omitempty" json:"padding,omitempty"`
 }
 
 // Annotation is a screen-space callout pinned to a composite part. It

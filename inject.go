@@ -157,7 +157,14 @@ func injectScreenLabels(svg string, infos []partInfo, extraObstacles []screenRec
 		baseY := bottomFrontY + ty + 14 // 14px gap under the part
 
 		text := p.screenLabel
-		family := "Inter, sans-serif"
+		family := p.labelFamily
+		if family == "" {
+			family = "Inter, sans-serif"
+		}
+		weight := p.labelWeight
+		if weight == "" {
+			weight = "600"
+		}
 		fontSize := p.labelFontSize
 		boxW := float64(len(text))*fontSize*0.58 + 16
 		boxH := fontSize + 10
@@ -198,8 +205,8 @@ func injectScreenLabels(svg string, infos []partInfo, extraObstacles []screenRec
 			)
 		}
 		fmt.Fprintf(&sb,
-			`<text x="%.2f" y="%.2f" dy=".35em" font-family="%s" font-size="%.1f" font-weight="600" fill="%s" text-anchor="middle">%s</text>`,
-			cx, baseY+boxH/2, family, fontSize, color, escapeXML(text),
+			`<text x="%.2f" y="%.2f" dy=".35em" font-family="%s" font-size="%.1f" font-weight="%s" fill="%s" text-anchor="middle">%s</text>`,
+			cx, baseY+boxH/2, escAttr(family), fontSize, escAttr(weight), color, escapeXML(text),
 		)
 		if labelBottom := baseY + boxH; labelBottom > maxLabelY {
 			maxLabelY = labelBottom
@@ -609,27 +616,25 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo,
 			tWX += tTanX * tStagger
 			tWY += tTanY * tStagger
 
-			// v1.6.6 arrow-gap pullback: with connectors now beneath the
-			// part z-layer, an arrow tip sitting AT the silhouette gets
-			// half-occluded by the part. Retract the target endpoint
-			// along its outward normal by `arrowGap` world units so the
-			// triangle lands fully OUTSIDE the silhouette. Source side
-			// stays flush — the line should still appear to emerge from
-			// the source face's edge. cos30² + sin30² = 1 so the world
-			// magnitude equals the screen magnitude (no axis-dependent
-			// scaling needed).
-			if c.Arrow == "triangle" {
-				const arrowGap = 8.0
-				tWX += tdx * arrowGap
-				tWY += tdy * arrowGap
-			}
+			// v3.1 — the v1.6.6 arrow-gap pullback is gone: arrowheads now
+			// paint in the top overlay and endpoints clip at the target's
+			// silhouette, so retracting the tip 8 world units only left it
+			// floating on bare canvas (worst on near-flat tiles whose
+			// silhouette is a sliver).
 
 			const stub = 24.0
 			sStubX, sStubY := sWX+sdx*stub, sWY+sdy*stub
 			tStubX, tStubY := tWX+tdx*stub, tWY+tdy*stub
 
 			var worldPts [][3]float64
-			if math.Abs(sdx) > math.Abs(sdy) {
+			xFirst := math.Abs(sdx) > math.Abs(sdy)
+			switch c.Elbow {
+			case "xFirst":
+				xFirst = true
+			case "yFirst":
+				xFirst = false
+			}
+			if xFirst {
 				// Source exits along world x → walk x then y.
 				worldPts = [][3]float64{
 					{sWX, sWY, routeZ},
@@ -670,6 +675,24 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo,
 				pts = append(pts, [2]float64{x2 + tx, y2 + ty})
 				break
 			}
+			// v3.1 despike: stub-driven waypoints can walk an axis one way
+			// and immediately back (hub→diagonal-neighbour cases), which
+			// renders as a doubled line / hook. Collapse any waypoint whose
+			// outgoing segment reverses its incoming segment's direction.
+			for changed := true; changed; {
+				changed = false
+				for i := 1; i < len(worldPts)-1; i++ {
+					inX, inY := worldPts[i][0]-worldPts[i-1][0], worldPts[i][1]-worldPts[i-1][1]
+					outX, outY := worldPts[i+1][0]-worldPts[i][0], worldPts[i+1][1]-worldPts[i][1]
+					if (inX*outX < 0 && math.Abs(inY)+math.Abs(outY) < eps) ||
+						(inY*outY < 0 && math.Abs(inX)+math.Abs(outX) < eps) {
+						worldPts = append(worldPts[:i], worldPts[i+1:]...)
+						changed = true
+						break
+					}
+				}
+			}
+
 			// Drop coincident consecutive waypoints so straight-shot
 			// connectors don't emit zero-length segments.
 			for _, p := range worldPts {
@@ -789,18 +812,40 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo,
 			if bg == "" {
 				bg = "#FFFFFFEE"
 			}
-			textW := float64(len(c.Label))*7 + 12
+			ink := c.LabelColor
+			if ink == "" {
+				ink = "#1F2433"
+			}
+			lfs := c.LabelFontSize
+			if lfs <= 0 {
+				lfs = 11
+			}
+			textW := float64(len([]rune(c.Label)))*lfs*0.64 + 12
 
-			type seg struct{ mx, my, length float64 }
-			segs := make([]seg, 0, len(pts)-1)
+			type seg struct{ mx, my, length, fromMid float64 }
+			total := 0.0
 			for i := 1; i < len(pts); i++ {
-				dx, dy := pts[i][0]-pts[i-1][0], pts[i][1]-pts[i-1][1]
+				total += math.Hypot(pts[i][0]-pts[i-1][0], pts[i][1]-pts[i-1][1])
+			}
+			segs := make([]seg, 0, len(pts)-1)
+			walked := 0.0
+			for i := 1; i < len(pts); i++ {
+				l := math.Hypot(pts[i][0]-pts[i-1][0], pts[i][1]-pts[i-1][1])
 				segs = append(segs, seg{
 					(pts[i-1][0] + pts[i][0]) / 2, (pts[i-1][1] + pts[i][1]) / 2,
-					math.Hypot(dx, dy),
+					l, math.Abs(walked + l/2 - total/2),
 				})
+				walked += l
 			}
-			sort.Slice(segs, func(a, b int) bool { return segs[a].length > segs[b].length })
+			// v3.1 — candidates ordered by closeness to the route's VISUAL
+			// midpoint (then by length); a dogleg's pill used to teleport
+			// to whichever segment happened to be longest.
+			sort.Slice(segs, func(a, b int) bool {
+				if math.Abs(segs[a].fromMid-segs[b].fromMid) > 1 {
+					return segs[a].fromMid < segs[b].fromMid
+				}
+				return segs[a].length > segs[b].length
+			})
 			mx, my := segs[0].mx, segs[0].my
 			for _, sg := range segs {
 				r := screenRect{sg.mx - textW/2 - 2, sg.my - 12, sg.mx + textW/2 + 2, sg.my + 12}
@@ -817,8 +862,8 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo,
 				mx-textW/2, my-10, textW, bg,
 			)
 			fmt.Fprintf(&overlay,
-				`<text x="%.2f" y="%.2f" dy=".35em" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#1F2433" text-anchor="middle">%s</text>`,
-				mx, my, c.Label,
+				`<text x="%.2f" y="%.2f" dy=".35em" font-family="Inter, sans-serif" font-size="%.1f" font-weight="600" fill="%s" text-anchor="middle">%s</text>`,
+				mx, my, lfs, escAttr(ink), c.Label,
 			)
 		}
 	}
@@ -942,13 +987,27 @@ func injectAnnotations(svg string, anns []*Annotation, infos []partInfo, extraOb
 		}
 
 		lines := strings.Split(a.Text, "\n")
-		longest := 0
+		// v3.1 — measure display width, not bytes: CJK and box-drawing
+		// glyphs are multi-byte AND wider than latin, so byte counting
+		// over- and under-sizes the box depending on script.
+		widest := 0.0
 		for _, l := range lines {
-			if len(l) > longest {
-				longest = len(l)
+			w := 0.0
+			for _, rn := range l {
+				switch {
+				case rn >= 0x2E80: // CJK and beyond
+					w += 1.0
+				case rn >= 0x2500 && rn <= 0x257F: // box-drawing rules
+					w += 0.7
+				default:
+					w += 0.58
+				}
+			}
+			if w > widest {
+				widest = w
 			}
 		}
-		boxW := float64(longest)*fontSize*0.58 + 20
+		boxW := widest*fontSize + 20
 		boxH := float64(len(lines))*(fontSize+4) + 14
 
 		posFor := func(s string, d float64) (float64, float64) {
