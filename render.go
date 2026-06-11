@@ -49,6 +49,28 @@ func renderComposite(n *Node, theme *Theme, canvas *Canvas, anns []*Annotation) 
 		return ""
 	}
 
+	// v3.0 — stable-partition substrates to the front of the painter
+	// order. A group slab is a thin plate at the ground (or its parent's
+	// top): painting every slab before every body is the correct 3D
+	// back-to-front order, and it makes the substrate block contiguous so
+	// the connector layer can splice in directly above it.
+	nSubstrates := 0
+	{
+		ordered := make([]*CompositePart, 0, len(flat))
+		for _, p := range flat {
+			if p.isSubstrate {
+				ordered = append(ordered, p)
+			}
+		}
+		nSubstrates = len(ordered)
+		for _, p := range flat {
+			if !p.isSubstrate {
+				ordered = append(ordered, p)
+			}
+		}
+		flat = ordered
+	}
+
 	infos := make([]partInfo, len(flat))
 
 	parts := make([]iso25d.CompositePart, 0, len(flat))
@@ -114,6 +136,7 @@ func renderComposite(n *Node, theme *Theme, canvas *Canvas, anns []*Annotation) 
 			w: w, d: d, h: h, offWX: ox, offWY: oy, offWZ: oz,
 			screenLabel: screenLabel, labelBg: labelBg, labelBorder: labelBorder,
 			labelColor: labelColor, labelFontSize: labelSize,
+			isSubstrate: p.isSubstrate,
 		}
 	}
 
@@ -126,17 +149,23 @@ func renderComposite(n *Node, theme *Theme, canvas *Canvas, anns []*Annotation) 
 	//   1. connectors first (will end up just below parts)
 	//   2. canvas-bg last  (will end up at the very top of doc order
 	//                       = painted first = furthest back)
+	var connRects []screenRect
 	if len(n.Connectors) > 0 {
-		svg = injectCompositeConnectors(svg, n.Connectors, infos)
+		svg, connRects = injectCompositeConnectors(svg, n.Connectors, infos, nSubstrates)
 	}
 	if canvas != nil {
 		svg = injectCanvasBackground(svg, canvas)
 	}
-	svg, labelRects := injectScreenLabels(svg, infos)
-	if len(anns) > 0 {
-		svg = injectAnnotations(svg, anns, infos, labelRects)
+	svg, labelRects := injectScreenLabels(svg, infos, connRects)
+	// v3.0 — node-level annotations join the document-level list so
+	// `nodes.X.annotations` is honoured instead of silently dropped.
+	allAnns := append(append([]*Annotation(nil), anns...), n.Annotations...)
+	if len(allAnns) > 0 {
+		svg = injectAnnotations(svg, allAnns, infos, append(labelRects, connRects...))
 	}
-	return svg
+	// v3.0 — integer outer dimensions: fractional width/height attrs make
+	// 1:1 raster captures grow scrollbars and clip the bottom row.
+	return ceilOuterDims(svg)
 }
 
 // RenderDocument renders every node in a Document and returns a map of
@@ -191,4 +220,3 @@ func RenderParts(doc *Document) map[string]string {
 	}
 	return out
 }
-

@@ -106,6 +106,20 @@ func wrapLine(line string, fs, maxW float64) []string {
 	if len(out) == 0 {
 		return []string{line}
 	}
+	// v3.0 widow control: rune-level (CJK) wrapping can strand a single
+	// character on the last line (实时动态信息 / 流). Pull one rune down
+	// from the previous line when doing so still fits the width budget.
+	if n := len(out); n >= 2 {
+		last := []rune(out[n-1])
+		prev := []rune(out[n-2])
+		if len(last) == 1 && len(prev) >= 3 {
+			cand := string(prev[len(prev)-1]) + string(last)
+			if lineWidth(cand, fs) <= maxW {
+				out[n-2] = string(prev[:len(prev)-1])
+				out[n-1] = cand
+			}
+		}
+	}
 	return out
 }
 

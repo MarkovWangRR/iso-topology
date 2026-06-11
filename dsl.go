@@ -38,6 +38,11 @@ type Node struct {
 	// face-centres are auto-derived; entries here are additive overrides.
 	Anchors map[string]*WorldPoint `yaml:"anchors,omitempty" json:"anchors,omitempty"`
 
+	// v3.0 — node-scoped annotations. Joined with the document-level
+	// Annotations list at render time, so callouts can live next to the
+	// scene that owns them instead of only at the document top level.
+	Annotations []*Annotation `yaml:"annotations,omitempty" json:"annotations,omitempty"`
+
 	// v1.4 — composite-only first-class connectors between parts. Each
 	// connector references "partID.anchor" on its From/To. Resolved at
 	// render time using each part's iso-projected anchor positions.
@@ -64,7 +69,7 @@ type Connector struct {
 	From    string  `yaml:"from" json:"from"`
 	To      string  `yaml:"to" json:"to"`
 	Stroke  *Stroke `yaml:"stroke,omitempty" json:"stroke,omitempty"`
-	Arrow   string  `yaml:"arrow,omitempty" json:"arrow,omitempty"`     // none | triangle (v1.4)
+	Arrow   string  `yaml:"arrow,omitempty" json:"arrow,omitempty"` // none | triangle (v1.4)
 	Label   string  `yaml:"label,omitempty" json:"label,omitempty"`
 	LabelBg string  `yaml:"labelBg,omitempty" json:"labelBg,omitempty"`
 
@@ -100,6 +105,12 @@ type CompositePart struct {
 	// layer. Models server racks / HA pods / replicas without forcing
 	// the author (or an agent) to copy-paste N declarations.
 	Stack *Stack `yaml:"stack,omitempty" json:"stack,omitempty"`
+
+	// set by lowering (groupSubstrate) — never authored. Substrate slabs
+	// are hoisted to the front of the painter order and the connector
+	// layer is spliced in directly above them, so routes show on group
+	// plates instead of vanishing underneath.
+	isSubstrate bool
 
 	// v2 — nested parts. Only honored when Shape == "group". The group
 	// itself renders as a low-extrusion translucent substrate; each
@@ -325,10 +336,10 @@ type Pattern struct {
 // front-right face with one row per band. Cells (v1.3) is a 2D grid drawn
 // on the TOP face (iso-tilted via the top matrix).
 type Content struct {
-	Header    string     `yaml:"header,omitempty" json:"header,omitempty"`
-	Rows      []string   `yaml:"rows,omitempty" json:"rows,omitempty"`
-	RowColors []string   `yaml:"rowColors,omitempty" json:"rowColors,omitempty"`
-	Cells     [][]string `yaml:"cells,omitempty" json:"cells,omitempty"`     // [row][col]
+	Header     string     `yaml:"header,omitempty" json:"header,omitempty"`
+	Rows       []string   `yaml:"rows,omitempty" json:"rows,omitempty"`
+	RowColors  []string   `yaml:"rowColors,omitempty" json:"rowColors,omitempty"`
+	Cells      [][]string `yaml:"cells,omitempty" json:"cells,omitempty"` // [row][col]
 	CellColors [][]string `yaml:"cellColors,omitempty" json:"cellColors,omitempty"`
 }
 

@@ -172,6 +172,12 @@ func RenderIsoBoxRounded(o IsoBoxOpts) string {
 	if o.Opacity > 0 && o.Opacity < 1 {
 		wrapAttrs += fmt.Sprintf(` opacity="%.3f"`, o.Opacity)
 	}
+	// v3.0 — stroke.dash was honoured by every box renderer except this
+	// one, so any rounded part (incl. every group substrate) silently
+	// rendered solid outlines.
+	if strings.TrimSpace(o.StrokeDasharray) != "" {
+		wrapAttrs += fmt.Sprintf(` stroke-dasharray="%s"`, escapeAttr(o.StrokeDasharray))
+	}
 	if shadowID != "" {
 		wrapAttrs += fmt.Sprintf(` filter="url(#%s)"`, shadowID)
 	}

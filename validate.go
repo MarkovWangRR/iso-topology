@@ -215,9 +215,22 @@ func Validate(doc *Document) []Issue {
 		}
 	}
 
-	// Annotations
+	// Annotations — document-level and node-level (v3.0) share checks.
+	type annAt struct {
+		a    *Annotation
+		path string
+	}
+	var annList []annAt
 	for i, a := range doc.Annotations {
-		aPath := fmt.Sprintf("annotations[%d]", i)
+		annList = append(annList, annAt{a, fmt.Sprintf("annotations[%d]", i)})
+	}
+	for nodeID, n := range doc.Nodes {
+		for i, a := range n.Annotations {
+			annList = append(annList, annAt{a, fmt.Sprintf("nodes.%s.annotations[%d]", nodeID, i)})
+		}
+	}
+	for _, item := range annList {
+		a, aPath := item.a, item.path
 		if a.Anchor == "" {
 			issues = append(issues, Issue{
 				Severity: SeverityError,

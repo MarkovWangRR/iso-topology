@@ -52,11 +52,11 @@ type ShapeCap struct {
 // / annotation / canvas-grid / ...) — the recipe an agent uses to
 // express layered, repeated, or annotated structure.
 type PrimitiveCap struct {
-	Name       string            `json:"name"`
-	Where      string            `json:"where"`   // YAML location
-	Syntax     string            `json:"syntax"`  // one-liner DSL form
-	Purpose    string            `json:"purpose"`
-	Fields     map[string]string `json:"fields"`  // field → semantics
+	Name    string            `json:"name"`
+	Where   string            `json:"where"`  // YAML location
+	Syntax  string            `json:"syntax"` // one-liner DSL form
+	Purpose string            `json:"purpose"`
+	Fields  map[string]string `json:"fields"` // field → semantics
 }
 
 // StyleKeyGroup describes one style sub-block (Palette, Stroke, Text,
@@ -70,7 +70,7 @@ type StyleKeyGroup struct {
 // Pure function — no IO, no globals.
 func CapabilityReport() Capabilities {
 	return Capabilities{
-		Version: "0.2.2",
+		Version: "0.3.0",
 		Inputs: []InputFormat{
 			{".yaml", "hand-authored iso composite with precise placement", "manual"},
 			{".json", "same shape as .yaml but JSON-encoded", "manual"},

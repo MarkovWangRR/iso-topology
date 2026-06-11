@@ -5,6 +5,7 @@ package isotopo
 
 import (
 	"fmt"
+	"math"
 	"strings"
 )
 
@@ -166,3 +167,38 @@ func resizeCanvasBg(body string, x, y, w, h float64) string {
 // RenderDocument renders every node in a Document and returns a map of
 // node-id → SVG string. The document's Theme is applied to every node.
 // v2 — the document's top-level "scene" composite picks up Canvas
+
+// ceilOuterDims rewrites the root <svg> width/height attributes to the
+// ceiling of their values. The precise viewBox is left untouched —
+// only the CSS pixel size becomes integral, so 1:1 raster captures
+// (e.g. headless Chrome at --window-size=WxH) need no scrollbars and
+// lose no bottom/right edge.
+func ceilOuterDims(svg string) string {
+	start := strings.Index(svg, "<svg")
+	if start < 0 {
+		return svg
+	}
+	tagEnd := strings.Index(svg[start:], ">")
+	if tagEnd < 0 {
+		return svg
+	}
+	tag := svg[start : start+tagEnd+1]
+	out := tag
+	for _, attr := range []string{"width", "height"} {
+		key := attr + `="`
+		i := strings.Index(out, key)
+		if i < 0 {
+			continue
+		}
+		j := strings.Index(out[i+len(key):], `"`)
+		if j < 0 {
+			continue
+		}
+		var v float64
+		if _, err := fmt.Sscanf(out[i+len(key):i+len(key)+j], "%f", &v); err != nil {
+			continue
+		}
+		out = out[:i] + fmt.Sprintf(`%s="%d"`, attr, int(math.Ceil(v))) + out[i+len(key)+j+1:]
+	}
+	return svg[:start] + out + svg[start+tagEnd+1:]
+}

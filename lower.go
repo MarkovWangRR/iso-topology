@@ -6,18 +6,19 @@ package isotopo
 import "fmt"
 
 type partInfo struct {
-	id      string
-	shape   string // v1.6.3 — needed by shape-aware anchor refinement
-	w, d, h float64
+	id                  string
+	shape               string // v1.6.3 — needed by shape-aware anchor refinement
+	w, d, h             float64
 	offWX, offWY, offWZ float64
 	// v1.6 screen-label intent: when set, renderComposite suppresses the
 	// part's iso-tilted top-face label and instead splices a horizontal
 	// label box under the part's projected bounding box.
-	screenLabel    string
-	labelBg        string
-	labelBorder    string
-	labelColor     string
-	labelFontSize  float64
+	screenLabel   string
+	labelBg       string
+	labelBorder   string
+	labelColor    string
+	labelFontSize float64
+	isSubstrate   bool
 }
 
 // renderComposite walks parts and delegates to iso25d.RenderComposite,
@@ -35,7 +36,18 @@ func lowerCompositeParts(in []*CompositePart, offX, offY, offZ float64) []*Compo
 		base := translatePart(p, offX, offY, offZ)
 		if p.Shape == "group" {
 			// Substrate first (z-ordered behind children).
-			out = append(out, groupSubstrate(base))
+			sub := groupSubstrate(base)
+			// v3.0 — a populated group's label used to render at the top-
+			// face centre UNDER its children (paint order), so it was
+			// invisible in every real scene. Strip it from the slab and
+			// emit it as a small iso_text at the slab's front-left corner
+			// AFTER the children, so it paints on top and sits in the
+			// padding strip the layout solver keeps child-free.
+			groupLabel := sub.Label
+			if len(p.Parts) > 0 {
+				sub.Label = ""
+			}
+			out = append(out, sub)
 			// base.Offset is the group's ABSOLUTE iso position (it already
 			// includes offX/Y/Z). Nested children expect their parent's
 			// absolute pos as the new origin, so seed the recursion with
@@ -47,6 +59,9 @@ func lowerCompositeParts(in []*CompositePart, offX, offY, offZ float64) []*Compo
 				childOffY = base.Offset.WY
 			}
 			out = append(out, lowerCompositeParts(p.Parts, childOffX, childOffY, childOffZ)...)
+			if groupLabel != "" && len(p.Parts) > 0 {
+				out = append(out, groupLabelPart(sub, groupLabel))
+			}
 			continue
 		}
 		if p.Stack != nil && p.Stack.Count > 1 {
@@ -115,6 +130,7 @@ func expandStack(p *CompositePart, s *Stack) []*CompositePart {
 func groupSubstrate(p *CompositePart) *CompositePart {
 	cp := *p
 	cp.Shape = "rectangle"
+	cp.isSubstrate = true
 	cp.Parts = nil
 	if cp.Geom == nil {
 		cp.Geom = &Geom{W: 360, D: 240, H: groupSubstrateHeight(p)}
@@ -166,5 +182,46 @@ func walkAtomicParts(parts []*CompositePart, fn func(*CompositePart)) {
 			continue
 		}
 		fn(p)
+	}
+}
+
+// groupLabelPart builds the front-edge iso_text replacement for a
+// populated group's label. Color follows the slab's stroke so the
+// caption reads as part of the substrate's design system.
+func groupLabelPart(sub *CompositePart, label string) *CompositePart {
+	w, d := 360.0, 240.0
+	if sub.Geom != nil {
+		if sub.Geom.W > 0 {
+			w = sub.Geom.W
+		}
+		if sub.Geom.D > 0 {
+			d = sub.Geom.D
+		}
+	}
+	_ = w
+	color := "#7C8DB5"
+	if sub.Style != nil && sub.Style.Stroke != nil && sub.Style.Stroke.Color != "" {
+		color = sub.Style.Stroke.Color
+	}
+	if sub.Style != nil && sub.Style.Text != nil && sub.Style.Text.Color != "" {
+		color = sub.Style.Text.Color
+	}
+	size := 11.0
+	if sub.Style != nil && sub.Style.Text != nil && sub.Style.Text.Size != nil && *sub.Style.Text.Size > 0 {
+		size = *sub.Style.Text.Size
+	}
+	off := &WorldPoint{WX: 14, WY: d - 14 - size, WZ: groupSubstrateHeight(sub)}
+	if sub.Offset != nil {
+		off.WX += sub.Offset.WX
+		off.WY += sub.Offset.WY
+		off.WZ += sub.Offset.WZ
+	}
+	return &CompositePart{
+		Shape:  "iso_text",
+		Label:  label,
+		Offset: off,
+		Style: &Style{
+			Text: &Text{Color: color, Size: &size},
+		},
 	}
 }

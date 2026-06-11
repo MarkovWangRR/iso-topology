@@ -11,6 +11,7 @@ package isotopo
 import (
 	"fmt"
 	"math"
+	"sort"
 	"strings"
 )
 
@@ -120,7 +121,7 @@ func injectCanvasBackground(svg string, c *Canvas) string {
 // part flagged with `style.text.orient: screen`. The label sits centred
 // horizontally on the part's projected (top-face centre) and slightly
 // below the iso shape's projected bounding box.
-func injectScreenLabels(svg string, infos []partInfo) (string, []screenRect) {
+func injectScreenLabels(svg string, infos []partInfo, extraObstacles []screenRect) (string, []screenRect) {
 	project := projectIso
 	any := false
 	for _, p := range infos {
@@ -138,7 +139,7 @@ func injectScreenLabels(svg string, infos []partInfo) (string, []screenRect) {
 	// touch any part's projection, and prefer the picture's periphery.
 	partRects := partScreenRects(infos)
 	sceneCx, sceneCy := sceneCenter(partRects)
-	obstacles := append([]screenRect(nil), partRects...)
+	obstacles := append(append([]screenRect(nil), partRects...), extraObstacles...)
 	var placed []screenRect
 
 	var sb strings.Builder
@@ -230,7 +231,13 @@ func injectScreenLabels(svg string, infos []partInfo) (string, []screenRect) {
 // viewBox/width/height so the post-hoc-inserted screen labels are not
 // clipped. Idempotent — shrinks to a no-op when the current viewBox is
 
-func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo) string {
+// injectCompositeConnectors splices the route layer in ABOVE the first
+// nSubstrates part groups (group slabs) and BELOW every body part, and
+// paints arrowheads + label pills in a separate top overlay so they are
+// never occluded. Returns the inflated screen rects of every emitted
+// route segment so later layers (screen labels, annotations) can treat
+// routes as collision obstacles.
+func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo, nSubstrates int) (string, []screenRect) {
 	project := projectIso
 	tx, ty := partsScreenOrigin(infos)
 
@@ -397,6 +404,38 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo)
 		return id + "/" + anchor
 	}
 
+	// v3.0 — bare refs (no ".anchor") used to pin to top-mid with a
+	// hard-coded +x exit normal: a target sitting to the LEFT still made
+	// the route walk +x for the 24-unit stub and double back, and every
+	// spoke into a hub converged on one point. Resolve bare refs to the
+	// side face FACING the other endpoint before anything else runs.
+	autoAnchor := func(ref, otherRef string) string {
+		if strings.Contains(ref, ".") {
+			return ref
+		}
+		p, ok := byID[ref]
+		if !ok {
+			return ref
+		}
+		oid, _ := parseAnchor(otherRef)
+		o, ok2 := byID[oid]
+		if !ok2 {
+			return ref
+		}
+		dx := (o.offWX + o.w/2) - (p.offWX + p.w/2)
+		dy := (o.offWY + o.d/2) - (p.offWY + p.d/2)
+		if math.Abs(dx) >= math.Abs(dy) {
+			if dx >= 0 {
+				return ref + ".right"
+			}
+			return ref + ".left"
+		}
+		if dy >= 0 {
+			return ref + ".front"
+		}
+		return ref + ".back"
+	}
+
 	// v1.6.2 fan-out: count how many orthogonal connectors share each
 	// (partID, side) so the per-connector pass can stagger their stubs
 	// along the face's tangent and stop them overlapping on the first
@@ -413,20 +452,24 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo)
 	isCollinearConn := make([]bool, len(conns))
 	srcSideCount := map[string]int{}
 	tgtSideCount := map[string]int{}
+	effFrom := make([]string, len(conns))
+	effTo := make([]string, len(conns))
 	for i, c := range conns {
+		effFrom[i] = autoAnchor(c.From, c.To)
+		effTo[i] = autoAnchor(c.To, c.From)
 		if c.Routing != "orthogonal" {
 			continue
 		}
-		sWX, sWY, _, ok1 := anchorWorld(c.From)
-		tWX, tWY, _, ok2 := anchorWorld(c.To)
+		sWX, sWY, _, ok1 := anchorWorld(effFrom[i])
+		tWX, tWY, _, ok2 := anchorWorld(effTo[i])
 		if !ok1 || !ok2 {
 			continue
 		}
-		sdx, sdy := anchorExit(c.From)
-		tdx, tdy := anchorExit(c.To)
-		routeZ := math.Min(anchorFaceMidZ(c.From), anchorFaceMidZ(c.To))
-		sWX, sWY = anchorRefineSilhouette(c.From, sWX, sWY, routeZ)
-		tWX, tWY = anchorRefineSilhouette(c.To, tWX, tWY, routeZ)
+		sdx, sdy := anchorExit(effFrom[i])
+		tdx, tdy := anchorExit(effTo[i])
+		routeZ := math.Min(anchorFaceMidZ(effFrom[i]), anchorFaceMidZ(effTo[i]))
+		sWX, sWY = anchorRefineSilhouette(effFrom[i], sWX, sWY, routeZ)
+		tWX, tWY = anchorRefineSilhouette(effTo[i], tWX, tWY, routeZ)
 
 		// Collinear iff face normals oppose AND perpendicular distance
 		// is zero (within a small tolerance — refinement and fan-out
@@ -446,8 +489,8 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo)
 		}
 		isCollinearConn[i] = collinear
 		if !collinear {
-			srcSideCount[anchorSideKey(c.From)]++
-			tgtSideCount[anchorSideKey(c.To)]++
+			srcSideCount[anchorSideKey(effFrom[i])]++
+			tgtSideCount[anchorSideKey(effTo[i])]++
 		}
 	}
 	srcSideIdx := map[string]int{}
@@ -468,7 +511,21 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo)
 	}
 
 	var sb strings.Builder
+	var overlay strings.Builder
 	sb.WriteString(`<g data-layer="connectors">`)
+
+	// Obstacles for pill placement + segment rects handed back to later
+	// layers. Substrate slabs are not pill obstacles — a pill ON a slab
+	// is fine; bodies are not.
+	var bodyRects []screenRect
+	allRects := partScreenRects(infos)
+	for i, p := range infos {
+		if !p.isSubstrate {
+			bodyRects = append(bodyRects, allRects[i])
+		}
+	}
+	var segRects []screenRect
+	var placedPills []screenRect
 	for ci, c := range conns {
 		stroke, width, dash := "#7A8390", 1.4, ""
 		if c.Stroke != nil {
@@ -507,22 +564,22 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo)
 			// lie inside both endpoints' side faces (any face-mid z ≤ h),
 			// so the endpoints attach inside the visible silhouette and
 			// no vertical "drop" segment is ever needed.
-			sWX, sWY, _, ok1 := anchorWorld(c.From)
-			tWX, tWY, _, ok2 := anchorWorld(c.To)
+			sWX, sWY, _, ok1 := anchorWorld(effFrom[ci])
+			tWX, tWY, _, ok2 := anchorWorld(effTo[ci])
 			if !ok1 || !ok2 {
 				continue
 			}
-			sdx, sdy := anchorExit(c.From)
-			tdx, tdy := anchorExit(c.To)
-			routeZ := math.Min(anchorFaceMidZ(c.From), anchorFaceMidZ(c.To))
+			sdx, sdy := anchorExit(effFrom[ci])
+			tdx, tdy := anchorExit(effTo[ci])
+			routeZ := math.Min(anchorFaceMidZ(effFrom[ci]), anchorFaceMidZ(effTo[ci]))
 
 			// v1.6.3 shape-aware anchor refinement: sphere/cloud
 			// silhouettes don't reach their bbox edges, so the bbox
 			// anchor would render the line ending in empty space. Slide
 			// the (wx, wy) along the face normal onto the real silhouette
 			// at the chosen routing z.
-			sWX, sWY = anchorRefineSilhouette(c.From, sWX, sWY, routeZ)
-			tWX, tWY = anchorRefineSilhouette(c.To, tWX, tWY, routeZ)
+			sWX, sWY = anchorRefineSilhouette(effFrom[ci], sWX, sWY, routeZ)
+			tWX, tWY = anchorRefineSilhouette(effTo[ci], tWX, tWY, routeZ)
 
 			// v1.6.2 fan-out: when N>1 connectors share a side, slide
 			// each endpoint along the face's tangent (perpendicular to
@@ -536,8 +593,8 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo)
 			// Collinear edges keep stagger 0 — shifting them would
 			// break the single-segment route the user laid out for.
 			if !isCollinearConn[ci] {
-				srcKey := anchorSideKey(c.From)
-				tgtKey := anchorSideKey(c.To)
+				srcKey := anchorSideKey(effFrom[ci])
+				tgtKey := anchorSideKey(effTo[ci])
 				sN, sIdx := srcSideCount[srcKey], srcSideIdx[srcKey]
 				tN, tIdx := tgtSideCount[tgtKey], tgtSideIdx[tgtKey]
 				srcSideIdx[srcKey]++
@@ -653,6 +710,24 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo)
 			pts = [][2]float64{{x1, y1}, {x2, y2}}
 		}
 
+		// v3.0 — endpoint silhouette clipping: when an anchor face is
+		// occluded by its own body (back/right faces under this camera),
+		// the projected endpoint lands INSIDE the silhouette; the line
+		// vanishes behind the part while the overlay arrowhead floats
+		// disconnected on the top face. Trim both ends at the silhouette
+		// boundary so line + arrow terminate visibly on the entry edge.
+		if len(pts) >= 2 {
+			if tp, ok := byID[func() string { id, _ := parseAnchor(effTo[ci]); return id }()]; ok && !tp.isSubstrate {
+				pts = clipRouteEnd(pts, silhouetteHex(tp, tx, ty), 2)
+			}
+			if sp, ok := byID[func() string { id, _ := parseAnchor(effFrom[ci]); return id }()]; ok && !sp.isSubstrate {
+				pts = clipRouteStart(pts, silhouetteHex(sp, tx, ty), 1)
+			}
+		}
+		if len(pts) < 2 {
+			continue
+		}
+
 		for _, p := range pts {
 			trackPt(p[0], p[1])
 		}
@@ -679,7 +754,17 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo)
 			d.String(), stroke, width, dashAttr,
 		)
 
-		// Arrow on last segment.
+		// Record inflated segment rects (route obstacles for later layers).
+		for i := 1; i < len(pts); i++ {
+			inf := width/2 + 3
+			segRects = append(segRects, screenRect{
+				math.Min(pts[i-1][0], pts[i][0]) - inf, math.Min(pts[i-1][1], pts[i][1]) - inf,
+				math.Max(pts[i-1][0], pts[i][0]) + inf, math.Max(pts[i-1][1], pts[i][1]) + inf,
+			})
+		}
+
+		// Arrow on last segment — painted in the top overlay so an
+		// occluded entry face still shows its tip.
 		if c.Arrow == "triangle" && len(pts) >= 2 {
 			end := pts[len(pts)-1]
 			prev := pts[len(pts)-2]
@@ -690,29 +775,48 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo)
 			b1y := tipY - size*math.Sin(theta) + size*0.5*math.Cos(theta)
 			b2x := tipX - size*math.Cos(theta) + size*0.5*math.Sin(theta)
 			b2y := tipY - size*math.Sin(theta) - size*0.5*math.Cos(theta)
-			fmt.Fprintf(&sb,
+			fmt.Fprintf(&overlay,
 				`<polygon points="%.2f,%.2f %.2f,%.2f %.2f,%.2f" fill="%s"/>`,
 				tipX, tipY, b1x, b1y, b2x, b2y, stroke,
 			)
 		}
 
-		// Take midpoint for label position from the polyline midpoint.
-		x1, y1 := pts[0][0], pts[0][1]
-		x2, y2 := pts[len(pts)-1][0], pts[len(pts)-1][1]
-		if strings.TrimSpace(c.Label) != "" {
-			mx, my := (x1+x2)/2, (y1+y2)/2
+		// v3.0 — label pill slides along the polyline to a body-free
+		// segment (longest first); a midpoint that lands inside a part's
+		// projection swallowed the pill entirely under the old rule.
+		if strings.TrimSpace(c.Label) != "" && len(pts) >= 2 {
 			bg := c.LabelBg
 			if bg == "" {
 				bg = "#FFFFFFEE"
 			}
 			textW := float64(len(c.Label))*7 + 12
+
+			type seg struct{ mx, my, length float64 }
+			segs := make([]seg, 0, len(pts)-1)
+			for i := 1; i < len(pts); i++ {
+				dx, dy := pts[i][0]-pts[i-1][0], pts[i][1]-pts[i-1][1]
+				segs = append(segs, seg{
+					(pts[i-1][0] + pts[i][0]) / 2, (pts[i-1][1] + pts[i][1]) / 2,
+					math.Hypot(dx, dy),
+				})
+			}
+			sort.Slice(segs, func(a, b int) bool { return segs[a].length > segs[b].length })
+			mx, my := segs[0].mx, segs[0].my
+			for _, sg := range segs {
+				r := screenRect{sg.mx - textW/2 - 2, sg.my - 12, sg.mx + textW/2 + 2, sg.my + 12}
+				if !collides(r, bodyRects) && !collides(r, placedPills) {
+					mx, my = sg.mx, sg.my
+					break
+				}
+			}
+			placedPills = append(placedPills, screenRect{mx - textW/2, my - 10, mx + textW/2, my + 10})
 			trackPt(mx-textW/2, my-10)
 			trackPt(mx+textW/2, my+10)
-			fmt.Fprintf(&sb,
+			fmt.Fprintf(&overlay,
 				`<rect x="%.2f" y="%.2f" width="%.2f" height="20" rx="4" ry="4" fill="%s"/>`,
 				mx-textW/2, my-10, textW, bg,
 			)
-			fmt.Fprintf(&sb,
+			fmt.Fprintf(&overlay,
 				`<text x="%.2f" y="%.2f" dy=".35em" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#1F2433" text-anchor="middle">%s</text>`,
 				mx, my, c.Label,
 			)
@@ -724,29 +828,45 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo)
 	// for stroke width + arrowheads) BEFORE splicing the layer in, so
 	// routes that bend past the part bbox are never clipped.
 	if cMinX <= cMaxX {
-		const pad = 10.0
+		const pad = 16.0
 		svg = growViewBoxAround(svg, minSvgRect{
 			minX: cMinX - pad, minY: cMinY - pad,
 			maxX: cMaxX + pad, maxY: cMaxY + pad,
 		})
 	}
 
-	// v1.6.5 — splice the connector layer IMMEDIATELY AFTER the opening
-	// <svg ...> tag, BEFORE the <g data-part="..."> blocks. SVG paint
-	// order = document order, so this puts every connector underneath
-	// every part, letting iso silhouettes occlude lines that cross them
-	// (the natural 3D z-order: a node is a body, lines run behind it).
-	// Screen labels stay at the document end so they always paint on top.
+	// v3.0 — splice the route layer above the substrate block: after the
+	// nSubstrates-th <g data-part=…> group (substrates are partitioned to
+	// the front of the painter order by renderComposite). Routes still
+	// paint under every BODY part — iso silhouettes occlude crossing
+	// lines — but group slabs no longer swallow them. With nSubstrates ==
+	// 0 this degrades to the v1.6.5 behaviour (just after the <svg> tag).
 	start := strings.Index(svg, "<svg")
 	if start < 0 {
-		return svg
+		return svg, segRects
 	}
 	tagEnd := strings.Index(svg[start:], ">")
 	if tagEnd < 0 {
-		return svg
+		return svg, segRects
 	}
 	insertAt := start + tagEnd + 1
-	return svg[:insertAt] + sb.String() + svg[insertAt:]
+	for k := 0; k < nSubstrates; k++ {
+		end, ok := partGroupEnd(svg, insertAt)
+		if !ok {
+			break
+		}
+		insertAt = end
+	}
+	svg = svg[:insertAt] + sb.String() + svg[insertAt:]
+
+	// Arrowheads and label pills go in a top overlay so a tip landing on
+	// a part's projection (occluded entry face) stays visible.
+	if overlay.Len() > 0 {
+		if closeIdx := strings.LastIndex(svg, "</svg>"); closeIdx >= 0 {
+			svg = svg[:closeIdx] + `<g data-layer="connector-overlay">` + overlay.String() + `</g>` + svg[closeIdx:]
+		}
+	}
+	return svg, segRects
 }
 
 // injectAnnotations paints each callout as a rounded text box plus a
@@ -788,6 +908,13 @@ func injectAnnotations(svg string, anns []*Annotation, infos []partInfo, extraOb
 		ax, ay := project(p.offWX+p.w/2, p.offWY+p.d/2, p.offWZ+p.h)
 		ax += tx
 		ay += ty
+		// v3.0 — box positions are measured from the part's projected
+		// RECT edges. Measuring every side from the top-face centre made
+		// side:bottom land inside the body (a part extends far below its
+		// top centre), so the collision search always bounced it to the
+		// top — side: bottom literally behaved like side: top.
+		ar := anchorRectByID[a.Anchor]
+		acx, acy := (ar.x0+ar.x1)/2, (ar.y0+ar.y1)/2
 
 		side := a.Side
 		if side == "" {
@@ -795,7 +922,7 @@ func injectAnnotations(svg string, anns []*Annotation, infos []partInfo, extraOb
 		}
 		dist := a.Distance
 		if dist <= 0 {
-			dist = 60
+			dist = 28
 		}
 		fontSize := a.FontSize
 		if fontSize <= 0 {
@@ -827,13 +954,13 @@ func injectAnnotations(svg string, anns []*Annotation, infos []partInfo, extraOb
 		posFor := func(s string, d float64) (float64, float64) {
 			switch s {
 			case "top":
-				return ax - boxW/2, ay - d - boxH
+				return acx - boxW/2, ar.y0 - d - boxH
 			case "bottom":
-				return ax - boxW/2, ay + d
+				return acx - boxW/2, ar.y1 + d
 			case "left":
-				return ax - d - boxW, ay - boxH/2
+				return ar.x0 - d - boxW, acy - boxH/2
 			default: // right
-				return ax + d, ay - boxH/2
+				return ar.x1 + d, acy - boxH/2
 			}
 		}
 		// Candidate order is SIDE-major for consistency: the author's
@@ -948,4 +1075,136 @@ func injectAnnotations(svg string, anns []*Annotation, infos []partInfo, extraOb
 		return svg
 	}
 	return svg[:closeIdx] + sb.String() + svg[closeIdx:]
+}
+
+// partGroupEnd finds the index just past the closing </g> of the next
+// <g data-part="..."> group at or after `from`. Part markup nests <g>
+// elements freely, so the close is found by depth-counting, not by the
+// first </g>.
+func partGroupEnd(svg string, from int) (int, bool) {
+	g := strings.Index(svg[from:], `<g data-part="`)
+	if g < 0 {
+		return 0, false
+	}
+	i := from + g
+	depth := 0
+	for i < len(svg) {
+		open := strings.Index(svg[i:], "<g")
+		close := strings.Index(svg[i:], "</g>")
+		if close < 0 {
+			return 0, false
+		}
+		if open >= 0 && open < close {
+			depth++
+			i += open + 2
+			continue
+		}
+		depth--
+		i += close + len("</g>")
+		if depth == 0 {
+			return i, true
+		}
+	}
+	return 0, false
+}
+
+// silhouetteHex returns the 6-corner screen silhouette of a part's
+// world bbox under the iso camera, in composite coords. Non-prismatic
+// shapes (cylinder, sphere, cloud) are approximated by their bbox hex —
+// slightly loose, which only makes arrow tips sit a touch earlier.
+func silhouetteHex(p partInfo, tx, ty float64) [][2]float64 {
+	w, d, h := p.w, p.d, p.h
+	x, y, z := p.offWX, p.offWY, p.offWZ
+	corners := [][3]float64{
+		{x, y, z + h}, {x + w, y, z + h}, {x + w, y, z},
+		{x + w, y + d, z}, {x, y + d, z}, {x, y + d, z + h},
+	}
+	out := make([][2]float64, 6)
+	for i, c := range corners {
+		sx, sy := projectIso(c[0], c[1], c[2])
+		out[i] = [2]float64{sx + tx, sy + ty}
+	}
+	return out
+}
+
+func pointInConvex(pt [2]float64, poly [][2]float64) bool {
+	n := len(poly)
+	sign := 0.0
+	for i := 0; i < n; i++ {
+		a, b := poly[i], poly[(i+1)%n]
+		cross := (b[0]-a[0])*(pt[1]-a[1]) - (b[1]-a[1])*(pt[0]-a[0])
+		if math.Abs(cross) < 1e-9 {
+			continue
+		}
+		if sign == 0 {
+			sign = cross
+		} else if sign*cross < 0 {
+			return false
+		}
+	}
+	return true
+}
+
+// segPolyEntry returns the intersection of segment a→b with a convex
+// polygon's boundary that is closest to a (the outside end).
+func segPolyEntry(a, b [2]float64, poly [][2]float64) ([2]float64, bool) {
+	bestT := math.Inf(1)
+	var best [2]float64
+	n := len(poly)
+	for i := 0; i < n; i++ {
+		p1, p2 := poly[i], poly[(i+1)%n]
+		d1x, d1y := b[0]-a[0], b[1]-a[1]
+		d2x, d2y := p2[0]-p1[0], p2[1]-p1[1]
+		den := d1x*d2y - d1y*d2x
+		if math.Abs(den) < 1e-9 {
+			continue
+		}
+		t := ((p1[0]-a[0])*d2y - (p1[1]-a[1])*d2x) / den
+		u := ((p1[0]-a[0])*d1y - (p1[1]-a[1])*d1x) / den
+		if t >= -1e-9 && t <= 1+1e-9 && u >= -1e-9 && u <= 1+1e-9 && t < bestT {
+			bestT = t
+			best = [2]float64{a[0] + t*d1x, a[1] + t*d1y}
+		}
+	}
+	return best, !math.IsInf(bestT, 1)
+}
+
+// clipRouteEnd trims a polyline where it dives inside `poly` near its
+// final point, so the visible line (and its arrowhead) terminate ON the
+// part's silhouette instead of underneath the body. The inset pulls the
+// tip slightly outside so the triangle stays fully visible.
+func clipRouteEnd(pts [][2]float64, poly [][2]float64, inset float64) [][2]float64 {
+	if len(pts) < 2 || !pointInConvex(pts[len(pts)-1], poly) {
+		return pts
+	}
+	for i := len(pts) - 1; i >= 1; i-- {
+		if pointInConvex(pts[i-1], poly) {
+			continue
+		}
+		entry, ok := segPolyEntry(pts[i-1], pts[i], poly)
+		if !ok {
+			return pts
+		}
+		dx, dy := entry[0]-pts[i-1][0], entry[1]-pts[i-1][1]
+		if l := math.Hypot(dx, dy); l > inset {
+			entry[0] -= dx / l * inset
+			entry[1] -= dy / l * inset
+		}
+		return append(append([][2]float64{}, pts[:i]...), entry)
+	}
+	return pts
+}
+
+// clipRouteStart is clipRouteEnd from the other side.
+func clipRouteStart(pts [][2]float64, poly [][2]float64, inset float64) [][2]float64 {
+	rev := make([][2]float64, len(pts))
+	for i, p := range pts {
+		rev[len(pts)-1-i] = p
+	}
+	rev = clipRouteEnd(rev, poly, inset)
+	out := make([][2]float64, len(rev))
+	for i, p := range rev {
+		out[len(rev)-1-i] = p
+	}
+	return out
 }
