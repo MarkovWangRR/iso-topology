@@ -89,3 +89,26 @@ func TestFitCJKWrapsByRune(t *testing.T) {
 		}
 	}
 }
+
+func TestIconCatalogComplete(t *testing.T) {
+	cat := IconCatalog()
+	glyphs, brands := 0, 0
+	for _, ic := range cat {
+		if ic.Description == "" {
+			t.Fatalf("icon %s/%s has no description — add it to glyphDescs", ic.Kind, ic.Name)
+		}
+		if !strings.HasPrefix(ic.SVG, "<svg") {
+			t.Fatalf("icon %s/%s has no renderable SVG", ic.Kind, ic.Name)
+		}
+		switch ic.Kind {
+		case "glyph":
+			glyphs++
+		case "brand":
+			brands++
+		}
+	}
+	if glyphs != len(glyphIcons) || brands != len(brandBadges) {
+		t.Fatalf("catalog incomplete: %d/%d glyphs, %d/%d brands",
+			glyphs, len(glyphIcons), brands, len(brandBadges))
+	}
+}

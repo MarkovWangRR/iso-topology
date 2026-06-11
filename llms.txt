@@ -11,6 +11,7 @@ Install: `go install github.com/MarkovWangRR/iso-topology/cmd/isotopo@latest` â€
 - [Prompt template](https://raw.githubusercontent.com/MarkovWangRR/iso-topology/main/docs/agent/PROMPT_TEMPLATE.md): drop-in system prompt with positioning rules and output contract
 - [Samples index](https://raw.githubusercontent.com/MarkovWangRR/iso-topology/main/docs/agent/SAMPLES.md): golden-tested worked scenes to imitate (few-shot library)
 - [Recipes](https://raw.githubusercontent.com/MarkovWangRR/iso-topology/main/docs/agent/RECIPES.md): task â†’ DSL primitive mapping
+- [Icon index](https://raw.githubusercontent.com/MarkovWangRR/iso-topology/main/docs/agent/ICONS.md): every built-in glyph and brand badge with previews
 - [MCP server setup](https://raw.githubusercontent.com/MarkovWangRR/iso-topology/main/docs/agent/MCP.md): use from Claude / any MCP client without shelling out
 - [Agent skill](https://raw.githubusercontent.com/MarkovWangRR/iso-topology/main/skills/draw-iso-diagram/SKILL.md): installable Claude Code skill for drawing iso diagrams
 

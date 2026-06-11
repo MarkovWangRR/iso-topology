@@ -12,6 +12,7 @@ package iso25d
 import (
 	"encoding/base64"
 	"fmt"
+	"sort"
 	"strings"
 )
 
@@ -114,15 +115,7 @@ func ResolveBrandIcon(uri string) string {
 		if !ok {
 			return uri
 		}
-		svg := fmt.Sprintf(
-			`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">`+
-				`<rect x="2" y="2" width="20" height="20" rx="5" fill="#FFFFFF" stroke="%s" stroke-width="1.6"/>`+
-				`<text x="12" y="16.5" text-anchor="middle" font-size="11" font-weight="800" fill="%s" `+
-				`font-family="-apple-system, Inter, system-ui, sans-serif">%s</text>`+
-				`</svg>`,
-			b.color, b.color, b.glyph,
-		)
-		return "data:image/svg+xml;base64," + base64.StdEncoding.EncodeToString([]byte(svg))
+		return "data:image/svg+xml;base64," + base64.StdEncoding.EncodeToString([]byte(brandSVG(b)))
 
 	case strings.HasPrefix(uri, glyphPrefix):
 		rest := strings.TrimPrefix(uri, glyphPrefix)
@@ -139,13 +132,8 @@ func ResolveBrandIcon(uri string) string {
 		case isHexColor(variant):
 			color = "#" + variant
 		}
-		// color also drives fill="currentColor" overrides inside glyphs.
-		svg := fmt.Sprintf(
-			`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" `+
-				`fill="none" stroke="%s" color="%s" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">%s</svg>`,
-			color, color, inner,
-		)
-		return "data:image/svg+xml;base64," + base64.StdEncoding.EncodeToString([]byte(svg))
+		_ = inner
+		return "data:image/svg+xml;base64," + base64.StdEncoding.EncodeToString([]byte(glyphSVG(name, color)))
 	}
 	return uri
 }
@@ -160,4 +148,114 @@ func isHexColor(s string) bool {
 		}
 	}
 	return true
+}
+
+// glyphDescs is the human/agent-facing one-liner for every glyph —
+// the generated icon index (docs/agent/ICONS.md) is built from it,
+// and a unit test enforces that no glyph ships without one.
+var glyphDescs = map[string]string{
+	"cloud":     "cloud — external system, SaaS, hosted service",
+	"database":  "database cylinder — storage, persistence",
+	"bolt":      "lightning bolt (filled) — functions, speed, compute",
+	"chart":     "bar chart — analytics, metrics, BI",
+	"globe":     "globe with meridians — CDN, edge, world-facing",
+	"shield":    "shield — security, WAF, guardrails",
+	"lock":      "padlock — auth, secrets, encryption",
+	"gear":      "hex nut with bore — settings, infrastructure, ops",
+	"cpu":       "chip with pins — processor, hardware, runtime",
+	"code":      "angle brackets — code, SDK, developer surface",
+	"layers":    "two stacked rhombi — cache layers, tiers, stack",
+	"rocket":    "rocket with porthole — launch, deploy, startup",
+	"user":      "head and shoulders — human actor, account",
+	"mobile":    "phone outline — mobile client",
+	"browser":   "window with toolbar dots — web client, frontend",
+	"search":    "magnifier — search, retrieval, lookup",
+	"bell":      "bell with clapper — notifications, alerts",
+	"queue":     "three horizontal bars — queue, log, buffer",
+	"model":     "four connected nodes — neural net, ML model",
+	"sparkles":  "four-point stars (filled) — GenAI, magic, LLM",
+	"gpu":       "wide chip with pins and core — GPU, accelerator",
+	"agent":     "robot face with antenna — AI agent, bot",
+	"chat":      "speech bubble with line — chat, LLM gateway, conversation",
+	"vector":    "axes with rising arrow — embeddings, vector store",
+	"stream":    "double wave — streaming, realtime data",
+	"warehouse": "gabled building — data warehouse",
+	"etl":       "funnel — ETL, filtering, transformation",
+	"table":     "grid with header — dataset, table, spreadsheet",
+	"graph":     "four linked nodes — knowledge graph, network",
+	"gauge":     "dial with needle — observability, dashboards, SLO",
+	"terminal":  "window with prompt — CLI, shell, developer tool",
+	"doc":       "page with folded corner — documents, files",
+	"key":       "key on ring — API keys, credentials, access",
+	"training":  "descending curve with two points — model training, gradient descent",
+	"lake":      "water drop — data lake",
+}
+
+// IconInfo is one entry of the built-in icon catalog.
+type IconInfo struct {
+	Kind        string // "glyph" | "brand"
+	Name        string
+	URI         string // what authors write in the DSL
+	Description string
+	SVG         string // standalone renderable SVG markup
+}
+
+// IconCatalog returns every built-in icon, sorted glyphs-then-brands
+// by name. The generated docs/agent/ICONS.md and the per-icon SVG
+// files under docs/assets/icons/ are derived from this — the single
+// source of truth stays in this file.
+func IconCatalog() []IconInfo {
+	var out []IconInfo
+	names := make([]string, 0, len(glyphIcons))
+	for n := range glyphIcons {
+		names = append(names, n)
+	}
+	sort.Strings(names)
+	for _, n := range names {
+		out = append(out, IconInfo{
+			Kind: "glyph", Name: n,
+			URI:         "iso://glyph/" + n,
+			Description: glyphDescs[n],
+			SVG:         glyphSVG(n, "#1F2937"),
+		})
+	}
+	names = names[:0]
+	for n := range brandBadges {
+		names = append(names, n)
+	}
+	sort.Strings(names)
+	for _, n := range names {
+		b := brandBadges[n]
+		out = append(out, IconInfo{
+			Kind: "brand", Name: n,
+			URI:         "iso://brand/" + n,
+			Description: fmt.Sprintf("letter badge %q in brand color %s", b.glyph, b.color),
+			SVG:         brandSVG(b),
+		})
+	}
+	return out
+}
+
+// glyphSVG builds the standalone SVG for one glyph at the given stroke
+// color (which also drives fill="currentColor" overrides inside the
+// markup).
+func glyphSVG(name, color string) string {
+	inner := glyphIcons[strings.ToLower(name)]
+	return fmt.Sprintf(
+		`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" `+
+			`fill="none" stroke="%s" color="%s" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">%s</svg>`,
+		color, color, inner,
+	)
+}
+
+// brandSVG builds the standalone SVG for one letter badge.
+func brandSVG(b brandBadge) string {
+	return fmt.Sprintf(
+		`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">`+
+			`<rect x="2" y="2" width="20" height="20" rx="5" fill="#FFFFFF" stroke="%s" stroke-width="1.6"/>`+
+			`<text x="12" y="16.5" text-anchor="middle" font-size="11" font-weight="800" fill="%s" `+
+			`font-family="-apple-system, Inter, system-ui, sans-serif">%s</text>`+
+			`</svg>`,
+		b.color, b.color, b.glyph,
+	)
 }

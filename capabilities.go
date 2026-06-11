@@ -240,7 +240,7 @@ func buildPrimitiveCaps() []PrimitiveCap {
 			Name:    "icon",
 			Where:   "node.parts[*].icon",
 			Syntax:  "icon: \"iso://glyph/<name>[/light|/RRGGBB]\" | \"iso://brand/<name>\"",
-			Purpose: "Put an icon on a part's top face instead of text — the preferred look for showcase scenes. Glyphs (generic, stroke style): cloud, database, bolt, chart, globe, shield, lock, gear, cpu, code, layers, rocket, user, mobile, browser, search, bell, queue; default ink, /light = white (dark tops), /RRGGBB = custom. Brands (letter badges): spark, hadoop, mysql, postgresql, iceberg, hive, pulsar, kafka, redis, mongo, kubernetes, docker, github, aws, gcp, azure, starrocks, vite, rolldown, oxc. Any other icon value is treated as a URL / data-URI.",
+			Purpose: "Put an icon on a part's top face instead of text — the preferred look for showcase scenes. Glyphs (generic, stroke style): cloud, database, bolt, chart, globe, shield, lock, gear, cpu, code, layers, rocket, user, mobile, browser, search, bell, queue; default ink, /light = white (dark tops), /RRGGBB = custom. Brands (letter badges): spark, hadoop, mysql, postgresql, iceberg, hive, pulsar, kafka, redis, mongo, kubernetes, docker, github, aws, gcp, azure, starrocks, vite, rolldown, oxc. Any other icon value is treated as a URL / data-URI. Browsable index with previews: docs/agent/ICONS.md.",
 			Fields: map[string]string{
 				"icon": "iso://glyph/<name>[/variant] | iso://brand/<name> | https://… | data:image/…",
 			},

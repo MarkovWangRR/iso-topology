@@ -341,7 +341,8 @@ browser, search, bell, queue.
 Brand badge names: spark, hadoop, mysql, postgresql, iceberg, hive,
 pulsar, kafka, redis, mongo, kubernetes, docker, github, aws, gcp,
 azure, starrocks, vite, rolldown, oxc. Any other `icon:` value is
-treated as a URL / data-URI.
+treated as a URL / data-URI. Full browsable index with previews:
+[ICONS.md](ICONS.md).
 
 ### I want flat / low / tall extrusion
 

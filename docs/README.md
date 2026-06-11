@@ -64,6 +64,8 @@ order — each step builds on the last.
   prompt (capability block auto-generated)
 - [`SAMPLES.md`](agent/SAMPLES.md) — generated index of the golden
   fixtures: the few-shot library, one entry per worked scene
+- [`ICONS.md`](agent/ICONS.md) — generated index of all built-in
+  icons with previews (source of truth: `iso25d/brand_icons.go`)
 - [`MCP.md`](agent/MCP.md) — the `isotopo-mcp` server: capabilities /
   validate / render as MCP tools for Claude-family clients
 - [`../skills/`](../skills/README.md) — installable Claude Code skill
