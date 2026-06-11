@@ -113,6 +113,14 @@ check("dirty-flag", ev("""
   dlEnabled: !document.getElementById('dl').disabled});})()
 """), lambda v: json.loads(v)=={"dirtyShown":True,"discardShown":True,"dlEnabled":True})
 
+# T7b export captures the CURRENT (edited) canvas, named .edited.*
+check("export-edited-svg", ev("""
+(()=>{return JSON.stringify({
+  capturesEdit: currentSVG().includes('GPU FARM 42'),
+  editedName: exportName('svg').endsWith('.edited.svg'),
+  pngName: exportName('png').endsWith('.edited.png')});})()
+"""), lambda v: json.loads(v)=={"capturesEdit":True,"editedName":True,"pngName":True})
+
 # T8 Tab inserts indentation instead of moving focus
 check("tab-indent", ev("""
 (()=>{const src=document.getElementById('src');

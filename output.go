@@ -118,6 +118,12 @@ header .spacer{flex:1;}
 #viewport.panning{cursor:grabbing;}
 #zoomer{transform-origin:0 0;filter:drop-shadow(0 18px 30px rgba(15,23,42,.10));}
 #zoomer svg{display:block;max-width:none;}
+.exportctl{position:absolute;right:16px;top:14px;display:flex;gap:1px;
+  background:white;border:1px solid var(--border);border-radius:10px;overflow:hidden;box-shadow:var(--shadow);}
+.exportctl button{border:0;border-radius:0;background:white;font:11px Inter,sans-serif;font-weight:550;
+  color:#334155;padding:7px 12px;}
+.exportctl button:hover{background:var(--accent-soft);color:var(--accent-deep);}
+.exportctl button+button{border-left:1px solid var(--border);}
 .zoomctl{position:absolute;right:16px;bottom:16px;display:flex;flex-direction:column;gap:1px;
   background:white;border:1px solid var(--border);border-radius:10px;overflow:hidden;box-shadow:var(--shadow);}
 .zoomctl button{width:34px;height:32px;border:0;border-radius:0;background:white;font-size:14px;color:#334155;}
@@ -199,6 +205,10 @@ svg g[data-part-id].hi{filter:drop-shadow(0 0 6px rgba(16,174,185,.9));}
   <div class="stage-wrap">
     <div id="viewport"><div id="zoomer">{{SVG}}</div></div>
     <div id="stale" class="stale" hidden>edits not rendered — showing last good result</div>
+    <div class="exportctl">
+      <button onclick="exportSVG()" title="download the current render as SVG">&#8595; SVG</button>
+      <button onclick="exportPNG()" title="download the current render as PNG (2x)">&#8595; PNG</button>
+    </div>
     <div class="zoomctl">
       <button onclick="zoomBy(1.25)">+</button>
       <button onclick="zoomBy(0.8)">−</button>
@@ -226,7 +236,7 @@ svg g[data-part-id].hi{filter:drop-shadow(0 0 6px rgba(16,174,185,.9));}
   <span>scroll to zoom · drag to pan · double-click resets</span>
   <span><kbd>⌘</kbd>+<kbd>↵</kbd> re-render</span>
   <span class="spacer" style="flex:1"></span>
-  <a href="./topology.svg" target="_blank">open SVG</a>
+  <a href="./topology.svg" target="_blank">original SVG</a>
   <a href="./nodes/_index.html">browse nodes</a>
 </footer>
 <script>
@@ -384,6 +394,34 @@ srcEl.addEventListener('keydown',e=>{
     srcEl.dispatchEvent(new Event('input'));
   }
 });
+
+/* ── export the CURRENT render (incl. unsaved edits) ───────────── */
+function currentSVG(){const el=zoomer.querySelector('svg');return el?el.outerHTML:'';}
+function exportName(ext){
+  return FILENAME.replace(/\.[a-z0-9]+$/i,'')+(dirty?'.edited':'')+'.'+ext;
+}
+function downloadBlob(blob,name){
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob); a.download=name; a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),5000);
+}
+function exportSVG(){
+  const sv=currentSVG(); if(!sv) return;
+  downloadBlob(new Blob([sv],{type:'image/svg+xml'}),exportName('svg'));
+}
+function exportPNG(){
+  const sv=currentSVG(); if(!sv) return;
+  const url=URL.createObjectURL(new Blob([sv],{type:'image/svg+xml'}));
+  const img=new Image();
+  img.onload=()=>{
+    const c=document.createElement('canvas');
+    c.width=img.width*2; c.height=img.height*2;
+    const ctx=c.getContext('2d'); ctx.scale(2,2); ctx.drawImage(img,0,0);
+    c.toBlob(b=>downloadBlob(b,exportName('png')),'image/png');
+    URL.revokeObjectURL(url);
+  };
+  img.src=url;
+}
 
 /* ── misc ───────────────────────────────────────────────────────── */
 async function copySrc(){
