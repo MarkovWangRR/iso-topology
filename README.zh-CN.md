@@ -10,7 +10,7 @@
 
 **写一段文本，得到一张等距 SVG 架构图。AI agent 可以自己生成、自己校验、和代码一起提交。**
 
-单个静态二进制 · 无运行时依赖 · 毫秒级渲染 · 内置 35 个图标 · 所有样例都有 golden 测试
+单个静态二进制 · 无运行时依赖 · 毫秒级渲染 · 内置 200+ 图标（含真品牌 logo） · 所有样例都有 golden 测试
 
 [English](README.md) · 简体中文
 
@@ -238,7 +238,7 @@ api  -> db:  write
 - **23 种 d2 形状**自动映射到等距图形（rectangle、cylinder、cloud、person、hexagon、queue、oval……）
 - **声明式定位**：`layout: {mode: row|column|grid|ring}` 排容器，`place: {rightOf|inFrontOf|above: 某节点}` 摆单件；坐标由求解器计算，引用错了会报错，撞了会警告
 - **8 个组合原语**：`group`、`stack`、`layout`、`place`、`canvas.grid`、`annotation`、`connector`、图标
-- **35 个内置图标**：18 个 AI / 大数据主题的图形（`iso://glyph/gpu`、`model`、`agent`、`vector`、`lake`……）可任意配色，另有一组品牌字母徽章（`iso://brand/kafka`……）
+- **200+ 内置图标**：约 150 个真品牌 logo（来自 Simple Icons，CC0 协议，`iso://si/postgresql`、`iso://si/openai`……），35 个手绘概念图形（`iso://glyph/gpu`、`model`、`agent`……），全部可改色，带预览的索引见 [ICONS.md](docs/agent/ICONS.md)
 - **逐面样式**：渐变、投影、辉光、斜纹/点阵纹理、圆角、线框模式、胶片颗粒
 - **风格预设**：`theme.presets` 里定义一次，节点上写 `preset: 名字` 即可复用（比 YAML 锚点强：JSON 也能用，写错名字会提示）
 - **两层输出**：整图 SVG，外加每个元素一张独立 SVG

@@ -63,8 +63,8 @@ func writeLLMsTxt() error {
 
 	var b strings.Builder
 	b.WriteString("# iso-topology\n\n")
-	fmt.Fprintf(&b, "> iso-topology is an open-source Go CLI and library that renders a small text DSL into design-grade 2.5D isometric SVG architecture diagrams. It is a diagram-as-code tool built agent-first: an LLM can discover the DSL (`isotopo capabilities`), validate documents before render (JSONPath-located issues with fix suggestions; exit codes 0 clean / 2 warnings / 3 errors), and produce deterministic, git-diffable SVG. Capabilities v%s: %d iso shapes, %d composition primitives, declarative layout/place positioning (no hand-computed coordinates), 35 built-in icons.\n\n",
-		cap.Version, len(cap.Shapes), len(cap.Primitives))
+	fmt.Fprintf(&b, "> iso-topology is an open-source Go CLI and library that renders a small text DSL into design-grade 2.5D isometric SVG architecture diagrams. It is a diagram-as-code tool built agent-first: an LLM can discover the DSL (`isotopo capabilities`), validate documents before render (JSONPath-located issues with fix suggestions; exit codes 0 clean / 2 warnings / 3 errors), and produce deterministic, git-diffable SVG. Capabilities v%s: %d iso shapes, %d composition primitives, declarative layout/place positioning (no hand-computed coordinates), %d built-in icons including real brand logos.\n\n",
+		cap.Version, len(cap.Shapes), len(cap.Primitives), len(iso25d.IconCatalog()))
 	b.WriteString("Install: `go install github.com/MarkovWangRR/iso-topology/cmd/isotopo@latest` — single static binary, no runtime deps. Inputs: `.yaml` (declarative composition), `.d2` (auto-layout), `.json`. An MCP server (`isotopo-mcp`) exposes capabilities/validate/render as tools.\n\n")
 
 	b.WriteString("## Agent integration\n\n")
@@ -141,7 +141,22 @@ func writeIconIndex() error {
 		fmt.Fprintf(&b, "| <img src=\"../assets/icons/glyph-%s.svg\" width=\"22\"> | `%s` | `%s` | %s |\n",
 			ic.Name, ic.Name, ic.URI, ic.Description)
 	}
+	b.WriteString("\n## Brand logos (Simple Icons)\n\n")
+	b.WriteString("Real logos vendored from [Simple Icons](https://simpleicons.org)\n")
+	b.WriteString("(CC0-1.0; see `iso25d/icons/si/NOTICE.txt` — brand names and\n")
+	b.WriteString("logos may be trademarks of their respective owners). Same color\n")
+	b.WriteString("variants as glyphs: `/light` for dark tops, `/<RRGGBB>` for any\n")
+	b.WriteString("color. Curate the set in `tools/import-icons/allowlist.txt`.\n\n")
+	b.WriteString("| | Name | URI | Description |\n|---|---|---|---|\n")
+	for _, ic := range cat {
+		if ic.Kind != "si" {
+			continue
+		}
+		fmt.Fprintf(&b, "| <img src=%q width=%q> | `%s` | `%s` | %s |\n",
+			"../assets/icons/si-"+ic.Name+".svg", "22", ic.Name, ic.URI, ic.Description)
+	}
 	b.WriteString("\n## Brand letter badges\n\n")
+	b.WriteString("Generated monogram fallbacks for marks that are not vendored.\n\n")
 	b.WriteString("| | Name | URI | Description |\n|---|---|---|---|\n")
 	for _, ic := range cat {
 		if ic.Kind != "brand" {

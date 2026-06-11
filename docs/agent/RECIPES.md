@@ -328,21 +328,24 @@ The preferred look for showcase scenes — keep top faces visual,
 push words into screen-space labels or annotations.
 
 ```yaml
+- {id: db,    icon: "iso://si/postgresql/336791", ...}  # REAL logo, brand color
+- {id: queue, icon: "iso://si/apachekafka", ...}        # real logo, ink
 - {id: fn,    icon: "iso://glyph/bolt", shape: rectangle, geom: {w: 84, d: 84, h: 10}}
 - {id: cdn,   icon: "iso://glyph/globe/light", ...}     # white, for dark tops
 - {id: waf,   icon: "iso://glyph/shield/22D3EE", ...}   # any hex color
-- {id: queue, icon: "iso://brand/kafka", ...}           # brand letter badge
 ```
 
 Glyph names (generic, stroke style): cloud, database, bolt, chart,
 globe, shield, lock, gear, cpu, code, layers, rocket, user, mobile,
 browser, search, bell, queue.
 
-Brand badge names: spark, hadoop, mysql, postgresql, iceberg, hive,
-pulsar, kafka, redis, mongo, kubernetes, docker, github, aws, gcp,
-azure, starrocks, vite, rolldown, oxc. Any other `icon:` value is
-treated as a URL / data-URI. Full browsable index with previews:
-[ICONS.md](ICONS.md).
+Real brand logos (`iso://si/<slug>`): ~150 marks vendored from
+Simple Icons (CC0) — mysql, postgresql, redis, apachekafka, docker,
+kubernetes, terraform, openai, anthropic, pytorch, grafana, … with
+the same `/light` and `/RRGGBB` color variants. Letter badges
+(`iso://brand/<name>`) remain as fallbacks for non-vendored marks.
+Any other `icon:` value is treated as a URL / data-URI. Full
+browsable index with previews: [ICONS.md](ICONS.md).
 
 ### I want flat / low / tall extrusion
 

@@ -1,0 +1,176 @@
+# Simple Icons slugs to vendor into iso25d/icons/si/.
+# One slug per line; '#' starts a comment. Add a line, run
+# `go run ./tools/import-icons`, commit the new SVGs.
+# Missing/renamed slugs are reported, not fatal.
+
+# ── databases & storage ──
+mysql
+postgresql
+redis
+mongodb
+sqlite
+mariadb
+elasticsearch
+opensearch
+clickhouse
+snowflake
+databricks
+apachecassandra
+couchbase
+neo4j
+influxdb
+supabase
+cockroachlabs
+duckdb
+minio
+apachecouchdb
+firebase
+planetscale
+
+# ── messaging & streaming ──
+apachekafka
+rabbitmq
+apachepulsar
+apacheflink
+apachespark
+apachehadoop
+apachehive
+apacheairflow
+dbt
+airbyte
+trino
+
+# ── containers & infra ──
+docker
+kubernetes
+helm
+terraform
+ansible
+vagrant
+podman
+consul
+vault
+istio
+envoyproxy
+nginx
+apache
+caddy
+traefikproxy
+openstack
+proxmox
+
+# ── cloud & hosting ──
+googlecloud
+digitalocean
+cloudflare
+vercel
+netlify
+heroku
+railway
+oracle
+alibabacloud
+ovh
+hetzner
+
+# ── languages & runtimes ──
+go
+python
+rust
+typescript
+javascript
+nodedotjs
+openjdk
+dotnet
+ruby
+php
+kotlin
+swift
+cplusplus
+c
+zig
+deno
+bun
+
+# ── frameworks ──
+react
+vuedotjs
+angular
+svelte
+nextdotjs
+nuxt
+django
+flask
+fastapi
+spring
+rubyonrails
+express
+laravel
+astro
+remix
+
+# ── AI / ML ──
+openai
+anthropic
+huggingface
+pytorch
+tensorflow
+keras
+scikitlearn
+pandas
+numpy
+jupyter
+mlflow
+langchain
+ollama
+modal
+replicate
+
+# ── observability & devops ──
+prometheus
+grafana
+datadog
+sentry
+elastic
+kibana
+opentelemetry
+splunk
+pagerduty
+newrelic
+victoriametrics
+
+# ── VCS & CI ──
+git
+github
+gitlab
+bitbucket
+githubactions
+jenkins
+circleci
+argo
+gitea
+
+# ── OS ──
+linux
+ubuntu
+debian
+redhat
+alpinelinux
+archlinux
+freebsd
+
+# ── protocols & APIs ──
+graphql
+swagger
+postman
+openapiinitiative
+json
+
+# ── messaging & SaaS ──
+slack
+discord
+telegram
+stripe
+twilio
+auth0
+okta
+temporal

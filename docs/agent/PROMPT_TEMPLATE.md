@@ -28,7 +28,7 @@ CAPABILITIES v0.2.2 (the only DSL you may emit):
     layout:     layout: {mode: row|column|grid|ring, cols: N, gap: 1, padding: 1, align: start|center|end}
     place:      place: {rightOf: <sibling-id>, inFrontOf: <sibling-id>, above: <sibling-id>, gap: 1, gapX: 2, gapY: 0, align: start|center|end}
     preset:     theme: {presets: {<name>: <Style>}}  →  part: {preset: <name>}
-    icon:       icon: "iso://glyph/<name>[/light|/RRGGBB]" | "iso://brand/<name>"
+    icon:       icon: "iso://glyph/<name>[/light|/RRGGBB]" | "iso://si/<slug>[/light|/RRGGBB]" | "iso://brand/<name>"
 - Style sub-blocks:
     palette:  top, left, right, topGradient {from, to, dir}, leftGradient {from, to, dir}, rightGradient {from, to, dir}
     stroke:   color, width, dash

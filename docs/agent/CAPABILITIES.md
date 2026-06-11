@@ -35,7 +35,7 @@ override per-part via `geom.h`.
 | **group** | `group` | 1.0 | v2 primitive — translucent labeled substrate wrapping nested parts |
 | **iso_text** | `text` | 0.3 | flat text panel (low extrusion) |
 | **person** | `c4-person`, `c4_person`, `person` | 1.2 |  |
-| **rectangle** | `callout`, `class`, `code`, `diamond`, `document`, `hexagon`, `hierarchy`, `image`, `package`, `page`, `parallelogram`, `rectangle`, `sequence-diagram`, `sequence_diagram`, `sql-table`, `sql_table`, `square`, `step` | 1.4 |  |
+| **rectangle** | `callout`, `class`, `code`, `diamond`, `document`, `hexagon`, `hierarchy`, `image`, `package`, `page`, `parallelogram`, `rectangle`, `sequence-diagram`, `sequence_diagram`, `sql-table`, `sql_table`, `square`, `step` | 0.3 |  |
 
 ## Composition primitives
 
@@ -167,9 +167,9 @@ Named design-system style presets — define a Style once in the theme, referenc
 
 **Where:** `node.parts[*].icon`
 
-**Syntax:** `icon: "iso://glyph/<name>[/light|/RRGGBB]" | "iso://brand/<name>"`
+**Syntax:** `icon: "iso://glyph/<name>[/light|/RRGGBB]" | "iso://si/<slug>[/light|/RRGGBB]" | "iso://brand/<name>"`
 
-Put an icon on a part's top face instead of text — the preferred look for showcase scenes. Glyphs (generic, stroke style): cloud, database, bolt, chart, globe, shield, lock, gear, cpu, code, layers, rocket, user, mobile, browser, search, bell, queue; default ink, /light = white (dark tops), /RRGGBB = custom. Brands (letter badges): spark, hadoop, mysql, postgresql, iceberg, hive, pulsar, kafka, redis, mongo, kubernetes, docker, github, aws, gcp, azure, starrocks, vite, rolldown, oxc. Any other icon value is treated as a URL / data-URI. Browsable index with previews: docs/agent/ICONS.md.
+Put an icon on a part's top face instead of text — the preferred look for showcase scenes. REAL brand logos (iso://si/<slug>, ~150 vendored from Simple Icons, CC0): mysql, postgresql, redis, apachekafka, docker, kubernetes, terraform, openai, anthropic, pytorch, grafana, ...; same /light and /RRGGBB variants as glyphs; full list in docs/agent/ICONS.md. Glyphs (generic, stroke style): cloud, database, bolt, chart, globe, shield, lock, gear, cpu, code, layers, rocket, user, mobile, browser, search, bell, queue; default ink, /light = white (dark tops), /RRGGBB = custom. Brands (letter badges): spark, hadoop, mysql, postgresql, iceberg, hive, pulsar, kafka, redis, mongo, kubernetes, docker, github, aws, gcp, azure, starrocks, vite, rolldown, oxc. Any other icon value is treated as a URL / data-URI. Browsable index with previews: docs/agent/ICONS.md.
 
 | Field | Meaning |
 |---|---|

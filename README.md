@@ -10,7 +10,7 @@
 
 **Text in. Isometric SVG out. Architecture diagrams your AI agent can generate, validate, and diff.**
 
-Single static binary · zero runtime deps · renders in milliseconds · 35 built-in icons · every sample golden-tested
+Single static binary · zero runtime deps · renders in milliseconds · 200+ built-in icons (incl. real brand logos) · every sample golden-tested
 
 English · [简体中文](README.zh-CN.md)
 
@@ -295,9 +295,11 @@ Both converge on the same document model and output structure. See
 - **8 composition primitives**: `group`, `stack`, `layout`, `place`,
   `canvas.grid`, `annotation`, `connector` (orthogonal / bezier),
   icons
-- **35 built-in icons**: 18 AI / big-data glyphs
-  (`iso://glyph/gpu`, `model`, `agent`, `vector`, `lake`, …) in any
-  color, plus brand badges (`iso://brand/kafka`, …)
+- **200+ built-in icons**: ~150 real brand logos vendored from
+  Simple Icons, CC0 (`iso://si/postgresql`, `iso://si/openai`, …),
+  35 hand-drawn concept glyphs (`iso://glyph/gpu`, `model`,
+  `agent`, …) — all recolorable, indexed with previews in
+  [ICONS.md](docs/agent/ICONS.md)
 - **Face styling**: per-face gradients, dropShadow, backglow,
   hatch/dot patterns, cornerRadius
 - **Design systems**: `theme.presets` — named style presets parts

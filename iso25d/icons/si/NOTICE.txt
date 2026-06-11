@@ -1,0 +1,9 @@
+Icons in this directory are from Simple Icons
+(https://simpleicons.org), released under CC0-1.0 (public domain):
+https://github.com/simple-icons/simple-icons/blob/master/LICENSE.md
+
+Brand names and logos may be trademarks of their respective owners.
+Their inclusion here is for identification in architecture diagrams
+and implies no endorsement by or affiliation with the trademark
+holders. Vendored at a pinned upstream version by
+tools/import-icons; do not edit these files by hand.

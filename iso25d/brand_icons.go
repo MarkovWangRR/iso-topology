@@ -107,6 +107,7 @@ func ResolveBrandIcon(uri string) string {
 	const (
 		brandPrefix = "iso://brand/"
 		glyphPrefix = "iso://glyph/"
+		siPrefix    = "iso://si/"
 	)
 	switch {
 	case strings.HasPrefix(uri, brandPrefix):
@@ -134,6 +135,23 @@ func ResolveBrandIcon(uri string) string {
 		}
 		_ = inner
 		return "data:image/svg+xml;base64," + base64.StdEncoding.EncodeToString([]byte(glyphSVG(name, color)))
+
+	case strings.HasPrefix(uri, siPrefix):
+		rest := strings.TrimPrefix(uri, siPrefix)
+		slug, variant, _ := strings.Cut(rest, "/")
+		slug = strings.ToLower(slug)
+		if _, ok := siIcons[slug]; !ok {
+			return uri
+		}
+		color := "#1F2937" // ink — for light top faces
+		switch {
+		case variant == "":
+		case strings.EqualFold(variant, "light"):
+			color = "#FAFAFA"
+		case isHexColor(variant):
+			color = "#" + variant
+		}
+		return "data:image/svg+xml;base64," + base64.StdEncoding.EncodeToString([]byte(siSVG(slug, color)))
 	}
 	return uri
 }
@@ -220,6 +238,19 @@ func IconCatalog() []IconInfo {
 		})
 	}
 	names = names[:0]
+	for n := range siIcons {
+		names = append(names, n)
+	}
+	sort.Strings(names)
+	for _, n := range names {
+		out = append(out, IconInfo{
+			Kind: "si", Name: n,
+			URI:         "iso://si/" + n,
+			Description: siTitle(n) + " logo (Simple Icons, CC0)",
+			SVG:         siSVG(n, "#1F2937"),
+		})
+	}
+	names = names[:0]
 	for n := range brandBadges {
 		names = append(names, n)
 	}
@@ -229,7 +260,7 @@ func IconCatalog() []IconInfo {
 		out = append(out, IconInfo{
 			Kind: "brand", Name: n,
 			URI:         "iso://brand/" + n,
-			Description: fmt.Sprintf("letter badge %q in brand color %s", b.glyph, b.color),
+			Description: fmt.Sprintf("letter badge %q in brand color %s — prefer iso://si/<slug> when the real logo is vendored", b.glyph, b.color),
 			SVG:         brandSVG(b),
 		})
 	}

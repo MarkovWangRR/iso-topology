@@ -62,9 +62,11 @@ Visual quality rules (what makes the output look professional):
 - Top faces carry an icon AND a short caption — not paragraphs.
   (The renderer auto-wraps/auto-shrinks labels and clamps icons so
   nothing overflows the face, but short captions still LOOK better.)
-  `icon: "iso://glyph/<name>"` (gpu, model, agent, chat, vector,
-  lake, stream, warehouse, etl, database, shield, key, gauge, …);
-  `/light` variant on dark tops, `/RRGGBB` for accent color.
+  `icon: "iso://si/<slug>"` for ~150 REAL brand logos (mysql,
+  postgresql, apachekafka, docker, openai, …) or
+  `iso://glyph/<name>` for generic concepts (gpu, model, agent,
+  chat, vector, lake, …); both take `/light` on dark tops and
+  `/RRGGBB` for any color. Index: docs/agent/ICONS.md.
 - Connectors: `routing: orthogonal`, ALWAYS — every segment must
   ride the iso grid; async links differ by `dash`, never by bezier
   or straight routing. Hairline widths (1–2) beat thick pipes.
