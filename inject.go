@@ -120,7 +120,7 @@ func injectCanvasBackground(svg string, c *Canvas) string {
 // part flagged with `style.text.orient: screen`. The label sits centred
 // horizontally on the part's projected (top-face centre) and slightly
 // below the iso shape's projected bounding box.
-func injectScreenLabels(svg string, infos []partInfo) string {
+func injectScreenLabels(svg string, infos []partInfo) (string, []screenRect) {
 	project := projectIso
 	any := false
 	for _, p := range infos {
@@ -130,20 +130,27 @@ func injectScreenLabels(svg string, infos []partInfo) string {
 		}
 	}
 	if !any {
-		return svg
+		return svg, nil
 	}
 	tx, ty := partsScreenOrigin(infos)
+
+	// v2.8 — screen-space text contract: labels must not cross or
+	// touch any part's projection, and prefer the picture's periphery.
+	partRects := partScreenRects(infos)
+	sceneCx, sceneCy := sceneCenter(partRects)
+	obstacles := append([]screenRect(nil), partRects...)
+	var placed []screenRect
 
 	var sb strings.Builder
 	sb.WriteString(`<g data-layer="screen-labels">`)
 	maxLabelY := 0.0
 	maxLabelX := 0.0
-	for _, p := range infos {
+	minLabelX, minLabelY := math.Inf(1), math.Inf(1)
+	for i, p := range infos {
 		if p.screenLabel == "" {
 			continue
 		}
-		// Find the projected y of the part's BOTTOM-front corner — that's
-		// the lowest screen point of the shape's footprint.
+		// Preferred (legacy) spot: under the part's bottom-front corner.
 		bottomFrontX, bottomFrontY := project(p.offWX+p.w/2, p.offWY+p.d, p.offWZ)
 		cx := bottomFrontX + tx
 		baseY := bottomFrontY + ty + 14 // 14px gap under the part
@@ -153,6 +160,20 @@ func injectScreenLabels(svg string, infos []partInfo) string {
 		fontSize := p.labelFontSize
 		boxW := float64(len(text))*fontSize*0.58 + 16
 		boxH := fontSize + 10
+
+		// Own silhouette doesn't block the label hanging off its edge —
+		// every OTHER part and already-placed label does.
+		others := make([]screenRect, 0, len(obstacles))
+		for j, o := range obstacles {
+			if j == i {
+				continue
+			}
+			others = append(others, o)
+		}
+		bx, by := placeTextBox(boxW, boxH, partRects[i], cx-boxW/2, baseY, sceneCx, sceneCy, others)
+		cx, baseY = bx+boxW/2, by
+		placed = append(placed, screenRect{bx, by, bx + boxW, by + boxH})
+		obstacles = append(obstacles, screenRect{bx, by, bx + boxW, by + boxH})
 		bg := p.labelBg
 		if bg == "" {
 			bg = "transparent"
@@ -185,14 +206,24 @@ func injectScreenLabels(svg string, infos []partInfo) string {
 		if labelRight := cx + boxW/2; labelRight > maxLabelX {
 			maxLabelX = labelRight
 		}
+		minLabelX = math.Min(minLabelX, cx-boxW/2)
+		minLabelY = math.Min(minLabelY, baseY)
 	}
 	sb.WriteString(`</g>`)
 	idx := strings.LastIndex(svg, "</svg>")
 	if idx < 0 {
-		return svg
+		return svg, placed
 	}
 	const pad = 12.0
-	return growViewBox(svg[:idx]+sb.String()+svg[idx:], maxLabelX+pad, maxLabelY+pad)
+	out := growViewBox(svg[:idx]+sb.String()+svg[idx:], maxLabelX+pad, maxLabelY+pad)
+	// Periphery placement can spill past the LEFT/TOP origin too.
+	if minLabelX < pad || minLabelY < pad {
+		out = growViewBoxAround(out, minSvgRect{
+			minX: minLabelX - pad, minY: minLabelY - pad,
+			maxX: maxLabelX + pad, maxY: maxLabelY + pad,
+		})
+	}
+	return out, placed
 }
 
 // growViewBox parses the leading <svg ...> tag and, if needed, expands
@@ -722,12 +753,18 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo)
 // thin leader line back to its anchor's projected silhouette. Same
 // projection math as injectScreenLabels — reused inline so we don't
 
-func injectAnnotations(svg string, anns []*Annotation, infos []partInfo) string {
+func injectAnnotations(svg string, anns []*Annotation, infos []partInfo, extraObstacles []screenRect) string {
 	if len(anns) == 0 || len(infos) == 0 {
 		return svg
 	}
 	project := projectIso
 	tx, ty := partsScreenOrigin(infos)
+
+	// v2.8 — same screen-space contract as labels: never cross or
+	// touch a part; pick the most peripheral collision-free spot.
+	partRects := partScreenRects(infos)
+	sceneCx, sceneCy := sceneCenter(partRects)
+	obstacles := append(append([]screenRect(nil), partRects...), extraObstacles...)
 
 	byID := make(map[string]partInfo, len(infos))
 	for _, p := range infos {
@@ -785,21 +822,67 @@ func injectAnnotations(svg string, anns []*Annotation, infos []partInfo) string 
 		boxW := float64(longest)*fontSize*0.58 + 20
 		boxH := float64(len(lines))*(fontSize+4) + 14
 
-		var bx, by float64
-		switch side {
-		case "top":
-			bx = ax - boxW/2
-			by = ay - dist - boxH
-		case "bottom":
-			bx = ax - boxW/2
-			by = ay + dist
-		case "left":
-			bx = ax - dist - boxW
-			by = ay - boxH/2
-		default: // right
-			bx = ax + dist
-			by = ay - boxH/2
+		posFor := func(s string, d float64) (float64, float64) {
+			switch s {
+			case "top":
+				return ax - boxW/2, ay - d - boxH
+			case "bottom":
+				return ax - boxW/2, ay + d
+			case "left":
+				return ax - d - boxW, ay - boxH/2
+			default: // right
+				return ax + d, ay - boxH/2
+			}
 		}
+		// Candidate order: author's side first, then the remaining
+		// sides sorted periphery-first (away from the scene centre);
+		// distances escalate until the box is collision-free.
+		anchorRect := screenRect{ax, ay, ax, ay}
+		outX, outY := ax-sceneCx, ay-sceneCy
+		sideScore := func(s string) float64 {
+			switch s {
+			case "top":
+				return -outY
+			case "bottom":
+				return outY
+			case "left":
+				return -outX
+			default:
+				return outX
+			}
+		}
+		sides := []string{side}
+		for _, s2 := range []string{"top", "right", "bottom", "left"} {
+			if s2 != side {
+				sides = append(sides, s2)
+			}
+		}
+		rest := sides[1:]
+		for i := 0; i < len(rest); i++ {
+			for j := i + 1; j < len(rest); j++ {
+				if sideScore(rest[j]) > sideScore(rest[i])+1e-9 {
+					rest[i], rest[j] = rest[j], rest[i]
+				}
+			}
+		}
+		_ = anchorRect
+		bx, by := posFor(side, dist)
+		found := false
+		for _, d := range []float64{dist, dist + 45, dist + 90, dist + 140} {
+			for _, s2 := range sides {
+				cx2, cy2 := posFor(s2, d)
+				c := screenRect{cx2, cy2, cx2 + boxW, cy2 + boxH}
+				if !collides(c, obstacles) {
+					bx, by, side = cx2, cy2, s2
+					found = true
+					break
+				}
+			}
+			if found {
+				break
+			}
+		}
+		obstacles = append(obstacles, screenRect{bx, by, bx + boxW, by + boxH})
 
 		// Leader line from anchor to nearest edge of the box.
 		var lx2, ly2 float64

@@ -132,9 +132,9 @@ func renderComposite(n *Node, theme *Theme, canvas *Canvas, anns []*Annotation) 
 	if canvas != nil {
 		svg = injectCanvasBackground(svg, canvas)
 	}
-	svg = injectScreenLabels(svg, infos)
+	svg, labelRects := injectScreenLabels(svg, infos)
 	if len(anns) > 0 {
-		svg = injectAnnotations(svg, anns, infos)
+		svg = injectAnnotations(svg, anns, infos, labelRects)
 	}
 	return svg
 }
