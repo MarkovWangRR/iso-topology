@@ -82,56 +82,108 @@ func TopologyHTML(svg, sourceText, sourceLang, sourceFilename string) string {
 <html lang="en"><head><meta charset="utf-8">
 <title>isotopo · topology</title>
 <style>
-:root{--bg:#FAFAFB;--fg:#1F2937;--muted:#6B7280;--border:rgba(127,127,127,0.22);--code:#F4F5F7;--accent:#6366F1;}
+:root{
+  --bg:#F6F8FA;--panel:#FFFFFF;--fg:#0F172A;--muted:#64748B;
+  --border:#E6E9F0;--accent:#10AEB9;--accent-deep:#0B8C97;
+  --accent-soft:rgba(16,174,185,.10);--code-bg:#FBFCFE;
+  --shadow:0 1px 2px rgba(15,23,42,.04),0 10px 28px -14px rgba(15,23,42,.14);
+}
 *{box-sizing:border-box;}
 html,body{height:100%;}
-body{margin:0;display:flex;flex-direction:column;background:var(--bg);color:var(--fg);font-family:Inter,"Helvetica Neue",Arial,sans-serif;}
-header{display:flex;align-items:center;gap:10px;padding:10px 18px;border-bottom:1px solid var(--border);}
-header h1{margin:0;font-size:15px;font-weight:650;}
-header .tag{padding:1px 7px;border:1px solid var(--border);border-radius:4px;font:11px ui-monospace,Menlo,monospace;color:var(--muted);}
+body{margin:0;display:flex;flex-direction:column;background:var(--bg);color:var(--fg);
+  font-family:Inter,-apple-system,"SF Pro Text","Helvetica Neue",Arial,sans-serif;
+  -webkit-font-smoothing:antialiased;}
+header{display:flex;align-items:center;gap:12px;padding:11px 20px;
+  background:rgba(255,255,255,.82);backdrop-filter:blur(14px) saturate(1.4);
+  border-bottom:1px solid var(--border);position:relative;z-index:5;}
+.brand{display:flex;align-items:center;gap:11px;}
+.brand .word{display:flex;flex-direction:column;line-height:1.15;}
+.brand h1{margin:0;font-size:14.5px;font-weight:650;letter-spacing:-.01em;}
+.brand .sub{font-size:10.5px;color:var(--muted);}
+.tag{padding:2px 9px;border:1px solid var(--border);border-radius:999px;
+  font:10.5px ui-monospace,Menlo,monospace;color:var(--muted);background:white;}
 header .spacer{flex:1;}
-#live{font:11px ui-monospace,Menlo,monospace;color:var(--muted);}
-#live.on{color:#059669;}
-.grid{flex:1;min-height:0;display:flex;gap:0;}
-.stage-wrap{flex:1.6;min-width:0;position:relative;overflow:hidden;border-right:1px solid var(--border);background:
-  conic-gradient(from 90deg at 1px 1px,transparent 90deg,rgba(127,127,127,.06) 0) 0 0/24px 24px;}
+#live{display:flex;align-items:center;gap:7px;font:11.5px Inter,sans-serif;color:var(--muted);
+  padding:6px 13px;border:1px solid var(--border);border-radius:999px;background:white;}
+#live::before{content:"";width:7px;height:7px;border-radius:50%;background:#CBD5E1;flex:none;}
+#live.on{color:var(--accent-deep);border-color:rgba(16,174,185,.35);background:var(--accent-soft);}
+#live.on::before{background:var(--accent);animation:pulse 2.2s ease-in-out infinite;}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(16,174,185,.35)}50%{box-shadow:0 0 0 5px rgba(16,174,185,0)}}
+.grid{flex:1;min-height:0;display:flex;}
+.stage-wrap{flex:1.6;min-width:0;position:relative;overflow:hidden;
+  background:#F2F4F8 radial-gradient(circle,rgba(15,23,42,.075) 1px,transparent 1.2px);
+  background-size:22px 22px;}
 #viewport{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;cursor:grab;}
 #viewport.panning{cursor:grabbing;}
-#zoomer{transform-origin:0 0;}
+#zoomer{transform-origin:0 0;filter:drop-shadow(0 18px 30px rgba(15,23,42,.10));}
 #zoomer svg{display:block;max-width:none;}
-.zoomctl{position:absolute;right:14px;bottom:14px;display:flex;gap:6px;}
-.zoomctl button{width:30px;}
-.side{flex:1;min-width:340px;display:flex;flex-direction:column;min-height:0;}
-.toolbar{display:flex;gap:8px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--border);flex-wrap:wrap;}
-button{font:12px ui-monospace,Menlo,monospace;border:1px solid var(--border);background:white;padding:6px 10px;border-radius:6px;cursor:pointer;}
-button:hover{background:#F1F3F8;}
+.zoomctl{position:absolute;right:16px;bottom:16px;display:flex;flex-direction:column;gap:1px;
+  background:white;border:1px solid var(--border);border-radius:10px;overflow:hidden;box-shadow:var(--shadow);}
+.zoomctl button{width:34px;height:32px;border:0;border-radius:0;background:white;font-size:14px;color:#334155;}
+.zoomctl button:hover{background:var(--accent-soft);color:var(--accent-deep);}
+.zoomctl button+button{border-top:1px solid var(--border);}
+.side{flex:1;min-width:360px;max-width:560px;display:flex;flex-direction:column;min-height:0;
+  background:var(--panel);border-left:1px solid var(--border);}
+.toolbar{display:flex;gap:8px;align-items:center;padding:10px 14px;border-bottom:1px solid var(--border);flex-wrap:wrap;}
+button{font:12px Inter,sans-serif;font-weight:550;border:1px solid var(--border);background:white;
+  color:#334155;padding:7px 13px;border-radius:8px;cursor:pointer;
+  transition:background .15s,border-color .15s,box-shadow .15s;}
+button:hover{background:#F4F6FA;border-color:#D6DAE3;}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:1px;}
 button:disabled{opacity:.45;cursor:default;}
-label.auto{font:11px ui-monospace,Menlo,monospace;color:var(--muted);display:flex;gap:4px;align-items:center;}
-.editor{flex:1;min-height:0;position:relative;font:12.5px/1.55 ui-monospace,Menlo,Consolas,monospace;}
-.editor .hl,.editor textarea{position:absolute;inset:0;margin:0;padding:14px;white-space:pre;overflow:auto;font:inherit;tab-size:2;}
-.editor .hl{color:transparent;background:var(--code);pointer-events:none;}
-.editor .hl .ln{min-height:1.55em;}
-.editor .hl .hit{background:rgba(99,102,241,0.18);box-shadow:-3px 0 0 var(--accent);}
-.editor textarea{background:transparent;border:0;resize:none;color:var(--fg);outline:none;width:100%;height:100%;}
-#issues{max-height:130px;overflow:auto;border-top:1px solid var(--border);font:11.5px/1.5 ui-monospace,Menlo,monospace;padding:8px 12px;display:none;}
+#render{background:var(--accent);border-color:transparent;color:white;}
+#render:hover{background:var(--accent-deep);}
+label.auto{font:11.5px Inter,sans-serif;color:var(--muted);display:flex;gap:5px;align-items:center;}
+label.auto input{accent-color:var(--accent);}
+.filetab{display:flex;align-items:center;gap:8px;padding:8px 16px;border-bottom:1px solid var(--border);
+  background:var(--code-bg);font:11px ui-monospace,Menlo,monospace;color:var(--muted);}
+.filetab b{color:#334155;font-weight:600;}
+.filetab .dot{width:6px;height:6px;border-radius:50%;background:var(--accent);opacity:.6;}
+.editor{flex:1;min-height:0;position:relative;font:12.5px/1.6 ui-monospace,Menlo,Consolas,monospace;}
+.editor .hl,.editor textarea{position:absolute;inset:0;margin:0;padding:14px 16px;white-space:pre;overflow:auto;font:inherit;tab-size:2;}
+.editor .hl{color:transparent;background:var(--code-bg);pointer-events:none;}
+.editor .hl .ln{min-height:1.6em;border-radius:4px;}
+.editor .hl .hit{background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent);}
+.editor textarea{background:transparent;border:0;resize:none;color:#1E293B;outline:none;width:100%;height:100%;caret-color:var(--accent-deep);}
+#issues{max-height:140px;overflow:auto;border-top:1px solid var(--border);font:11.5px/1.6 ui-monospace,Menlo,monospace;
+  padding:10px 16px;display:none;background:#FFF9F5;}
 #issues.show{display:block;}
 #issues .err{color:#DC2626;}
 #issues .warn{color:#D97706;}
-footer{padding:7px 18px;border-top:1px solid var(--border);font-size:11.5px;color:var(--muted);}
-footer a{color:var(--muted);}
+footer{display:flex;gap:18px;align-items:center;padding:8px 20px;border-top:1px solid var(--border);
+  font-size:11px;color:var(--muted);background:rgba(255,255,255,.7);}
+footer a{color:var(--accent-deep);text-decoration:none;}
+footer a:hover{text-decoration:underline;}
+kbd{font:10px ui-monospace,Menlo,monospace;border:1px solid var(--border);border-bottom-width:2px;
+  border-radius:4px;padding:1px 5px;background:white;color:#475569;}
 svg g[data-part-id]{transition:filter .12s;}
-svg g[data-part-id].hi{filter:drop-shadow(0 0 5px rgba(99,102,241,.85));}
+svg g[data-part-id].hi{filter:drop-shadow(0 0 6px rgba(16,174,185,.9));}
 </style></head><body>
 <header>
-  <svg width="26" height="26" viewBox="0 0 32 32" aria-label="iso-topology">
-    <g stroke-linejoin="round">
-      <polygon points="16,4 27,10 16,16 5,10" fill="#7C8CF8"/>
-      <polygon points="5,10 16,16 16,29 5,23" fill="#4F46E5"/>
-      <polygon points="27,10 16,16 16,29 27,23" fill="#6366F1"/>
-      <polygon points="16,10 21,13 16,16 11,13" fill="#EEF2FF"/>
-    </g>
-  </svg>
-  <h1>iso-topology</h1><span class="tag">{{LANG}}</span>
+  <div class="brand">
+    <svg width="34" height="30" viewBox="0 0 68 56" aria-label="iso-topology">
+      <defs>
+        <linearGradient id="lgcube" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#52D7DE"/><stop offset="1" stop-color="#2FA9B8"/>
+        </linearGradient>
+      </defs>
+      <!-- stacked plates -->
+      <polygon points="4,26 22,16 40,26 22,36" fill="#2FA9B8" opacity=".35" transform="translate(0,8)"/>
+      <polygon points="4,26 22,16 40,26 22,36" fill="#36BCC6" opacity=".65" transform="translate(0,4)"/>
+      <polygon points="4,26 22,16 40,26 22,36" fill="#4ED2D9"/>
+      <!-- flow into the cube -->
+      <path d="M38 30 C46 34 44 40 50 42" fill="none" stroke="#3CC4CC" stroke-width="5" stroke-linecap="round"/>
+      <!-- cube -->
+      <polygon points="46,36 56,30 66,36 56,42" fill="#8FE9EC"/>
+      <polygon points="46,36 56,42 56,54 46,48" fill="#2596A6"/>
+      <polygon points="66,36 56,42 56,54 66,48" fill="url(#lgcube)"/>
+    </svg>
+    <div class="word">
+      <h1>iso-topology</h1>
+      <span class="sub">isometric diagrams as code</span>
+    </div>
+  </div>
+  <span class="tag">{{LANG}}</span>
   <span class="spacer"></span>
   <span id="live">checking renderer…</span>
 </header>
@@ -152,6 +204,7 @@ svg g[data-part-id].hi{filter:drop-shadow(0 0 5px rgba(99,102,241,.85));}
       <button onclick="copySrc()">copy</button>
       <button onclick="downloadCopy()">save edited copy</button>
     </div>
+    <div class="filetab"><span class="dot"></span><b>{{FILE}}</b><span>· editing a copy — the original is never written</span></div>
     <div class="editor">
       <div class="hl" id="hl"></div>
       <textarea id="src" spellcheck="false">{{SRC}}</textarea>
@@ -160,9 +213,12 @@ svg g[data-part-id].hi{filter:drop-shadow(0 0 5px rgba(99,102,241,.85));}
   </div>
 </div>
 <footer>
-  hover a node to locate its source · scroll to zoom, drag to pan, double-click to reset ·
-  edits live in this page (a copy — the original file is never touched) ·
-  <a href="./topology.svg" target="_blank">open svg</a> · <a href="./nodes/_index.html">browse nodes</a>
+  <span>hover a node to locate its source</span>
+  <span>scroll to zoom · drag to pan · double-click resets</span>
+  <span><kbd>⌘</kbd>+<kbd>↵</kbd> re-render</span>
+  <span class="spacer" style="flex:1"></span>
+  <a href="./topology.svg" target="_blank">open SVG</a>
+  <a href="./nodes/_index.html">browse nodes</a>
 </footer>
 <script>
 "use strict";
@@ -303,6 +359,7 @@ buildMap(); paint(null); wireHover(); probe();
 		"{{SRC}}", html.EscapeString(sourceText),
 		"{{LANGQ}}", fmt.Sprintf("%q", sourceLang),
 		"{{FILEQ}}", fmt.Sprintf("%q", sourceFilename),
+		"{{FILE}}", html.EscapeString(sourceFilename),
 	)
 	return r.Replace(tpl)
 }

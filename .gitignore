@@ -13,6 +13,7 @@
 # Diagnostic files emitted by golden tests on failure
 samples/*/*/actual.svg
 .playwright-mcp/
-gen-docs
-isotopo
-isotopo-mcp
+/gen-docs
+/isotopo-mcp
+/cmd/isotopo-mcp/isotopo-mcp
+/tools/gen-docs/gen-docs

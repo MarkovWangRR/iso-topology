@@ -331,7 +331,7 @@ func serveFile(in string) error {
 	if _, err := os.Stat(in); err != nil {
 		return err
 	}
-	sourceLang, sourceExt := classifyInput(in)
+	sourceLang, _ := classifyInput(in)
 
 	port := os.Getenv("ISOTOPO_PORT")
 	if port == "" {
@@ -396,7 +396,7 @@ func serveFile(in string) error {
 		}
 		svg, _, _ := render(sourceLang, data)
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		w.Write([]byte(isotopo.TopologyHTML(svg, string(data), sourceLang, "topology"+sourceExt)))
+		w.Write([]byte(isotopo.TopologyHTML(svg, string(data), sourceLang, filepath.Base(in))))
 	})
 
 	fmt.Printf("isotopo serve · %s\npreview:  http://localhost:%s\nedits in the browser are a copy — %s is never written\n", in, port, in)
