@@ -382,6 +382,66 @@ func serveFile(in string) error {
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]any{"svg": svg, "issues": issues})
 	})
+	// The per-part gallery the footer links to. The render command writes
+	// these as files; serve answers them on the fly from the CURRENT file
+	// content so the link works in live mode too.
+	mux.HandleFunc("GET /nodes/", func(w http.ResponseWriter, r *http.Request) {
+		data, err := os.ReadFile(in)
+		if err != nil {
+			http.Error(w, err.Error(), 500)
+			return
+		}
+		doc, err := loadDocument(sourceLang, data)
+		if err != nil {
+			http.Error(w, err.Error(), 422)
+			return
+		}
+		name := strings.TrimPrefix(r.URL.Path, "/nodes/")
+		if name == "" || name == "_index.html" {
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			w.Write([]byte(isotopo.NodesIndexHTML(isotopo.PartIDs(doc))))
+			return
+		}
+		ext := filepath.Ext(name)
+		id := strings.TrimSuffix(name, ext)
+		switch ext {
+		case ".svg":
+			svg := isotopo.RenderParts(doc)[id]
+			if svg == "" {
+				http.NotFound(w, r)
+				return
+			}
+			w.Header().Set("Content-Type", "image/svg+xml")
+			w.Write([]byte(svg))
+		case ".yaml":
+			f := isotopo.PartFragments(doc)[id]
+			if f == nil {
+				http.NotFound(w, r)
+				return
+			}
+			y, err := isotopo.MarshalFragmentYAML(f)
+			if err != nil {
+				http.Error(w, err.Error(), 500)
+				return
+			}
+			w.Header().Set("Content-Type", "text/yaml; charset=utf-8")
+			w.Write(y)
+		case ".html":
+			svg := isotopo.RenderParts(doc)[id]
+			if svg == "" {
+				http.NotFound(w, r)
+				return
+			}
+			var fragYAML []byte
+			if f := isotopo.PartFragments(doc)[id]; f != nil {
+				fragYAML, _ = isotopo.MarshalFragmentYAML(f)
+			}
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			w.Write([]byte(isotopo.NodeHTML(id, svg, string(fragYAML))))
+		default:
+			http.NotFound(w, r)
+		}
+	})
 	mux.HandleFunc("GET /topology.svg", func(w http.ResponseWriter, r *http.Request) {
 		data, err := os.ReadFile(in)
 		if err != nil {

@@ -102,8 +102,8 @@ header{display:flex;align-items:center;gap:12px;padding:11px 20px;
 .brand .word{display:flex;flex-direction:column;line-height:1.15;}
 .brand h1{margin:0;font-size:14.5px;font-weight:650;letter-spacing:-.01em;}
 .brand .sub{font-size:10.5px;color:var(--muted);}
-.tag{padding:2px 8px;border:1px solid var(--border);border-radius:5px;
-  font:10.5px ui-monospace,Menlo,monospace;color:var(--muted);background:white;}
+.pagedesc{font:11px Inter,sans-serif;color:var(--muted);
+  margin-left:4px;padding-left:14px;border-left:1px solid var(--border);}
 header .spacer{flex:1;}
 #live{display:flex;align-items:center;gap:6px;font:11.5px Inter,sans-serif;font-weight:550;color:var(--muted);}
 #live::before{content:"";width:7px;height:7px;border-radius:50%;background:#CBD5E1;flex:none;}
@@ -215,7 +215,7 @@ svg g[data-part-id].hi{filter:drop-shadow(0 0 3px rgba(16,174,185,.85));}
       <span class="sub">isometric diagrams as code</span>
     </div>
   </div>
-  <span class="tag">{{LANG}}</span>
+  <span class="pagedesc">Preview &middot; Edit &middot; Export</span>
   <span class="spacer"></span>
   <span id="live">checking renderer…</span>
 </header>

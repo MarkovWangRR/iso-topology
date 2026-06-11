@@ -31,6 +31,7 @@ time.sleep(1.2)
 CHROME="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 tmp=tempfile.mkdtemp()
 proc=subprocess.Popen([CHROME,"--headless=new","--remote-debugging-port=9223","--remote-allow-origins=*",
+    "--window-size=1400,900",
     f"--user-data-dir={tmp}","--no-first-run","--disable-gpu","http://localhost:8733/"],
     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 time.sleep(3)
@@ -194,6 +195,13 @@ return JSON.stringify({
   dlDisabled: document.getElementById('dl').disabled,
   draftGone: localStorage.getItem('isotopo-draft:'+PATH)===null});})()
 """), lambda v: json.loads(v)=={"restored":True,"clean":True,"dlDisabled":True,"draftGone":True})
+
+# T12 the footer's Browse-nodes target exists in serve mode
+try:
+    nodes_code = urllib.request.urlopen("http://localhost:8733/nodes/_index.html").status
+except Exception:
+    nodes_code = 0
+check("nodes-gallery-route", nodes_code, 200)
 
 ws.close(); proc.terminate()
 
