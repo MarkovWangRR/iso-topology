@@ -21,8 +21,11 @@ os.chdir(REPO)
 # next run would silently test that stale binary's page. Clear it first.
 subprocess.run(["pkill","-f","isotopo-viewer-test"], capture_output=True)
 time.sleep(0.5)
-subprocess.run(["go","build","-o","/tmp/isotopo-viewer-test","./cmd/isotopo"], check=True)
-serve = subprocess.Popen(["/tmp/isotopo-viewer-test","serve","samples/topology/ai-platform/input.yaml"],
+# Per-run binary name: overwriting a still-running binary in place can
+# serve a stale page on macOS (exec cache); a unique path sidesteps it.
+BIN = f"/tmp/isotopo-viewer-test-{os.getpid()}"
+subprocess.run(["go","build","-o",BIN,"./cmd/isotopo"], check=True)
+serve = subprocess.Popen([BIN,"serve","samples/topology/ai-platform/input.yaml"],
     env={**os.environ,"ISOTOPO_PORT":"8733"}, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 time.sleep(1.2)
 CHROME="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
@@ -138,6 +141,17 @@ return JSON.stringify({
   copyBtn: !!document.getElementById('cppath')});})()
 """), lambda v: json.loads(v)=={"truncated":True,"endsSlash":True,"fullInTitle":True,"copyBtn":True})
 
+# T7d splitter drag widens the editor pane and persists the width
+check("pane-resize", ev("""
+(()=>{const side=document.querySelector('.side'), sp=document.getElementById('split');
+const w0=side.getBoundingClientRect().width;
+sp.dispatchEvent(new MouseEvent('mousedown',{clientX:600,bubbles:true,cancelable:true}));
+window.dispatchEvent(new MouseEvent('mousemove',{clientX:520,bubbles:true}));
+window.dispatchEvent(new MouseEvent('mouseup',{bubbles:true}));
+const w1=side.getBoundingClientRect().width;
+return JSON.stringify({wider: w1>w0+50, saved: +localStorage.getItem('isotopo-pane')===Math.round(w1)});})()
+"""), lambda v: json.loads(v)=={"wider":True,"saved":True})
+
 # T8 Tab inserts indentation instead of moving focus
 check("tab-indent", ev("""
 (()=>{const src=document.getElementById('src');
@@ -186,7 +200,7 @@ ws.close(); proc.terminate()
 # T6 degradation: static server without /api
 import http.server, threading, functools, os
 os.makedirs('/tmp/static-out', exist_ok=True)
-subprocess.run(["/tmp/isotopo-viewer-test","render","samples/topology/ai-platform/input.yaml","/tmp/static-out"],
+subprocess.run([BIN,"render","samples/topology/ai-platform/input.yaml","/tmp/static-out"],
     cwd="/Users/markovwong/Desktop/CodeProject/iso-topology", capture_output=True)
 httpd=http.server.HTTPServer(('127.0.0.1',8799),
     functools.partial(http.server.SimpleHTTPRequestHandler, directory='/tmp/static-out'))
@@ -202,6 +216,8 @@ time.sleep(1.5)
 check("degraded-status", ev("document.getElementById('live').textContent"), lambda v: "offline" in str(v).lower())
 check("degraded-btn-disabled", ev("document.getElementById('render').disabled"))
 ws.close(); proc2.terminate(); httpd.shutdown(); serve.terminate()
+try: os.remove(BIN)
+except OSError: pass
 
 print()
 fails=0

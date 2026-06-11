@@ -129,7 +129,10 @@ header .spacer{flex:1;}
 .zoomctl button{width:34px;height:32px;border:0;border-radius:0;background:white;font-size:14px;color:#334155;}
 .zoomctl button:hover{background:var(--accent-soft);color:var(--accent-deep);}
 .zoomctl button+button{border-top:1px solid var(--border);}
-.side{flex:1;min-width:360px;max-width:560px;display:flex;flex-direction:column;min-height:0;
+.splitter{flex:none;width:7px;margin:0 -3px;cursor:col-resize;position:relative;z-index:6;}
+.splitter::after{content:"";position:absolute;left:3px;top:0;bottom:0;width:1px;background:transparent;transition:background .15s;}
+.splitter:hover::after,.splitter.active::after{background:var(--accent);}
+.side{flex:1;min-width:320px;max-width:560px;display:flex;flex-direction:column;min-height:0;
   background:var(--panel);border-left:1px solid var(--border);}
 .toolbar{display:flex;gap:8px;align-items:center;padding:10px 14px;border-bottom:1px solid var(--border);flex-wrap:wrap;}
 button{font:12px Inter,sans-serif;font-weight:550;border:1px solid var(--border);background:white;
@@ -151,19 +154,19 @@ label.auto input{accent-color:var(--accent);}
 .filetab .iconbtn:hover{background:var(--accent-soft);color:var(--accent-deep);}
 .filetab .dot{width:7px;height:7px;border-radius:50%;border:1.5px solid #C2C9D6;background:transparent;flex:none;}
 .filetab .dot.on{border-color:#F59E0B;background:#F59E0B;}
-.editor{flex:1;min-height:0;position:relative;font:12.5px/1.6 ui-monospace,Menlo,Consolas,monospace;}
+.editor{flex:1;min-height:0;position:relative;font:11.5px/18px ui-monospace,Menlo,Consolas,monospace;}
 .editor .hl,.editor textarea{position:absolute;inset:0;margin:0;padding:14px 16px 14px 60px;white-space:pre;overflow:auto;font:inherit;tab-size:2;}
 .editor .gutter{position:absolute;top:0;bottom:0;left:0;width:46px;overflow:hidden;
   padding:14px 0;background:var(--code-bg);border-right:1px solid var(--border);
-  color:#B3BCCA;font-size:10.5px;text-align:right;pointer-events:none;}
-.editor .gutter div{height:20px;line-height:20px;padding-right:10px;}
+  color:#B3BCCA;font-size:10px;text-align:right;pointer-events:none;}
+.editor .gutter div{height:18px;line-height:18px;padding-right:10px;}
 .editor textarea::-webkit-scrollbar{width:10px;height:10px;}
 .editor textarea::-webkit-scrollbar-thumb{background:#D5DBE5;border-radius:5px;border:2px solid var(--code-bg);}
 .editor textarea::-webkit-scrollbar-thumb:hover{background:#BCC5D2;}
 .editor textarea::-webkit-scrollbar-track{background:transparent;}
 .editor textarea::-webkit-scrollbar-corner{background:transparent;}
 .editor .hl{color:transparent;background:var(--code-bg);pointer-events:none;}
-.editor .hl .ln{min-height:1.6em;}
+.editor .hl .ln{min-height:18px;}
 .editor .hl .hit{background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent);}
 .editor .hl .hit-a{border-top-right-radius:6px;}
 .editor .hl .hit-b{border-bottom-right-radius:6px;}
@@ -230,6 +233,7 @@ svg g[data-part-id].hi{filter:drop-shadow(0 0 3px rgba(16,174,185,.85));}
       <button onclick="resetView()" title="reset">⤾</button>
     </div>
   </div>
+  <div class="splitter" id="split" title="drag to resize the editor"></div>
   <div class="side">
     <div class="toolbar">
       <button id="render" onclick="rerender()" title="Cmd/Ctrl+Enter">Render</button>
@@ -435,6 +439,39 @@ function renderPath(){
   while(k>0 && fpathEl.scrollWidth>fpathEl.clientWidth){k--;set(k);}
 }
 window.addEventListener('resize',renderPath);
+
+/* ── editor pane drag-resize ────────────────────────────────────── */
+const sideEl=document.querySelector('.side'), splitEl=document.getElementById('split');
+function setPaneWidth(w){
+  w=Math.min(Math.max(w,320),Math.max(360,window.innerWidth*0.7));
+  sideEl.style.flex='0 0 '+w+'px';
+  sideEl.style.maxWidth='none';
+}
+let paneDrag=null;
+splitEl.addEventListener('mousedown',e=>{
+  e.preventDefault();
+  paneDrag={x:e.clientX,w:sideEl.getBoundingClientRect().width};
+  splitEl.classList.add('active');
+  document.body.style.cursor='col-resize';
+  document.body.style.userSelect='none';
+});
+window.addEventListener('mousemove',e=>{
+  if(!paneDrag)return;
+  setPaneWidth(paneDrag.w-(e.clientX-paneDrag.x));
+  renderPath();
+});
+window.addEventListener('mouseup',()=>{
+  if(!paneDrag)return;
+  paneDrag=null;
+  splitEl.classList.remove('active');
+  document.body.style.cursor='';
+  document.body.style.userSelect='';
+  try{localStorage.setItem('isotopo-pane',String(Math.round(sideEl.getBoundingClientRect().width)));}catch(_){}
+});
+try{
+  const pw=parseInt(localStorage.getItem('isotopo-pane'),10);
+  if(pw>0) setPaneWidth(pw);
+}catch(_){}
 async function copyPath(){
   const b=document.getElementById('cppath'), keep=b.innerHTML;
   try{
