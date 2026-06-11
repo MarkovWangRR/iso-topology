@@ -35,7 +35,7 @@ override per-part via `geom.h`.
 | **group** | `group` | 1.0 | v2 primitive — translucent labeled substrate wrapping nested parts |
 | **iso_text** | `text` | 0.3 | flat text panel (low extrusion) |
 | **person** | `c4-person`, `c4_person`, `person` | 1.2 |  |
-| **rectangle** | `callout`, `class`, `code`, `diamond`, `document`, `hexagon`, `hierarchy`, `image`, `package`, `page`, `parallelogram`, `rectangle`, `sequence-diagram`, `sequence_diagram`, `sql-table`, `sql_table`, `square`, `step` | 1.4 |  |
+| **rectangle** | `callout`, `class`, `code`, `diamond`, `document`, `hexagon`, `hierarchy`, `image`, `package`, `page`, `parallelogram`, `rectangle`, `sequence-diagram`, `sequence_diagram`, `sql-table`, `sql_table`, `square`, `step` | 0.3 |  |
 
 ## Composition primitives
 
@@ -149,6 +149,19 @@ Position a part relative to a SIBLING — the preferred way to compose free-stan
 | `inFrontOf` | sibling id — +y side, toward the viewer |
 | `leftOf` | sibling id — -x side (mutually exclusive with rightOf) |
 | `rightOf` | sibling id — this part sits on its +x side |
+
+### `preset`
+
+**Where:** `theme.presets + node.parts[*].preset`
+
+**Syntax:** `theme: {presets: {<name>: <Style>}}  →  part: {preset: <name>}`
+
+Named design-system style presets — define a Style once in the theme, reference it by name from any part. Merges between the per-shape defaults and the part's own style block, so parts can still override individual fields. The portable replacement for YAML anchors (works in JSON, validates with suggestions). Typical systems: hero / satellite / ghost.
+
+| Field | Meaning |
+|---|---|
+| `preset` | preset name on a Node or CompositePart; unknown names are validation errors with a nearest-name suggestion |
+| `theme.presets` | map of preset name to a full Style block (palette / stroke / text / effects) |
 
 ### `icon`
 

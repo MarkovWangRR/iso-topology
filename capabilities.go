@@ -227,6 +227,16 @@ func buildPrimitiveCaps() []PrimitiveCap {
 			},
 		},
 		{
+			Name:    "preset",
+			Where:   "theme.presets + node.parts[*].preset",
+			Syntax:  "theme: {presets: {<name>: <Style>}}  →  part: {preset: <name>}",
+			Purpose: "Named design-system style presets — define a Style once in the theme, reference it by name from any part. Merges between the per-shape defaults and the part's own style block, so parts can still override individual fields. The portable replacement for YAML anchors (works in JSON, validates with suggestions). Typical systems: hero / satellite / ghost.",
+			Fields: map[string]string{
+				"theme.presets": "map of preset name to a full Style block (palette / stroke / text / effects)",
+				"preset":        "preset name on a Node or CompositePart; unknown names are validation errors with a nearest-name suggestion",
+			},
+		},
+		{
 			Name:    "icon",
 			Where:   "node.parts[*].icon",
 			Syntax:  "icon: \"iso://glyph/<name>[/light|/RRGGBB]\" | \"iso://brand/<name>\"",

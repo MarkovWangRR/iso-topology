@@ -24,6 +24,7 @@ type Node struct {
 	Shape     string     `yaml:"shape" json:"shape"`
 	Geom      *Geom      `yaml:"geom,omitempty" json:"geom,omitempty"`
 	Style     *Style     `yaml:"style,omitempty" json:"style,omitempty"`
+	Preset    string     `yaml:"preset,omitempty" json:"preset,omitempty"` // v2.5 — theme.presets reference
 	Label     string     `yaml:"label,omitempty" json:"label,omitempty"`
 	Icon      string     `yaml:"icon,omitempty" json:"icon,omitempty"`
 	Content   *Content   `yaml:"content,omitempty" json:"content,omitempty"`
@@ -81,6 +82,7 @@ type CompositePart struct {
 	Shape   string      `yaml:"shape" json:"shape"`
 	Geom    *Geom       `yaml:"geom,omitempty" json:"geom,omitempty"`
 	Style   *Style      `yaml:"style,omitempty" json:"style,omitempty"`
+	Preset  string      `yaml:"preset,omitempty" json:"preset,omitempty"` // v2.5 — theme.presets reference
 	Label   string      `yaml:"label,omitempty" json:"label,omitempty"`
 	Icon    string      `yaml:"icon,omitempty" json:"icon,omitempty"`
 	Content *Content    `yaml:"content,omitempty" json:"content,omitempty"`
@@ -337,6 +339,14 @@ type Direction struct {
 type Theme struct {
 	Style  `yaml:",inline" json:",inline"`
 	Shapes map[string]*Style `yaml:"shapes,omitempty" json:"shapes,omitempty"`
+
+	// v2.5 — named style presets. A part opts in with `preset: <name>`
+	// and gets the preset merged between the per-shape defaults and its
+	// own style block. Presets are the portable replacement for YAML
+	// anchors: they survive JSON encoding, they're visible to agents
+	// through the schema, and one theme can ship a whole design system
+	// (hero / satellite / ghost / …) that parts reference by name.
+	Presets map[string]*Style `yaml:"presets,omitempty" json:"presets,omitempty"`
 }
 
 // Canvas is composition-level metadata for a Document. v2 extended:

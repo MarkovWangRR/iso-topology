@@ -18,6 +18,15 @@ theme:
   stroke:
     color: "#D6D9E0"
     width: 1
+  # v2.5 — named design-system preset; every ring tile references it
+  # with `preset: satellite` instead of repeating the style block.
+  presets:
+    satellite:
+      palette: { top: "#FFFFFF", left: "#E2E4EA", right: "#EEF0F4" }
+      stroke:  { color: "#D6D9E0", width: 1 }
+      effects:
+        cornerRadius: 12
+        dropShadow: { dx: 0, dy: 7, blur: 10, color: "rgba(63,63,70,0.14)" }
 
 nodes:
   scene:
@@ -48,54 +57,49 @@ nodes:
         geom: { w: 118, d: 118, h: 12 }
         icon: "iso://glyph/chat"
         label: "LLM Gateway"
-        style: &sat
-          palette: { top: "#FFFFFF", left: "#E2E4EA", right: "#EEF0F4" }
-          stroke:  { color: "#D6D9E0", width: 1 }
-          effects:
-            cornerRadius: 12
-            dropShadow: { dx: 0, dy: 7, blur: 10, color: "rgba(63,63,70,0.14)" }
+        preset: satellite
       - id: vector_store
         shape: rectangle
         geom: { w: 118, d: 118, h: 12 }
         icon: "iso://glyph/vector"
         label: "Vector Store"
-        style: *sat
+        preset: satellite
       - id: gpu_pool
         shape: rectangle
         geom: { w: 118, d: 118, h: 12 }
         icon: "iso://glyph/gpu"
         label: "GPU Pool"
-        style: *sat
+        preset: satellite
       - id: agents
         shape: rectangle
         geom: { w: 118, d: 118, h: 12 }
         icon: "iso://glyph/agent"
         label: "Agents"
-        style: *sat
+        preset: satellite
       - id: data_lake
         shape: rectangle
         geom: { w: 118, d: 118, h: 12 }
         icon: "iso://glyph/lake"
         label: "Data Lake"
-        style: *sat
+        preset: satellite
       - id: streaming
         shape: rectangle
         geom: { w: 118, d: 118, h: 12 }
         icon: "iso://glyph/stream"
         label: "Streaming"
-        style: *sat
+        preset: satellite
       - id: warehouse
         shape: rectangle
         geom: { w: 118, d: 118, h: 12 }
         icon: "iso://glyph/warehouse"
         label: "Warehouse"
-        style: *sat
+        preset: satellite
       - id: observability
         shape: rectangle
         geom: { w: 118, d: 118, h: 12 }
         icon: "iso://glyph/gauge"
         label: "Observability"
-        style: *sat
+        preset: satellite
 
     connectors:
       # Serving path (solid) vs data path (dashed) — all hairline.

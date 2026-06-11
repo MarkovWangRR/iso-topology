@@ -175,3 +175,47 @@ func TestPureOffsetDocumentsUntouched(t *testing.T) {
 	solveScene(t, []*CompositePart{a})
 	at(t, a, 123, 456, 0)
 }
+
+// ── v2.5 preset cascade ──────────────────────────────────────────────
+
+func TestPresetCascade(t *testing.T) {
+	w := 2.0
+	theme := &Theme{
+		Style: Style{Palette: &Palette{Top: "#AAA", Left: "#BBB"}},
+		Presets: map[string]*Style{
+			"hero": {
+				Palette: &Palette{Top: "#FFF"},
+				Stroke:  &Stroke{Color: "#111", Width: &w},
+			},
+		},
+	}
+	// preset overrides theme; node style overrides preset.
+	got := ResolveStyle(theme, "rectangle", "hero", &Style{Stroke: &Stroke{Color: "#222"}})
+	if got.Palette.Top != "#FFF" || got.Palette.Left != "#BBB" {
+		t.Fatalf("palette merge wrong: %+v", got.Palette)
+	}
+	if got.Stroke.Color != "#222" || got.Stroke.Width == nil || *got.Stroke.Width != 2 {
+		t.Fatalf("stroke merge wrong: %+v", got.Stroke)
+	}
+}
+
+func TestValidateUnknownPresetSuggests(t *testing.T) {
+	doc := &Document{
+		Theme: &Theme{Presets: map[string]*Style{"satellite": {}}},
+		Nodes: map[string]*Node{
+			"scene": {Shape: "composite", Parts: []*CompositePart{
+				{ID: "a", Shape: "rectangle", Preset: "satelite"},
+			}},
+		},
+	}
+	issues := Validate(doc)
+	found := false
+	for _, i := range issues {
+		if i.Severity == SeverityError && i.Suggest == "satellite" {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("want unknown-preset error suggesting satellite, got %v", issues)
+	}
+}

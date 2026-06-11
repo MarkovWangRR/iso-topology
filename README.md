@@ -246,6 +246,9 @@ Both converge on the same document model and output structure. See
   color, plus brand badges (`iso://brand/kafka`, …)
 - **Face styling**: per-face gradients, dropShadow, backglow,
   hatch/dot patterns, cornerRadius
+- **Design systems**: `theme.presets` — named style presets parts
+  reference with `preset: <name>` (the JSON-safe, validated
+  replacement for YAML anchors)
 - **Two-tier output**: topology SVG + per-element standalone SVG
 
 Full machine-readable list:
@@ -321,7 +324,7 @@ trademarked logos.
 
 Organized by purpose — full index at [docs/README.md](docs/README.md).
 
-- **Start here:** [Tutorial](docs/getting-started/01-install.md) · [Recipes](docs/agent/RECIPES.md) · [Troubleshooting](docs/guides/troubleshooting.md)
+- **Start here:** [Tutorial](docs/getting-started/01-install.md) · [Recipes](docs/agent/RECIPES.md) · [Scene design](docs/guides/scene-design.md) · [Troubleshooting](docs/guides/troubleshooting.md)
 - **Reference:** [CLI + library](docs/reference/cli.md) · [YAML DSL](docs/reference/dsl-yaml.md) · [d2 DSL](docs/reference/dsl-d2.md) · [Style/Theme](docs/reference/dsl-theme.md) · [Output layout](docs/reference/output-layout.md)
 - **Agent integration:** [CAPABILITIES.md](docs/agent/CAPABILITIES.md) · [PROMPT_TEMPLATE.md](docs/agent/PROMPT_TEMPLATE.md) · [SAMPLES.md](docs/agent/SAMPLES.md) · [dsl.schema.json](docs/agent/schema/dsl.schema.json) · [MCP server](docs/agent/MCP.md) · [skills/](skills/README.md)
 - **Design:** [Why isometric](docs/concepts/why-isometric.md) · [Extending](docs/guides/extending.md)

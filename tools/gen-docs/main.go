@@ -408,6 +408,11 @@ func themeSchema() map[string]any {
 				"description":          "Per-shape-type Style overrides. Keys are iso shape names (rectangle, cylinder, …).",
 				"additionalProperties": styleSchema(),
 			},
+			"presets": map[string]any{
+				"type":                 "object",
+				"description":          "Named design-system style presets. Parts reference them with `preset: <name>`; the preset merges between per-shape defaults and the part's own style.",
+				"additionalProperties": styleSchema(),
+			},
 		},
 	}
 }
@@ -453,6 +458,7 @@ func nodeSchema(shapeEnum []string) map[string]any {
 			"shape":      map[string]any{"type": "string", "enum": shapeEnum, "description": "One of the iso shapes from capabilities."},
 			"geom":       geomSchema(),
 			"style":      styleSchema(),
+			"preset":     map[string]any{"type": "string", "description": "Name of a theme.presets entry to merge under this node's style."},
 			"label":      map[string]any{"type": "string"},
 			"icon":       map[string]any{"type": "string"},
 			"content":    map[string]any{"type": "object"},
@@ -473,6 +479,7 @@ func compositePartSchema(shapeEnum []string) map[string]any {
 			"shape":    map[string]any{"type": "string", "enum": shapeEnum},
 			"geom":     geomSchema(),
 			"style":    styleSchema(),
+			"preset":   map[string]any{"type": "string", "description": "Name of a theme.presets entry to merge under this part's style."},
 			"label":    map[string]any{"type": "string"},
 			"icon":     map[string]any{"type": "string"},
 			"content":  map[string]any{"type": "object"},

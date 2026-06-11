@@ -1,20 +1,26 @@
 package isotopo
 
-// ResolveStyle applies the canonical three-layer merge for a node:
+// ResolveStyle applies the canonical four-layer merge for a node:
 //
-//	theme.Style           (document-wide defaults)
-//	theme.Shapes[shape]   (per-shape-type defaults — optional)
-//	nodeStyle             (per-node overrides — optional)
-func ResolveStyle(theme *Theme, shape string, nodeStyle *Style) *Style {
+//	theme.Style            (document-wide defaults)
+//	theme.Shapes[shape]    (per-shape-type defaults — optional)
+//	theme.Presets[preset]  (named design-system preset — optional, v2.5)
+//	nodeStyle              (per-node overrides — optional)
+func ResolveStyle(theme *Theme, shape, preset string, nodeStyle *Style) *Style {
 	var base *Style
 	var perShape *Style
+	var fromPreset *Style
 	if theme != nil {
 		base = &theme.Style
 		if theme.Shapes != nil {
 			perShape = theme.Shapes[shape]
 		}
+		if preset != "" && theme.Presets != nil {
+			fromPreset = theme.Presets[preset]
+		}
 	}
 	merged := MergeStyle(base, perShape)
+	merged = MergeStyle(merged, fromPreset)
 	merged = MergeStyle(merged, nodeStyle)
 	return merged
 }

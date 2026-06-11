@@ -365,6 +365,10 @@
                   },
                   "type": "object"
                 },
+                "preset": {
+                  "description": "Name of a theme.presets entry to merge under this part's style.",
+                  "type": "string"
+                },
                 "shape": {
                   "enum": [
                     "c4-person",
@@ -444,6 +448,10 @@
               "type": "object"
             },
             "type": "array"
+          },
+          "preset": {
+            "description": "Name of a theme.presets entry to merge under this node's style.",
+            "type": "string"
           },
           "shape": {
             "description": "One of the iso shapes from capabilities.",
@@ -559,6 +567,28 @@
               "description": "see reference/dsl-theme.md"
             }
           },
+          "type": "object"
+        },
+        "presets": {
+          "additionalProperties": {
+            "description": "Style block (Palette, Stroke, Text, Effects).",
+            "properties": {
+              "effects": {
+                "type": "object"
+              },
+              "palette": {
+                "type": "object"
+              },
+              "stroke": {
+                "type": "object"
+              },
+              "text": {
+                "type": "object"
+              }
+            },
+            "type": "object"
+          },
+          "description": "Named design-system style presets. Parts reference them with `preset: \u003cname\u003e`; the preset merges between per-shape defaults and the part's own style.",
           "type": "object"
         },
         "shapes": {

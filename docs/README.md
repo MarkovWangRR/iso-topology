@@ -23,6 +23,8 @@ order — each step builds on the last.
 
 **You have a specific task — recipes that show one solution.**
 
+- [`scene-design.md`](guides/scene-design.md) — the visual playbook:
+  hero/accent rules, composition patterns, presets, pre-ship checklist
 - [`extending.md`](guides/extending.md) — add a new shape, primitive,
   or layout engine
 - [`troubleshooting.md`](guides/troubleshooting.md) — failure modes
@@ -76,6 +78,7 @@ order — each step builds on the last.
 | "Where do I start?" | [getting-started/02-first-scene.md](getting-started/02-first-scene.md) |
 | "How do I express N replicas?" | [agent/RECIPES.md](agent/RECIPES.md) |
 | "How do I position parts without coordinates?" | [agent/RECIPES.md](agent/RECIPES.md) § Positioning |
+| "Why does my diagram look like clip-art?" | [guides/scene-design.md](guides/scene-design.md) |
 | "Is there a full example like my task?" | [agent/SAMPLES.md](agent/SAMPLES.md) |
 | "Why isn't my callout showing?" | [guides/troubleshooting.md](guides/troubleshooting.md) |
 | "What does palette.left do?" | [reference/dsl-theme.md](reference/dsl-theme.md) |

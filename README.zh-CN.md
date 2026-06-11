@@ -216,6 +216,8 @@ api  -> db:  write
   （`iso://glyph/gpu`、`model`、`agent`、`vector`、`lake`……）任意
   着色，外加品牌徽章（`iso://brand/kafka`……）
 - **面级样式**：逐面渐变、dropShadow、backglow、网格/点阵纹理、圆角
+- **设计系统**：`theme.presets` 命名风格预设——部件一句 `preset: <name>`
+  引用（YAML 锚点的 JSON 安全、可校验替代品）
 - **两级输出**：整场 SVG + 逐元素独立 SVG
 
 机器可读全量清单：`isotopo capabilities`。
@@ -279,7 +281,7 @@ diff 的基础。
 
 按用途组织——总索引见 [docs/README.md](docs/README.md)。
 
-- **入门：**[教程](docs/getting-started/01-install.md) · [配方](docs/agent/RECIPES.md) · [排障](docs/guides/troubleshooting.md)
+- **入门：**[教程](docs/getting-started/01-install.md) · [配方](docs/agent/RECIPES.md) · [场景设计](docs/guides/scene-design.md) · [排障](docs/guides/troubleshooting.md)
 - **参考：**[CLI 与库](docs/reference/cli.md) · [YAML DSL](docs/reference/dsl-yaml.md) · [d2 DSL](docs/reference/dsl-d2.md) · [样式/主题](docs/reference/dsl-theme.md) · [输出结构](docs/reference/output-layout.md)
 - **Agent 集成：**[CAPABILITIES.md](docs/agent/CAPABILITIES.md) · [PROMPT_TEMPLATE.md](docs/agent/PROMPT_TEMPLATE.md) · [SAMPLES.md](docs/agent/SAMPLES.md) · [dsl.schema.json](docs/agent/schema/dsl.schema.json) · [MCP](docs/agent/MCP.md) · [skills/](skills/README.md)
 - **设计：**[为什么是等距](docs/concepts/why-isometric.md) · [扩展](docs/guides/extending.md)

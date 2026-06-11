@@ -21,6 +21,16 @@ theme:
   stroke:
     color: "#2E2E33"
     width: 1
+  presets:
+    client:
+      palette: { top: "#1B1B1F", left: "#0E0E11", right: "#141417" }
+      stroke:  { color: "#3F3F46", width: 1 }
+      text:    { color: "#D4D4D8", size: 10 }
+      effects: { cornerRadius: 12 }
+    cell:
+      palette: { top: "#1B1B1F", left: "#0E0E11", right: "#141417" }
+      stroke:  { color: "#155E75", width: 1 }
+      effects: { cornerRadius: 10 }
 
 nodes:
   scene:
@@ -32,18 +42,14 @@ nodes:
         geom: { w: 100, d: 100, h: 14 }
         icon: "iso://glyph/chat/light"
         label: "Chat App"
-        style: &client
-          palette: { top: "#1B1B1F", left: "#0E0E11", right: "#141417" }
-          stroke:  { color: "#3F3F46", width: 1 }
-          text:    { color: "#D4D4D8", size: 10 }
-          effects: { cornerRadius: 12 }
+        preset: client
       - id: cli
         shape: rectangle
         place: { inFrontOf: chat_app, gap: 1 }
         geom: { w: 100, d: 100, h: 14 }
         icon: "iso://glyph/terminal/light"
         label: "CLI"
-        style: *client
+        preset: client
 
       # ── Texture panel floating behind the gateway ────────────────
       - id: mesh_panel
@@ -79,28 +85,25 @@ nodes:
             geom: { w: 96, d: 96, h: 10 }
             icon: "iso://glyph/bolt/22D3EE"
             label: "Router"
-            style: &cell
-              palette: { top: "#1B1B1F", left: "#0E0E11", right: "#141417" }
-              stroke:  { color: "#155E75", width: 1 }
-              effects: { cornerRadius: 10 }
+            preset: cell
           - id: guardrails
             shape: rectangle
             geom: { w: 96, d: 96, h: 10 }
             icon: "iso://glyph/shield/22D3EE"
             label: "Guardrails"
-            style: *cell
+            preset: cell
           - id: semantic_cache
             shape: rectangle
             geom: { w: 96, d: 96, h: 10 }
             icon: "iso://glyph/layers/22D3EE"
             label: "Cache"
-            style: *cell
+            preset: cell
           - id: auth
             shape: rectangle
             geom: { w: 96, d: 96, h: 10 }
             icon: "iso://glyph/key/22D3EE"
             label: "Auth"
-            style: *cell
+            preset: cell
 
       # ── Model plane (back-right: GPU pool + model registry) ──────
       - id: model_plane

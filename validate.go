@@ -132,6 +132,46 @@ func Validate(doc *Document) []Issue {
 		}
 	}
 
+	// v2.5 — preset references must exist in theme.presets.
+	presetNames := map[string]struct{}{}
+	if doc.Theme != nil {
+		for name := range doc.Theme.Presets {
+			presetNames[name] = struct{}{}
+		}
+	}
+	checkPreset := func(preset, path string) {
+		if preset == "" {
+			return
+		}
+		if _, ok := presetNames[preset]; !ok {
+			cand := make([]string, 0, len(presetNames))
+			for n := range presetNames {
+				cand = append(cand, n)
+			}
+			issues = append(issues, Issue{
+				Severity: SeverityError,
+				Path:     path + ".preset",
+				Message:  fmt.Sprintf("preset %q is not defined in theme.presets", preset),
+				Suggest:  nearest(preset, cand),
+			})
+		}
+	}
+	for nodeID, n := range doc.Nodes {
+		checkPreset(n.Preset, "nodes."+nodeID)
+		var walkPresets func(parts []*CompositePart, prefix string)
+		walkPresets = func(parts []*CompositePart, prefix string) {
+			for i, p := range parts {
+				if p == nil {
+					continue
+				}
+				pp := fmt.Sprintf("%s.parts[%d]", prefix, i)
+				checkPreset(p.Preset, pp)
+				walkPresets(p.Parts, pp)
+			}
+		}
+		walkPresets(n.Parts, "nodes."+nodeID)
+	}
+
 	// v2.2 — layout/place dry run (dangling refs, cycles, conflicting
 	// constraints → errors; post-solve sibling overlaps → warnings).
 	// Runs against a clone so Validate never mutates the document.

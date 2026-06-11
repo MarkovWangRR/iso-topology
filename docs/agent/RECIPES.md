@@ -6,7 +6,10 @@ do I reach for?" Each recipe is copy-paste ready.
 Both humans and agents read this. Agents should treat it as the
 authoritative mapping from natural-language intent to DSL primitive.
 
-For full field grammar see [`../reference/dsl-yaml.md`](../reference/dsl-yaml.md)
+For what makes a scene look DESIGNED (hero/accent rules, effect
+budget, composition patterns) see the
+[scene design guide](../guides/scene-design.md). For full field
+grammar see [`../reference/dsl-yaml.md`](../reference/dsl-yaml.md)
 and [`../reference/dsl-d2.md`](../reference/dsl-d2.md). For the
 machine-readable inventory call `isotopo capabilities` or read
 [`CAPABILITIES.md`](CAPABILITIES.md). For complete worked scenes see
@@ -372,7 +375,28 @@ theme:
 ```
 
 See [`../reference/dsl-theme.md`](../reference/dsl-theme.md) for the
-full three-layer cascade.
+full cascade.
+
+### I want to reuse one style across many parts
+
+Define a named preset in the theme, reference it by name — no YAML
+anchors, works in JSON, typos get "did you mean" suggestions:
+
+```yaml
+theme:
+  presets:
+    tile:
+      palette: { top: "#FFFFFF", left: "#E2E4EA", right: "#EEF0F4" }
+      effects: { cornerRadius: 12 }
+
+# parts:
+- { id: a, shape: rectangle, preset: tile, icon: "iso://glyph/gpu", label: "GPU" }
+- { id: b, shape: rectangle, preset: tile, icon: "iso://glyph/lake", label: "Lake" }
+```
+
+Per-part `style` still overrides individual preset fields. For which
+presets a good scene needs, read the
+[scene design guide](../guides/scene-design.md).
 
 ### I want a gradient face / glow / shadow / texture
 

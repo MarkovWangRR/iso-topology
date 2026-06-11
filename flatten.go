@@ -10,7 +10,7 @@ import (
 // the renderer expects. Theme is applied first, then per-shape-type
 // defaults, then per-node Style merged on top (3-layer ResolveStyle).
 func Flatten(n *Node, theme *Theme) (string, iso25d.ConvertOpts) {
-	merged := ResolveStyle(theme, n.Shape, n.Style)
+	merged := ResolveStyle(theme, n.Shape, n.Preset, n.Style)
 	o := iso25d.ConvertOpts{}
 
 	if n.Geom != nil {

@@ -58,7 +58,7 @@ func renderComposite(n *Node, theme *Theme, canvas *Canvas, anns []*Annotation) 
 		// shape doesn't double-print it on the top face. We must look at
 		// the *merged* style (theme → per-shape → part) so theme-level
 		// `text.orient: screen` propagates to every part.
-		mergedForLabel := ResolveStyle(theme, p.Shape, p.Style)
+		mergedForLabel := ResolveStyle(theme, p.Shape, p.Preset, p.Style)
 		isoLabel := p.Label
 		var screenLabel, labelBg, labelBorder, labelColor string
 		var labelSize float64 = 11
@@ -76,6 +76,7 @@ func renderComposite(n *Node, theme *Theme, canvas *Canvas, anns []*Annotation) 
 			Shape:   p.Shape,
 			Geom:    p.Geom,
 			Style:   p.Style,
+			Preset:  p.Preset,
 			Label:   isoLabel,
 			Icon:    p.Icon,
 			Content: p.Content,
@@ -179,6 +180,7 @@ func RenderParts(doc *Document) map[string]string {
 				Shape:   p.Shape,
 				Geom:    p.Geom,
 				Style:   p.Style,
+				Preset:  p.Preset,
 				Label:   p.Label,
 				Icon:    p.Icon,
 				Content: p.Content,

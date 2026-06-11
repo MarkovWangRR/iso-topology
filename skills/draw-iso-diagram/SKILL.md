@@ -51,6 +51,10 @@ bar and are all coordinate-free.
 - Sizes stay semantic: hero 150–220, standard boxes ~90–120 with
   h 30–60, thin tiles h 8–20.
 
+Reuse styles with `theme.presets` (define `hero` / `tile` / `ghost`
+once, parts say `preset: tile`) instead of repeating style blocks or
+YAML anchors. Full visual playbook: `docs/guides/scene-design.md`.
+
 Visual quality rules (what makes the output look professional):
 
 - ONE hero per scene: gradient flanks + `backglow` + `dropShadow`.
