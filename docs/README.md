@@ -8,8 +8,11 @@ matches what you're trying to do.
 **You're new and want to render something real, fast.** Walk it in
 order — each step builds on the last.
 
-1. [`01-install.md`](getting-started/01-install.md) — install paths
-   (CLI + library)
+0. [`00-onboarding.md`](getting-started/00-onboarding.md) — fresh
+   machine? paste one block into Claude; the agent installs
+   everything and teaches you the workflow
+1. [`01-install.md`](getting-started/01-install.md) — manual install
+   paths (CLI + library)
 2. [`02-first-scene.md`](getting-started/02-first-scene.md) — your
    first multi-element scene
 3. [`03-grouping.md`](getting-started/03-grouping.md) — wrap related
@@ -74,7 +77,8 @@ order — each step builds on the last.
 
 | If you're asking… | Read |
 |---|---|
-| "How do I install it?" | [getting-started/01-install.md](getting-started/01-install.md) |
+| "I just want Claude to set everything up" | [getting-started/00-onboarding.md](getting-started/00-onboarding.md) |
+| "How do I install it by hand?" | [getting-started/01-install.md](getting-started/01-install.md) |
 | "Where do I start?" | [getting-started/02-first-scene.md](getting-started/02-first-scene.md) |
 | "How do I express N replicas?" | [agent/RECIPES.md](agent/RECIPES.md) |
 | "How do I position parts without coordinates?" | [agent/RECIPES.md](agent/RECIPES.md) § Positioning |

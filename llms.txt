@@ -24,5 +24,6 @@ Install: `go install github.com/MarkovWangRR/iso-topology/cmd/isotopo@latest` â€
 ## Optional
 
 - [README](https://raw.githubusercontent.com/MarkovWangRR/iso-topology/main/README.md): pitch, gallery, FAQ, comparison vs Mermaid/D2
-- [Tutorial](https://raw.githubusercontent.com/MarkovWangRR/iso-topology/main/docs/getting-started/01-install.md): five steps from install to published scene
+- [Onboarding](https://raw.githubusercontent.com/MarkovWangRR/iso-topology/main/docs/getting-started/00-onboarding.md): one paste-into-Claude block that installs and teaches everything
+- [Tutorial](https://raw.githubusercontent.com/MarkovWangRR/iso-topology/main/docs/getting-started/01-install.md): manual path, five steps from install to published scene
 - [Why isometric](https://raw.githubusercontent.com/MarkovWangRR/iso-topology/main/docs/concepts/why-isometric.md): design rationale

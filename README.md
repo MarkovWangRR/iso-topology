@@ -56,7 +56,61 @@ Every scene in this README is positioned entirely by `place` relations
 and `layout` containers — not a single hand-computed coordinate.
 Full source: [samples/topology/ai-platform/input.yaml](samples/topology/ai-platform/input.yaml).
 
-## Quickstart
+## Start here — paste this into Claude
+
+On a fresh machine, you shouldn't read install docs — your agent
+should do the setup and then teach you the workflow. Paste this into
+Claude Code (or any coding agent) and come back to a working
+toolchain, a rendered sample, and instructions addressed to you:
+
+````markdown
+Set up the iso-topology diagram toolchain on this machine, then teach
+me how to use it. Work autonomously; only stop if something needs my
+password or a decision only I can make. Reply in the language I use.
+
+## 1 · Install (idempotent — skip whatever is already present)
+- Ensure Go ≥ 1.25 (`go version`); if missing, install it with the
+  system package manager (macOS: `brew install go`; Debian/Ubuntu:
+  `sudo apt install golang-go`; otherwise https://go.dev/dl).
+- `go install github.com/MarkovWangRR/iso-topology/cmd/isotopo@latest`
+- `go install github.com/MarkovWangRR/iso-topology/cmd/isotopo-mcp@latest`
+- Ensure `$(go env GOPATH)/bin` is on PATH for this session.
+- Install the drawing skill so future sessions already know the
+  workflow:
+  `mkdir -p ~/.claude/skills/draw-iso-diagram && curl -sL https://raw.githubusercontent.com/MarkovWangRR/iso-topology/main/skills/draw-iso-diagram/SKILL.md -o ~/.claude/skills/draw-iso-diagram/SKILL.md`
+
+## 2 · Verify with a real render
+- `isotopo capabilities | head -20` must print JSON.
+- Render the showcase sample into ./diagrams/hello:
+  `curl -sL https://raw.githubusercontent.com/MarkovWangRR/iso-topology/main/samples/topology/ai-platform/input.yaml -o /tmp/hello.yaml && isotopo render /tmp/hello.yaml ./diagrams/hello`
+- Open ./diagrams/hello/topology.html and tell me what I should see.
+
+## 3 · From now on, whenever I ask for a diagram
+- Read `isotopo capabilities` once per session; imitate the closest
+  fixture from
+  https://raw.githubusercontent.com/MarkovWangRR/iso-topology/main/docs/agent/SAMPLES.md
+  and follow the visual rules in
+  https://raw.githubusercontent.com/MarkovWangRR/iso-topology/main/docs/guides/scene-design.md
+- Author YAML with layout/place relations ONLY — never hand-computed
+  coordinates; connectors are always routing: orthogonal.
+- Loop `isotopo validate <file>` until exit 0, then render into
+  ./diagrams/<kebab-case-name>/ and give me the topology.html path.
+- Keep the YAML next to the output as input.yaml; when I ask for
+  changes, edit it and re-render the same folder.
+
+## 4 · Finish by telling me
+- three example requests that show off what this tool does well, and
+- how I should phrase change requests so you can apply them precisely.
+````
+
+After that you only do two things: **ask** ("draw my RAG pipeline,
+dark mode, emerald accent, the vector DB is the hero") and **iterate**
+("move the cache right of the gateway") — results always land in
+`./diagrams/<name>/topology.html`. The full guide, including how to
+phrase requests and debug results, is
+[docs/getting-started/00-onboarding.md](docs/getting-started/00-onboarding.md).
+
+## Quickstart (by hand)
 
 ```bash
 # install (single static binary — works in CI images and agent containers)

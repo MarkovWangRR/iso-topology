@@ -28,7 +28,7 @@ override per-part via `geom.h`.
 
 | Iso shape | Accepted aliases | Height hint | Notes |
 |---|---|---|---|
-| **circle** | `circle`, `oval` | 0.8 |  |
+| **circle** | `circle`, `oval` | 1.0 |  |
 | **cloud** | `cloud` | 0.8 | free-form rounded outline; no per-face palette overrides |
 | **composite** | `composite` | 1.0 | container — holds parts: [] of CompositePart entries |
 | **cylinder** | `cylinder`, `queue`, `stored-data`, `stored_data` | 1.0 |  |

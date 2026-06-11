@@ -79,7 +79,8 @@ func writeLLMsTxt() error {
 
 	b.WriteString("\n## Optional\n\n")
 	b.WriteString("- [README](" + base + "README.md): pitch, gallery, FAQ, comparison vs Mermaid/D2\n")
-	b.WriteString("- [Tutorial](" + base + "docs/getting-started/01-install.md): five steps from install to published scene\n")
+	b.WriteString("- [Onboarding](" + base + "docs/getting-started/00-onboarding.md): one paste-into-Claude block that installs and teaches everything\n")
+	b.WriteString("- [Tutorial](" + base + "docs/getting-started/01-install.md): manual path, five steps from install to published scene\n")
 	b.WriteString("- [Why isometric](" + base + "docs/concepts/why-isometric.md): design rationale\n")
 
 	return os.WriteFile("llms.txt", []byte(b.String()), 0o644)

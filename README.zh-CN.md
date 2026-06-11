@@ -55,7 +55,60 @@ nodes:
 没有一个手算坐标。完整源码：
 [samples/topology/ai-platform/input.yaml](samples/topology/ai-platform/input.yaml)。
 
-## 快速开始
+## 从这里开始——把这段话粘给 Claude
+
+在一台全新的电脑上，你不应该读安装文档——agent 应该完成全部前置
+准备，然后反过来教你工作流。把下面这段粘进 Claude Code（或任意
+编码 agent），回来时你会得到装好的工具链、一张渲染完成的样例图、
+和一份写给你的使用说明：
+
+````markdown
+Set up the iso-topology diagram toolchain on this machine, then teach
+me how to use it. Work autonomously; only stop if something needs my
+password or a decision only I can make. Reply in the language I use.
+
+## 1 · Install (idempotent — skip whatever is already present)
+- Ensure Go ≥ 1.25 (`go version`); if missing, install it with the
+  system package manager (macOS: `brew install go`; Debian/Ubuntu:
+  `sudo apt install golang-go`; otherwise https://go.dev/dl).
+- `go install github.com/MarkovWangRR/iso-topology/cmd/isotopo@latest`
+- `go install github.com/MarkovWangRR/iso-topology/cmd/isotopo-mcp@latest`
+- Ensure `$(go env GOPATH)/bin` is on PATH for this session.
+- Install the drawing skill so future sessions already know the
+  workflow:
+  `mkdir -p ~/.claude/skills/draw-iso-diagram && curl -sL https://raw.githubusercontent.com/MarkovWangRR/iso-topology/main/skills/draw-iso-diagram/SKILL.md -o ~/.claude/skills/draw-iso-diagram/SKILL.md`
+
+## 2 · Verify with a real render
+- `isotopo capabilities | head -20` must print JSON.
+- Render the showcase sample into ./diagrams/hello:
+  `curl -sL https://raw.githubusercontent.com/MarkovWangRR/iso-topology/main/samples/topology/ai-platform/input.yaml -o /tmp/hello.yaml && isotopo render /tmp/hello.yaml ./diagrams/hello`
+- Open ./diagrams/hello/topology.html and tell me what I should see.
+
+## 3 · From now on, whenever I ask for a diagram
+- Read `isotopo capabilities` once per session; imitate the closest
+  fixture from
+  https://raw.githubusercontent.com/MarkovWangRR/iso-topology/main/docs/agent/SAMPLES.md
+  and follow the visual rules in
+  https://raw.githubusercontent.com/MarkovWangRR/iso-topology/main/docs/guides/scene-design.md
+- Author YAML with layout/place relations ONLY — never hand-computed
+  coordinates; connectors are always routing: orthogonal.
+- Loop `isotopo validate <file>` until exit 0, then render into
+  ./diagrams/<kebab-case-name>/ and give me the topology.html path.
+- Keep the YAML next to the output as input.yaml; when I ask for
+  changes, edit it and re-render the same folder.
+
+## 4 · Finish by telling me
+- three example requests that show off what this tool does well, and
+- how I should phrase change requests so you can apply them precisely.
+````
+
+之后你只做两件事：**提需求**（"画我的 RAG 流水线，暗色，翡翠
+accent，向量库是主角"）和**迭代**（"把缓存挪到网关右边"）——产物
+永远落在 `./diagrams/<名字>/topology.html`。完整指南（怎么措辞、
+怎么调试）见
+[docs/getting-started/00-onboarding.md](docs/getting-started/00-onboarding.md)。
+
+## 快速开始（手动路径）
 
 ```bash
 # 安装（单一静态二进制，可直接放进 CI 镜像或 agent 容器）
