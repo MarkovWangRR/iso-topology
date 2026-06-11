@@ -767,9 +767,11 @@ func injectAnnotations(svg string, anns []*Annotation, infos []partInfo, extraOb
 	obstacles := append(append([]screenRect(nil), partRects...), extraObstacles...)
 
 	byID := make(map[string]partInfo, len(infos))
-	for _, p := range infos {
+	anchorRectByID := make(map[string]screenRect, len(infos))
+	for i, p := range infos {
 		if p.id != "" {
 			byID[p.id] = p
+			anchorRectByID[p.id] = partRects[i]
 		}
 	}
 
@@ -834,10 +836,9 @@ func injectAnnotations(svg string, anns []*Annotation, infos []partInfo, extraOb
 				return ax + d, ay - boxH/2
 			}
 		}
-		// Candidate order: author's side first, then the remaining
-		// sides sorted periphery-first (away from the scene centre);
-		// distances escalate until the box is collision-free.
-		anchorRect := screenRect{ax, ay, ax, ay}
+		// Candidate order is SIDE-major for consistency: the author's
+		// side is exhausted at every distance before any other side is
+		// tried; fallback sides are ordered periphery-first.
 		outX, outY := ax-sceneCx, ay-sceneCy
 		sideScore := func(s string) float64 {
 			switch s {
@@ -865,11 +866,10 @@ func injectAnnotations(svg string, anns []*Annotation, infos []partInfo, extraOb
 				}
 			}
 		}
-		_ = anchorRect
 		bx, by := posFor(side, dist)
 		found := false
-		for _, d := range []float64{dist, dist + 45, dist + 90, dist + 140} {
-			for _, s2 := range sides {
+		for _, s2 := range sides {
+			for _, d := range []float64{dist, dist + 45, dist + 90, dist + 140} {
 				cx2, cy2 := posFor(s2, d)
 				c := screenRect{cx2, cy2, cx2 + boxW, cy2 + boxH}
 				if !collides(c, obstacles) {
@@ -884,7 +884,8 @@ func injectAnnotations(svg string, anns []*Annotation, infos []partInfo, extraOb
 		}
 		obstacles = append(obstacles, screenRect{bx, by, bx + boxW, by + boxH})
 
-		// Leader line from anchor to nearest edge of the box.
+		// Leader line: from the silhouette edge FACING the box to the
+		// box's nearest edge — never across the node's own body.
 		var lx2, ly2 float64
 		switch side {
 		case "top":
@@ -896,9 +897,10 @@ func injectAnnotations(svg string, anns []*Annotation, infos []partInfo, extraOb
 		default:
 			lx2, ly2 = bx, by+boxH/2
 		}
+		lx1, ly1 := leaderStart(anchorRectByID[a.Anchor], lx2, ly2)
 		fmt.Fprintf(&sb,
 			`<line x1="%.2f" y1="%.2f" x2="%.2f" y2="%.2f" stroke="%s" stroke-width="1" stroke-dasharray="3 3"/>`,
-			ax, ay, lx2, ly2, escAttr(border),
+			lx1, ly1, lx2, ly2, escAttr(border),
 		)
 		fmt.Fprintf(&sb,
 			`<rect x="%.2f" y="%.2f" width="%.2f" height="%.2f" rx="6" ry="6" fill="%s" stroke="%s" stroke-width="1"/>`,

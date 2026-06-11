@@ -82,10 +82,12 @@ func collides(c screenRect, obstacles []screenRect) bool {
 // placeTextBox positions a boxW×boxH text box for an element whose
 // silhouette is anchor. The preferred position (the legacy spot) wins
 // when it is already collision-free — scenes that were clean render
-// unchanged. Otherwise candidates around the anchor are tried in
-// periphery-first order (directions pointing away from the scene
-// centre first) at increasing clearances; the first collision-free
-// candidate wins, the preferred spot is the final fallback.
+// unchanged. The search is DIRECTION-major for consistency: the
+// preferred direction (where the preferred spot sits relative to the
+// anchor — below, for captions) is exhausted at every clearance
+// before any other direction is tried, so sibling labels keep the
+// same relative position; fallback directions are ordered
+// periphery-first (away from the scene centre).
 func placeTextBox(boxW, boxH float64, anchor screenRect, prefX, prefY float64, sceneCx, sceneCy float64, obstacles []screenRect) (float64, float64) {
 	pref := screenRect{prefX, prefY, prefX + boxW, prefY + boxH}
 	if !collides(pref, obstacles) {
@@ -111,9 +113,26 @@ func placeTextBox(boxW, boxH float64, anchor screenRect, prefX, prefY float64, s
 			}
 		}
 	}
+	// Consistency beats periphery: the direction of the PREFERRED spot
+	// goes first regardless of outwardness.
+	prefDir := dir{0, 1}
+	switch {
+	case pref.cy() < anchor.y0:
+		prefDir = dir{0, -1}
+	case pref.cx() > anchor.x1:
+		prefDir = dir{1, 0}
+	case pref.cx() < anchor.x0:
+		prefDir = dir{-1, 0}
+	}
+	ordered := []dir{prefDir}
+	for _, d := range dirs {
+		if d != prefDir {
+			ordered = append(ordered, d)
+		}
+	}
 
-	for _, g := range []float64{10, 34, 62, 96, 136} {
-		for _, d := range dirs {
+	for _, d := range ordered {
+		for _, g := range []float64{10, 34, 62, 96, 136} {
 			var x, y float64
 			switch {
 			case d.dy > 0: // below
@@ -132,4 +151,24 @@ func placeTextBox(boxW, boxH float64, anchor screenRect, prefX, prefY float64, s
 		}
 	}
 	return prefX, prefY
+}
+
+// leaderStart returns the point on the anchor silhouette's boundary
+// facing (tx, ty) — annotation leader lines start HERE instead of at
+// the top-face centre, so a leader can never lie across its own node.
+func leaderStart(anchor screenRect, tx, ty float64) (float64, float64) {
+	cx, cy := anchor.cx(), anchor.cy()
+	dx, dy := tx-cx, ty-cy
+	if math.Abs(dx) < 0.001 && math.Abs(dy) < 0.001 {
+		return cx, anchor.y1
+	}
+	halfW, halfH := (anchor.x1-anchor.x0)/2, (anchor.y1-anchor.y0)/2
+	t := math.Inf(1)
+	if dx != 0 {
+		t = math.Min(t, halfW/math.Abs(dx))
+	}
+	if dy != 0 {
+		t = math.Min(t, halfH/math.Abs(dy))
+	}
+	return cx + dx*t, cy + dy*t
 }

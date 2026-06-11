@@ -299,9 +299,12 @@ to the anchor part. Multi-line text is supported via `\n`.
 Annotation boxes and `orient: screen` labels are
 **collision-managed**: they never cross or touch a part's projected
 silhouette (6px clearance), never overlap each other, and when the
-requested spot is occupied they slide to the nearest free position
-toward the picture's periphery. `side`/`distance` are treated as the
-preferred candidate, not an absolute position.
+requested spot is occupied the search escalates distance WITHIN the
+preferred direction first (so sibling labels keep a consistent
+relative position) before falling to the next side, peripheral sides
+first. The leader line starts on the silhouette edge FACING the box —
+never across the node's own body. `side`/`distance` are treated as
+the preferred candidate, not an absolute position.
 
 ## Worked example
 
