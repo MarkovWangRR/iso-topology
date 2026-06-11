@@ -101,13 +101,12 @@ header{display:flex;align-items:center;gap:12px;padding:11px 20px;
 .brand .word{display:flex;flex-direction:column;line-height:1.15;}
 .brand h1{margin:0;font-size:14.5px;font-weight:650;letter-spacing:-.01em;}
 .brand .sub{font-size:10.5px;color:var(--muted);}
-.tag{padding:2px 9px;border:1px solid var(--border);border-radius:999px;
+.tag{padding:2px 8px;border:1px solid var(--border);border-radius:5px;
   font:10.5px ui-monospace,Menlo,monospace;color:var(--muted);background:white;}
 header .spacer{flex:1;}
-#live{display:flex;align-items:center;gap:7px;font:11.5px Inter,sans-serif;color:var(--muted);
-  padding:6px 13px;border:1px solid var(--border);border-radius:999px;background:white;}
+#live{display:flex;align-items:center;gap:6px;font:11.5px Inter,sans-serif;font-weight:550;color:var(--muted);}
 #live::before{content:"";width:7px;height:7px;border-radius:50%;background:#CBD5E1;flex:none;}
-#live.on{color:var(--accent-deep);border-color:rgba(16,174,185,.35);background:var(--accent-soft);}
+#live.on{color:var(--accent-deep);}
 #live.on::before{background:var(--accent);animation:pulse 2.2s ease-in-out infinite;}
 @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(16,174,185,.35)}50%{box-shadow:0 0 0 5px rgba(16,174,185,0)}}
 .grid{flex:1;min-height:0;display:flex;}
@@ -119,13 +118,13 @@ header .spacer{flex:1;}
 #zoomer{transform-origin:0 0;filter:drop-shadow(0 18px 30px rgba(15,23,42,.10));}
 #zoomer svg{display:block;max-width:none;}
 .exportctl{position:absolute;right:16px;top:14px;display:flex;gap:1px;
-  background:white;border:1px solid var(--border);border-radius:10px;overflow:hidden;box-shadow:var(--shadow);}
+  background:white;border:1px solid var(--border);border-radius:8px;overflow:hidden;box-shadow:var(--shadow);}
 .exportctl button{border:0;border-radius:0;background:white;font:11px Inter,sans-serif;font-weight:550;
   color:#334155;padding:7px 12px;}
 .exportctl button:hover{background:var(--accent-soft);color:var(--accent-deep);}
 .exportctl button+button{border-left:1px solid var(--border);}
 .zoomctl{position:absolute;right:16px;bottom:16px;display:flex;flex-direction:column;gap:1px;
-  background:white;border:1px solid var(--border);border-radius:10px;overflow:hidden;box-shadow:var(--shadow);}
+  background:white;border:1px solid var(--border);border-radius:8px;overflow:hidden;box-shadow:var(--shadow);}
 .zoomctl button{width:34px;height:32px;border:0;border-radius:0;background:white;font-size:14px;color:#334155;}
 .zoomctl button:hover{background:var(--accent-soft);color:var(--accent-deep);}
 .zoomctl button+button{border-top:1px solid var(--border);}
@@ -133,7 +132,7 @@ header .spacer{flex:1;}
   background:var(--panel);border-left:1px solid var(--border);}
 .toolbar{display:flex;gap:8px;align-items:center;padding:10px 14px;border-bottom:1px solid var(--border);flex-wrap:wrap;}
 button{font:12px Inter,sans-serif;font-weight:550;border:1px solid var(--border);background:white;
-  color:#334155;padding:7px 13px;border-radius:8px;cursor:pointer;
+  color:#334155;padding:7px 13px;border-radius:6px;cursor:pointer;
   transition:background .15s,border-color .15s,box-shadow .15s;}
 button:hover{background:#F4F6FA;border-color:#D6DAE3;}
 button:focus-visible{outline:2px solid var(--accent);outline-offset:1px;}
@@ -145,7 +144,8 @@ label.auto input{accent-color:var(--accent);}
 .filetab{display:flex;align-items:center;gap:8px;padding:8px 16px;border-bottom:1px solid var(--border);
   background:var(--code-bg);font:11px ui-monospace,Menlo,monospace;color:var(--muted);}
 .filetab b{color:#334155;font-weight:600;}
-.filetab .dot{width:6px;height:6px;border-radius:50%;background:var(--accent);opacity:.6;}
+.filetab .dot{width:7px;height:7px;border-radius:50%;border:1.5px solid #C2C9D6;background:transparent;flex:none;}
+.filetab .dot.on{border-color:#F59E0B;background:#F59E0B;}
 .editor{flex:1;min-height:0;position:relative;font:12.5px/1.6 ui-monospace,Menlo,Consolas,monospace;}
 .editor .hl,.editor textarea{position:absolute;inset:0;margin:0;padding:14px 16px;white-space:pre;overflow:auto;font:inherit;tab-size:2;}
 .editor .hl{color:transparent;background:var(--code-bg);pointer-events:none;}
@@ -163,9 +163,8 @@ footer a{color:var(--accent-deep);text-decoration:none;}
 footer a:hover{text-decoration:underline;}
 kbd{font:10px ui-monospace,Menlo,monospace;border:1px solid var(--border);border-bottom-width:2px;
   border-radius:4px;padding:1px 5px;background:white;color:#475569;}
-#render{min-width:96px;}
-.filetab #dirty{color:#D97706;font-weight:600;font-family:Inter,sans-serif;font-size:10.5px;}
-.filetab #discard{color:var(--accent-deep);cursor:pointer;font-family:Inter,sans-serif;font-size:10.5px;}
+#render{min-width:78px;}
+.filetab #discard{color:var(--accent-deep);cursor:pointer;font-family:Inter,sans-serif;font-size:10.5px;white-space:nowrap;}
 .filetab #discard:hover{text-decoration:underline;}
 .stale{position:absolute;top:14px;left:50%;transform:translateX(-50%);z-index:4;
   background:#FFF7ED;border:1px solid #FDBA74;color:#9A3412;
@@ -204,7 +203,7 @@ svg g[data-part-id].hi{filter:drop-shadow(0 0 6px rgba(16,174,185,.9));}
 <div class="grid">
   <div class="stage-wrap">
     <div id="viewport"><div id="zoomer">{{SVG}}</div></div>
-    <div id="stale" class="stale" hidden>edits not rendered — showing last good result</div>
+    <div id="stale" class="stale" hidden>showing last good render</div>
     <div class="exportctl">
       <button onclick="exportSVG()" title="download the current render as SVG">&#8595; SVG</button>
       <button onclick="exportPNG()" title="download the current render as PNG (2x)">&#8595; PNG</button>
@@ -217,13 +216,13 @@ svg g[data-part-id].hi{filter:drop-shadow(0 0 6px rgba(16,174,185,.9));}
   </div>
   <div class="side">
     <div class="toolbar">
-      <button id="render" onclick="rerender()" title="Cmd/Ctrl+Enter">re-render</button>
-      <label class="auto"><input type="checkbox" id="auto" checked>auto re-render</label>
+      <button id="render" onclick="rerender()" title="Cmd/Ctrl+Enter">Render</button>
+      <label class="auto"><input type="checkbox" id="auto" checked>Auto</label>
       <span class="spacer" style="flex:1"></span>
-      <button id="copybtn" onclick="copySrc()">copy YAML</button>
-      <button id="dl" onclick="downloadCopy()" disabled title="enabled once you edit">download copy</button>
+      <button id="copybtn" onclick="copySrc()" title="copy the YAML to the clipboard">Copy</button>
+      <button id="dl" onclick="downloadCopy()" disabled title="download the edited YAML as a new file">Download</button>
     </div>
-    <div class="filetab"><span class="dot"></span><b>{{FILE}}</b><span>· editing a copy — the original is never written</span><span class="spacer" style="flex:1"></span><span id="dirty" hidden>● unsaved edits</span><a id="discard" hidden onclick="discardDraft()">discard</a></div>
+    <div class="filetab"><span class="dot" id="dirty" title="unsaved edits stay in this page; the file on disk is never written"></span><b>{{FILE}}</b><span>copy</span><span class="spacer" style="flex:1"></span><a id="discard" hidden onclick="discardDraft()">revert</a></div>
     <div class="editor">
       <div class="hl" id="hl"></div>
       <textarea id="src" spellcheck="false">{{SRC}}</textarea>
@@ -232,12 +231,12 @@ svg g[data-part-id].hi{filter:drop-shadow(0 0 6px rgba(16,174,185,.9));}
   </div>
 </div>
 <footer>
-  <span>hover a node to locate its source</span>
-  <span>scroll to zoom · drag to pan · double-click resets</span>
-  <span><kbd>⌘</kbd>+<kbd>↵</kbd> re-render</span>
+  <span>Hover a node to jump to its source</span>
+  <span>Scroll to zoom · drag to pan · double-click to reset</span>
+  <span><kbd>⌘</kbd>+<kbd>↵</kbd> render</span>
   <span class="spacer" style="flex:1"></span>
-  <a href="./topology.svg" target="_blank">original SVG</a>
-  <a href="./nodes/_index.html">browse nodes</a>
+  <a href="./topology.svg" target="_blank">Original SVG</a>
+  <a href="./nodes/_index.html">Browse nodes</a>
 </footer>
 <script>
 "use strict";
@@ -248,7 +247,7 @@ const staleEl=document.getElementById('stale');
 let dirty=false;
 function setDirty(d){
   dirty=d;
-  document.getElementById('dirty').hidden=!d;
+  document.getElementById('dirty').classList.toggle('on',d);
   document.getElementById('discard').hidden=!d;
   document.getElementById('dl').disabled=!d;
 }
@@ -333,20 +332,22 @@ const liveEl=document.getElementById('live'), renderBtn=document.getElementById(
 let serverOK=false, timer=null;
 async function probe(){
   if(!location.protocol.startsWith('http')){
-    liveEl.textContent='static file — run "isotopo serve <input>" for live re-render';
+    liveEl.textContent='Static file';
+    liveEl.title='run "isotopo serve <input>" for live re-render';
     renderBtn.disabled=true; return;
   }
   try{
     const r=await fetch('/api/ping');
     serverOK=r.ok;
   }catch(_){serverOK=false;}
-  liveEl.textContent=serverOK?'live · renderer connected':'renderer unreachable';
+  liveEl.textContent=serverOK?'Live':'Offline';
+  liveEl.title=serverOK?'renderer connected':'renderer unreachable — restart isotopo serve';
   liveEl.classList.toggle('on',serverOK);
   renderBtn.disabled=!serverOK;
 }
 async function rerender(){
   if(!serverOK) return;
-  renderBtn.textContent='rendering…';
+  renderBtn.textContent='Rendering…';
   try{
     const r=await fetch('/api/render?format='+encodeURIComponent(LANG),{method:'POST',body:srcEl.value});
     const data=await r.json();
@@ -363,7 +364,7 @@ async function rerender(){
     staleEl.hidden=false;
     probe();
   }
-  renderBtn.textContent='re-render';
+  renderBtn.textContent='Render';
 }
 function showIssues(list){
   const el=document.getElementById('issues');
@@ -426,9 +427,9 @@ function exportPNG(){
 /* ── misc ───────────────────────────────────────────────────────── */
 async function copySrc(){
   const b=document.getElementById('copybtn');
-  try{await navigator.clipboard.writeText(srcEl.value);b.textContent='copied ✓';}
-  catch(_){b.textContent='copy failed';}
-  setTimeout(()=>{b.textContent='copy YAML';},1200);
+  try{await navigator.clipboard.writeText(srcEl.value);b.textContent='Copied';}
+  catch(_){b.textContent='Copy failed';}
+  setTimeout(()=>{b.textContent='Copy';},1200);
 }
 function downloadCopy(){
   const blob=new Blob([srcEl.value],{type:'text/plain'});

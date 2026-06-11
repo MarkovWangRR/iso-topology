@@ -50,7 +50,7 @@ def check(name, val, expect=True):
 time.sleep(1.5)  # let probe() finish
 
 # T3 live status first
-check("live-status", ev("document.getElementById('live').textContent"), lambda v: "live" in str(v))
+check("live-status", ev("document.getElementById('live').textContent"), lambda v: "live" in str(v).lower())
 check("render-btn-enabled", ev("!document.getElementById('render').disabled"))
 
 # T1 hover → highlight
@@ -108,10 +108,10 @@ check("stale-badge", ev("!document.getElementById('stale').hidden"))
 # T7 dirty state: edits flip the unsaved flag and arm the download button
 check("dirty-flag", ev("""
 (()=>{return JSON.stringify({
-  dirtyShown: !document.getElementById('dirty').hidden,
+  dirtyDot: document.getElementById('dirty').classList.contains('on'),
   discardShown: !document.getElementById('discard').hidden,
   dlEnabled: !document.getElementById('dl').disabled});})()
-"""), lambda v: json.loads(v)=={"dirtyShown":True,"discardShown":True,"dlEnabled":True})
+"""), lambda v: json.loads(v)=={"dirtyDot":True,"discardShown":True,"dlEnabled":True})
 
 # T7b export captures the CURRENT (edited) canvas, named .edited.*
 check("export-edited-svg", ev("""
@@ -137,7 +137,7 @@ b.click();
 await new Promise(r=>setTimeout(r,200));
 const during=b.textContent;
 await new Promise(r=>setTimeout(r,1400));
-return JSON.stringify({changed: during!=='copy YAML', restored: b.textContent==='copy YAML'});})()
+return JSON.stringify({changed: during!=='Copy', restored: b.textContent==='Copy'});})()
 """), lambda v: json.loads(v)=={"changed":True,"restored":True})
 
 # T10 draft survives a reload (localStorage), original untouched on disk
@@ -147,8 +147,8 @@ check("draft-restored", ev("""
 (()=>{const src=document.getElementById('src');
 return JSON.stringify({
   draftKept: src.value.includes('GPU FARM 42'),
-  dirtyShown: !document.getElementById('dirty').hidden});})()
-"""), lambda v: json.loads(v)=={"draftKept":True,"dirtyShown":True})
+  dirtyDot: document.getElementById('dirty').classList.contains('on')});})()
+"""), lambda v: json.loads(v)=={"draftKept":True,"dirtyDot":True})
 with open("samples/topology/ai-platform/input.yaml") as f:
     check("original-untouched", "GPU FARM 42" not in f.read())
 
@@ -159,7 +159,7 @@ await new Promise(r=>setTimeout(r,1200));
 const src=document.getElementById('src');
 return JSON.stringify({
   restored: src.value.includes('GPU Pool') && !src.value.includes('GPU FARM 42'),
-  clean: document.getElementById('dirty').hidden,
+  clean: !document.getElementById('dirty').classList.contains('on'),
   dlDisabled: document.getElementById('dl').disabled,
   draftGone: localStorage.getItem('isotopo-draft:/:'+FILENAME)===null});})()
 """), lambda v: json.loads(v)=={"restored":True,"clean":True,"dlDisabled":True,"draftGone":True})
@@ -182,7 +182,7 @@ targets=json.load(urllib.request.urlopen("http://127.0.0.1:9224/json"))
 page=[t for t in targets if t["type"]=="page"][0]
 ws=websocket.create_connection(page["webSocketDebuggerUrl"], timeout=20)
 time.sleep(1.5)
-check("degraded-status", ev("document.getElementById('live').textContent"), lambda v: "unreachable" in str(v))
+check("degraded-status", ev("document.getElementById('live').textContent"), lambda v: "offline" in str(v).lower())
 check("degraded-btn-disabled", ev("document.getElementById('render').disabled"))
 ws.close(); proc2.terminate(); httpd.shutdown(); serve.terminate()
 
