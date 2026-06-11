@@ -3,6 +3,7 @@ package isotopo
 import (
 	"fmt"
 	"html"
+	"path/filepath"
 	"sort"
 	"strings"
 
@@ -143,14 +144,26 @@ label.auto{font:11.5px Inter,sans-serif;color:var(--muted);display:flex;gap:5px;
 label.auto input{accent-color:var(--accent);}
 .filetab{display:flex;align-items:center;gap:8px;padding:8px 16px;border-bottom:1px solid var(--border);
   background:var(--code-bg);font:11px ui-monospace,Menlo,monospace;color:var(--muted);}
-.filetab b{color:#334155;font-weight:600;}
+.filetab b{color:#334155;font-weight:600;flex:none;}
+.filetab .path{direction:rtl;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;flex:0 1 auto;margin-right:-6px;}
 .filetab .dot{width:7px;height:7px;border-radius:50%;border:1.5px solid #C2C9D6;background:transparent;flex:none;}
 .filetab .dot.on{border-color:#F59E0B;background:#F59E0B;}
 .editor{flex:1;min-height:0;position:relative;font:12.5px/1.6 ui-monospace,Menlo,Consolas,monospace;}
-.editor .hl,.editor textarea{position:absolute;inset:0;margin:0;padding:14px 16px;white-space:pre;overflow:auto;font:inherit;tab-size:2;}
+.editor .hl,.editor textarea{position:absolute;inset:0;margin:0;padding:14px 16px 14px 60px;white-space:pre;overflow:auto;font:inherit;tab-size:2;}
+.editor .gutter{position:absolute;top:0;bottom:0;left:0;width:46px;overflow:hidden;
+  padding:14px 0;background:var(--code-bg);border-right:1px solid var(--border);
+  color:#B3BCCA;font-size:10.5px;text-align:right;pointer-events:none;}
+.editor .gutter div{height:20px;line-height:20px;padding-right:10px;}
+.editor textarea::-webkit-scrollbar{width:10px;height:10px;}
+.editor textarea::-webkit-scrollbar-thumb{background:#D5DBE5;border-radius:5px;border:2px solid var(--code-bg);}
+.editor textarea::-webkit-scrollbar-thumb:hover{background:#BCC5D2;}
+.editor textarea::-webkit-scrollbar-track{background:transparent;}
+.editor textarea::-webkit-scrollbar-corner{background:transparent;}
 .editor .hl{color:transparent;background:var(--code-bg);pointer-events:none;}
-.editor .hl .ln{min-height:1.6em;border-radius:4px;}
+.editor .hl .ln{min-height:1.6em;}
 .editor .hl .hit{background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent);}
+.editor .hl .hit-a{border-top-right-radius:6px;}
+.editor .hl .hit-b{border-bottom-right-radius:6px;}
 .editor textarea{background:transparent;border:0;resize:none;color:#1E293B;outline:none;width:100%;height:100%;caret-color:var(--accent-deep);}
 #issues{max-height:140px;overflow:auto;border-top:1px solid var(--border);font:11.5px/1.6 ui-monospace,Menlo,monospace;
   padding:10px 16px;display:none;background:#FFF9F5;}
@@ -170,7 +183,7 @@ kbd{font:10px ui-monospace,Menlo,monospace;border:1px solid var(--border);border
   background:#FFF7ED;border:1px solid #FDBA74;color:#9A3412;
   font:11px Inter,sans-serif;padding:5px 13px;border-radius:999px;box-shadow:var(--shadow);}
 svg g[data-part-id]{transition:filter .12s;}
-svg g[data-part-id].hi{filter:drop-shadow(0 0 6px rgba(16,174,185,.9));}
+svg g[data-part-id].hi{filter:drop-shadow(0 0 3px rgba(16,174,185,.85));}
 </style></head><body>
 <header>
   <div class="brand">
@@ -222,9 +235,10 @@ svg g[data-part-id].hi{filter:drop-shadow(0 0 6px rgba(16,174,185,.9));}
       <button id="copybtn" onclick="copySrc()" title="copy the YAML to the clipboard">Copy</button>
       <button id="dl" onclick="downloadCopy()" disabled title="download the edited YAML as a new file">Download</button>
     </div>
-    <div class="filetab"><span class="dot" id="dirty" title="unsaved edits stay in this page; the file on disk is never written"></span><b>{{FILE}}</b><span>copy</span><span class="spacer" style="flex:1"></span><a id="discard" hidden onclick="discardDraft()">revert</a></div>
+    <div class="filetab"><span class="dot" id="dirty" title="unsaved edits stay in this page; the file on disk is never written"></span><span class="path" title="{{DIR}}{{FILE}}">&lrm;{{DIR}}&lrm;</span><b>{{FILE}}</b><span class="spacer" style="flex:1"></span><a id="discard" hidden onclick="discardDraft()">revert</a></div>
     <div class="editor">
       <div class="hl" id="hl"></div>
+      <div class="gutter" id="gut"></div>
       <textarea id="src" spellcheck="false">{{SRC}}</textarea>
     </div>
     <div id="issues"></div>
@@ -240,9 +254,10 @@ svg g[data-part-id].hi{filter:drop-shadow(0 0 6px rgba(16,174,185,.9));}
 </footer>
 <script>
 "use strict";
-const LANG={{LANGQ}}, FILENAME={{FILEQ}};
-const srcEl=document.getElementById('src'), hlEl=document.getElementById('hl');
-const ORIGINAL=srcEl.value, DRAFTKEY='isotopo-draft:'+location.pathname+':'+FILENAME;
+const LANG={{LANGQ}}, PATH={{PATHQ}};
+const FILENAME=PATH.split('/').pop();
+const srcEl=document.getElementById('src'), hlEl=document.getElementById('hl'), gutEl=document.getElementById('gut');
+const ORIGINAL=srcEl.value, DRAFTKEY='isotopo-draft:'+PATH;
 const staleEl=document.getElementById('stale');
 let dirty=false;
 function setDirty(d){
@@ -288,11 +303,13 @@ function paint(range){
   const lines=srcEl.value.split('\n');
   hlEl.innerHTML=lines.map((l,i)=>{
     const hit=range&&i>=range[0]&&i<=range[1];
-    return '<div class="ln'+(hit?' hit':'')+'">'+esc(l||' ')+'</div>';
+    const cls='ln'+(hit?' hit':'')+(hit&&i===range[0]?' hit-a':'')+(hit&&i===range[1]?' hit-b':'');
+    return '<div class="'+cls+'">'+esc(l||' ')+'</div>';
   }).join('');
-  hlEl.scrollTop=srcEl.scrollTop; hlEl.scrollLeft=srcEl.scrollLeft;
+  gutEl.innerHTML=lines.map((_,i)=>'<div>'+(i+1)+'</div>').join('');
+  hlEl.scrollTop=srcEl.scrollTop; hlEl.scrollLeft=srcEl.scrollLeft; gutEl.scrollTop=srcEl.scrollTop;
 }
-srcEl.addEventListener('scroll',()=>{hlEl.scrollTop=srcEl.scrollTop;hlEl.scrollLeft=srcEl.scrollLeft;});
+srcEl.addEventListener('scroll',()=>{hlEl.scrollTop=srcEl.scrollTop;hlEl.scrollLeft=srcEl.scrollLeft;gutEl.scrollTop=srcEl.scrollTop;});
 function wireHover(){
   zoomer.querySelectorAll('g[data-part-id]').forEach(g=>{
     g.addEventListener('mouseenter',()=>{
@@ -447,13 +464,19 @@ probe().then(()=>{if(serverOK&&dirty)rerender();});
 if(location.protocol.startsWith('http')) setInterval(probe,5000);
 </script>
 </body></html>`
+	base := filepath.Base(sourceFilename)
+	dir := ""
+	if d := filepath.Dir(sourceFilename); d != "." {
+		dir = d + "/"
+	}
 	r := strings.NewReplacer(
 		"{{LANG}}", html.EscapeString(sourceLang),
 		"{{SVG}}", svg,
 		"{{SRC}}", html.EscapeString(sourceText),
 		"{{LANGQ}}", fmt.Sprintf("%q", sourceLang),
-		"{{FILEQ}}", fmt.Sprintf("%q", sourceFilename),
-		"{{FILE}}", html.EscapeString(sourceFilename),
+		"{{PATHQ}}", fmt.Sprintf("%q", sourceFilename),
+		"{{FILE}}", html.EscapeString(base),
+		"{{DIR}}", html.EscapeString(dir),
 	)
 	return r.Replace(tpl)
 }

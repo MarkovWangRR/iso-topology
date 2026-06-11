@@ -161,7 +161,7 @@ return JSON.stringify({
   restored: src.value.includes('GPU Pool') && !src.value.includes('GPU FARM 42'),
   clean: !document.getElementById('dirty').classList.contains('on'),
   dlDisabled: document.getElementById('dl').disabled,
-  draftGone: localStorage.getItem('isotopo-draft:/:'+FILENAME)===null});})()
+  draftGone: localStorage.getItem('isotopo-draft:'+PATH)===null});})()
 """), lambda v: json.loads(v)=={"restored":True,"clean":True,"dlDisabled":True,"draftGone":True})
 
 ws.close(); proc.terminate()
