@@ -80,7 +80,8 @@ func PartIDs(doc *Document) []string {
 func TopologyHTML(svg, sourceText, sourceLang, sourceFilename string) string {
 	tpl := `<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
-<title>isotopo · topology</title>
+<title>isotopo · {{FILE}}</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 68 56'%3E%3Cpolygon points='4,34 22,24 40,34 22,44' fill='%232FA9B8' opacity='.35'/%3E%3Cpolygon points='4,30 22,20 40,30 22,40' fill='%2336BCC6' opacity='.65'/%3E%3Cpolygon points='4,26 22,16 40,26 22,36' fill='%234ED2D9'/%3E%3Cpath d='M38 30 C46 34 44 40 50 42' fill='none' stroke='%233CC4CC' stroke-width='5' stroke-linecap='round'/%3E%3Cpolygon points='46,36 56,30 66,36 56,42' fill='%238FE9EC'/%3E%3Cpolygon points='46,36 56,42 56,54 46,48' fill='%232596A6'/%3E%3Cpolygon points='66,36 56,42 56,54 66,48' fill='%2349CDD6'/%3E%3C/svg%3E">
 <style>
 :root{
   --bg:#F6F8FA;--panel:#FFFFFF;--fg:#0F172A;--muted:#64748B;
