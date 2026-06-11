@@ -117,13 +117,27 @@ ISOTOPO_PORT=9000 isotopo serve scene.yaml
 
 Serves the interactive viewer at `http://localhost:8731`:
 
-- the YAML editor fills the right pane; **edits are an in-browser
-  copy — the input file on disk is never written**
-- hovering a node in the SVG highlights its source block
+- the YAML editor (line numbers, Tab inserts indent, drag the splitter
+  to resize the pane) edits an **in-browser copy — the input file on
+  disk is never written**; unsaved edits persist across a reload as a
+  local draft, with a one-click `revert`
+- hovering a node in the SVG highlights its source block; the filetab
+  shows the absolute source path with a copy-path button
 - scroll to zoom, drag to pan, double-click to reset
 - edits re-render automatically (debounced) or with Cmd/Ctrl+Enter;
-  validation errors show under the editor with fix suggestions
-- "save edited copy" downloads `<name>.edited.yaml`
+  validation errors show under the editor with fix suggestions, and
+  the canvas keeps the last good render (with a badge) while the
+  source is broken
+- `↓ SVG` / `↓ PNG` export whatever the canvas currently shows —
+  unsaved edits included — as `<name>.edited.svg` / `.png` (2x);
+  `Download` saves the edited YAML copy
+- `Browse nodes` opens the per-part gallery, served live from the
+  current file content
+
+Endpoints, for tooling: `GET /` viewer · `GET /topology.svg` fresh
+render of the file on disk · `GET /nodes/_index.html` and
+`/nodes/<id>.svg|.yaml|.html` gallery · `POST /api/render` renders the
+posted source, returns `{"svg", "issues"}` · `GET /api/ping` health.
 
 The same interactive page is written to `out/topology.html` by
 `isotopo render`; opened as a static file it keeps everything except

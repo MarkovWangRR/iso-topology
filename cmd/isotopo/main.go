@@ -199,8 +199,10 @@ subcommands:
                  exit: 0 = clean, 2 = warnings only, 3 = errors
   serve <in>     local live-preview server (default :8731, override with
                  ISOTOPO_PORT): the interactive topology.html with hover
-                 source-mapping, zoom/pan, and edit-to-re-render against
-                 an in-browser COPY — the input file is never written`)
+                 source-mapping, zoom/pan, edit-to-re-render against an
+                 in-browser COPY (the input file is never written),
+                 SVG/PNG export of the edited canvas, and the per-node
+                 gallery at /nodes/`)
 }
 
 func renderFile(in, outDir string) error {
