@@ -1,0 +1,128 @@
+# platform-board — PCB / circuit-board hero shot, landing-page style.
+# Three exploded white plates float above each other (place.above +
+# a wz delta per layer); the top plate carries a dashed inset frame,
+# violet HATCH-FILLED chip tiles wired together by thick trace-like
+# orthogonal connectors, and a wireframe ghost cube hovering over the
+# hero chip. The middle plate carries a perforation dot texture.
+# Pure neutrals + one violet. Zero hand-computed x/y coordinates.
+
+canvas:
+  background: "#EFF0F4"
+
+theme:
+  text:
+    family: "Inter, system-ui, sans-serif"
+    size: 10
+    weight: "700"
+    color: "#5B21B6"
+  stroke:
+    color: "#C9CBD6"
+    width: 1.2
+  presets:
+    plate:
+      palette: { top: "#FFFFFF", left: "#D9DBE4", right: "#E9EAF1" }
+      stroke:  { color: "#C9CBD6", width: 1.2 }
+      effects:
+        cornerRadius: 30
+        dropShadow: { dx: 0, dy: 10, blur: 16, color: "rgba(76,29,149,0.12)" }
+    chip:
+      palette: { top: "#F6F3FF", left: "#C4B5FD", right: "#DDD3FE" }
+      stroke:  { color: "#7C3AED", width: 1.3 }
+      effects:
+        cornerRadius: 10
+        pattern: { kind: hatch, color: "#7C3AED", spacing: 5, angle: 45 }
+
+nodes:
+  scene:
+    shape: composite
+    parts:
+      # ── Exploded plate stack (bottom → top, each floats 26 higher) ─
+      - id: plate_base
+        shape: rectangle
+        geom: { w: 380, d: 380, h: 12 }
+        preset: plate
+      - id: plate_mid
+        shape: rectangle
+        place: { above: plate_base }
+        offset: { wz: 26 }
+        geom: { w: 380, d: 380, h: 12 }
+        preset: plate
+        style:
+          effects:
+            pattern: { kind: dots, color: "#A5A8B8", spacing: 12 }
+      - id: plate_top
+        shape: rectangle
+        place: { above: plate_mid }
+        offset: { wz: 30 }
+        geom: { w: 380, d: 380, h: 12 }
+        preset: plate
+
+      # ── Dashed inset frame on the top plate ──────────────────────
+      - id: inset_frame
+        shape: rectangle
+        place: { above: plate_top }
+        geom: { w: 330, d: 330, h: 1 }
+        style:
+          palette: { top: "none", left: "none", right: "none" }
+          stroke:  { color: "#B3B6C6", width: 1.1, dash: "5 5" }
+          effects: { cornerRadius: 22 }
+
+      # ── Hatched circuit chips, wired like PCB traces ─────────────
+      - id: cpu
+        shape: rectangle
+        place: { above: plate_top }
+        geom: { w: 120, d: 120, h: 10 }
+        preset: chip
+        icon: "iso://glyph/sparkles/5B21B6"
+        style:
+          stroke: { color: "#5B21B6", width: 1.6 }
+          effects:
+            pattern: { kind: hatch, color: "#7C3AED", spacing: 4, angle: 45 }
+      - id: io_left
+        shape: rectangle
+        place: { above: plate_top, leftOf: cpu, gap: 1.3 }
+        geom: { w: 64, d: 64, h: 8 }
+        preset: chip
+      - id: io_right
+        shape: rectangle
+        place: { above: plate_top, rightOf: cpu, gap: 1.3 }
+        geom: { w: 64, d: 64, h: 8 }
+        preset: chip
+      - id: io_back
+        shape: rectangle
+        place: { above: plate_top, behind: cpu, gap: 1.3 }
+        geom: { w: 64, d: 64, h: 8 }
+        preset: chip
+      - id: io_front
+        shape: rectangle
+        place: { above: plate_top, inFrontOf: cpu, gap: 1.3 }
+        geom: { w: 64, d: 64, h: 8 }
+        preset: chip
+
+      # ── Wireframe ghost hovering over the hero chip ──────────────
+      - id: ghost_die
+        shape: rectangle
+        place: { above: cpu }
+        offset: { wz: 26 }
+        geom: { w: 86, d: 86, h: 30 }
+        style:
+          palette: { top: "none", left: "none", right: "none" }
+          stroke:  { color: "#7C3AED", width: 1.2, dash: "3 4" }
+          effects: { wireframe: true, cornerRadius: 10 }
+
+    connectors:
+      # Thick violet PCB traces between the chips.
+      - { from: io_left.right-mid,  to: cpu.left-mid,   routing: orthogonal, stroke: { color: "#8B5CF6", width: 4 } }
+      - { from: io_right.left-mid,  to: cpu.right-mid,  routing: orthogonal, stroke: { color: "#8B5CF6", width: 4 } }
+      - { from: io_back.front-mid,  to: cpu.back-mid,   routing: orthogonal, stroke: { color: "#8B5CF6", width: 4 } }
+      - { from: io_front.back-mid,  to: cpu.front-mid,  routing: orthogonal, stroke: { color: "#8B5CF6", width: 4 } }
+
+annotations:
+  - anchor: ghost_die
+    side: right
+    distance: 120
+    text: "One board.\nEvery integration."
+    bg: "#FFFFFF"
+    border: "#C4B5FD"
+    color: "#5B21B6"
+    fontSize: 13

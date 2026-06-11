@@ -402,7 +402,7 @@ func themeSchema() map[string]any {
 			"palette": styleBlockSchema("Face fills (top/left/right), each optionally a {from, to, dir} gradient via topGradient/leftGradient/rightGradient.", []string{"top", "left", "right", "topGradient", "leftGradient", "rightGradient"}),
 			"stroke":  styleBlockSchema("Silhouette stroke.", []string{"color", "width", "dash"}),
 			"text":    styleBlockSchema("Label typography.", []string{"family", "size", "weight", "color", "orient", "boxBg", "boxBorder"}),
-			"effects": styleBlockSchema("Visual modifiers. dropShadow {dx, dy, blur, color}; backglow {color, radius, opacity}; pattern {kind, color, spacing, angle}.", []string{"opacity", "margin", "cornerRadius", "dropShadow", "backglow", "pattern"}),
+			"effects": styleBlockSchema("Visual modifiers. dropShadow {dx, dy, blur, color}; backglow {color, radius, opacity}; pattern {kind, color, spacing, angle}; wireframe (bool, line-art); grain {intensity, scale} (film-grain noise).", []string{"opacity", "margin", "cornerRadius", "dropShadow", "backglow", "pattern", "wireframe", "grain"}),
 			"shapes": map[string]any{
 				"type":                 "object",
 				"description":          "Per-shape-type Style overrides. Keys are iso shape names (rectangle, cylinder, …).",

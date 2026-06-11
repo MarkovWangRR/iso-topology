@@ -361,9 +361,16 @@ func RenderIsoBox(o IsoBoxOpts) string {
 	var sb strings.Builder
 	sb.WriteString(svgHeader(g.ViewW, g.ViewH))
 
-	topFill, leftFill, rightFill, shadowID, patID := emitBoxDefs(&sb, &o)
+	topFill, leftFill, rightFill, shadowID, patID, grainID := emitBoxDefs(&sb, &o)
 
 	openWrapper(&sb, g.ViewW, g.ViewH, o.Background, o.Opacity, o.StrokeDasharray, shadowID)
+	if grainID != "" {
+		fmt.Fprintf(&sb, `<g filter="url(#%s)">`, grainID)
+	}
+	// v2.6 — wireframe line-art: keep the strokes, drop every fill.
+	if o.Wireframe {
+		topFill, leftFill, rightFill, patID = "none", "none", "none", ""
+	}
 
 	leftC, leftW, leftD := pickFaceStroke(o.Stroke, o.StrokeWidth, o.StrokeDasharray, o.LeftStroke)
 	rightC, rightW, rightD := pickFaceStroke(o.Stroke, o.StrokeWidth, o.StrokeDasharray, o.RightStroke)
@@ -374,6 +381,9 @@ func RenderIsoBox(o IsoBoxOpts) string {
 	writeFace(&sb, "top", topFill, topC, topW, topD, 0, g.E, g.F, g.G, g.H)
 	if patID != "" {
 		writeFace(&sb, "top-pattern", "url(#"+patID+")", "", 0, "", 0, g.E, g.F, g.G, g.H)
+	}
+	if grainID != "" {
+		sb.WriteString(`</g>`)
 	}
 
 	{
@@ -393,7 +403,7 @@ func RenderIsoBox(o IsoBoxOpts) string {
 // emitBoxDefs emits any required <defs> (gradients + shadow filter +
 // pattern tile) onto sb and returns the fill references plus the shadow
 // filter and pattern ids.
-func emitBoxDefs(sb *strings.Builder, o *IsoBoxOpts) (topFill, leftFill, rightFill, shadowID, patID string) {
+func emitBoxDefs(sb *strings.Builder, o *IsoBoxOpts) (topFill, leftFill, rightFill, shadowID, patID, grainID string) {
 	topFill, leftFill, rightFill = o.TopFill, o.LeftFill, o.RightFill
 	var defs strings.Builder
 	if o.TopGradient != nil {
@@ -413,12 +423,40 @@ func emitBoxDefs(sb *strings.Builder, o *IsoBoxOpts) (topFill, leftFill, rightFi
 		emitDropShadowFilter(&defs, shadowID, o.ShadowDx, o.ShadowDy, o.ShadowBlur, o.ShadowColor)
 	}
 	patID = emitPatternDef(&defs, "pat-top", o.PatternKind, o.PatternColor, o.PatternSpacing, o.PatternAngle)
+	grainID = emitGrainFilter(&defs, "grain", o.GrainIntensity, o.GrainScale)
 	if defs.Len() > 0 {
 		sb.WriteString(`<defs>`)
 		sb.WriteString(defs.String())
 		sb.WriteString(`</defs>`)
 	}
 	return
+}
+
+// emitGrainFilter writes a monochrome film-grain noise filter def and
+// returns its id, or "" when intensity is zero. The noise is grayscale
+// fractal turbulence soft-light-blended onto the shape, clipped to the
+// shape's own alpha — it darkens light fills and lifts dark ones, so
+// one filter works on any palette.
+func emitGrainFilter(defs *strings.Builder, id string, intensity, scale float64) string {
+	if intensity <= 0 {
+		return ""
+	}
+	if intensity > 1 {
+		intensity = 1
+	}
+	if scale <= 0 {
+		scale = 0.8
+	}
+	fmt.Fprintf(defs,
+		`<filter id="%s" x="-5%%" y="-5%%" width="110%%" height="110%%">`+
+			`<feTurbulence type="fractalNoise" baseFrequency="%.3f" numOctaves="2" stitchTiles="stitch" result="noise"/>`+
+			`<feColorMatrix in="noise" type="saturate" values="0" result="mono"/>`+
+			`<feComponentTransfer in="mono" result="mono2"><feFuncA type="linear" slope="%.3f" intercept="0"/></feComponentTransfer>`+
+			`<feBlend in="SourceGraphic" in2="mono2" mode="soft-light" result="lit"/>`+
+			`<feComposite in="lit" in2="SourceGraphic" operator="in"/>`+
+			`</filter>`,
+		id, scale, intensity)
+	return id
 }
 
 // emitPatternDef writes a hatch/dots <pattern> tile def and returns its

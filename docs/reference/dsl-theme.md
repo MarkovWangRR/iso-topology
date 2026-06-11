@@ -101,8 +101,14 @@ effects:
   canvas.
 - `backglow` — a blurred halo behind the silhouette. ONE per scene:
   it marks "the" central element.
-- `pattern` — `hatch` or `dots` texture overlaid on the faces
-  (box and sphere today; cylinder sides not yet).
+- `pattern` — `hatch` or `dots` texture overlaid on box top faces,
+  cylinder top ellipses, and sphere discs.
+- `wireframe: true` — line-art mode: strokes only, no fills. Pair
+  with a dashed stroke for ghost volumes and floating frames;
+  wireframe/none-filled parts are exempt from overlap warnings.
+- `grain: {intensity: 0.45, scale: 0.8}` — monochrome film-grain
+  noise on the faces (the "print / risograph" texture). Intensity
+  0..1; ~0.4–0.5 keeps dark fills dark. Box, rounded box, cylinder.
 
 ## The Theme block
 

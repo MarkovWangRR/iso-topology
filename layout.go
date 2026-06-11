@@ -588,7 +588,7 @@ func checkSiblingOverlaps(parts []*CompositePart, path string, issues *[]Issue) 
 	}
 	boxes := make([]box, 0, len(parts))
 	for i, p := range parts {
-		if p == nil {
+		if p == nil || isGhostPart(p) {
 			continue
 		}
 		x, y, z := 0.0, 0.0, 0.0
@@ -623,6 +623,23 @@ func checkSiblingOverlaps(parts []*CompositePart, path string, issues *[]Issue) 
 			}
 		}
 	}
+}
+
+// isGhostPart reports whether a part is pure decoration that other
+// parts may legitimately overlap: every face fill is "none" (dashed
+// inset frames, ghost volumes) or it renders as a wireframe.
+func isGhostPart(p *CompositePart) bool {
+	if p.Style == nil {
+		return false
+	}
+	if e := p.Style.Effects; e != nil && e.Wireframe != nil && *e.Wireframe {
+		return true
+	}
+	if pal := p.Style.Palette; pal != nil &&
+		pal.Top == "none" && pal.Left == "none" && pal.Right == "none" {
+		return true
+	}
+	return false
 }
 
 // ── validate-time dry run ────────────────────────────────────────────

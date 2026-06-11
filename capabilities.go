@@ -261,6 +261,8 @@ func buildStyleKeyGroups() []StyleKeyGroup {
 			"dropShadow {dx, dy, blur, color}",
 			"backglow {color, radius, opacity}",
 			"pattern {kind: hatch|dots, color, spacing, angle}",
+			"wireframe (bool — line-art: strokes only, no fills; ghost parts are exempt from overlap warnings)",
+			"grain {intensity 0..1, scale} (film-grain noise on the faces)",
 		}},
 	}
 }

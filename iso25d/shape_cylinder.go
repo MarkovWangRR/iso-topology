@@ -42,6 +42,10 @@ type IsoCylinderOpts struct {
 	PatternColor   string
 	PatternSpacing float64
 	PatternAngle   float64
+
+	// v2.6 — film-grain noise over the body + top.
+	GrainIntensity float64
+	GrainScale     float64
 }
 
 func DefaultIsoCylinder() IsoCylinderOpts {
@@ -83,7 +87,18 @@ func RenderIsoCylinder(o IsoCylinderOpts) string {
 
 	var sb strings.Builder
 	sb.WriteString(svgHeader(W, H))
+	grainID := ""
+	{
+		var defs strings.Builder
+		if id := emitGrainFilter(&defs, "cyl-grain", o.GrainIntensity, o.GrainScale); id != "" {
+			grainID = id
+			fmt.Fprintf(&sb, `<defs>%s</defs>`, defs.String())
+		}
+	}
 	openWrapper(&sb, W, H, o.Background, o.Opacity, o.StrokeDasharray, "")
+	if grainID != "" {
+		fmt.Fprintf(&sb, `<g filter="url(#%s)">`, grainID)
+	}
 
 	leftTopX, leftTopY := sx(-rx), sy(0)
 	rightTopX, rightTopY := sx(rx), sy(0)
@@ -144,6 +159,10 @@ func RenderIsoCylinder(o IsoCylinderOpts) string {
 		}
 	}
 
+	if grainID != "" {
+		sb.WriteString(`</g>`)
+	}
+
 	// Label + icon on the top circle, using the inscribed square (in 3D) as
 	// the local frame so the icon/text sit cleanly inside the top ellipse.
 	s := rx / cos30
@@ -170,6 +189,7 @@ func RenderIsoCylinder(o IsoCylinderOpts) string {
 func applyCylinder(o ConvertOpts, c *IsoCylinderOpts) {
 	c.PatternKind, c.PatternColor = o.PatternKind, o.PatternColor
 	c.PatternSpacing, c.PatternAngle = o.PatternSpacing, o.PatternAngle
+	c.GrainIntensity, c.GrainScale = o.GrainIntensity, o.GrainScale
 	if o.Width > 0 {
 		c.Radius = o.Width / 2
 	}

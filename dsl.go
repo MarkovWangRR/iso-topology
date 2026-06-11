@@ -270,6 +270,19 @@ type Effects struct {
 	// v2.1 — repeating surface texture overlaid on the top face
 	// (hatch lines, dot grid, square grid).
 	Pattern *Pattern `yaml:"pattern,omitempty" json:"pattern,omitempty"`
+
+	// v2.6 — line-art mode: faces render unfilled, strokes only.
+	Wireframe *bool `yaml:"wireframe,omitempty" json:"wireframe,omitempty"`
+	// v2.6 — film-grain noise overlay on the faces.
+	Grain *Grain `yaml:"grain,omitempty" json:"grain,omitempty"`
+}
+
+// Grain overlays monochrome film-grain noise on the part's faces —
+// the "risograph / print" texture. Intensity 0..1 (how visible),
+// Scale = noise frequency (default 0.8; smaller = coarser speckle).
+type Grain struct {
+	Intensity float64 `yaml:"intensity,omitempty" json:"intensity,omitempty"`
+	Scale     float64 `yaml:"scale,omitempty" json:"scale,omitempty"`
 }
 
 // DropShadow describes a Gaussian-blurred offset shadow under the part.

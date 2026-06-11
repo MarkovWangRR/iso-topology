@@ -69,6 +69,10 @@ Visual quality rules (what makes the output look professional):
 - Dark scenes: near-black canvas (`#0A0A0B`), `grid: iso` with a
   whisper grid color, white or neon glyphs. Light scenes: off-white
   canvas, ink glyphs.
+- Texture registers (pick at most one per scene): hatch-filled
+  accent tiles = blueprint/PCB; `effects.grain` = monochrome print
+  editorial; dots panel = depth. Wireframe + dashed stroke = ghost
+  frames (overlap-warning exempt).
 
 ## 4. Validate until clean
 

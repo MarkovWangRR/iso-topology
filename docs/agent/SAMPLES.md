@@ -27,7 +27,9 @@ description matches your task, imitate its structure, then check
 | Fixture | Demonstrates |
 |---|---|
 | [`ai-platform`](../../samples/topology/ai-platform/input.yaml) | ai-platform — an AI platform core and its eight capabilities, as a hub-and-spoke ring. |
+| [`identity-flow`](../../samples/topology/identity-flow/input.yaml) | identity-flow — monochrome film-grain editorial style: how human identities delegate to AI agents which consume machine identities. |
 | [`llm-serving`](../../samples/topology/llm-serving/input.yaml) | llm-serving — a dark-mode LLM inference platform. |
 | [`microservice`](../../samples/topology/microservice/input.d2) | microservice — minimal .d2 auto-layout path: person → services → database. |
+| [`platform-board`](../../samples/topology/platform-board/input.yaml) | platform-board — PCB / circuit-board hero shot, landing-page style. |
 | [`rag-pipeline`](../../samples/topology/rag-pipeline/input.yaml) | rag-pipeline — a RAG system on two planes. |
 | [`training-compute`](../../samples/topology/training-compute/input.yaml) | training-compute — where the GPU hours of a training run go. |

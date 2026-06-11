@@ -159,6 +159,8 @@ func RenderIsoBoxRounded(o IsoBoxOpts) string {
 	}
 	// v2.3 — hatch/dots texture overlaid on the top face.
 	patID := emitPatternDef(&defs, "rounded-pattern", o.PatternKind, o.PatternColor, o.PatternSpacing, o.PatternAngle)
+	// v2.6 — film-grain noise over the faces.
+	grainID := emitGrainFilter(&defs, "rounded-grain", o.GrainIntensity, o.GrainScale)
 	if defs.Len() > 0 {
 		sb.WriteString(`<defs>`)
 		sb.WriteString(defs.String())
@@ -183,6 +185,9 @@ func RenderIsoBoxRounded(o IsoBoxOpts) string {
 		)
 	}
 	fmt.Fprintf(&sb, `<g data-face="wrap"%s>`, wrapAttrs)
+	if grainID != "" {
+		fmt.Fprintf(&sb, `<g filter="url(#%s)">`, grainID)
+	}
 
 	stroke := o.Stroke
 	if stroke == "" {
@@ -266,6 +271,9 @@ func RenderIsoBoxRounded(o IsoBoxOpts) string {
 	topOriginX, topOriginY := project(0, 0, h)
 	topOriginX += tx
 	topOriginY += ty
+	if grainID != "" {
+		sb.WriteString(`</g>`)
+	}
 	writeTopLabelAndIconV12(
 		&sb,
 		topOriginX, topOriginY, w, d,

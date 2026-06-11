@@ -522,7 +522,7 @@
       "description": "Document-wide default Style plus optional per-shape-type overrides.",
       "properties": {
         "effects": {
-          "description": "Visual modifiers. dropShadow {dx, dy, blur, color}; backglow {color, radius, opacity}; pattern {kind, color, spacing, angle}.",
+          "description": "Visual modifiers. dropShadow {dx, dy, blur, color}; backglow {color, radius, opacity}; pattern {kind, color, spacing, angle}; wireframe (bool, line-art); grain {intensity, scale} (film-grain noise).",
           "properties": {
             "backglow": {
               "description": "see reference/dsl-theme.md"
@@ -533,6 +533,9 @@
             "dropShadow": {
               "description": "see reference/dsl-theme.md"
             },
+            "grain": {
+              "description": "see reference/dsl-theme.md"
+            },
             "margin": {
               "description": "see reference/dsl-theme.md"
             },
@@ -540,6 +543,9 @@
               "description": "see reference/dsl-theme.md"
             },
             "pattern": {
+              "description": "see reference/dsl-theme.md"
+            },
+            "wireframe": {
               "description": "see reference/dsl-theme.md"
             }
           },

@@ -219,3 +219,22 @@ func TestValidateUnknownPresetSuggests(t *testing.T) {
 		t.Fatalf("want unknown-preset error suggesting satellite, got %v", issues)
 	}
 }
+
+func TestGhostPartsExemptFromOverlap(t *testing.T) {
+	wf := true
+	base := part("base", 200, 200, 10)
+	frame := part("frame", 180, 180, 1)
+	frame.Place = &Place{Above: "base"}
+	frame.Style = &Style{Palette: &Palette{Top: "none", Left: "none", Right: "none"}}
+	wire := part("wire", 100, 100, 30)
+	wire.Place = &Place{Above: "base"}
+	wire.Style = &Style{Effects: &Effects{Wireframe: &wf}}
+	solid := part("solid", 100, 100, 8)
+	solid.Place = &Place{Above: "base"}
+	issues := solveScene(t, []*CompositePart{base, frame, wire, solid})
+	for _, i := range issues {
+		if i.Severity == SeverityWarning && strings.Contains(i.Message, "overlaps") {
+			t.Fatalf("ghost parts must not trigger overlap warnings, got %v", i)
+		}
+	}
+}

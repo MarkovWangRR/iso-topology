@@ -49,6 +49,8 @@ the solver do geometry (all gaps in cells):
 | layered flow | anchor part + `place` chains (`rightOf`, `behind`) | [llm-serving](../../samples/topology/llm-serving/input.yaml) |
 | dual plane | two `layout: row` groups, the second `place: {inFrontOf: …}` | [rag-pipeline](../../samples/topology/rag-pipeline/input.yaml) |
 | metric bars + ghosts | bars in a `place` chain, ghosts `place: {above: <bar>}` | [training-compute](../../samples/topology/training-compute/input.yaml) |
+| exploded plate stack (PCB) | plates chained with `above` + a `wz` lift each | [platform-board](../../samples/topology/platform-board/input.yaml) |
+| editorial screen-horizontal row | `rightOf`+`behind` with `gapX/gapY` so Δx = −Δy | [identity-flow](../../samples/topology/identity-flow/input.yaml) |
 | stair | each tile `{rightOf: prev, inFrontOf: prev, gap: 0}` | [RECIPES § stair](../agent/RECIPES.md#i-want-a-staircase-climbing-the-iso-axis) |
 
 ## Ship a design system with `theme.presets`
@@ -105,6 +107,15 @@ and `ghost` or `pedestal`.
   `palette: none` + dashed stroke shows capacity/budget headroom.
 - **Pedestals**: small flat neutral tiles scattered with `place`
   diagonals fill negative space in marketing shots.
+- **Hatch-filled accent tiles**: `pattern: {kind: hatch}` in the
+  accent color on a near-white top reads as "circuit / blueprint"
+  (see platform-board's chips).
+- **Wireframe ghosts**: `effects.wireframe` + dashed stroke for
+  floating frames and dashed inset borders — exempt from overlap
+  warnings by design.
+- **Film grain**: `effects.grain` for the monochrome editorial
+  register — one strong texture style per scene, don't mix with
+  neon glows.
 
 ## Pre-ship checklist
 

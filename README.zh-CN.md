@@ -160,6 +160,24 @@ Chat 应用与 CLI 的请求流经服务网关——一块 `layout: grid` 的 he
 "幽灵"体积表示各阶段预算上限。
 [源码](samples/topology/training-compute/input.yaml)。
 
+### 平台电路板（亮色 · PCB / 蓝图）
+
+![爆炸式等距电路板插画——浮空板上的斜线芯片](docs/assets/platform-board.png)
+
+落地页 hero 级别的质感：三层板用 `place: {above}` 链式爆炸悬浮，
+斜线填充的芯片由粗紫走线连接，虚线内嵌框、点阵纹理板、悬浮在主
+芯片上方的线框幽灵体。
+[源码](samples/topology/platform-board/input.yaml)。
+
+### 身份流（白底 · 胶片颗粒排版风）
+
+![单色颗粒质感身份图——人类委托 AI agent，agent 消费机器身份](docs/assets/identity-flow.png)
+
+"平面广告"语域：白底上的近黑 `effects.grain` 颗粒物体、带药丸标
+签的发丝连线、屏幕空间的粗体排版——横排由 `rightOf`+`behind` 配
+合分轴 gap 实现屏幕水平。
+[源码](samples/topology/identity-flow/input.yaml)。
+
 ### 三行 d2 的微服务（自动布局）
 
 ![由 d2 图源自动布局的等距微服务拓扑](docs/assets/microservice.png)

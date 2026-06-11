@@ -420,6 +420,50 @@ texture on box top faces, cylinder top ellipses, and sphere discs.
 Use ONE hero treatment per scene — backglow on everything reads as
 noise.
 
+### I want line-art / wireframe ghosts
+
+`effects.wireframe: true` keeps strokes and drops every fill — pair
+with a dashed stroke for floating "ghost" frames. None-filled and
+wireframe parts are exempt from overlap warnings, so they can sit on
+or around solid parts freely:
+
+```yaml
+- id: ghost_die
+  shape: rectangle
+  place: { above: cpu }
+  offset: { wz: 26 }
+  geom: { w: 86, d: 86, h: 30 }
+  style:
+    palette: { top: "none", left: "none", right: "none" }
+    stroke:  { color: "#7C3AED", width: 1.2, dash: "3 4" }
+    effects: { wireframe: true, cornerRadius: 10 }
+```
+
+### I want a film-grain / print texture
+
+`effects.grain` overlays monochrome noise — the editorial "print ad"
+register (see [`identity-flow`](../../samples/topology/identity-flow/input.yaml)):
+
+```yaml
+style:
+  effects:
+    grain: { intensity: 0.45, scale: 0.8 }
+```
+
+Works on boxes (plain + rounded) and cylinders. Keep intensity
+≤ 0.5 on dark fills or the noise greys them out.
+
+### I want a screen-horizontal row (editorial layout)
+
+In iso projection a plain `rightOf` row slopes down-right. To march
+straight across the screen, pair `rightOf` with `behind` and tune
+per-axis gaps so Δx = −Δy:
+
+```yaml
+- id: b
+  place: { rightOf: a, behind: a, gapX: 2.2, gapY: 2.45 }
+```
+
 ## Canvas / backdrop
 
 ### I want an iso ground grid

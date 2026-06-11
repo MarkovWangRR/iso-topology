@@ -145,6 +145,16 @@ func mergeEffects(b, o *Effects) *Effects {
 	} else {
 		out.Pattern = b.Pattern
 	}
+	if o.Wireframe != nil {
+		out.Wireframe = o.Wireframe
+	} else {
+		out.Wireframe = b.Wireframe
+	}
+	if o.Grain != nil {
+		out.Grain = o.Grain
+	} else {
+		out.Grain = b.Grain
+	}
 	return out
 }
 

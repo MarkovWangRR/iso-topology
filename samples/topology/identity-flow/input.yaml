@@ -1,0 +1,92 @@
+# identity-flow — monochrome film-grain editorial style: how human
+# identities delegate to AI agents which consume machine identities.
+# Three near-black grain-textured objects on a bare white canvas,
+# joined by hairline connectors carrying pill labels; bold typography
+# lives in screen space, NOT on the objects. The style proves grain /
+# typography-first composition — the "print ad" register, the polar
+# opposite of the neon dark-mode scenes. Zero coordinates.
+
+canvas:
+  background: "#FFFFFF"
+
+theme:
+  text:
+    family: "Inter, system-ui, sans-serif"
+    size: 15
+    weight: "800"
+    color: "#111114"
+    orient: screen
+  stroke:
+    color: "#111114"
+    width: 1.2
+  presets:
+    inkblock:
+      palette:
+        top: "#2C2C33"
+        left: "#0B0B0E"
+        right: "#1B1B21"
+        topGradient:   { from: "#3A3A42", to: "#191A1F", dir: "down" }
+        leftGradient:  { from: "#101014", to: "#050507", dir: "down" }
+        rightGradient: { from: "#26262D", to: "#101014", dir: "down" }
+      stroke: { color: "#000000", width: 1 }
+      effects:
+        grain: { intensity: 0.45, scale: 0.8 }
+        dropShadow: { dx: 0, dy: 10, blur: 18, color: "rgba(17,17,20,0.18)" }
+
+nodes:
+  scene:
+    shape: composite
+    parts:
+      - id: humans
+        shape: cylinder
+        geom: { w: 150, d: 150, h: 64 }
+        label: "Human Identities"
+        preset: inkblock
+      - id: agents
+        shape: rectangle
+        place: { rightOf: humans, behind: humans, gapX: 2.2, gapY: 2.45 }   # Δx = −Δy → screen-horizontal
+        geom: { w: 140, d: 140, h: 96 }
+        label: "AI Agents"
+        preset: inkblock
+        icon: "iso://glyph/agent/light"
+        style:
+          effects: { cornerRadius: 18 }
+      - id: machines
+        shape: rectangle
+        place: { rightOf: agents, behind: agents, gapX: 2.2, gapY: 2.45 }
+        geom: { w: 170, d: 130, h: 52 }
+        label: "Non-Human Identities"
+        preset: inkblock
+        icon: "iso://glyph/key/light"
+        style:
+          effects: { cornerRadius: 26 }
+
+    connectors:
+      - { from: humans.right-mid, to: agents.left-mid,   stroke: { color: "#111114", width: 1.2 }, arrow: triangle, label: "Delegate to" }
+      - { from: agents.right-mid, to: machines.left-mid, stroke: { color: "#111114", width: 1.2 }, arrow: triangle, label: "Consume" }
+
+annotations:
+  - anchor: humans
+    side: bottom
+    distance: 150
+    text: "MANAGED"
+    bg: "#F4F4F5"
+    border: "#F4F4F5"
+    color: "#52525B"
+    fontSize: 12
+  - anchor: agents
+    side: bottom
+    distance: 170
+    text: "MULTIPLYING"
+    bg: "#F4F4F5"
+    border: "#F4F4F5"
+    color: "#52525B"
+    fontSize: 12
+  - anchor: machines
+    side: bottom
+    distance: 150
+    text: "100X MORE THAN HUMANS"
+    bg: "#F4F4F5"
+    border: "#F4F4F5"
+    color: "#52525B"
+    fontSize: 12

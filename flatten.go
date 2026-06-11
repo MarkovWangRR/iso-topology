@@ -70,6 +70,13 @@ func Flatten(n *Node, theme *Theme) (string, iso25d.ConvertOpts) {
 			if pt := e.Pattern; pt != nil {
 				o.PatternKind, o.PatternColor, o.PatternSpacing, o.PatternAngle = pt.Kind, pt.Color, pt.Spacing, pt.Angle
 			}
+			// v2.6 — wireframe line-art + film-grain texture.
+			if e.Wireframe != nil {
+				o.Wireframe = *e.Wireframe
+			}
+			if g := e.Grain; g != nil {
+				o.GrainIntensity, o.GrainScale = g.Intensity, g.Scale
+			}
 		}
 	}
 
