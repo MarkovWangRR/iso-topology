@@ -88,13 +88,20 @@ and `ghost` or `pedestal`.
 
 ## Connector grammar
 
-- `routing: orthogonal` for architecture flow — every segment rides
-  the iso grid (±30° on screen). This is the default choice.
-- `routing: bezier` + `dash` for async / replication / background
-  links — the soft arc reads as "data drifts" against rigid pipes.
+- **`routing: orthogonal`, always.** Every segment must ride the iso
+  grid (±30° on screen) — a line that cuts across the 2.5D lattice
+  instantly breaks the illusion. When two anchors already share an
+  iso axis the route collapses to a single on-axis segment, so
+  "straight-looking" lines come from ALIGNED LAYOUT, not from
+  `routing: straight`.
+- Async / replication / background links: same orthogonal routing,
+  distinguished by `dash` — never by bezier curves.
 - Hairline widths: 1–1.2 for relationship spokes, 1.6–2 for primary
   flow. Solid = synchronous path, dashed = async.
 - Arrows (`arrow: triangle`) only where direction carries meaning.
+- Pill labels sit at the route's midpoint and paint UNDER parts —
+  leave enough gap between connected parts for the label to land in
+  open canvas.
 
 ## Depth tricks
 
@@ -122,6 +129,8 @@ and `ghost` or `pedestal`.
 1. `isotopo validate` exits 0 — no overlap warnings you haven't
    consciously accepted.
 2. Exactly one hero, one accent. Count your backglows: ≤ 1.
+   Adjacent nodes must be tonally separable — never the same fill on
+   touching or peer objects (use a tonal ladder in mono scenes).
 3. Every top face: glyph + short caption, long text in screen space.
 4. Connectors all orthogonal or deliberately bezier — no default
    `straight` cutting across the grid by accident.

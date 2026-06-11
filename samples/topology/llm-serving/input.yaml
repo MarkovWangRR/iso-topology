@@ -144,7 +144,7 @@ nodes:
       - { from: cli,      to: gateway, arrow: triangle, routing: orthogonal, stroke: { color: "#22D3EE", width: 1.8 } }
       - { from: gateway,  to: model_plane, arrow: triangle, routing: orthogonal, stroke: { color: "#22D3EE", width: 1.8 } }
       # Async model sync: dashed arc from the registry to the board.
-      - { from: model_plane, to: mesh_panel, routing: bezier, stroke: { color: "#E4E4E7", width: 1, dash: "2 5" } }
+      - { from: model_plane, to: mesh_panel, routing: orthogonal, stroke: { color: "#E4E4E7", width: 1, dash: "2 5" } }
 
 annotations:
   - anchor: gateway

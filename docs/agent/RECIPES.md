@@ -265,16 +265,19 @@ Orthogonal paths ride the iso ground axes — every segment projects to
 exactly ±30°, in register with `canvas.grid: iso`. **Use this for
 architecture flows**; the default `straight` cuts across the grid.
 
-### I want a soft curved connector (async / replication)
+### I want an async / replication link
+
+Same orthogonal routing as everything else — async is expressed by
+`dash`, NOT by a different geometry:
 
 ```yaml
 connectors:
-  - {from: region_a, to: replica, routing: bezier, arrow: triangle,
+  - {from: region_a, to: replica, routing: orthogonal, arrow: triangle,
      stroke: {color: "#FFFFFF", width: 1.2, dash: "3 4"}}
 ```
 
-A single quadratic arc — reads as "data flow" against the rigid
-orthogonal pipes. Pairs well with `dash`.
+`routing: bezier` exists for non-iso freeform sketches only — in an
+iso scene a curve cuts across the grid and breaks the projection.
 
 ### I want a dashed connector
 

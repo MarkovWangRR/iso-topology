@@ -192,7 +192,7 @@ func buildPrimitiveCaps() []PrimitiveCap {
 			Fields: map[string]string{
 				"from":    "source part id; \"id.anchor\" picks a specific face-centre (e.g. central.right-mid)",
 				"to":      "destination part id (same anchor syntax)",
-				"routing": "straight = single segment; orthogonal = bends along iso ground axes (grid-aligned — prefer for architecture flows); bezier = soft quadratic arc (reads as async/data flow)",
+				"routing": "ALWAYS use orthogonal — every segment rides the iso ground axes, flush with the 2.5D grid (collinear endpoints collapse to one on-axis segment). straight/bezier cut across the grid and are reserved for non-iso freeform sketches.",
 				"arrow":   "none = no head; triangle = filled arrowhead at the dst",
 			},
 		},

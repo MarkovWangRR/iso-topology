@@ -103,11 +103,11 @@ nodes:
 
     connectors:
       # Serving path (solid) vs data path (dashed) — all hairline.
-      - { from: core, to: llm,           stroke: { color: "#8B5CF6", width: 1.1 } }
-      - { from: core, to: gpu_pool,      stroke: { color: "#8B5CF6", width: 1.1 } }
-      - { from: core, to: agents,        stroke: { color: "#8B5CF6", width: 1.1 } }
-      - { from: core, to: vector_store,  stroke: { color: "#8B5CF6", width: 1.1 } }
-      - { from: core, to: data_lake,     stroke: { color: "#8B5CF6", width: 1.1, dash: "1.5 4" } }
-      - { from: core, to: streaming,     stroke: { color: "#8B5CF6", width: 1.1, dash: "1.5 4" } }
-      - { from: core, to: warehouse,     stroke: { color: "#8B5CF6", width: 1.1, dash: "1.5 4" } }
-      - { from: core, to: observability, stroke: { color: "#8B5CF6", width: 1.1, dash: "1.5 4" } }
+      - { from: core, to: llm,           routing: orthogonal, stroke: { color: "#8B5CF6", width: 1.1 } }
+      - { from: core, to: gpu_pool,      routing: orthogonal, stroke: { color: "#8B5CF6", width: 1.1 } }
+      - { from: core, to: agents,        routing: orthogonal, stroke: { color: "#8B5CF6", width: 1.1 } }
+      - { from: core, to: vector_store,  routing: orthogonal, stroke: { color: "#8B5CF6", width: 1.1 } }
+      - { from: core, to: data_lake,     routing: orthogonal, stroke: { color: "#8B5CF6", width: 1.1, dash: "1.5 4" } }
+      - { from: core, to: streaming,     routing: orthogonal, stroke: { color: "#8B5CF6", width: 1.1, dash: "1.5 4" } }
+      - { from: core, to: warehouse,     routing: orthogonal, stroke: { color: "#8B5CF6", width: 1.1, dash: "1.5 4" } }
+      - { from: core, to: observability, routing: orthogonal, stroke: { color: "#8B5CF6", width: 1.1, dash: "1.5 4" } }

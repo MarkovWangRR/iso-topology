@@ -172,8 +172,8 @@ WHEN UNSURE:
 - Default shapes: rectangle = compute, cylinder = data, person =
   human actor, cloud = external system.
 - Default canvas: {background: "#FAFBFC", grid: iso, gridColor: "#E2E6EE", gridStep: 40}.
-- Connectors: routing orthogonal for architecture flow (rides the iso
-  grid), bezier for async/replication links.
+- Connectors: ALWAYS routing orthogonal — every segment must ride the
+  iso grid. Style async links with dash, never with bezier/straight.
 
 <TASK>
 {user's actual prompt here}

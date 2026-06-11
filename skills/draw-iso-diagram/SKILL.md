@@ -63,9 +63,9 @@ Visual quality rules (what makes the output look professional):
   `icon: "iso://glyph/<name>"` (gpu, model, agent, chat, vector,
   lake, stream, warehouse, etl, database, shield, key, gauge, …);
   `/light` variant on dark tops, `/RRGGBB` for accent color.
-- Connectors: `routing: orthogonal` for architecture flow (rides the
-  iso grid), `bezier` + `dash` for async links. Hairline widths
-  (1–2) look better than thick pipes.
+- Connectors: `routing: orthogonal`, ALWAYS — every segment must
+  ride the iso grid; async links differ by `dash`, never by bezier
+  or straight routing. Hairline widths (1–2) beat thick pipes.
 - Dark scenes: near-black canvas (`#0A0A0B`), `grid: iso` with a
   whisper grid color, white or neon glyphs. Light scenes: off-white
   canvas, ink glyphs.

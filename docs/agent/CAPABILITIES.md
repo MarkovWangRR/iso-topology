@@ -28,14 +28,14 @@ override per-part via `geom.h`.
 
 | Iso shape | Accepted aliases | Height hint | Notes |
 |---|---|---|---|
-| **circle** | `circle`, `oval` | 1.0 |  |
+| **circle** | `circle`, `oval` | 0.8 |  |
 | **cloud** | `cloud` | 0.8 | free-form rounded outline; no per-face palette overrides |
 | **composite** | `composite` | 1.0 | container — holds parts: [] of CompositePart entries |
 | **cylinder** | `cylinder`, `queue`, `stored-data`, `stored_data` | 1.0 |  |
 | **group** | `group` | 1.0 | v2 primitive — translucent labeled substrate wrapping nested parts |
 | **iso_text** | `text` | 0.3 | flat text panel (low extrusion) |
 | **person** | `c4-person`, `c4_person`, `person` | 1.2 |  |
-| **rectangle** | `callout`, `class`, `code`, `diamond`, `document`, `hexagon`, `hierarchy`, `image`, `package`, `page`, `parallelogram`, `rectangle`, `sequence-diagram`, `sequence_diagram`, `sql-table`, `sql_table`, `square`, `step` | 0.5 |  |
+| **rectangle** | `callout`, `class`, `code`, `diamond`, `document`, `hexagon`, `hierarchy`, `image`, `package`, `page`, `parallelogram`, `rectangle`, `sequence-diagram`, `sequence_diagram`, `sql-table`, `sql_table`, `square`, `step` | 0.3 |  |
 
 ## Composition primitives
 
@@ -111,7 +111,7 @@ Directed line between two parts, optionally labeled and orthogonal-routed.
 |---|---|
 | `arrow` | none = no head; triangle = filled arrowhead at the dst |
 | `from` | source part id; "id.anchor" picks a specific face-centre (e.g. central.right-mid) |
-| `routing` | straight = single segment; orthogonal = bends along iso ground axes (grid-aligned — prefer for architecture flows); bezier = soft quadratic arc (reads as async/data flow) |
+| `routing` | ALWAYS use orthogonal — every segment rides the iso ground axes, flush with the 2.5D grid (collinear endpoints collapse to one on-axis segment). straight/bezier cut across the grid and are reserved for non-iso freeform sketches. |
 | `to` | destination part id (same anchor syntax) |
 
 ### `layout`

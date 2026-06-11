@@ -3,7 +3,7 @@
 # serves (app → retriever → LLM); the shared vector database stands
 # between them as a replica stack. Every cube has a white top with a
 # glyph AND an iso caption; emerald pipes carry the synchronous
-# paths, a dashed white bezier carries the retriever's vector query.
+# paths, a dashed white grid-aligned line carries the vector query.
 # Near-black canvas, one emerald accent. Zero coordinates.
 
 canvas:
@@ -113,8 +113,8 @@ nodes:
       # Serve path (front plane).
       - { from: app,       to: retriever, arrow: triangle, routing: orthogonal, stroke: { color: "#34D399", width: 1.6 } }
       - { from: retriever, to: llm,       arrow: triangle, routing: orthogonal, stroke: { color: "#34D399", width: 1.6 } }
-      # The vector query: dashed arc from retriever up to the DB stack.
-      - { from: retriever, to: vector_db, arrow: triangle, routing: bezier, stroke: { color: "#ECFDF5", width: 1.2, dash: "3 5" } }
+      # The vector query: dashed grid-aligned route up to the DB stack.
+      - { from: retriever, to: vector_db, arrow: triangle, routing: orthogonal, stroke: { color: "#ECFDF5", width: 1.2, dash: "3 5" } }
 
 annotations:
   - anchor: embedder

@@ -1,8 +1,9 @@
 # identity-flow — monochrome film-grain editorial style: how human
 # identities delegate to AI agents which consume machine identities.
 # Three near-black grain-textured objects on a bare white canvas,
-# joined by hairline connectors carrying pill labels; bold typography
-# lives in screen space, NOT on the objects. The style proves grain /
+# arranged on a pure iso row so the pill-labelled connectors are
+# SINGLE on-axis segments (always flush with the 2.5D grid); bold
+# typography lives in screen space, NOT on the objects. The style proves grain /
 # typography-first composition — the "print ad" register, the polar
 # opposite of the neon dark-mode scenes. Zero coordinates.
 
@@ -19,8 +20,16 @@ theme:
   stroke:
     color: "#111114"
     width: 1.2
+  # Monochrome register, but THREE distinct tonal steps — the objects
+  # must never read as one mass: silver / ink (hero) / slate.
   presets:
-    inkblock:
+    silver:
+      palette: { top: "#F2F2F5", left: "#9A9AA4", right: "#C6C6CE" }
+      stroke: { color: "#3F3F46", width: 1 }
+      effects:
+        grain: { intensity: 0.4, scale: 0.8 }
+        dropShadow: { dx: 0, dy: 10, blur: 18, color: "rgba(17,17,20,0.14)" }
+    ink:
       palette:
         top: "#2C2C33"
         left: "#0B0B0E"
@@ -31,7 +40,13 @@ theme:
       stroke: { color: "#000000", width: 1 }
       effects:
         grain: { intensity: 0.45, scale: 0.8 }
-        dropShadow: { dx: 0, dy: 10, blur: 18, color: "rgba(17,17,20,0.18)" }
+        dropShadow: { dx: 0, dy: 12, blur: 20, color: "rgba(17,17,20,0.22)" }
+    slate:
+      palette: { top: "#9C9CA8", left: "#4A4A54", right: "#6E6E7A" }
+      stroke: { color: "#26262D", width: 1 }
+      effects:
+        grain: { intensity: 0.4, scale: 0.8 }
+        dropShadow: { dx: 0, dy: 10, blur: 18, color: "rgba(17,17,20,0.16)" }
 
 nodes:
   scene:
@@ -41,52 +56,27 @@ nodes:
         shape: cylinder
         geom: { w: 150, d: 150, h: 64 }
         label: "Human Identities"
-        preset: inkblock
+        preset: silver
       - id: agents
         shape: rectangle
-        place: { rightOf: humans, behind: humans, gapX: 2.2, gapY: 2.45 }   # Δx = −Δy → screen-horizontal
+        place: { rightOf: humans, gap: 5 }
         geom: { w: 140, d: 140, h: 96 }
         label: "AI Agents"
-        preset: inkblock
+        preset: ink
         icon: "iso://glyph/agent/light"
         style:
           effects: { cornerRadius: 18 }
       - id: machines
         shape: rectangle
-        place: { rightOf: agents, behind: agents, gapX: 2.2, gapY: 2.45 }
+        place: { rightOf: agents, gap: 5 }
         geom: { w: 170, d: 130, h: 52 }
         label: "Non-Human Identities"
-        preset: inkblock
+        preset: slate
         icon: "iso://glyph/key/light"
         style:
           effects: { cornerRadius: 26 }
 
     connectors:
-      - { from: humans.right-mid, to: agents.left-mid,   stroke: { color: "#111114", width: 1.2 }, arrow: triangle, label: "Delegate to" }
-      - { from: agents.right-mid, to: machines.left-mid, stroke: { color: "#111114", width: 1.2 }, arrow: triangle, label: "Consume" }
+      - { from: humans.right-mid, to: agents.left-mid,   routing: orthogonal, stroke: { color: "#111114", width: 1.2 }, arrow: triangle, label: "Delegate to" }
+      - { from: agents.right-mid, to: machines.left-mid, routing: orthogonal, stroke: { color: "#111114", width: 1.2 }, arrow: triangle, label: "Consume" }
 
-annotations:
-  - anchor: humans
-    side: bottom
-    distance: 150
-    text: "MANAGED"
-    bg: "#F4F4F5"
-    border: "#F4F4F5"
-    color: "#52525B"
-    fontSize: 12
-  - anchor: agents
-    side: bottom
-    distance: 170
-    text: "MULTIPLYING"
-    bg: "#F4F4F5"
-    border: "#F4F4F5"
-    color: "#52525B"
-    fontSize: 12
-  - anchor: machines
-    side: bottom
-    distance: 150
-    text: "100X MORE THAN HUMANS"
-    bg: "#F4F4F5"
-    border: "#F4F4F5"
-    color: "#52525B"
-    fontSize: 12
