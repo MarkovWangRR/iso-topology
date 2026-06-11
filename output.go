@@ -145,7 +145,10 @@ label.auto input{accent-color:var(--accent);}
 .filetab{display:flex;align-items:center;gap:8px;padding:8px 16px;border-bottom:1px solid var(--border);
   background:var(--code-bg);font:11px ui-monospace,Menlo,monospace;color:var(--muted);}
 .filetab b{color:#334155;font-weight:600;flex:none;}
-.filetab .path{direction:rtl;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;flex:0 1 auto;margin-right:-6px;}
+.filetab .path{overflow:hidden;white-space:nowrap;min-width:0;flex:0 1 auto;margin-right:-6px;}
+.filetab .iconbtn{border:0;background:transparent;padding:3px;min-width:0;display:flex;align-items:center;
+  color:#9AA4B5;border-radius:4px;cursor:pointer;flex:none;}
+.filetab .iconbtn:hover{background:var(--accent-soft);color:var(--accent-deep);}
 .filetab .dot{width:7px;height:7px;border-radius:50%;border:1.5px solid #C2C9D6;background:transparent;flex:none;}
 .filetab .dot.on{border-color:#F59E0B;background:#F59E0B;}
 .editor{flex:1;min-height:0;position:relative;font:12.5px/1.6 ui-monospace,Menlo,Consolas,monospace;}
@@ -235,7 +238,7 @@ svg g[data-part-id].hi{filter:drop-shadow(0 0 3px rgba(16,174,185,.85));}
       <button id="copybtn" onclick="copySrc()" title="copy the YAML to the clipboard">Copy</button>
       <button id="dl" onclick="downloadCopy()" disabled title="download the edited YAML as a new file">Download</button>
     </div>
-    <div class="filetab"><span class="dot" id="dirty" title="unsaved edits stay in this page; the file on disk is never written"></span><span class="path" title="{{DIR}}{{FILE}}">&lrm;{{DIR}}&lrm;</span><b>{{FILE}}</b><span class="spacer" style="flex:1"></span><a id="discard" hidden onclick="discardDraft()">revert</a></div>
+    <div class="filetab"><span class="dot" id="dirty" title="unsaved edits stay in this page; the file on disk is never written"></span><span class="path" id="fpath"></span><b>{{FILE}}</b><button class="iconbtn" id="cppath" onclick="copyPath()" title="copy full path"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button><span class="spacer" style="flex:1"></span><a id="discard" hidden onclick="discardDraft()">revert</a></div>
     <div class="editor">
       <div class="hl" id="hl"></div>
       <div class="gutter" id="gut"></div>
@@ -413,6 +416,34 @@ srcEl.addEventListener('keydown',e=>{
   }
 });
 
+/* ── path display: middle-truncate by segment to fit ───────────── */
+const fpathEl=document.getElementById('fpath');
+function renderPath(){
+  const segs=PATH.split('/').filter(Boolean);
+  segs.pop(); // basename is rendered separately in bold
+  fpathEl.title=PATH;
+  const set=k=>{
+    if(k>=segs.length){fpathEl.textContent='/'+segs.map(x=>x+'/').join('');return;}
+    if(k<=0){fpathEl.textContent='…/';return;}
+    const nt=Math.ceil(k/2), nh=k-nt;
+    const head=segs.slice(0,nh).map(x=>x+'/').join('');
+    const tail=segs.slice(-nt).map(x=>x+'/').join('');
+    fpathEl.textContent=(nh>0?'/'+head:'')+'…/'+tail;
+  };
+  let k=segs.length;
+  set(k);
+  while(k>0 && fpathEl.scrollWidth>fpathEl.clientWidth){k--;set(k);}
+}
+window.addEventListener('resize',renderPath);
+async function copyPath(){
+  const b=document.getElementById('cppath'), keep=b.innerHTML;
+  try{
+    await navigator.clipboard.writeText(PATH);
+    b.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+    setTimeout(()=>{b.innerHTML=keep;},1200);
+  }catch(_){}
+}
+
 /* ── export the CURRENT render (incl. unsaved edits) ───────────── */
 function currentSVG(){const el=zoomer.querySelector('svg');return el?el.outerHTML:'';}
 function exportName(ext){
@@ -459,16 +490,12 @@ try{
   const d=localStorage.getItem(DRAFTKEY);
   if(d&&d!==ORIGINAL){srcEl.value=d;setDirty(true);}
 }catch(_){}
-buildMap(); paint(null); wireHover();
+buildMap(); paint(null); wireHover(); renderPath();
 probe().then(()=>{if(serverOK&&dirty)rerender();});
 if(location.protocol.startsWith('http')) setInterval(probe,5000);
 </script>
 </body></html>`
 	base := filepath.Base(sourceFilename)
-	dir := ""
-	if d := filepath.Dir(sourceFilename); d != "." {
-		dir = d + "/"
-	}
 	r := strings.NewReplacer(
 		"{{LANG}}", html.EscapeString(sourceLang),
 		"{{SVG}}", svg,
@@ -476,7 +503,6 @@ if(location.protocol.startsWith('http')) setInterval(probe,5000);
 		"{{LANGQ}}", fmt.Sprintf("%q", sourceLang),
 		"{{PATHQ}}", fmt.Sprintf("%q", sourceFilename),
 		"{{FILE}}", html.EscapeString(base),
-		"{{DIR}}", html.EscapeString(dir),
 	)
 	return r.Replace(tpl)
 }

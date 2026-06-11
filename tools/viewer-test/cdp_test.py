@@ -17,6 +17,10 @@ import json, subprocess, time, urllib.request, websocket, tempfile, sys, os
 
 REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 os.chdir(REPO)
+# A crashed previous run leaves its serve orphaned on the port — and the
+# next run would silently test that stale binary's page. Clear it first.
+subprocess.run(["pkill","-f","isotopo-viewer-test"], capture_output=True)
+time.sleep(0.5)
 subprocess.run(["go","build","-o","/tmp/isotopo-viewer-test","./cmd/isotopo"], check=True)
 serve = subprocess.Popen(["/tmp/isotopo-viewer-test","serve","samples/topology/ai-platform/input.yaml"],
     env={**os.environ,"ISOTOPO_PORT":"8733"}, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -44,7 +48,10 @@ def ev(expr, timeout=20):
 
 results=[]
 def check(name, val, expect=True):
-    ok = (val == expect) if not callable(expect) else expect(val)
+    try:
+        ok = (val == expect) if not callable(expect) else expect(val)
+    except Exception:
+        ok = False
     results.append((name, ok, val))
 
 time.sleep(1.5)  # let probe() finish
@@ -120,6 +127,16 @@ check("export-edited-svg", ev("""
   editedName: exportName('svg').endsWith('.edited.svg'),
   pngName: exportName('png').endsWith('.edited.png')});})()
 """), lambda v: json.loads(v)=={"capturesEdit":True,"editedName":True,"pngName":True})
+
+# T7c long path is middle-truncated, full path in tooltip, copy button present
+check("path-display", ev("""
+(()=>{const p=document.getElementById('fpath');
+return JSON.stringify({
+  truncated: p.textContent.includes('\u2026'),
+  endsSlash: p.textContent.endsWith('/'),
+  fullInTitle: p.title===PATH && PATH.startsWith('/'),
+  copyBtn: !!document.getElementById('cppath')});})()
+"""), lambda v: json.loads(v)=={"truncated":True,"endsSlash":True,"fullInTitle":True,"copyBtn":True})
 
 # T8 Tab inserts indentation instead of moving focus
 check("tab-indent", ev("""
