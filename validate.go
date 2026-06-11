@@ -2,6 +2,7 @@ package isotopo
 
 import (
 	"fmt"
+	"github.com/MarkovWangRR/iso-topology/iso25d"
 	"sort"
 	"strings"
 )
@@ -170,6 +171,35 @@ func Validate(doc *Document) []Issue {
 			}
 		}
 		walkPresets(n.Parts, "nodes."+nodeID)
+	}
+
+	// v2.9 — icon URIs must resolve: an unknown iso://… icon renders
+	// as a silently-missing image, which is worse than an error.
+	checkIcon := func(icon, path string) {
+		if icon == "" || iso25d.KnownIsoIconURI(icon) {
+			return
+		}
+		issues = append(issues, Issue{
+			Severity: SeverityError,
+			Path:     path + ".icon",
+			Message:  fmt.Sprintf("unknown built-in icon %q", icon),
+			Suggest:  nearest(icon, iso25d.IconNames()),
+		})
+	}
+	for nodeID, n := range doc.Nodes {
+		checkIcon(n.Icon, "nodes."+nodeID)
+		var walkIcons func(parts []*CompositePart, prefix string)
+		walkIcons = func(parts []*CompositePart, prefix string) {
+			for i, p := range parts {
+				if p == nil {
+					continue
+				}
+				pp := fmt.Sprintf("%s.parts[%d]", prefix, i)
+				checkIcon(p.Icon, pp)
+				walkIcons(p.Parts, pp)
+			}
+		}
+		walkIcons(n.Parts, "nodes."+nodeID)
 	}
 
 	// v2.2 — layout/place dry run (dangling refs, cycles, conflicting

@@ -218,14 +218,11 @@ Generated monogram fallbacks for marks that are not vendored.
 
 | | Name | URI | Description |
 |---|---|---|---|
-| <img src="../assets/icons/brand-aws.svg" width="22"> | `aws` | `iso://brand/aws` | letter badge "AW" in brand color #FF9900 (mark not vendorable — e.g. removed from Simple Icons at the trademark holder's request) |
-| <img src="../assets/icons/brand-azure.svg" width="22"> | `azure` | `iso://brand/azure` | letter badge "Az" in brand color #0078D4 (mark not vendorable — e.g. removed from Simple Icons at the trademark holder's request) |
 | <img src="../assets/icons/brand-docker.svg" width="22"> | `docker` | `iso://brand/docker` | real Docker logo in brand color #2496ED (alias of iso://si/docker) |
 | <img src="../assets/icons/brand-gcp.svg" width="22"> | `gcp` | `iso://brand/gcp` | real Google Cloud logo in brand color #4285F4 (alias of iso://si/googlecloud) |
 | <img src="../assets/icons/brand-github.svg" width="22"> | `github` | `iso://brand/github` | real GitHub logo in brand color #181717 (alias of iso://si/github) |
 | <img src="../assets/icons/brand-hadoop.svg" width="22"> | `hadoop` | `iso://brand/hadoop` | real Apache Hadoop logo in brand color #65B832 (alias of iso://si/apachehadoop) |
 | <img src="../assets/icons/brand-hive.svg" width="22"> | `hive` | `iso://brand/hive` | real Apache Hive logo in brand color #D4B106 (alias of iso://si/apachehive) |
-| <img src="../assets/icons/brand-iceberg.svg" width="22"> | `iceberg` | `iso://brand/iceberg` | letter badge "I" in brand color #2486C0 (mark not vendorable — e.g. removed from Simple Icons at the trademark holder's request) |
 | <img src="../assets/icons/brand-kafka.svg" width="22"> | `kafka` | `iso://brand/kafka` | real Apache Kafka logo in brand color #231F20 (alias of iso://si/apachekafka) |
 | <img src="../assets/icons/brand-kubernetes.svg" width="22"> | `kubernetes` | `iso://brand/kubernetes` | real Kubernetes logo in brand color #326CE5 (alias of iso://si/kubernetes) |
 | <img src="../assets/icons/brand-mongo.svg" width="22"> | `mongo` | `iso://brand/mongo` | real MongoDB logo in brand color #4FAA41 (alias of iso://si/mongodb) |
@@ -237,7 +234,6 @@ Generated monogram fallbacks for marks that are not vendored.
 | <img src="../assets/icons/brand-redis.svg" width="22"> | `redis` | `iso://brand/redis` | real Redis logo in brand color #DC382D (alias of iso://si/redis) |
 | <img src="../assets/icons/brand-rolldown.svg" width="22"> | `rolldown` | `iso://brand/rolldown` | real Rolldown logo in brand color #C2410C (alias of iso://si/rolldown) |
 | <img src="../assets/icons/brand-spark.svg" width="22"> | `spark` | `iso://brand/spark` | real Apache Spark logo in brand color #E25A2C (alias of iso://si/apachespark) |
-| <img src="../assets/icons/brand-starrocks.svg" width="22"> | `starrocks` | `iso://brand/starrocks` | letter badge "⚡" in brand color #F59E0B (mark not vendorable — e.g. removed from Simple Icons at the trademark holder's request) |
 | <img src="../assets/icons/brand-vite.svg" width="22"> | `vite` | `iso://brand/vite` | real Vite logo in brand color #646CFF (alias of iso://si/vite) |
 
 ## Adding an icon

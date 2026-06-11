@@ -22,15 +22,18 @@ type brandBadge struct {
 	color string // accent — used for both stroke and glyph
 }
 
-// brandBadges keeps the table tiny and editable. Add an entry → it's
-// immediately addressable via iso://brand/<key> from any DSL Icon field.
+// brandBadges keeps the table tiny and editable. Every remaining
+// entry has a brandToSI alias, so iso://brand/<key> always renders
+// the REAL vendored logo tinted in this curated color; the letter
+// badge is only the emergency fallback if the vendored set shrinks.
+// Marks not vendorable upstream (AWS, Azure, …) are intentionally
+// absent — an unknown iso:// icon is a validation error.
 var brandBadges = map[string]brandBadge{
 	"spark":      {"S", "#E25A2C"},
 	"hadoop":     {"H", "#65B832"},
 	"mysql":      {"M", "#00618A"},
 	"postgresql": {"P", "#336791"},
 	"postgres":   {"P", "#336791"},
-	"iceberg":    {"I", "#2486C0"},
 	"hive":       {"Hv", "#D4B106"},
 	"pulsar":     {"P", "#D63341"},
 	"kafka":      {"K", "#231F20"},
@@ -39,10 +42,7 @@ var brandBadges = map[string]brandBadge{
 	"kubernetes": {"K8", "#326CE5"},
 	"docker":     {"D", "#2496ED"},
 	"github":     {"G", "#181717"},
-	"aws":        {"AW", "#FF9900"},
 	"gcp":        {"GC", "#4285F4"},
-	"azure":      {"Az", "#0078D4"},
-	"starrocks":  {"⚡", "#F59E0B"},
 	"vite":       {"V", "#646CFF"},
 	"rolldown":   {"R", "#C2410C"},
 	"oxc":        {"OX", "#6B7280"},
@@ -159,7 +159,7 @@ func ResolveBrandIcon(uri string) string {
 		}
 		color := "#1F2937" // ink — for light top faces
 		switch {
-		case variant == "" :
+		case variant == "":
 		case strings.EqualFold(variant, "light"):
 			color = "#FAFAFA"
 		case isHexColor(variant):
@@ -328,4 +328,31 @@ func brandSVG(b brandBadge) string {
 			`</svg>`,
 		b.color, b.color, b.glyph,
 	)
+}
+
+// KnownIsoIconURI reports whether an "iso://…" icon URI resolves to a
+// built-in icon. Non-iso URIs (https://, data:, "") return true —
+// they're passthrough, not catalog lookups.
+func KnownIsoIconURI(uri string) bool {
+	if !strings.HasPrefix(uri, "iso://") {
+		return true
+	}
+	return ResolveBrandIcon(uri) != uri
+}
+
+// IconNames returns every addressable icon name (glyph, si, brand) —
+// used by validation to suggest the nearest name for a typo.
+func IconNames() []string {
+	var out []string
+	for n := range glyphIcons {
+		out = append(out, "iso://glyph/"+n)
+	}
+	for n := range siIcons {
+		out = append(out, "iso://si/"+n)
+	}
+	for n := range brandBadges {
+		out = append(out, "iso://brand/"+n)
+	}
+	sort.Strings(out)
+	return out
 }
