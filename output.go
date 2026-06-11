@@ -78,81 +78,233 @@ func PartIDs(doc *Document) []string {
 // <textarea> with copy / download buttons so the user can iterate on
 // the topology without losing fidelity to what produced this SVG.
 func TopologyHTML(svg, sourceText, sourceLang, sourceFilename string) string {
-	bg := "#FAFAFB"
-	var sb strings.Builder
-	fmt.Fprintf(&sb, `<!doctype html>
+	tpl := `<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <title>isotopo · topology</title>
 <style>
-:root{--bg:%s;--fg:#1F2937;--muted:#6B7280;--border:rgba(127,127,127,0.22);--code:#F4F5F7;}
+:root{--bg:#FAFAFB;--fg:#1F2937;--muted:#6B7280;--border:rgba(127,127,127,0.22);--code:#F4F5F7;--accent:#6366F1;}
 *{box-sizing:border-box;}
-body{margin:0;padding:32px;background:var(--bg);color:var(--fg);font-family:Inter,"Helvetica Neue",Arial,sans-serif;}
-h1{margin:0 0 4px;font-size:18px;}
-h2{margin:32px 0 10px;font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);}
-.grid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:24px;}
-.panel{border:1px solid var(--border);border-radius:10px;background:rgba(255,255,255,0.6);}
-.stage{display:flex;align-items:center;justify-content:center;padding:16px;min-height:320px;}
-.stage svg{max-width:100%%;height:auto;}
-pre,textarea{font:12.5px/1.55 ui-monospace,Menlo,Consolas,monospace;background:var(--code);border:0;border-radius:8px;padding:14px;width:100%%;}
-textarea{min-height:280px;resize:vertical;color:var(--fg);}
-.row{display:flex;gap:8px;align-items:center;margin:8px 0;}
+html,body{height:100%;}
+body{margin:0;display:flex;flex-direction:column;background:var(--bg);color:var(--fg);font-family:Inter,"Helvetica Neue",Arial,sans-serif;}
+header{display:flex;align-items:center;gap:10px;padding:10px 18px;border-bottom:1px solid var(--border);}
+header h1{margin:0;font-size:15px;font-weight:650;}
+header .tag{padding:1px 7px;border:1px solid var(--border);border-radius:4px;font:11px ui-monospace,Menlo,monospace;color:var(--muted);}
+header .spacer{flex:1;}
+#live{font:11px ui-monospace,Menlo,monospace;color:var(--muted);}
+#live.on{color:#059669;}
+.grid{flex:1;min-height:0;display:flex;gap:0;}
+.stage-wrap{flex:1.6;min-width:0;position:relative;overflow:hidden;border-right:1px solid var(--border);background:
+  conic-gradient(from 90deg at 1px 1px,transparent 90deg,rgba(127,127,127,.06) 0) 0 0/24px 24px;}
+#viewport{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;cursor:grab;}
+#viewport.panning{cursor:grabbing;}
+#zoomer{transform-origin:0 0;}
+#zoomer svg{display:block;max-width:none;}
+.zoomctl{position:absolute;right:14px;bottom:14px;display:flex;gap:6px;}
+.zoomctl button{width:30px;}
+.side{flex:1;min-width:340px;display:flex;flex-direction:column;min-height:0;}
+.toolbar{display:flex;gap:8px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--border);flex-wrap:wrap;}
 button{font:12px ui-monospace,Menlo,monospace;border:1px solid var(--border);background:white;padding:6px 10px;border-radius:6px;cursor:pointer;}
 button:hover{background:#F1F3F8;}
-small{color:var(--muted);}
-.tag{display:inline-block;padding:1px 6px;border:1px solid var(--border);border-radius:4px;font:11px ui-monospace,Menlo,monospace;color:var(--muted);}
+button:disabled{opacity:.45;cursor:default;}
+label.auto{font:11px ui-monospace,Menlo,monospace;color:var(--muted);display:flex;gap:4px;align-items:center;}
+.editor{flex:1;min-height:0;position:relative;font:12.5px/1.55 ui-monospace,Menlo,Consolas,monospace;}
+.editor .hl,.editor textarea{position:absolute;inset:0;margin:0;padding:14px;white-space:pre;overflow:auto;font:inherit;tab-size:2;}
+.editor .hl{color:transparent;background:var(--code);pointer-events:none;}
+.editor .hl .ln{min-height:1.55em;}
+.editor .hl .hit{background:rgba(99,102,241,0.18);box-shadow:-3px 0 0 var(--accent);}
+.editor textarea{background:transparent;border:0;resize:none;color:var(--fg);outline:none;width:100%;height:100%;}
+#issues{max-height:130px;overflow:auto;border-top:1px solid var(--border);font:11.5px/1.5 ui-monospace,Menlo,monospace;padding:8px 12px;display:none;}
+#issues.show{display:block;}
+#issues .err{color:#DC2626;}
+#issues .warn{color:#D97706;}
+footer{padding:7px 18px;border-top:1px solid var(--border);font-size:11.5px;color:var(--muted);}
+footer a{color:var(--muted);}
+svg g[data-part-id]{transition:filter .12s;}
+svg g[data-part-id].hi{filter:drop-shadow(0 0 5px rgba(99,102,241,.85));}
 </style></head><body>
-<h1>topology <span class="tag">%s</span></h1>
-<small>standalone SVG · embeddable snippet · editable DSL source</small>
-
-<div class="grid" style="margin-top:18px;">
-  <div class="panel stage" id="stage">%s</div>
-  <div>
-    <h2>embed</h2>
-    <pre id="embed">&lt;img src="./topology.svg" alt="topology"/&gt;</pre>
-    <div class="row">
-      <button onclick="copy('embed')">copy &lt;img&gt;</button>
-      <button onclick="window.open('./topology.svg','_blank')">open svg</button>
-    </div>
-
-    <h2>source · %s</h2>
-    <textarea id="src" spellcheck="false">%s</textarea>
-    <div class="row">
-      <button onclick="copy('src')">copy</button>
-      <button onclick="download()">download %s</button>
-      <small>edit, save as <code>%s</code>, then re-run <code>isotopo render</code>.</small>
+<header>
+  <svg width="26" height="26" viewBox="0 0 32 32" aria-label="iso-topology">
+    <g stroke-linejoin="round">
+      <polygon points="16,4 27,10 16,16 5,10" fill="#7C8CF8"/>
+      <polygon points="5,10 16,16 16,29 5,23" fill="#4F46E5"/>
+      <polygon points="27,10 16,16 16,29 27,23" fill="#6366F1"/>
+      <polygon points="16,10 21,13 16,16 11,13" fill="#EEF2FF"/>
+    </g>
+  </svg>
+  <h1>iso-topology</h1><span class="tag">{{LANG}}</span>
+  <span class="spacer"></span>
+  <span id="live">checking renderer…</span>
+</header>
+<div class="grid">
+  <div class="stage-wrap">
+    <div id="viewport"><div id="zoomer">{{SVG}}</div></div>
+    <div class="zoomctl">
+      <button onclick="zoomBy(1.25)">+</button>
+      <button onclick="zoomBy(0.8)">−</button>
+      <button onclick="resetView()" title="reset">⤾</button>
     </div>
   </div>
+  <div class="side">
+    <div class="toolbar">
+      <button id="render" onclick="rerender()" title="Cmd/Ctrl+Enter">re-render</button>
+      <label class="auto"><input type="checkbox" id="auto" checked>auto</label>
+      <span class="spacer" style="flex:1"></span>
+      <button onclick="copySrc()">copy</button>
+      <button onclick="downloadCopy()">save edited copy</button>
+    </div>
+    <div class="editor">
+      <div class="hl" id="hl"></div>
+      <textarea id="src" spellcheck="false">{{SRC}}</textarea>
+    </div>
+    <div id="issues"></div>
+  </div>
 </div>
-
-<h2>nodes</h2>
-<small>per-part standalone SVGs are written under <code>./nodes/</code> alongside their own embed pages.</small>
-<p><a href="./nodes/_index.html">→ browse nodes</a></p>
-
+<footer>
+  hover a node to locate its source · scroll to zoom, drag to pan, double-click to reset ·
+  edits live in this page (a copy — the original file is never touched) ·
+  <a href="./topology.svg" target="_blank">open svg</a> · <a href="./nodes/_index.html">browse nodes</a>
+</footer>
 <script>
-function copy(id){
-  const el=document.getElementById(id);
-  const text=el.value!==undefined?el.value:el.innerText;
-  navigator.clipboard.writeText(text);
+"use strict";
+const LANG={{LANGQ}}, FILENAME={{FILEQ}};
+const srcEl=document.getElementById('src'), hlEl=document.getElementById('hl');
+const zoomer=document.getElementById('zoomer'), viewport=document.getElementById('viewport');
+
+/* ── editor backdrop + SVG↔source hover map ────────────────────── */
+let lineMap={};
+function esc(t){return t.replace(/&/g,'&amp;').replace(/</g,'&lt;');}
+function buildMap(){
+  const lines=srcEl.value.split('\n'); lineMap={};
+  const idRe=/(?:^|[\s{])id:\s*"?([A-Za-z0-9_~-]+)/;
+  for(let i=0;i<lines.length;i++){
+    const m=lines[i].match(idRe); if(!m) continue;
+    let start=i;
+    if(!/^\s*-/.test(lines[i])){
+      for(let k=i-1;k>=0;k--){
+        if(/^\s*-\s/.test(lines[k])){start=k;break;}
+        if(lines[k].trim() && lines[k].search(/\S/)===0) break;
+      }
+    }
+    const ind=lines[start].search(/\S/);
+    let end=lines.length-1;
+    for(let k=start+1;k<lines.length;k++){
+      const t=lines[k]; if(!t.trim()) continue;
+      const ki=t.search(/\S/);
+      if(ki<ind || (ki===ind && /^\s*-\s/.test(t)) || ki===0){end=k-1;break;}
+    }
+    if(!(m[1] in lineMap)) lineMap[m[1]]=[start,end];
+  }
 }
-function download(){
-  const blob=new Blob([document.getElementById('src').value],{type:'text/plain'});
+function paint(range){
+  const lines=srcEl.value.split('\n');
+  hlEl.innerHTML=lines.map((l,i)=>{
+    const hit=range&&i>=range[0]&&i<=range[1];
+    return '<div class="ln'+(hit?' hit':'')+'">'+esc(l||' ')+'</div>';
+  }).join('');
+  hlEl.scrollTop=srcEl.scrollTop; hlEl.scrollLeft=srcEl.scrollLeft;
+}
+srcEl.addEventListener('scroll',()=>{hlEl.scrollTop=srcEl.scrollTop;hlEl.scrollLeft=srcEl.scrollLeft;});
+function wireHover(){
+  zoomer.querySelectorAll('g[data-part-id]').forEach(g=>{
+    g.addEventListener('mouseenter',()=>{
+      g.classList.add('hi');
+      let id=g.getAttribute('data-part-id');
+      if(!(id in lineMap)) id=id.replace(/~\d+$/,'');
+      const r=lineMap[id]; if(!r) return;
+      paint(r);
+      const lh=srcEl.scrollHeight/srcEl.value.split('\n').length;
+      srcEl.scrollTop=Math.max(0,r[0]*lh-60);
+      hlEl.scrollTop=srcEl.scrollTop;
+    });
+    g.addEventListener('mouseleave',()=>{g.classList.remove('hi');paint(null);});
+  });
+}
+
+/* ── zoom & pan ─────────────────────────────────────────────────── */
+let scale=1,panX=0,panY=0;
+function apply(){zoomer.style.transform='translate('+panX+'px,'+panY+'px) scale('+scale+')';}
+function zoomBy(f){scale=Math.min(8,Math.max(0.2,scale*f));apply();}
+function resetView(){scale=1;panX=0;panY=0;apply();}
+viewport.addEventListener('wheel',e=>{
+  e.preventDefault();
+  const f=e.deltaY<0?1.1:0.9, r=viewport.getBoundingClientRect();
+  const mx=e.clientX-r.left, my=e.clientY-r.top;
+  panX=mx-(mx-panX)*f; panY=my-(my-panY)*f;
+  scale=Math.min(8,Math.max(0.2,scale*f)); apply();
+},{passive:false});
+let drag=null;
+viewport.addEventListener('mousedown',e=>{drag={x:e.clientX-panX,y:e.clientY-panY};viewport.classList.add('panning');});
+window.addEventListener('mousemove',e=>{if(!drag)return;panX=e.clientX-drag.x;panY=e.clientY-drag.y;apply();});
+window.addEventListener('mouseup',()=>{drag=null;viewport.classList.remove('panning');});
+viewport.addEventListener('dblclick',resetView);
+
+/* ── live re-render against isotopo serve ───────────────────────── */
+const liveEl=document.getElementById('live'), renderBtn=document.getElementById('render');
+let serverOK=false, timer=null;
+async function probe(){
+  if(!location.protocol.startsWith('http')){
+    liveEl.textContent='static file — run "isotopo serve <input>" for live re-render';
+    renderBtn.disabled=true; return;
+  }
+  try{
+    const r=await fetch('/api/ping');
+    serverOK=r.ok;
+  }catch(_){serverOK=false;}
+  liveEl.textContent=serverOK?'live · renderer connected':'renderer unreachable';
+  liveEl.classList.toggle('on',serverOK);
+  renderBtn.disabled=!serverOK;
+}
+async function rerender(){
+  if(!serverOK) return;
+  renderBtn.textContent='rendering…';
+  try{
+    const r=await fetch('/api/render?format='+encodeURIComponent(LANG),{method:'POST',body:srcEl.value});
+    const data=await r.json();
+    showIssues(data.issues||[]);
+    if(data.svg){
+      zoomer.innerHTML=data.svg;
+      buildMap(); paint(null); wireHover();
+    }
+  }catch(e){showIssues([{severity:'error',path:'$',message:String(e)}]);}
+  renderBtn.textContent='re-render';
+}
+function showIssues(list){
+  const el=document.getElementById('issues');
+  if(!list.length){el.classList.remove('show');el.innerHTML='';return;}
+  el.classList.add('show');
+  el.innerHTML=list.map(i=>'<div class="'+(i.severity==='error'?'err':'warn')+'">'+
+    esc(i.severity+' '+(i.path||'')+' — '+i.message+(i.suggest?' (did you mean '+i.suggest+'?)':''))+'</div>').join('');
+}
+srcEl.addEventListener('input',()=>{
+  buildMap(); paint(null);
+  if(document.getElementById('auto').checked && serverOK){
+    clearTimeout(timer); timer=setTimeout(rerender,600);
+  }
+});
+window.addEventListener('keydown',e=>{
+  if((e.metaKey||e.ctrlKey)&&e.key==='Enter'){e.preventDefault();rerender();}
+});
+
+/* ── misc ───────────────────────────────────────────────────────── */
+function copySrc(){navigator.clipboard.writeText(srcEl.value);}
+function downloadCopy(){
+  const blob=new Blob([srcEl.value],{type:'text/plain'});
   const a=document.createElement('a');
   a.href=URL.createObjectURL(blob);
-  a.download=%q;
+  a.download=FILENAME.replace(/(\.[a-z0-9]+)$/i,'.edited$1');
   a.click();
 }
+buildMap(); paint(null); wireHover(); probe();
 </script>
-</body></html>`,
-		bg,
-		html.EscapeString(sourceLang),
-		svg,
-		html.EscapeString(sourceLang),
-		html.EscapeString(sourceText),
-		html.EscapeString(sourceFilename),
-		html.EscapeString(sourceFilename),
-		sourceFilename,
+</body></html>`
+	r := strings.NewReplacer(
+		"{{LANG}}", html.EscapeString(sourceLang),
+		"{{SVG}}", svg,
+		"{{SRC}}", html.EscapeString(sourceText),
+		"{{LANGQ}}", fmt.Sprintf("%q", sourceLang),
+		"{{FILEQ}}", fmt.Sprintf("%q", sourceFilename),
 	)
-	return sb.String()
+	return r.Replace(tpl)
 }
 
 // NodeHTML wraps a single per-part SVG with its embed snippet and DSL

@@ -23,6 +23,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -59,6 +60,16 @@ func main() {
 		}
 	case "capabilities":
 		if err := emitCapabilities(os.Stdout); err != nil {
+			fmt.Fprintln(os.Stderr, "error:", err)
+			os.Exit(1)
+		}
+	case "serve":
+		args, err := parseFlags(os.Args[2:])
+		if err != nil || len(args) != 1 {
+			usage()
+			os.Exit(2)
+		}
+		if err := serveFile(args[0]); err != nil {
 			fmt.Fprintln(os.Stderr, "error:", err)
 			os.Exit(1)
 		}
@@ -185,7 +196,11 @@ subcommands:
                  before generating DSL
   validate <in>  parse + structural validate the input file. Emits JSON
                  of issues with paths and "did you mean" suggestions.
-                 exit: 0 = clean, 2 = warnings only, 3 = errors`)
+                 exit: 0 = clean, 2 = warnings only, 3 = errors
+  serve <in>     local live-preview server (default :8731, override with
+                 ISOTOPO_PORT): the interactive topology.html with hover
+                 source-mapping, zoom/pan, and edit-to-re-render against
+                 an in-browser COPY — the input file is never written`)
 }
 
 func renderFile(in, outDir string) error {
@@ -306,4 +321,84 @@ func writeFile(path string, data []byte) error {
 		return fmt.Errorf("write %s: %w", path, err)
 	}
 	return nil
+}
+
+// serveFile starts a local preview server for one input file: GET /
+// renders the CURRENT file content into the interactive topology.html,
+// and POST /api/render renders whatever source the page's editor holds
+// — a copy living in the browser; the original file is never written.
+func serveFile(in string) error {
+	if _, err := os.Stat(in); err != nil {
+		return err
+	}
+	sourceLang, sourceExt := classifyInput(in)
+
+	port := os.Getenv("ISOTOPO_PORT")
+	if port == "" {
+		port = "8731"
+	}
+
+	render := func(lang string, data []byte) (string, []isotopo.Issue, error) {
+		doc, err := loadDocument(lang, data)
+		if err != nil {
+			return "", []isotopo.Issue{{Severity: isotopo.SeverityError, Path: "$", Message: err.Error()}}, nil
+		}
+		issues := isotopo.Validate(doc)
+		for _, i := range issues {
+			if i.Severity == isotopo.SeverityError {
+				return "", issues, nil
+			}
+		}
+		return renderTopologySVG(doc), issues, nil
+	}
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /api/ping", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("ok"))
+	})
+	mux.HandleFunc("POST /api/render", func(w http.ResponseWriter, r *http.Request) {
+		body, err := io.ReadAll(io.LimitReader(r.Body, 4<<20))
+		if err != nil {
+			http.Error(w, err.Error(), 400)
+			return
+		}
+		lang := r.URL.Query().Get("format")
+		if lang == "" {
+			lang = sourceLang
+		}
+		svg, issues, err := render(lang, body)
+		if err != nil {
+			http.Error(w, err.Error(), 500)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]any{"svg": svg, "issues": issues})
+	})
+	mux.HandleFunc("GET /topology.svg", func(w http.ResponseWriter, r *http.Request) {
+		data, err := os.ReadFile(in)
+		if err != nil {
+			http.Error(w, err.Error(), 500)
+			return
+		}
+		svg, _, _ := render(sourceLang, data)
+		w.Header().Set("Content-Type", "image/svg+xml")
+		w.Write([]byte(svg))
+	})
+	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/" {
+			http.NotFound(w, r)
+			return
+		}
+		data, err := os.ReadFile(in)
+		if err != nil {
+			http.Error(w, err.Error(), 500)
+			return
+		}
+		svg, _, _ := render(sourceLang, data)
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.Write([]byte(isotopo.TopologyHTML(svg, string(data), sourceLang, "topology"+sourceExt)))
+	})
+
+	fmt.Printf("isotopo serve · %s\npreview:  http://localhost:%s\nedits in the browser are a copy — %s is never written\n", in, port, in)
+	return http.ListenAndServe("localhost:"+port, mux)
 }

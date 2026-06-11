@@ -119,7 +119,8 @@ go install github.com/MarkovWangRR/iso-topology/cmd/isotopo@latest
 # render the hero scene above
 curl -sLO https://raw.githubusercontent.com/MarkovWangRR/iso-topology/main/samples/topology/ai-platform/input.yaml
 isotopo render input.yaml ./out
-open ./out/topology.html        # SVG side-by-side with editable DSL
+open ./out/topology.html        # interactive viewer (zoom/pan + hover-to-source)
+isotopo serve input.yaml        # …or live mode: edit YAML, re-render instantly
 ```
 
 Or start from a three-line graph and let auto-layout do everything:

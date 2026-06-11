@@ -108,7 +108,8 @@ go install github.com/MarkovWangRR/iso-topology/cmd/isotopo@latest
 # 渲染上面那张 AI 平台图
 curl -sLO https://raw.githubusercontent.com/MarkovWangRR/iso-topology/main/samples/topology/ai-platform/input.yaml
 isotopo render input.yaml ./out
-open ./out/topology.html        # 左边是图，右边是可编辑的源码
+open ./out/topology.html        # 交互式预览：缩放平移、悬停定位源码
+isotopo serve input.yaml        # 或者起本地服务：边改 YAML 边看渲染
 ```
 
 也可以先用三行 d2 跑通流程，布局全自动：

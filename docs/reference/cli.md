@@ -108,6 +108,27 @@ fi
 isotopo render scene.yaml ./out
 ```
 
+## `isotopo serve` — live preview
+
+```bash
+isotopo serve scene.yaml          # default port 8731
+ISOTOPO_PORT=9000 isotopo serve scene.yaml
+```
+
+Serves the interactive viewer at `http://localhost:8731`:
+
+- the YAML editor fills the right pane; **edits are an in-browser
+  copy — the input file on disk is never written**
+- hovering a node in the SVG highlights its source block
+- scroll to zoom, drag to pan, double-click to reset
+- edits re-render automatically (debounced) or with Cmd/Ctrl+Enter;
+  validation errors show under the editor with fix suggestions
+- "save edited copy" downloads `<name>.edited.yaml`
+
+The same interactive page is written to `out/topology.html` by
+`isotopo render`; opened as a static file it keeps everything except
+live re-render (the toolbar tells you to start `isotopo serve`).
+
 ## Go library
 
 Module path: `github.com/MarkovWangRR/iso-topology`

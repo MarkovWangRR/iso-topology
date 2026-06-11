@@ -71,8 +71,10 @@ Useful vocabulary the agent understands directly:
 
 Every diagram lands in `./diagrams/<name>/`:
 
-- `topology.html` — the SVG side-by-side with its editable source;
-  this is the page you keep open while iterating
+- `topology.html` — the interactive viewer (zoom/pan, hover a node
+  to highlight its source); run `isotopo serve <input.yaml>` and the
+  same page re-renders live as the YAML is edited — against a COPY,
+  the original file is never touched
 - `topology.svg` — drop straight into docs / slides / Notion
 - `input.yaml` — the source of truth; your change requests edit this
 - `nodes/<id>.svg` — each element as a standalone sticker

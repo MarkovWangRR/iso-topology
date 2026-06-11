@@ -8,6 +8,7 @@ import (
 
 // CompositePart describes one sub-element inside a composite node.
 type CompositePart struct {
+	ID     string // v2.9 — emitted as data-part-id for SVG↔source tooling
 	Shape  string
 	Opts   ConvertOpts
 	OffWX  float64
@@ -123,8 +124,12 @@ func RenderComposite(parts []CompositePart) string {
 		// pre-shift cancels the part's internal centering so the part's
 		// local (0, 0, 0) inside the standalone SVG aligns with that
 		// translate position — no more per-shape coord mismatch.
-		fmt.Fprintf(&sb, `<g data-part="%d" transform="translate(%.2f %.2f)">%s</g>`,
-			i, r.sx+tx-r.intTx, r.sy+ty-r.intTy, namespaceSVGIDs(r.inner, fmt.Sprintf("p%d-", i)),
+		idAttr := ""
+		if parts[i].ID != "" {
+			idAttr = fmt.Sprintf(` data-part-id="%s"`, escapeAttr(parts[i].ID))
+		}
+		fmt.Fprintf(&sb, `<g data-part="%d"%s transform="translate(%.2f %.2f)">%s</g>`,
+			i, idAttr, r.sx+tx-r.intTx, r.sy+ty-r.intTy, namespaceSVGIDs(r.inner, fmt.Sprintf("p%d-", i)),
 		)
 	}
 	sb.WriteString(`</svg>`)

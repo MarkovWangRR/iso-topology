@@ -94,7 +94,7 @@ func renderComposite(n *Node, theme *Theme, canvas *Canvas, anns []*Annotation) 
 			oz += p.Offset.WZ
 		}
 
-		cp := iso25d.CompositePart{Shape: shape, Opts: opts, OffWX: ox, OffWY: oy, OffWZ: oz}
+		cp := iso25d.CompositePart{ID: p.ID, Shape: shape, Opts: opts, OffWX: ox, OffWY: oy, OffWZ: oz}
 		parts = append(parts, cp)
 
 		w, d, h := 140.0, 140.0, 80.0
