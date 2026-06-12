@@ -1,13 +1,15 @@
-# ai-platform — an AI platform core and its eight capabilities, as a
-# hub-and-spoke ring. One hero, one accent: the violet AI core sits at
-# the centre with a halo; the capabilities ring around it, every top
-# face carrying a domain glyph AND an iso-projected caption (LLM
-# gateway, vector store, GPU pool, agents, data lake, streaming,
-# warehouse, observability). Hairline spokes underneath: solid for
-# the serving path, dashed for the data path. Zero coordinates.
+# ai-platform v2 — flagship hero, reimagined with the v3.3 surface
+# pipeline. One violet AI core at the centre of a capability ring:
+# the hub top is a multi-stop radial sheen, its flanks are 3-stop
+# linear gradients, and every painted face is re-traced twice (wide
+# ink outline + thin light highlight) via style.faces. The LLM
+# gateway satellite is a hexprism — API-gateway semantics straight
+# from the prism family. Light scene, single violet accent, zero
+# hand-computed coordinates.
 
 canvas:
-  background: "#F5F6F8"
+  background: "#F6F5FA"
+  padding: 56
 
 theme:
   text:
@@ -16,48 +18,73 @@ theme:
     weight: "600"
     color: "#3F3F46"
   stroke:
-    color: "#D6D9E0"
+    color: "#D6D4E0"
     width: 1
-  # v2.5 — named design-system preset; every ring tile references it
-  # with `preset: satellite` instead of repeating the style block.
   presets:
     satellite:
-      palette: { top: "#FFFFFF", left: "#E2E4EA", right: "#EEF0F4" }
-      stroke:  { color: "#D6D9E0", width: 1 }
+      palette: { top: "#FFFFFF", left: "#E3E1EC", right: "#EEEDF4" }
+      stroke:  { color: "#D6D4E0", width: 1 }
       effects:
         cornerRadius: 12
-        dropShadow: { dx: 0, dy: 7, blur: 10, color: "rgba(63,63,70,0.14)" }
+        dropShadow: { dx: 0, dy: 7, blur: 10, color: "rgba(76,29,149,0.12)" }
 
 nodes:
   scene:
     shape: composite
-    layout: { mode: ring, gap: 2.6 }   # hub first, satellites clockwise from the back
+    layout: { mode: ring, gap: 3.1 }   # hub first, satellites clockwise from the back
     parts:
-      # ── The AI core (hero: gradient flanks, halo, soft shadow) ───
+      # ── The AI core (hero) — v3.3 faces: radial multi-stop top,
+      #    3-stop gradient flanks, double-stroke highlight retraces ──
       - id: core
         shape: rectangle
-        geom: { w: 170, d: 170, h: 24 }
-        icon: "iso://glyph/sparkles/7C5CFC"
+        geom: { w: 180, d: 180, h: 30 }
+        icon: "iso://glyph/sparkles/5B21B6"
         label: "AI Core"
         style:
-          palette:
-            top: "#FFFFFF"
-            leftGradient:  { from: "#7C3AED", to: "#4C1D95", dir: "down" }
-            rightGradient: { from: "#8B5CF6", to: "#5B21B6", dir: "down" }
-          stroke: { color: "#5B21B6", width: 1.2 }
-          text:   { color: "#4C1D95", size: 12, weight: "700" }
+          faces:
+            top:
+              fill:
+                kind: radialGradient
+                cx: 0.32
+                cy: 0.28
+                stops:
+                  - { offset: 0,    color: "#FFFFFF" }
+                  - { offset: 0.55, color: "#F2EEFE" }
+                  - { offset: 1,    color: "#E2DAFA" }
+              strokes:
+                - { color: "#5B21B6", width: 1.6 }
+                - { color: "#FFFFFF", width: 0.7, opacity: 0.95 }
+            left:
+              fill:
+                kind: linearGradient
+                angle: 90
+                stops:
+                  - { offset: 0,    color: "#7C3AED" }
+                  - { offset: 0.55, color: "#6527C9" }
+                  - { offset: 1,    color: "#4C1D95" }
+              strokes:
+                - { color: "#4C1D95", width: 1.4 }
+                - { color: "#C4B5FD", width: 0.6, opacity: 0.8 }
+            right:
+              fill:
+                kind: linearGradient
+                angle: 90
+                stops:
+                  - { offset: 0,    color: "#A78BFA" }
+                  - { offset: 0.55, color: "#8B5CF6" }
+                  - { offset: 1,    color: "#6D28D9" }
+              strokes:
+                - { color: "#5B21B6", width: 1.4 }
+                - { color: "#DDD6FE", width: 0.6, opacity: 0.8 }
+          text: { color: "#4C1D95", size: 12, weight: "700" }
           effects:
-            cornerRadius: 14
-            backglow:   { color: "#A78BFA", radius: 46, opacity: 0.4 }
-            dropShadow: { dx: 0, dy: 12, blur: 18, color: "rgba(91,33,182,0.28)" }
+            # NOTE: no cornerRadius here — the rounded-silhouette path
+            # does not yet honor style.faces (it would silently drop
+            # the gradients). Sharp corners + double strokes instead.
+            backglow:   { color: "#A78BFA", radius: 48, opacity: 0.38 }
+            dropShadow: { dx: 0, dy: 12, blur: 18, color: "rgba(91,33,182,0.26)" }
 
-      # ── Capability ring (icon + caption on every top face) ───────
-      - id: llm
-        shape: rectangle
-        geom: { w: 118, d: 118, h: 12 }
-        icon: "iso://glyph/chat"
-        label: "LLM Gateway"
-        preset: satellite
+      # ── Capability ring — quiet white tiles, one hexprism gateway ─
       - id: vector_store
         shape: rectangle
         geom: { w: 118, d: 118, h: 12 }
@@ -76,6 +103,31 @@ nodes:
         icon: "iso://glyph/agent"
         label: "Agents"
         preset: satellite
+      # front-of-ring: the LLM gateway as a hexprism (v3.2 prism
+      # family — API gateway semantics), its top re-skinned with a
+      # v3.3 faces gradient + double stroke.
+      - id: llm_gateway
+        shape: hexprism
+        geom: { w: 126, d: 126, h: 32 }
+        icon: "iso://glyph/chat/4C1D95"
+        label: "LLM Gateway"
+        style:
+          palette: { left: "#6D28D9", right: "#8B5CF6" }
+          stroke:  { color: "#4C1D95", width: 1.3 }
+          faces:
+            top:
+              fill:
+                kind: linearGradient
+                angle: 135
+                stops:
+                  - { offset: 0,   color: "#F7F4FF" }
+                  - { offset: 0.6, color: "#EDE7FD" }
+                  - { offset: 1,   color: "#DCD2F8" }
+              strokes:
+                - { color: "#4C1D95", width: 1.4 }
+                - { color: "#FFFFFF", width: 0.6, opacity: 0.9 }
+          text: { color: "#4C1D95", weight: "700" }
+
       - id: data_lake
         shape: rectangle
         geom: { w: 118, d: 118, h: 12 }
@@ -88,11 +140,11 @@ nodes:
         icon: "iso://glyph/stream"
         label: "Streaming"
         preset: satellite
-      - id: warehouse
+      - id: guardrails
         shape: rectangle
         geom: { w: 118, d: 118, h: 12 }
-        icon: "iso://glyph/warehouse"
-        label: "Warehouse"
+        icon: "iso://glyph/shield"
+        label: "Guardrails"
         preset: satellite
       - id: observability
         shape: rectangle
@@ -102,12 +154,14 @@ nodes:
         preset: satellite
 
     connectors:
-      # Serving path (solid) vs data path (dashed) — all hairline.
-      - { from: core, to: llm,           routing: orthogonal, stroke: { color: "#8B5CF6", width: 1.1 } }
+      # Serving path (solid) vs data path (dashed) — all hairline violet.
+      # pin the gateway spoke to the hub's FRONT face — the auto-picked
+      # right-wall exit would cross under the hub's front corner.
+      - { from: core.front, to: llm_gateway, routing: orthogonal, stroke: { color: "#7C3AED", width: 1.3 } }
       - { from: core, to: gpu_pool,      routing: orthogonal, stroke: { color: "#8B5CF6", width: 1.1 } }
       - { from: core, to: agents,        routing: orthogonal, stroke: { color: "#8B5CF6", width: 1.1 } }
       - { from: core, to: vector_store,  routing: orthogonal, stroke: { color: "#8B5CF6", width: 1.1 } }
       - { from: core, to: data_lake,     routing: orthogonal, stroke: { color: "#8B5CF6", width: 1.1, dash: "1.5 4" } }
       - { from: core, to: streaming,     routing: orthogonal, stroke: { color: "#8B5CF6", width: 1.1, dash: "1.5 4" } }
-      - { from: core, to: warehouse,     routing: orthogonal, stroke: { color: "#8B5CF6", width: 1.1, dash: "1.5 4" } }
+      - { from: core, to: guardrails,    routing: orthogonal, stroke: { color: "#8B5CF6", width: 1.1, dash: "1.5 4" } }
       - { from: core, to: observability, routing: orthogonal, stroke: { color: "#8B5CF6", width: 1.1, dash: "1.5 4" } }

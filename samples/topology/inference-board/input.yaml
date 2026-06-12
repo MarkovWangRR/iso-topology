@@ -1,0 +1,260 @@
+# inference-board — LLM inference PCB, dark green / copper engineering look.
+# Showcases v3.3 style.faces: multi-stop linear + radial gradients,
+# multi-layer face strokes, projected patterns (silk-screen via grid,
+# gold-finger edge connector), and the prism family (hexprism scheduler
+# with per-face gradient walls). Zero hand-computed coordinates beyond
+# one composition offset on the hero anchor.
+
+canvas:
+  background: "#070A08"
+  grid: iso
+  gridColor: "#101713"
+  gridStep: 44
+  padding: 64
+
+theme:
+  text:
+    family: "Inter, system-ui, sans-serif"
+    size: 11
+    weight: "700"
+    color: "#CDE5D6"
+  stroke:
+    color: "#1C3527"
+    width: 1.1
+  presets:
+    gpu:
+      faces:
+        top:
+          fill:
+            kind: linearGradient
+            angle: 115
+            stops:
+              - { offset: 0,    color: "#2BD9A4" }
+              - { offset: 0.45, color: "#0F9468" }
+              - { offset: 1,    color: "#07523A" }
+          strokes:
+            - { color: "#03190F", width: 1.6 }
+            - { color: "#46E8B5", width: 0.7, opacity: 0.8 }
+        left:
+          fill: { kind: solid, color: "#062B1F" }
+        right:
+          fill: { kind: solid, color: "#0A3C2B" }
+      stroke: { color: "#03190F", width: 1.2 }
+      text: { color: "#EAFBF3", size: 10 }
+    vrm:
+      faces:
+        top:
+          fill:
+            kind: pattern
+            pattern: { kind: hatch, color: "#C98445", spacing: 5, angle: 45, projected: true }
+          strokes:
+            - { color: "#8A5524", width: 1.2 }
+        left:
+          fill: { kind: solid, color: "#2E1D0C" }
+        right:
+          fill: { kind: solid, color: "#3F2811" }
+      stroke: { color: "#8A5524", width: 1 }
+      text: { color: "#D9A05B", size: 8, weight: "800" }
+
+nodes:
+  scene:
+    shape: composite
+    parts:
+      # ── The PCB itself: gradient top, multi-layer outline ─────────
+      - id: board
+        shape: rectangle
+        geom: { w: 760, d: 480, h: 18 }
+        style:
+          faces:
+            top:
+              fill:
+                kind: linearGradient
+                angle: 25
+                stops:
+                  - { offset: 0,    color: "#0E3B26" }
+                  - { offset: 0.55, color: "#114B2F" }
+                  - { offset: 1,    color: "#0A2C1C" }
+              strokes:
+                - { color: "#041009", width: 2.4 }
+                - { color: "#B87333", width: 0.8, opacity: 0.45 }
+            left:
+              fill: { kind: solid, color: "#05130C" }
+            right:
+              fill:
+                kind: linearGradient
+                angle: 90
+                stops:
+                  - { offset: 0, color: "#0A2418" }
+                  - { offset: 1, color: "#061710" }
+          stroke: { color: "#041009", width: 1.6 }
+          effects:
+            dropShadow: { dx: 0, dy: 16, blur: 24, color: "rgba(0,0,0,0.55)" }
+
+      # ── Silk-screen layer: projected via-dot grid + dashed frame ──
+      - id: silk
+        shape: rectangle
+        place: { above: board }
+        geom: { w: 700, d: 420, h: 1 }
+        style:
+          palette: { top: "none", left: "none", right: "none" }
+          faces:
+            top:
+              fill:
+                kind: pattern
+                pattern: { kind: dots, color: "rgba(184,115,51,0.40)", spacing: 16, projected: true }
+              strokes:
+                - { color: "#B87333", width: 1, dash: "6 7", opacity: 0.5 }
+
+      # ── Hero: hexprism token scheduler, copper radial-glow top ────
+      - id: sched
+        shape: hexprism
+        place: { above: board }
+        offset: { wx: -160, wy: 16 }
+        geom: { w: 170, d: 170, h: 64 }
+        icon: "iso://glyph/gear/3A2008"
+        label: "Scheduler"
+        style:
+          faces:
+            top:
+              fill:
+                kind: radialGradient
+                cx: 0.5
+                cy: 0.42
+                stops:
+                  - { offset: 0,    color: "#F2B373" }
+                  - { offset: 0.55, color: "#C2752F" }
+                  - { offset: 1,    color: "#7A4517" }
+              strokes:
+                - { color: "#331D08", width: 2 }
+                - { color: "#FFD9A8", width: 0.8, opacity: 0.75 }
+            "*":
+              fill:
+                kind: linearGradient
+                angle: 90
+                stops:
+                  - { offset: 0,    color: "#5C3414" }
+                  - { offset: 0.6,  color: "#2E1A0B" }
+                  - { offset: 1,    color: "#190E05" }
+              strokes:
+                - { color: "#241204", width: 1 }
+          stroke: { color: "#241204", width: 1.2 }
+          text: { color: "#2A1503", size: 12, weight: "800" }
+
+      # ── KV cache (palette-only cylinder, deliberately quiet) ──────
+      - id: kv
+        shape: cylinder
+        place: { above: board, inFrontOf: sched, gap: 0.9, align: start }
+        geom: { w: 90, d: 90, h: 58 }
+        icon: "iso://glyph/database/light"
+        label: "KV Cache"
+        style:
+          palette: { top: "#134231", left: "#08221A", right: "#0C2D21" }
+          stroke: { color: "#1F4A38", width: 1.2 }
+          text: { color: "#CDE5D6", size: 10 }
+
+      # ── GPU tensor array: 2x2 gradient-top chips on a submount ────
+      - id: gpus
+        shape: group
+        place: { above: board, rightOf: sched, gap: 1.0 }
+        layout: { mode: grid, cols: 2, gap: 0.8, padding: 0.5 }
+        geom: { h: 10 }
+        style:
+          palette: { top: "#0E2317", left: "#06110B", right: "#09170F" }
+          stroke: { color: "#1C3527", width: 1 }
+          effects: { cornerRadius: 10 }
+        parts:
+          - { id: gpu0, shape: rectangle, geom: { w: 96, d: 96, h: 26 }, preset: gpu, icon: "iso://glyph/gpu/light", label: "GPU 0" }
+          - { id: gpu1, shape: rectangle, geom: { w: 96, d: 96, h: 26 }, preset: gpu, icon: "iso://glyph/gpu/light", label: "GPU 1" }
+          - { id: gpu2, shape: rectangle, geom: { w: 96, d: 96, h: 26 }, preset: gpu, icon: "iso://glyph/gpu/light", label: "GPU 2" }
+          - { id: gpu3, shape: rectangle, geom: { w: 96, d: 96, h: 26 }, preset: gpu, icon: "iso://glyph/gpu/light", label: "GPU 3" }
+
+      # ── VRM power stages: projected copper hatch tiles ────────────
+      - id: vrm0
+        shape: rectangle
+        place: { above: board, leftOf: sched, gap: 1.0 }
+        geom: { w: 58, d: 58, h: 12 }
+        preset: vrm
+        label: "VRM"
+      - id: vrm1
+        shape: rectangle
+        place: { above: board, behind: vrm0, gap: 0.5 }
+        geom: { w: 58, d: 58, h: 12 }
+        preset: vrm
+        label: "VRM"
+
+      # ── DRAM banks: quiet dark tiles, emerald hairline retrace ────
+      - id: ddr0
+        shape: rectangle
+        place: { above: board, rightOf: pcie, gap: 0.6 }
+        geom: { w: 120, d: 34, h: 10 }
+        label: "DRAM"
+        style:
+          faces:
+            top:
+              fill: { kind: solid, color: "#0C2418" }
+              strokes:
+                - { color: "#03190F", width: 1.3 }
+                - { color: "#2BD9A4", width: 0.6, opacity: 0.55 }
+            left:
+              fill: { kind: solid, color: "#051209" }
+            right:
+              fill: { kind: solid, color: "#081A10" }
+          stroke: { color: "#03190F", width: 1 }
+          text: { color: "#7FD6B4", size: 8, weight: "800" }
+      - id: ddr1
+        shape: rectangle
+        place: { above: board, rightOf: ddr0, gap: 0.5 }
+        geom: { w: 120, d: 34, h: 10 }
+        label: "DRAM"
+        style:
+          faces:
+            top:
+              fill: { kind: solid, color: "#0C2418" }
+              strokes:
+                - { color: "#03190F", width: 1.3 }
+                - { color: "#2BD9A4", width: 0.6, opacity: 0.55 }
+            left:
+              fill: { kind: solid, color: "#051209" }
+            right:
+              fill: { kind: solid, color: "#081A10" }
+          stroke: { color: "#03190F", width: 1 }
+          text: { color: "#7FD6B4", size: 8, weight: "800" }
+
+      # ── PCIe edge connector: projected gold-finger hatch ──────────
+      - id: pcie
+        shape: rectangle
+        place: { above: board }
+        offset: { wx: -20, wy: 195 }
+        geom: { w: 150, d: 30, h: 8 }
+        style:
+          faces:
+            top:
+              fill:
+                kind: pattern
+                pattern: { kind: hatch, color: "#E8AF66", spacing: 6, angle: 90, projected: true }
+              strokes:
+                - { color: "#8A5524", width: 1 }
+            left:
+              fill: { kind: solid, color: "#4A2E12" }
+            right:
+              fill: { kind: solid, color: "#5E3A17" }
+          stroke: { color: "#8A5524", width: 1 }
+
+    connectors:
+      # Copper PCB traces: scheduler fans tokens out to the array.
+      - { from: sched, to: gpu0, routing: orthogonal, arrow: none, stroke: { color: "#C98445", width: 3 } }
+      - { from: sched, to: gpu1, routing: orthogonal, arrow: none, stroke: { color: "#C98445", width: 3 } }
+      - { from: sched, to: gpu2, routing: orthogonal, arrow: none, stroke: { color: "#C98445", width: 3 } }
+      - { from: sched, to: gpu3, routing: orthogonal, arrow: none, stroke: { color: "#C98445", width: 3 } }
+      # Cache lookups: async, dashed.
+      - { from: kv, to: sched, routing: orthogonal, arrow: none, stroke: { color: "#D9924C", width: 2, dash: "5 5" } }
+
+annotations:
+  - anchor: sched
+    side: top
+    distance: 90
+    text: "LLM inference board\ncontinuous batching · 4× GPU"
+    bg: "#0B100D"
+    border: "#B87333"
+    color: "#E8DCC8"
+    fontSize: 13

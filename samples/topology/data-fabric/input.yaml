@@ -1,0 +1,249 @@
+# data-fabric — three pastel domain groups (commerce / logistics /
+# telemetry) feed a radial-gradient hero catalog at the centre of the
+# fabric. Each domain owns a service tile plus a data-product cylinder
+# with gradient flanks; the catalog fans out to an analytics consumer
+# and a coral triprism alert sink (dashed = async). Showcases v3.3
+# style.faces (radial + linear gradients, multi-layer strokes,
+# projected dot pattern) and the prism family. Zero coordinates.
+
+canvas:
+  background: "#FAF9F6"
+  grid: iso
+  gridColor: "#EDEBE3"
+  gridStep: 40
+  padding: 56
+
+theme:
+  text:
+    family: "Inter, system-ui, sans-serif"
+    size: 10
+    weight: "600"
+    color: "#52525B"
+  stroke:
+    color: "#D8D5CD"
+    width: 1
+  presets:
+    domtile:
+      palette: { top: "#FFFFFF", left: "#E7E5DE", right: "#F1EFE9" }
+      stroke:  { color: "#D8D5CD", width: 1 }
+      effects:
+        cornerRadius: 10
+        dropShadow: { dx: 0, dy: 5, blur: 8, color: "rgba(82,82,91,0.10)" }
+
+nodes:
+  scene:
+    shape: composite
+    parts:
+      # ── Domain 1: commerce (teal) ────────────────────────────────
+      - id: dom_commerce
+        shape: group
+        label: "Commerce"
+        geom: { h: 8 }
+        layout: { mode: row, gap: 0.6, padding: 0.7 }
+        style:
+          palette: { top: "#E5F4F0", left: "#CDE6E0", right: "#D9EDE8" }
+          stroke:  { color: "#BBDCD4", width: 1 }
+          text:    { color: "#356F64", size: 11 }
+          effects: { cornerRadius: 12 }
+        parts:
+          - id: commerce_svc
+            shape: rectangle
+            geom: { w: 84, d: 84, h: 12 }
+            icon: "iso://glyph/code/2E8C7E"
+            label: "Orders API"
+            preset: domtile
+          - id: commerce_db
+            shape: cylinder
+            geom: { w: 76, d: 76, h: 30 }
+            label: "Sales"
+            style:
+              palette:
+                top: "#EFFAF7"
+                leftGradient:  { from: "#79C9BA", to: "#479E8E", dir: "down" }
+                rightGradient: { from: "#9BDACE", to: "#5FB3A3", dir: "down" }
+              stroke: { color: "#3D8A7C", width: 1 }
+              text:   { color: "#2E6E62", size: 10, weight: "700" }
+
+      # ── Domain 2: logistics (amber) ──────────────────────────────
+      - id: dom_logistics
+        shape: group
+        label: "Logistics"
+        place: { inFrontOf: dom_commerce, gap: 1.1 }
+        geom: { h: 8 }
+        layout: { mode: row, gap: 0.6, padding: 0.7 }
+        style:
+          palette: { top: "#FAF1E0", left: "#EEDFC4", right: "#F4E8D2" }
+          stroke:  { color: "#E4D2B0", width: 1 }
+          text:    { color: "#8A6320", size: 11 }
+          effects: { cornerRadius: 12 }
+        parts:
+          - id: logistics_svc
+            shape: rectangle
+            geom: { w: 84, d: 84, h: 12 }
+            icon: "iso://glyph/globe/B07A2E"
+            label: "Fleet API"
+            preset: domtile
+          - id: logistics_db
+            shape: cylinder
+            geom: { w: 76, d: 76, h: 30 }
+            label: "Routes"
+            style:
+              palette:
+                top: "#FCF6E9"
+                leftGradient:  { from: "#E8B96B", to: "#C18F38", dir: "down" }
+                rightGradient: { from: "#F2CD8C", to: "#D6A458", dir: "down" }
+              stroke: { color: "#B08234", width: 1 }
+              text:   { color: "#8A6320", size: 10, weight: "700" }
+
+      # ── Domain 3: telemetry (blue) ───────────────────────────────
+      - id: dom_telemetry
+        shape: group
+        label: "Telemetry"
+        place: { inFrontOf: dom_logistics, gap: 1.1 }
+        geom: { h: 8 }
+        layout: { mode: row, gap: 0.6, padding: 0.7 }
+        style:
+          palette: { top: "#E8F0FA", left: "#D2E0F0", right: "#DDE8F5" }
+          stroke:  { color: "#C2D5EC", width: 1 }
+          text:    { color: "#39598C", size: 11 }
+          effects: { cornerRadius: 12 }
+        parts:
+          - id: telemetry_svc
+            shape: rectangle
+            geom: { w: 84, d: 84, h: 12 }
+            icon: "iso://glyph/stream/3F6BB0"
+            label: "Sensors"
+            preset: domtile
+          - id: telemetry_db
+            shape: cylinder
+            geom: { w: 76, d: 76, h: 30 }
+            label: "Events"
+            style:
+              palette:
+                top: "#EEF4FC"
+                leftGradient:  { from: "#86A9DC", to: "#5379B5", dir: "down" }
+                rightGradient: { from: "#A5C0E8", to: "#6C8FC6", dir: "down" }
+              stroke: { color: "#4A6FA8", width: 1 }
+              text:   { color: "#39598C", size: 10, weight: "700" }
+
+      # ── Quiet pedestals filling the front-left negative space ────
+      - id: pedestal_a
+        shape: rectangle
+        place: { rightOf: dom_telemetry, inFrontOf: dom_telemetry, gapX: 1.6, gapY: 0.9 }
+        geom: { w: 72, d: 72, h: 8 }
+        style:
+          palette: { top: "#F4F2EC", left: "#E4E1D8", right: "#ECE9E0" }
+          stroke:  { color: "#DCD8CE", width: 1 }
+          effects: { cornerRadius: 8 }
+      - id: pedestal_b
+        shape: rectangle
+        place: { rightOf: pedestal_a, inFrontOf: pedestal_a, gap: 0.7 }
+        geom: { w: 46, d: 46, h: 6 }
+        style:
+          palette: { top: "#F4F2EC", left: "#E4E1D8", right: "#ECE9E0" }
+          stroke:  { color: "#DCD8CE", width: 1 }
+          effects: { cornerRadius: 7 }
+
+      # ── Hero: the data catalog (radial-gradient top, layered strokes) ──
+      - id: catalog
+        shape: rectangle
+        place: { rightOf: dom_logistics, gap: 3 }
+        geom: { w: 190, d: 190, h: 26 }
+        icon: "iso://glyph/layers/6D5BAE"
+        label: "Data Catalog"
+        style:
+          faces:
+            top:
+              fill:
+                kind: radialGradient
+                cx: 0.5
+                cy: 0.38
+                stops:
+                  - { offset: 0,    color: "#FFFFFF" }
+                  - { offset: 0.55, color: "#F0EBFB" }
+                  - { offset: 1,    color: "#D9CEF2" }
+              strokes:
+                - { color: "#8E7CC3", width: 2.2 }
+                - { color: "#FFFFFF", width: 0.9, opacity: 0.85 }
+            left:
+              fill:
+                kind: linearGradient
+                angle: 90
+                stops:
+                  - { offset: 0, color: "#A493D9" }
+                  - { offset: 1, color: "#7A66B8" }
+            right:
+              fill:
+                kind: linearGradient
+                angle: 90
+                stops:
+                  - { offset: 0, color: "#BFB2E6" }
+                  - { offset: 1, color: "#8E7CC3" }
+          text: { color: "#4A3E78", size: 13, weight: "700" }
+          # NOTE: no cornerRadius here — rounded boxes bypass the v3.3
+          # faces pipeline, and the radial top is the whole point.
+          effects:
+            backglow:   { color: "#C9BCEC", radius: 46, opacity: 0.45 }
+            dropShadow: { dx: 0, dy: 11, blur: 16, color: "rgba(122,102,184,0.25)" }
+
+      # ── Fabric panel floating behind the catalog (projected dots) ──
+      - id: fabric_panel
+        shape: rectangle
+        place: { behind: analytics, gap: 1.5, align: end }
+        geom: { w: 230, d: 130, h: 5 }
+        style:
+          palette: { left: "#E3E0D8", right: "#EDEAE2" }
+          stroke:  { color: "#DCD8CE", width: 1 }
+          faces:
+            top:
+              fill:
+                kind: pattern
+                pattern: { kind: dots, color: "#B9ABE4", spacing: 9, projected: true }
+
+      # ── Consumers: analytics tile + triprism alert sink ──────────
+      - id: analytics
+        shape: rectangle
+        place: { rightOf: catalog, gap: 2.6 }
+        geom: { w: 104, d: 104, h: 14 }
+        icon: "iso://glyph/chart/6D5BAE"
+        label: "Analytics"
+        preset: domtile
+
+      - id: alert_sink
+        shape: triprism
+        place: { inFrontOf: analytics, gap: 1.4 }
+        geom: { w: 96, d: 96, h: 56 }
+        icon: "iso://glyph/bell/A8453A"
+        label: "Alert Sink"
+        style:
+          faces:
+            top:   { fill: { kind: solid, color: "#FFE9E4" } }
+            side0: { fill: { kind: solid, color: "#F2A294" } }
+            side1: { fill: { kind: solid, color: "#E07A6C" } }
+            side2: { fill: { kind: solid, color: "#CB6052" } }
+          stroke: { color: "#B5503F", width: 1.1 }
+          text:   { color: "#8C3A2E", size: 10, weight: "700", orient: screen }
+
+    connectors:
+      # Domain feeds into the catalog (solid accent, grid-aligned).
+      - { from: dom_commerce,  to: catalog, arrow: none, routing: orthogonal, stroke: { color: "#8E7CC3", width: 1.6 } }
+      - { from: dom_logistics, to: catalog, arrow: none, routing: orthogonal, stroke: { color: "#8E7CC3", width: 1.6 } }
+      - { from: dom_telemetry, to: catalog, arrow: none, routing: orthogonal, stroke: { color: "#8E7CC3", width: 1.6 } }
+      # Serving path to analytics (solid) and async alerts (dashed coral).
+      - { from: catalog, to: analytics,  arrow: none, routing: orthogonal, stroke: { color: "#8E7CC3", width: 1.6 } }
+      - { from: catalog.front-mid, to: alert_sink, arrow: none, routing: orthogonal, elbow: yFirst, label: "anomalies", labelColor: "#8C3A2E", stroke: { color: "#E07A6C", width: 1.4, dash: "2 5" } }
+
+annotations:
+  - anchor: fabric_panel
+    side: top
+    distance: 55
+    text: "Unified semantic layer\nlineage, contracts, access"
+    bg: "#FFFFFF"
+    border: "#D8D5CD"
+  - anchor: alert_sink
+    side: right
+    distance: 70
+    text: "Contract breaches\npage the on-call"
+    bg: "#FFF7F5"
+    border: "#E8B3AA"
+    color: "#8C3A2E"

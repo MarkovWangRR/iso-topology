@@ -28,11 +28,16 @@ description matches your task, imitate its structure, then check
 
 | Fixture | Demonstrates |
 |---|---|
-| [`ai-platform`](../../samples/topology/ai-platform/input.yaml) | ai-platform — an AI platform core and its eight capabilities, as a hub-and-spoke ring. |
+| [`ai-platform`](../../samples/topology/ai-platform/input.yaml) | ai-platform v2 — flagship hero, reimagined with the v3.3 surface pipeline. |
+| [`data-fabric`](../../samples/topology/data-fabric/input.yaml) | data-fabric — three pastel domain groups (commerce / logistics / telemetry) feed a radial-gradient hero catalog at the centre of the fabric. |
+| [`devtool-pipeline`](../../samples/topology/devtool-pipeline/input.yaml) | devtool-pipeline — CI/CD neon. |
+| [`edge-security`](../../samples/topology/edge-security/input.yaml) | edge-security — zero-trust edge, official gallery scene (v0.3.3). |
 | [`gateway-mesh`](../../samples/topology/gateway-mesh/input.yaml) | (no header comment) |
 | [`identity-flow`](../../samples/topology/identity-flow/input.yaml) | identity-flow — monochrome film-grain editorial style: how human identities delegate to AI agents which consume machine identities. |
+| [`inference-board`](../../samples/topology/inference-board/input.yaml) | inference-board — LLM inference PCB, dark green / copper engineering look. |
 | [`llm-serving`](../../samples/topology/llm-serving/input.yaml) | llm-serving — a dark-mode LLM inference platform. |
 | [`microservice`](../../samples/topology/microservice/input.d2) | microservice — minimal .d2 auto-layout path: person → services → database. |
+| [`payment-rails`](../../samples/topology/payment-rails/input.yaml) | payment-rails — fintech print register: a payment authorization flow set on bare white like a financial-press illustration. |
 | [`platform-board`](../../samples/topology/platform-board/input.yaml) | platform-board — PCB / circuit-board hero shot, landing-page style. |
 | [`rag-pipeline`](../../samples/topology/rag-pipeline/input.yaml) | rag-pipeline — a RAG system on two planes. |
 | [`training-compute`](../../samples/topology/training-compute/input.yaml) | training-compute — where the GPU hours of a training run go. |

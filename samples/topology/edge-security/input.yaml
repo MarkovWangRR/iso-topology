@@ -1,0 +1,254 @@
+# edge-security — zero-trust edge, official gallery scene (v0.3.3).
+# Two octprism firewalls guard the perimeter: the hero edge firewall
+# shows off style.faces — a radial-gradient crown, a per-side red
+# gradient ladder around all eight walls, and dual-layer re-traced
+# strokes. An amber diamond is the policy decision point; allowed
+# traffic lands on a projected-hatch platform deck carrying three
+# service chips. Dark slate neutrals, red = untrusted/deny,
+# amber = policy/allow. Zero hand-computed coordinates.
+
+canvas:
+  background: "#0E1116"
+  grid: iso
+  gridColor: "#181D26"
+  gridStep: 40
+  padding: 56
+
+theme:
+  text:
+    family: "Inter, system-ui, sans-serif"
+    size: 10
+    weight: "600"
+    color: "#E5E7EB"
+  stroke:
+    color: "#2A3140"
+    width: 1.1
+  presets:
+    source:
+      palette: { top: "#161B24", left: "#0B0E14", right: "#10141C" }
+      stroke:  { color: "#2A3140", width: 1.1 }
+      text:    { color: "#9CA3AF" }
+      effects:
+        cornerRadius: 10
+        dropShadow: { dx: 0, dy: 8, blur: 12, color: "rgba(0,0,0,0.45)" }
+    chip:
+      palette: { top: "#1B2230", left: "#0D1118", right: "#131924" }
+      stroke:  { color: "#B45309", width: 1.2 }
+      text:    { color: "#FCD34D", size: 9, weight: "700" }
+      effects:
+        cornerRadius: 8
+        dropShadow: { dx: 0, dy: 6, blur: 9, color: "rgba(0,0,0,0.5)" }
+
+nodes:
+  scene:
+    shape: composite
+    parts:
+      # ── Hero: edge firewall (octprism, faces v3.3 showcase) ──────
+      - id: fw_edge
+        shape: octprism
+        geom: { w: 180, d: 180, h: 62 }
+        icon: "iso://glyph/shield/light"
+        label: "Edge Firewall"
+        style:
+          text: { color: "#FECACA", size: 12, weight: "700" }
+          faces:
+            top:
+              fill:
+                kind: radialGradient
+                cx: 0.5
+                cy: 0.38
+                stops:
+                  - { offset: 0,    color: "#DC2626" }
+                  - { offset: 0.55, color: "#991B1B" }
+                  - { offset: 1,    color: "#5F1212" }
+              strokes:
+                - { color: "#450A0A", width: 1.7 }
+                - { color: "#FCA5A5", width: 0.6, opacity: 0.85 }
+            side0:
+              fill: { kind: linearGradient, angle: 90, stops: [ { offset: 0, color: "#991B1B" }, { offset: 1, color: "#57100F" } ] }
+              strokes: [ { color: "#450A0A", width: 1.2 } ]
+            side1:
+              fill: { kind: linearGradient, angle: 90, stops: [ { offset: 0, color: "#7F1D1D" }, { offset: 1, color: "#420C0C" } ] }
+              strokes: [ { color: "#450A0A", width: 1.2 } ]
+            side2:
+              fill: { kind: linearGradient, angle: 90, stops: [ { offset: 0, color: "#991B1B" }, { offset: 1, color: "#57100F" } ] }
+              strokes: [ { color: "#450A0A", width: 1.2 } ]
+            side3:
+              fill: { kind: linearGradient, angle: 90, stops: [ { offset: 0, color: "#7F1D1D" }, { offset: 1, color: "#420C0C" } ] }
+              strokes: [ { color: "#450A0A", width: 1.2 } ]
+            side4:
+              fill: { kind: linearGradient, angle: 90, stops: [ { offset: 0, color: "#991B1B" }, { offset: 1, color: "#57100F" } ] }
+              strokes: [ { color: "#450A0A", width: 1.2 } ]
+            side5:
+              fill: { kind: linearGradient, angle: 90, stops: [ { offset: 0, color: "#7F1D1D" }, { offset: 1, color: "#420C0C" } ] }
+              strokes: [ { color: "#450A0A", width: 1.2 } ]
+            side6:
+              fill: { kind: linearGradient, angle: 90, stops: [ { offset: 0, color: "#991B1B" }, { offset: 1, color: "#57100F" } ] }
+              strokes: [ { color: "#450A0A", width: 1.2 } ]
+            side7:
+              fill: { kind: linearGradient, angle: 90, stops: [ { offset: 0, color: "#7F1D1D" }, { offset: 1, color: "#420C0C" } ] }
+              strokes: [ { color: "#450A0A", width: 1.2 } ]
+
+      # ── Second perimeter firewall (quieter rose tonal step) ──────
+      - id: fw_vpn
+        shape: octprism
+        place: { behind: fw_edge, gap: 1.3 }
+        geom: { w: 134, d: 134, h: 44 }
+        icon: "iso://glyph/lock/light"
+        label: "VPN Firewall"
+        style:
+          text: { color: "#FBCFCF", size: 10 }
+          faces:
+            top:
+              fill:
+                kind: linearGradient
+                angle: 135
+                stops:
+                  - { offset: 0, color: "#6B1D1D" }
+                  - { offset: 1, color: "#3B0E0E" }
+              strokes:
+                - { color: "#2C0808", width: 1.4 }
+                - { color: "#F87171", width: 0.5, opacity: 0.7 }
+            "*":
+              fill: { kind: solid, color: "#380C0C" }
+              strokes: [ { color: "#2C0808", width: 1.1 } ]
+            side2:
+              fill: { kind: solid, color: "#4F1313" }
+              strokes: [ { color: "#2C0808", width: 1.1 } ]
+            side4:
+              fill: { kind: solid, color: "#4F1313" }
+              strokes: [ { color: "#2C0808", width: 1.1 } ]
+
+      # ── Untrusted sources ─────────────────────────────────────────
+      - id: inet
+        shape: rectangle
+        place: { leftOf: fw_edge, gap: 3 }
+        geom: { w: 108, d: 108, h: 18 }
+        icon: "iso://glyph/globe/94A3B8"
+        label: "Internet"
+        preset: source
+      - id: partners
+        shape: rectangle
+        place: { leftOf: fw_vpn, gap: 2.2, align: center }
+        geom: { w: 108, d: 108, h: 18 }
+        icon: "iso://glyph/key/94A3B8"
+        label: "Partner VPN"
+        preset: source
+
+      # ── Policy decision point (diamond, amber) ───────────────────
+      - id: policy
+        shape: diamond
+        place: { rightOf: fw_edge, gap: 2.4 }
+        geom: { w: 142, d: 142, h: 36 }
+        icon: "iso://glyph/etl/451A03"
+        label: "Policy?"
+        style:
+          text: { color: "#451A03", size: 11, weight: "800" }
+          faces:
+            top:
+              fill:
+                kind: linearGradient
+                angle: 135
+                stops:
+                  - { offset: 0,   color: "#FDE68A" }
+                  - { offset: 0.6, color: "#F59E0B" }
+                  - { offset: 1,   color: "#D97706" }
+              strokes:
+                - { color: "#92400E", width: 1.5 }
+                - { color: "#FEF3C7", width: 0.5, opacity: 0.9 }
+            "*":
+              fill: { kind: linearGradient, angle: 90, stops: [ { offset: 0, color: "#B45309" }, { offset: 1, color: "#713006" } ] }
+              strokes: [ { color: "#92400E", width: 1.2 } ]
+
+      # ── Deny sink (triprism alert) ────────────────────────────────
+      - id: siem
+        shape: triprism
+        place: { inFrontOf: policy, gap: 1.7 }
+        geom: { w: 96, d: 96, h: 30 }
+        icon: "iso://glyph/bell/FCA5A5"
+        label: "Drop + SIEM"
+        style:
+          text: { color: "#FCA5A5", size: 10, orient: screen }
+          faces:
+            top:
+              fill: { kind: solid, color: "#2A1215" }
+              strokes:
+                - { color: "#7F1D1D", width: 1.3 }
+            "*":
+              fill: { kind: solid, color: "#1B0B0D" }
+              strokes: [ { color: "#7F1D1D", width: 1.1 } ]
+
+      # ── Trusted platform deck: projected-hatch top face ──────────
+      - id: platform
+        shape: rectangle
+        place: { rightOf: policy, gap: 2.4 }
+        geom: { w: 340, d: 220, h: 16 }
+        style:
+          palette: { left: "#12161E", right: "#171C26" }
+          faces:
+            top:
+              fill:
+                kind: pattern
+                pattern: { kind: hatch, color: "#39445C", spacing: 8, angle: 45, projected: true }
+              strokes:
+                - { color: "#262E3C", width: 1.3 }
+                - { color: "#B45309", width: 0.5, opacity: 0.55 }
+
+      # ── Service chips riding the deck ─────────────────────────────
+      - id: svc_id
+        shape: rectangle
+        place: { above: platform }
+        geom: { w: 82, d: 82, h: 12 }
+        icon: "iso://glyph/lock/F59E0B"
+        label: "mTLS"
+        preset: chip
+      - id: svc_api
+        shape: rectangle
+        place: { above: platform, leftOf: svc_id, gap: 0.6 }
+        geom: { w: 82, d: 82, h: 12 }
+        icon: "iso://glyph/code/F59E0B"
+        label: "Services"
+        preset: chip
+      - id: svc_data
+        shape: rectangle
+        place: { above: platform, rightOf: svc_id, gap: 0.6 }
+        geom: { w: 82, d: 82, h: 12 }
+        icon: "iso://glyph/database/F59E0B"
+        label: "Data"
+        preset: chip
+
+      # ── Quiet pedestals filling negative space ───────────────────
+      - id: ped_a
+        shape: rectangle
+        place: { inFrontOf: inet, gap: 1.4 }
+        geom: { w: 84, d: 84, h: 10 }
+        preset: source
+      - id: ped_b
+        shape: rectangle
+        place: { inFrontOf: ped_a, gap: 0.9, rightOf: ped_a, gapX: 0.9 }
+        geom: { w: 56, d: 56, h: 8 }
+        preset: source
+
+    connectors:
+      # untrusted ingress (red)
+      - { from: inet,     to: fw_edge, routing: orthogonal, arrow: triangle, label: "untrusted", stroke: { color: "#DC2626", width: 1.8 }, labelBg: "#141A23EE", labelColor: "#FCA5A5" }
+      - { from: partners, to: fw_vpn,  routing: orthogonal, arrow: triangle, stroke: { color: "#B91C1C", width: 1.4 } }
+      # inspected traffic to the decision point (amber)
+      - { from: fw_edge, to: policy, routing: orthogonal, arrow: triangle, label: "inspect", stroke: { color: "#F59E0B", width: 1.8 }, labelBg: "#141A23EE", labelColor: "#FCD34D" }
+      - { from: fw_vpn,  to: policy, routing: orthogonal, arrow: triangle, stroke: { color: "#D97706", width: 1.4 } }
+      # decision outcomes
+      - { from: policy, to: platform, routing: orthogonal, arrow: triangle, label: "allow", stroke: { color: "#F59E0B", width: 2 }, labelBg: "#141A23EE", labelColor: "#FCD34D" }
+      - { from: policy, to: siem,     routing: orthogonal, arrow: triangle, label: "deny",  stroke: { color: "#DC2626", width: 1.4, dash: "5 4" }, labelBg: "#141A23EE", labelColor: "#FCA5A5" }
+      # service traces on the deck
+      - { from: svc_api.right-mid, to: svc_id.left-mid,    routing: orthogonal, arrow: none, stroke: { color: "#B45309", width: 1.2 } }
+      - { from: svc_id.right-mid,  to: svc_data.left-mid,  routing: orthogonal, arrow: none, stroke: { color: "#B45309", width: 1.2 } }
+
+annotations:
+  - anchor: platform
+    side: top
+    distance: 80
+    text: "Zero-trust edge\ndefault-deny, allow by policy"
+    bg: "#141A23"
+    border: "#7F1D1D"
+    color: "#E5E7EB"
+    fontSize: 12
