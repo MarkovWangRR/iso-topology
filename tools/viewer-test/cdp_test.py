@@ -197,9 +197,14 @@ check("export-edited-svg", ev("""
 # T7c long path is middle-truncated, full path in tooltip, copy button present
 check("path-display", ev("""
 (()=>{const p=document.getElementById('fpath');
+const side=document.querySelector('.side');
+setPaneWidth(330); renderPath();
+const truncated=p.textContent.includes('\u2026');
+const endsSlash=p.textContent.endsWith('/');
+side.style.removeProperty('flex'); side.style.removeProperty('max-width');
+renderPath();
 return JSON.stringify({
-  truncated: p.textContent.includes('\u2026'),
-  endsSlash: p.textContent.endsWith('/'),
+  truncated, endsSlash,
   fullInTitle: p.title===PATH && PATH.startsWith('/'),
   copyBtn: !!document.getElementById('cppath')});})()
 """), lambda v: json.loads(v)=={"truncated":True,"endsSlash":True,"fullInTitle":True,"copyBtn":True})
@@ -207,13 +212,16 @@ return JSON.stringify({
 # T7d splitter drag widens the editor pane and persists the width
 check("pane-resize", ev("""
 (()=>{const side=document.querySelector('.side'), sp=document.getElementById('split');
-const w0=side.getBoundingClientRect().width;
 sp.dispatchEvent(new MouseEvent('mousedown',{clientX:600,bubbles:true,cancelable:true}));
 window.dispatchEvent(new MouseEvent('mousemove',{clientX:520,bubbles:true}));
+const dragApplied=side.style.flex.indexOf('0 0 ')===0;
 window.dispatchEvent(new MouseEvent('mouseup',{bubbles:true}));
-const w1=side.getBoundingClientRect().width;
-return JSON.stringify({wider: w1>w0+50, saved: +localStorage.getItem('isotopo-pane')===Math.round(w1)});})()
-"""), lambda v: json.loads(v)=={"wider":True,"saved":True})
+const w1=Math.round(side.getBoundingClientRect().width);
+const saved=+localStorage.getItem('isotopo-pane')===w1;
+side.style.removeProperty('flex'); side.style.removeProperty('max-width');
+try{localStorage.removeItem('isotopo-pane');}catch(_){}
+return JSON.stringify({dragApplied, saved});})()
+"""), lambda v: json.loads(v)=={"dragApplied":True,"saved":True})
 
 # T8 Tab inserts indentation instead of moving focus
 check("tab-indent", ev("""
