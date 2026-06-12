@@ -108,7 +108,9 @@ fi
 isotopo render scene.yaml ./out
 ```
 
-## `isotopo serve` — live preview
+## `isotopo serve` — the Studio
+
+The interactive page has a name and its own guide: **[isotopo Studio](../guides/studio.md)** — feature tour, design rationale, endpoints, and how it is tested. Quick reference below.
 
 ```bash
 isotopo serve scene.yaml          # default port 8731

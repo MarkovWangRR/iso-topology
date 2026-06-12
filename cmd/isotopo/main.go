@@ -469,6 +469,6 @@ func serveFile(in string) error {
 		w.Write([]byte(isotopo.TopologyHTML(svg, string(data), sourceLang, absIn)))
 	})
 
-	fmt.Printf("isotopo serve · %s\npreview:  http://localhost:%s\nedits in the browser are a copy — %s is never written\n", in, port, in)
+	fmt.Printf("isotopo Studio · %s\nopen:  http://localhost:%s\nedits in the browser are a copy — %s is never written\n", in, port, in)
 	return http.ListenAndServe("localhost:"+port, mux)
 }

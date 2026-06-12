@@ -50,6 +50,19 @@ def ev(expr, timeout=20):
             if "value" in r: return r["value"]
             return r.get("description")
 
+def cdp(method, params=None):
+    global mid; mid+=1
+    ws.send(json.dumps({"id":mid,"method":method,"params":params or {}}))
+    while True:
+        m=json.loads(ws.recv())
+        if m.get("id")==mid: return m
+
+# --window-size is unreliable under headless=new on macOS (innerWidth came
+# back 756 regardless); pin the viewport at the protocol level instead so
+# pane-resize's 70vw clamp math is deterministic.
+cdp("Emulation.setDeviceMetricsOverride",
+    {"width":1400,"height":900,"deviceScaleFactor":1,"mobile":False})
+
 results=[]
 def check(name, val, expect=True):
     try:
@@ -64,6 +77,15 @@ time.sleep(1.5)  # let probe() finish
 check("live-status", ev("document.getElementById('live').textContent"), lambda v: "live" in str(v).lower())
 check("render-btn-enabled", ev("!document.getElementById('render').disabled"))
 
+# T13 syntax highlighting: tokens in the hl layer, textarea ink transparent
+check("syntax-tokens", ev("""
+(()=>{return JSON.stringify({
+  keys: document.querySelectorAll('#hl .tk-k').length>10,
+  strings: document.querySelectorAll('#hl .tk-s').length>0,
+  isoUri: document.querySelectorAll('#hl .tk-u').length>0,
+  taTransparent: getComputedStyle(document.getElementById('src')).color==='rgba(0, 0, 0, 0)'});})()
+"""), lambda v: json.loads(v)=={"keys":True,"strings":True,"isoUri":True,"taTransparent":True})
+
 # T1 hover → highlight
 check("hover-highlight", ev("""
 (()=>{const g=document.querySelector('g[data-part-id="gpu_pool"]');
@@ -74,6 +96,17 @@ g.dispatchEvent(new Event('mouseleave'));
 const cleared=document.querySelectorAll('#hl .hit').length===0;
 return JSON.stringify({hasHits:hits.length>0, mentionsId:hits.includes('gpu_pool'), glow, cleared});})()
 """), lambda v: json.loads(v)=={"hasHits":True,"mentionsId":True,"glow":True,"cleared":True})
+
+# T14 click pins a node; clicking empty canvas unpins
+check("pin-select", ev("""
+(()=>{const g=document.querySelector('g[data-part-id="gpu_pool"]');
+g.dispatchEvent(new MouseEvent('click',{bubbles:true}));
+g.dispatchEvent(new Event('mouseleave'));
+const pinned=document.querySelectorAll('#hl .hit').length>0 && g.classList.contains('hi');
+document.getElementById('viewport').dispatchEvent(new MouseEvent('click',{bubbles:true}));
+const cleared=document.querySelectorAll('#hl .hit').length===0 && !g.classList.contains('hi');
+return JSON.stringify({pinned, cleared});})()
+"""), lambda v: json.loads(v)=={"pinned":True,"cleared":True})
 
 # T2 zoom via wheel + pan via drag
 check("wheel-zoom", ev("""
@@ -92,6 +125,17 @@ window.dispatchEvent(new MouseEvent('mouseup',{bubbles:true}));
 return document.getElementById('zoomer').style.transform!==t0;})()
 """))
 
+# T15 zoom readout + fit
+check("zoom-ui", ev("""
+(()=>{const pct=document.getElementById('zpct');
+const okPct=/%$/.test(pct.textContent);
+const t0=document.getElementById('zoomer').style.transform;
+document.getElementById('zfit').click();
+const changed=document.getElementById('zoomer').style.transform!==t0;
+const pctAfter=/%$/.test(pct.textContent);
+return JSON.stringify({okPct, changed, pctAfter});})()
+"""), lambda v: json.loads(v)=={"okPct":True,"changed":True,"pctAfter":True})
+
 # T4 edit → auto re-render (copy semantics)
 check("auto-rerender", ev("""
 (async()=>{const src=document.getElementById('src');
@@ -100,6 +144,16 @@ src.dispatchEvent(new Event('input',{bubbles:true}));
 await new Promise(r=>setTimeout(r,1600));
 return document.getElementById('zoomer').innerHTML.includes('GPU FARM 42');})()
 """))
+
+# T16 adaptive stage: dark canvas tints the backdrop
+check("adaptive-stage", ev("""
+(async()=>{const src=document.getElementById('src');
+src.value=src.value.replace('background: "#F5F6F8"','background: "#0B0F14"');
+src.dispatchEvent(new Event('input',{bubbles:true}));
+await new Promise(r=>setTimeout(r,1600));
+const v=document.getElementById('stage').style.getPropertyValue('--stage-bg');
+return JSON.stringify({tinted: v.indexOf('rgb(')===0});})()
+"""), lambda v: json.loads(v)=={"tinted":True})
 
 # T5 broken edit → issues panel, svg preserved
 check("issues-panel", ev("""
@@ -115,6 +169,14 @@ return JSON.stringify({shown, svgKept});})()
 
 # T5b broken render → stale badge over the canvas
 check("stale-badge", ev("!document.getElementById('stale').hidden"))
+
+# T17 clicking an issue jumps to (and flashes) the offending line
+check("issue-jump", ev("""
+(()=>{const first=document.querySelector('#issues [data-path]');
+if(!first) return JSON.stringify({clicked:false,flashed:false});
+first.click();
+return JSON.stringify({clicked:true, flashed: document.querySelectorAll('#hl .flash').length>0});})()
+"""), lambda v: json.loads(v)=={"clicked":True,"flashed":True})
 
 # T7 dirty state: edits flip the unsaved flag and arm the download button
 check("dirty-flag", ev("""
@@ -171,6 +233,23 @@ const during=b.textContent;
 await new Promise(r=>setTimeout(r,1400));
 return JSON.stringify({changed: during!=='Copy', restored: b.textContent==='Copy'});})()
 """), lambda v: json.loads(v)=={"changed":True,"restored":True})
+
+# T18 share permalink: deflate/inflate round-trip
+check("share-roundtrip", ev("""
+(async()=>{const s=document.getElementById('src').value;
+const h=await deflateText(s);
+const back=await inflateText(h);
+return JSON.stringify({roundtrip: back===s, compact: h.length < s.length});})()
+"""), lambda v: json.loads(v)=={"roundtrip":True,"compact":True})
+
+# T19 examples menu populates
+check("examples-menu", ev("""
+(()=>{toggleExamples();
+const p=document.getElementById('expanel');
+const items=p.querySelectorAll('[data-ex]').length;
+toggleExamples();
+return JSON.stringify({items: items>=5});})()
+"""), lambda v: json.loads(v)=={"items":True})
 
 # T10 draft survives a reload (localStorage), original untouched on disk
 ev("location.reload()", timeout=30)

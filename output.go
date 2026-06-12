@@ -81,7 +81,7 @@ func PartIDs(doc *Document) []string {
 func TopologyHTML(svg, sourceText, sourceLang, sourceFilename string) string {
 	tpl := `<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
-<title>isotopo · {{FILE}}</title>
+<title>isotopo Studio · {{FILE}}</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 68 56'%3E%3Cpolygon points='4,34 22,24 40,34 22,44' fill='%232FA9B8' opacity='.35'/%3E%3Cpolygon points='4,30 22,20 40,30 22,40' fill='%2336BCC6' opacity='.65'/%3E%3Cpolygon points='4,26 22,16 40,26 22,36' fill='%234ED2D9'/%3E%3Cpath d='M38 30 C46 34 44 40 50 42' fill='none' stroke='%233CC4CC' stroke-width='5' stroke-linecap='round'/%3E%3Cpolygon points='46,36 56,30 66,36 56,42' fill='%238FE9EC'/%3E%3Cpolygon points='46,36 56,42 56,54 46,48' fill='%232596A6'/%3E%3Cpolygon points='66,36 56,42 56,54 66,48' fill='%2349CDD6'/%3E%3C/svg%3E">
 <style>
 :root{
@@ -100,11 +100,24 @@ header{display:flex;align-items:center;gap:12px;padding:11px 20px;
   border-bottom:1px solid var(--border);position:relative;z-index:5;}
 .brand{display:flex;align-items:center;gap:11px;}
 .brand .word{display:flex;flex-direction:column;line-height:1.15;}
-.brand h1{margin:0;font-size:14.5px;font-weight:650;letter-spacing:-.01em;}
+.brand h1{margin:0;font-size:14.5px;font-weight:650;letter-spacing:-.01em;display:flex;align-items:center;gap:7px;}
+.studio{font:9px Inter,sans-serif;font-weight:700;letter-spacing:.14em;color:var(--accent-deep);
+  background:var(--accent-soft);padding:2.5px 6px;border-radius:4px;}
 .brand .sub{font-size:10.5px;color:var(--muted);}
 .pagedesc{font:11px Inter,sans-serif;color:var(--muted);
   margin-left:4px;padding-left:14px;border-left:1px solid var(--border);}
 header .spacer{flex:1;}
+.menu{position:relative;margin-left:6px;}
+.menubtn{font:11.5px Inter,sans-serif;font-weight:550;border:1px solid var(--border);background:white;
+  color:#334155;padding:5px 11px;border-radius:6px;cursor:pointer;}
+.menubtn:hover{background:#F4F6FA;}
+.menu-panel{position:absolute;top:calc(100% + 6px);left:0;min-width:200px;z-index:30;
+  background:white;border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow);
+  padding:5px;display:flex;flex-direction:column;}
+.menu-panel button{border:0;background:transparent;text-align:left;padding:7px 10px;border-radius:6px;
+  font:12px Inter,sans-serif;color:#334155;}
+.menu-panel button:hover{background:var(--accent-soft);color:var(--accent-deep);}
+.menu-panel .hint{font:10px Inter,sans-serif;color:#A6B0C0;padding:3px 10px 5px;}
 #live{display:flex;align-items:center;gap:6px;font:11.5px Inter,sans-serif;font-weight:550;color:var(--muted);}
 #live::before{content:"";width:7px;height:7px;border-radius:50%;background:#CBD5E1;flex:none;}
 #live.on{color:var(--accent-deep);}
@@ -112,8 +125,8 @@ header .spacer{flex:1;}
 @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(16,174,185,.35)}50%{box-shadow:0 0 0 5px rgba(16,174,185,0)}}
 .grid{flex:1;min-height:0;display:flex;}
 .stage-wrap{flex:1.6;min-width:0;position:relative;overflow:hidden;
-  background:#F2F4F8 radial-gradient(circle,rgba(15,23,42,.075) 1px,transparent 1.2px);
-  background-size:22px 22px;}
+  background:var(--stage-bg,#F2F4F8) radial-gradient(circle,var(--stage-dot,rgba(15,23,42,.075)) 1px,transparent 1.2px);
+  background-size:22px 22px;transition:background-color .35s;}
 #viewport{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;cursor:grab;}
 #viewport.panning{cursor:grabbing;}
 #zoomer{transform-origin:0 0;filter:drop-shadow(0 18px 30px rgba(15,23,42,.10));}
@@ -127,6 +140,7 @@ header .spacer{flex:1;}
 .zoomctl{position:absolute;right:16px;bottom:16px;display:flex;flex-direction:column;gap:1px;
   background:white;border:1px solid var(--border);border-radius:8px;overflow:hidden;box-shadow:var(--shadow);}
 .zoomctl button{width:34px;height:32px;border:0;border-radius:0;background:white;font-size:14px;color:#334155;}
+.zoomctl #zpct{width:46px;font:10.5px Inter,sans-serif;font-weight:600;color:var(--muted);}
 .zoomctl button:hover{background:var(--accent-soft);color:var(--accent-deep);}
 .zoomctl button+button{border-top:1px solid var(--border);}
 .splitter{flex:none;width:7px;margin:0 -3px;cursor:col-resize;position:relative;z-index:6;}
@@ -165,23 +179,43 @@ label.auto input{accent-color:var(--accent);}
 .editor textarea::-webkit-scrollbar-thumb:hover{background:#BCC5D2;}
 .editor textarea::-webkit-scrollbar-track{background:transparent;}
 .editor textarea::-webkit-scrollbar-corner{background:transparent;}
-.editor .hl{color:transparent;background:var(--code-bg);pointer-events:none;}
+.editor .hl{color:#334155;background:var(--code-bg);pointer-events:none;}
+.tk-k{color:#0F172A;font-weight:600;}
+.tk-s{color:#0E9AA5;}
+.tk-u{color:#7C3AED;}
+.tk-n{color:#B45309;}
+.tk-b{color:#7C3AED;}
+.tk-c{color:#94A3B8;font-style:italic;}
+.tk-d{color:#94A3B8;}
+.hl .flash{animation:flashln 1.4s ease-out;}
+@keyframes flashln{0%{background:rgba(245,158,11,.35)}100%{background:transparent}}
 .editor .hl .ln{min-height:18px;}
 .editor .hl .hit{background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent);}
 .editor .hl .hit-a{border-top-right-radius:6px;}
 .editor .hl .hit-b{border-bottom-right-radius:6px;}
-.editor textarea{background:transparent;border:0;resize:none;color:#1E293B;outline:none;width:100%;height:100%;caret-color:var(--accent-deep);}
+.editor textarea{background:transparent;border:0;resize:none;color:transparent;outline:none;width:100%;height:100%;caret-color:var(--accent-deep);}
+.editor textarea::selection{background:rgba(16,174,185,.22);}
 #issues{max-height:140px;overflow:auto;border-top:1px solid var(--border);font:11.5px/1.6 ui-monospace,Menlo,monospace;
   padding:10px 16px;display:none;background:#FFF9F5;}
 #issues.show{display:block;}
 #issues .err{color:#DC2626;}
 #issues .warn{color:#D97706;}
+#issues .err,#issues .warn{cursor:pointer;}
+#issues .err:hover,#issues .warn:hover{text-decoration:underline;}
 footer{display:flex;gap:18px;align-items:center;padding:8px 20px;border-top:1px solid var(--border);
   font-size:11px;color:var(--muted);background:rgba(255,255,255,.7);}
 footer a{color:var(--accent-deep);text-decoration:none;}
 footer a:hover{text-decoration:underline;}
 kbd{font:10px ui-monospace,Menlo,monospace;border:1px solid var(--border);border-bottom-width:2px;
   border-radius:4px;padding:1px 5px;background:white;color:#475569;}
+#help[hidden]{display:none;}
+#help{position:fixed;inset:0;background:rgba(15,23,42,.35);z-index:50;display:flex;
+  align-items:center;justify-content:center;backdrop-filter:blur(3px);}
+.help-card{background:white;border-radius:14px;box-shadow:0 24px 64px -16px rgba(15,23,42,.35);
+  padding:22px 26px;min-width:340px;}
+.help-card h2{margin:0 0 14px;font-size:14px;font-weight:650;}
+.hrow{display:flex;justify-content:space-between;gap:40px;font:12px Inter,sans-serif;
+  color:#475569;padding:6px 0;border-top:1px solid var(--border);}
 #render{min-width:78px;}
 .filetab #discard{color:var(--accent-deep);cursor:pointer;font-family:Inter,sans-serif;font-size:10.5px;white-space:nowrap;}
 .filetab #discard:hover{text-decoration:underline;}
@@ -211,16 +245,20 @@ svg g[data-part-id].hi{filter:drop-shadow(0 0 3px rgba(16,174,185,.85));}
       <polygon points="66,36 56,42 56,54 66,48" fill="url(#lgcube)"/>
     </svg>
     <div class="word">
-      <h1>iso-topology</h1>
+      <h1>iso-topology <span class="studio">STUDIO</span></h1>
       <span class="sub">isometric diagrams as code</span>
     </div>
   </div>
   <span class="pagedesc">Preview &middot; Edit &middot; Export</span>
+  <div class="menu">
+    <button class="menubtn" id="exbtn" onclick="toggleExamples()">Examples &#9662;</button>
+    <div class="menu-panel" id="expanel" hidden></div>
+  </div>
   <span class="spacer"></span>
   <span id="live">checking renderer…</span>
 </header>
 <div class="grid">
-  <div class="stage-wrap">
+  <div class="stage-wrap" id="stage">
     <div id="viewport"><div id="zoomer">{{SVG}}</div></div>
     <div id="stale" class="stale" hidden>showing last good render</div>
     <div class="exportctl">
@@ -228,9 +266,10 @@ svg g[data-part-id].hi{filter:drop-shadow(0 0 3px rgba(16,174,185,.85));}
       <button onclick="exportPNG()" title="download the current render as PNG (2x)">&#8595; PNG</button>
     </div>
     <div class="zoomctl">
-      <button onclick="zoomBy(1.25)">+</button>
-      <button onclick="zoomBy(0.8)">−</button>
-      <button onclick="resetView()" title="reset">⤾</button>
+      <button onclick="zoomBy(1.25)" title="zoom in (⌘+)">+</button>
+      <button onclick="zoomBy(0.8)" title="zoom out (⌘−)">−</button>
+      <button id="zfit" onclick="fitView()" title="fit to window (⌘0)">⤢</button>
+      <button id="zpct" onclick="resetView()" title="reset to 100%">100%</button>
     </div>
   </div>
   <div class="splitter" id="split" title="drag to resize the editor"></div>
@@ -241,6 +280,7 @@ svg g[data-part-id].hi{filter:drop-shadow(0 0 3px rgba(16,174,185,.85));}
       <span class="spacer" style="flex:1"></span>
       <button id="copybtn" onclick="copySrc()" title="copy the YAML to the clipboard">Copy</button>
       <button id="dl" onclick="downloadCopy()" disabled title="download the edited YAML as a new file">Download</button>
+      <button id="share" onclick="shareLink()" title="copy a permalink with the YAML embedded in the URL">Share</button>
     </div>
     <div class="filetab"><span class="dot" id="dirty" title="unsaved edits stay in this page; the file on disk is never written"></span><span class="path" id="fpath"></span><b>{{FILE}}</b><button class="iconbtn" id="cppath" onclick="copyPath()" title="copy full path"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button><span class="spacer" style="flex:1"></span><a id="discard" hidden onclick="discardDraft()">revert</a></div>
     <div class="editor">
@@ -251,13 +291,26 @@ svg g[data-part-id].hi{filter:drop-shadow(0 0 3px rgba(16,174,185,.85));}
     <div id="issues"></div>
   </div>
 </div>
+<div id="help" hidden>
+  <div class="help-card">
+    <h2>Keyboard shortcuts</h2>
+    <div class="hrow"><span>Re-render</span><span><kbd>⌘</kbd>+<kbd>↵</kbd></span></div>
+    <div class="hrow"><span>Fit to window</span><span><kbd>⌘</kbd>+<kbd>0</kbd></span></div>
+    <div class="hrow"><span>Zoom in / out</span><span><kbd>⌘</kbd>+<kbd>+</kbd> / <kbd>⌘</kbd>+<kbd>−</kbd></span></div>
+    <div class="hrow"><span>Indent</span><span><kbd>Tab</kbd></span></div>
+    <div class="hrow"><span>This panel</span><span><kbd>?</kbd></span></div>
+    <div class="hrow"><span>Pin a node</span><span>click it on the canvas</span></div>
+    <div class="hrow"><span>Jump to an error</span><span>click it in the issues panel</span></div>
+  </div>
+</div>
 <footer>
-  <span>Hover a node to jump to its source</span>
+  <span>Hover a node to jump to its source &middot; click to pin</span>
   <span>Scroll to zoom · drag to pan · double-click to reset</span>
-  <span><kbd>⌘</kbd>+<kbd>↵</kbd> render</span>
+  <span><kbd>⌘</kbd>+<kbd>↵</kbd> render &middot; <a onclick="toggleHelp()" style="cursor:pointer">all shortcuts</a></span>
   <span class="spacer" style="flex:1"></span>
   <a href="./topology.svg" target="_blank">Original SVG</a>
   <a href="./nodes/_index.html">Browse nodes</a>
+  <a href="https://github.com/MarkovWangRR/iso-topology/blob/main/docs/guides/studio.md" target="_blank">About Studio</a>
 </footer>
 <script>
 "use strict";
@@ -306,38 +359,129 @@ function buildMap(){
     if(!(m[1] in lineMap)) lineMap[m[1]]=[start,end];
   }
 }
+/* one-line YAML tokenizer: comments, keys, strings (iso:// URIs get
+   their own class), numbers, booleans, list dashes. Escapes as it goes
+   so layout stays byte-identical with the textarea overlay. */
+function tokLine(l){
+  if(!l) return ' ';
+  let out='';
+  const km=l.match(/^(\s*)(- )?([A-Za-z_][\w.-]*)(:)(?=\s|$)/);
+  let rest=l;
+  if(km){
+    out+=esc(km[1])+(km[2]?'<span class="tk-d">- </span>':'')+
+      '<span class="tk-k">'+esc(km[3])+'</span>:';
+    rest=l.slice(km[0].length);
+  }else{
+    const dm=l.match(/^(\s*)(- )/);
+    if(dm){out+=esc(dm[1])+'<span class="tk-d">- </span>';rest=l.slice(dm[0].length);}
+    else rest=l;
+  }
+  const re=/("(?:[^"\\]|\\.)*"?)|(#.*$)|(\b(?:true|false|null)\b)|(-?\d+(?:\.\d+)?\b)/g;
+  let last=0,m;
+  while((m=re.exec(rest))){
+    out+=esc(rest.slice(last,m.index));
+    if(m[1])      out+='<span class="'+(m[1].indexOf('iso://')>=0?'tk-u':'tk-s')+'">'+esc(m[1])+'</span>';
+    else if(m[2]) out+='<span class="tk-c">'+esc(m[2])+'</span>';
+    else if(m[3]) out+='<span class="tk-b">'+esc(m[3])+'</span>';
+    else          out+='<span class="tk-n">'+esc(m[4])+'</span>';
+    last=m.index+m[0].length;
+  }
+  out+=esc(rest.slice(last));
+  return out;
+}
+let flashLine=-1;
 function paint(range){
   const lines=srcEl.value.split('\n');
   hlEl.innerHTML=lines.map((l,i)=>{
     const hit=range&&i>=range[0]&&i<=range[1];
-    const cls='ln'+(hit?' hit':'')+(hit&&i===range[0]?' hit-a':'')+(hit&&i===range[1]?' hit-b':'');
-    return '<div class="'+cls+'">'+esc(l||' ')+'</div>';
+    const cls='ln'+(hit?' hit':'')+(hit&&i===range[0]?' hit-a':'')+(hit&&i===range[1]?' hit-b':'')+(i===flashLine?' flash':'');
+    return '<div class="'+cls+'">'+tokLine(l)+'</div>';
   }).join('');
   gutEl.innerHTML=lines.map((_,i)=>'<div>'+(i+1)+'</div>').join('');
   hlEl.scrollTop=srcEl.scrollTop; hlEl.scrollLeft=srcEl.scrollLeft; gutEl.scrollTop=srcEl.scrollTop;
 }
 srcEl.addEventListener('scroll',()=>{hlEl.scrollTop=srcEl.scrollTop;hlEl.scrollLeft=srcEl.scrollLeft;gutEl.scrollTop=srcEl.scrollTop;});
-function wireHover(){
+let pinId=null;
+function rangeFor(id){
+  if(!(id in lineMap)) id=id.replace(/~\d+$/,'');
+  return lineMap[id]||null;
+}
+function scrollToLine(ln){
+  const lh=srcEl.scrollHeight/srcEl.value.split('\n').length;
+  srcEl.scrollTop=Math.max(0,ln*lh-60);
+  hlEl.scrollTop=srcEl.scrollTop; gutEl.scrollTop=srcEl.scrollTop;
+}
+function glowOnly(id){
   zoomer.querySelectorAll('g[data-part-id]').forEach(g=>{
-    g.addEventListener('mouseenter',()=>{
-      g.classList.add('hi');
-      let id=g.getAttribute('data-part-id');
-      if(!(id in lineMap)) id=id.replace(/~\d+$/,'');
-      const r=lineMap[id]; if(!r) return;
-      paint(r);
-      const lh=srcEl.scrollHeight/srcEl.value.split('\n').length;
-      srcEl.scrollTop=Math.max(0,r[0]*lh-60);
-      hlEl.scrollTop=srcEl.scrollTop;
-    });
-    g.addEventListener('mouseleave',()=>{g.classList.remove('hi');paint(null);});
+    const gid=g.getAttribute('data-part-id');
+    g.classList.toggle('hi', gid===id || (id!==null && gid.replace(/~\d+$/,'')===id));
   });
 }
+function wireHover(){
+  zoomer.querySelectorAll('g[data-part-id]').forEach(g=>{
+    const id=g.getAttribute('data-part-id');
+    g.style.cursor='pointer';
+    g.addEventListener('mouseenter',()=>{
+      g.classList.add('hi');
+      const r=rangeFor(id); if(!r) return;
+      paint(r); scrollToLine(r[0]);
+    });
+    g.addEventListener('mouseleave',()=>{
+      if(pinId!==id) g.classList.remove('hi');
+      const pr=pinId?rangeFor(pinId):null;
+      paint(pr);
+    });
+    g.addEventListener('click',e=>{
+      e.stopPropagation();
+      pinId = (pinId===id)?null:id;
+      glowOnly(pinId);
+      const pr=pinId?rangeFor(pinId):null;
+      paint(pr);
+      if(pr) scrollToLine(pr[0]);
+    });
+  });
+  if(pinId) glowOnly(pinId);
+}
+/* reverse mapping: caret inside a part's block lights the node up */
+function caretSync(){
+  const line=srcEl.value.slice(0,srcEl.selectionStart).split('\n').length-1;
+  let hitId=null;
+  for(const id in lineMap){
+    const r=lineMap[id];
+    if(line>=r[0]&&line<=r[1]){hitId=id;break;}
+  }
+  if(!pinId) glowOnly(hitId);
+}
+srcEl.addEventListener('keyup',caretSync);
+srcEl.addEventListener('click',caretSync);
 
 /* ── zoom & pan ─────────────────────────────────────────────────── */
 let scale=1,panX=0,panY=0;
-function apply(){zoomer.style.transform='translate('+panX+'px,'+panY+'px) scale('+scale+')';}
-function zoomBy(f){scale=Math.min(8,Math.max(0.2,scale*f));apply();}
+function apply(){
+  zoomer.style.transform='translate('+panX+'px,'+panY+'px) scale('+scale+')';
+  const z=document.getElementById('zpct');
+  if(z) z.textContent=Math.round(scale*100)+'%';
+}
+function zoomBy(f){
+  const r=viewport.getBoundingClientRect();
+  const cx=r.width/2, cy=r.height/2;
+  const ns=Math.min(8,Math.max(0.2,scale*f));
+  const eff=ns/scale;
+  panX=cx-(cx-panX)*eff; panY=cy-(cy-panY)*eff;
+  scale=ns; apply();
+}
 function resetView(){scale=1;panX=0;panY=0;apply();}
+function fitView(){
+  const svg=zoomer.querySelector('svg'); if(!svg) return;
+  const r=viewport.getBoundingClientRect();
+  const w=parseFloat(svg.getAttribute('width'))||svg.viewBox.baseVal.width;
+  const h=parseFloat(svg.getAttribute('height'))||svg.viewBox.baseVal.height;
+  if(!w||!h) return;
+  const s=Math.min((r.width-72)/w,(r.height-72)/h);
+  scale=Math.min(4,Math.max(0.2,s));
+  panX=w*(1-scale)/2; panY=h*(1-scale)/2;
+  apply();
+}
 viewport.addEventListener('wheel',e=>{
   e.preventDefault();
   const f=e.deltaY<0?1.1:0.9, r=viewport.getBoundingClientRect();
@@ -350,6 +494,76 @@ viewport.addEventListener('mousedown',e=>{drag={x:e.clientX-panX,y:e.clientY-pan
 window.addEventListener('mousemove',e=>{if(!drag)return;panX=e.clientX-drag.x;panY=e.clientY-drag.y;apply();});
 window.addEventListener('mouseup',()=>{drag=null;viewport.classList.remove('panning');});
 viewport.addEventListener('dblclick',resetView);
+viewport.addEventListener('click',e=>{
+  if(e.target.closest && e.target.closest('g[data-part-id]')) return;
+  if(pinId!==null){pinId=null;glowOnly(null);paint(null);}
+});
+
+/* ── adaptive stage: tint the backdrop after the scene's canvas ── */
+function hexRGB(c){
+  if(!c) return null;
+  c=c.trim();
+  let m=c.match(/^#([0-9a-f]{3})$/i);
+  if(m) return [parseInt(m[1][0]+m[1][0],16),parseInt(m[1][1]+m[1][1],16),parseInt(m[1][2]+m[1][2],16)];
+  m=c.match(/^#([0-9a-f]{6})/i);
+  if(m) return [parseInt(m[1].slice(0,2),16),parseInt(m[1].slice(2,4),16),parseInt(m[1].slice(4,6),16)];
+  return null;
+}
+function adaptStage(){
+  const st=document.getElementById('stage');
+  const r=zoomer.querySelector('rect[data-layer="canvas-bg"]');
+  const rgb=r?hexRGB(r.getAttribute('fill')):null;
+  if(!rgb){st.style.removeProperty('--stage-bg');st.style.removeProperty('--stage-dot');return;}
+  const lum=(0.2126*rgb[0]+0.7152*rgb[1]+0.0722*rgb[2])/255;
+  if(lum<0.45){
+    const mix=rgb.map(v=>Math.round(v*0.82));
+    st.style.setProperty('--stage-bg','rgb('+mix.join(',')+')');
+    st.style.setProperty('--stage-dot','rgba(255,255,255,.07)');
+  }else{
+    const mix=rgb.map(v=>Math.round(v*0.96));
+    st.style.setProperty('--stage-bg','rgb('+mix.join(',')+')');
+    st.style.setProperty('--stage-dot','rgba(15,23,42,.08)');
+  }
+}
+
+/* ── issues → source navigation ─────────────────────────────────── */
+function pathToLine(path){
+  const segs=String(path||'').replace(/\[(\d+)\]/g,'.$1').split('.').filter(Boolean);
+  const lines=srcEl.value.split('\n');
+  let pos=0, indent=-1;
+  for(const sg of segs){
+    if(/^\d+$/.test(sg)){
+      let n=+sg, itemIndent=-1, found=-1;
+      for(let i=pos+1;i<lines.length;i++){
+        const t=lines[i]; if(!t.trim()) continue;
+        const ind=t.search(/\S/);
+        if(ind<=indent) break;
+        if(/^\s*-(\s|$)/.test(t)){
+          if(itemIndent<0) itemIndent=ind;
+          if(ind===itemIndent){ if(n===0){found=i;break;} n--; }
+        }
+      }
+      if(found<0) return pos;
+      pos=found; indent=lines[found].search(/\S/);
+      continue;
+    }
+    const re=new RegExp('^\\s*(?:- )?'+sg.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\s*:');
+    let found=-1;
+    for(let i=pos;i<lines.length;i++){
+      if(re.test(lines[i])){found=i;break;}
+    }
+    if(found<0) return pos;
+    pos=found; indent=lines[found].search(/\S/);
+  }
+  return pos;
+}
+function jumpToIssue(path){
+  const ln=pathToLine(path);
+  flashLine=ln;
+  paint(pinId?rangeFor(pinId):null);
+  scrollToLine(ln);
+  setTimeout(()=>{flashLine=-1;paint(pinId?rangeFor(pinId):null);},1500);
+}
 
 /* ── live re-render against isotopo serve ───────────────────────── */
 const liveEl=document.getElementById('live'), renderBtn=document.getElementById('render');
@@ -378,7 +592,7 @@ async function rerender(){
     showIssues(data.issues||[]);
     if(data.svg){
       zoomer.innerHTML=data.svg;
-      buildMap(); paint(null); wireHover();
+      buildMap(); paint(pinId?rangeFor(pinId):null); wireHover(); adaptStage();
       staleEl.hidden=true;
     }else{
       staleEl.hidden=false;
@@ -394,8 +608,11 @@ function showIssues(list){
   const el=document.getElementById('issues');
   if(!list.length){el.classList.remove('show');el.innerHTML='';return;}
   el.classList.add('show');
-  el.innerHTML=list.map(i=>'<div class="'+(i.severity==='error'?'err':'warn')+'">'+
+  el.innerHTML=list.map(i=>'<div class="'+(i.severity==='error'?'err':'warn')+'" data-path="'+esc(i.path||'')+'" title="click to jump to this line">'+
     esc(i.severity+' '+(i.path||'')+' — '+i.message+(i.suggest?' (did you mean '+i.suggest+'?)':''))+'</div>').join('');
+  el.querySelectorAll('[data-path]').forEach(d=>{
+    d.addEventListener('click',()=>jumpToIssue(d.getAttribute('data-path')));
+  });
 }
 srcEl.addEventListener('input',()=>{
   buildMap(); paint(null);
@@ -410,7 +627,19 @@ srcEl.addEventListener('input',()=>{
   }
 });
 window.addEventListener('keydown',e=>{
-  if((e.metaKey||e.ctrlKey)&&e.key==='Enter'){e.preventDefault();rerender();}
+  if((e.metaKey||e.ctrlKey)&&e.key==='Enter'){e.preventDefault();rerender();return;}
+  if((e.metaKey||e.ctrlKey)&&e.key==='0'){e.preventDefault();fitView();return;}
+  if((e.metaKey||e.ctrlKey)&&(e.key==='='||e.key==='+')){e.preventDefault();zoomBy(1.25);return;}
+  if((e.metaKey||e.ctrlKey)&&e.key==='-'){e.preventDefault();zoomBy(0.8);return;}
+  if(e.key==='Escape'){document.getElementById('help').hidden=true;return;}
+  if(e.key==='?'&&document.activeElement!==srcEl){toggleHelp();}
+});
+function toggleHelp(){
+  const h=document.getElementById('help');
+  h.hidden=!h.hidden;
+}
+document.getElementById('help').addEventListener('click',e=>{
+  if(e.target.id==='help') e.target.hidden=true;
 });
 srcEl.addEventListener('keydown',e=>{
   if(e.key==='Tab'&&!e.shiftKey){
@@ -523,11 +752,85 @@ function downloadCopy(){
   a.download=FILENAME.replace(/(\.[a-z0-9]+)$/i,'.edited$1');
   a.click();
 }
+/* ── examples menu (fetched from the public gallery) ────────────── */
+const EXAMPLES=['ai-platform','llm-serving','rag-pipeline','training-compute','platform-board','identity-flow'];
+const RAWBASE='https://raw.githubusercontent.com/MarkovWangRR/iso-topology/main/samples/topology/';
+function toggleExamples(){
+  const p=document.getElementById('expanel');
+  if(!p.hidden){p.hidden=true;return;}
+  if(!p.childElementCount){
+    p.innerHTML='<div class="hint">loads into the editor — your file is untouched</div>'+
+      EXAMPLES.map(n=>'<button data-ex="'+n+'">'+n+'</button>').join('');
+    p.querySelectorAll('[data-ex]').forEach(b=>{
+      b.addEventListener('click',()=>loadExample(b.getAttribute('data-ex')));
+    });
+  }
+  p.hidden=false;
+}
+document.addEventListener('click',e=>{
+  if(!e.target.closest('.menu')) document.getElementById('expanel').hidden=true;
+});
+async function loadExample(name){
+  document.getElementById('expanel').hidden=true;
+  const b=document.getElementById('exbtn'), keep=b.textContent;
+  b.textContent='loading…';
+  try{
+    const r=await fetch(RAWBASE+name+'/input.yaml');
+    if(!r.ok) throw new Error(r.status);
+    srcEl.value=await r.text();
+    srcEl.dispatchEvent(new Event('input',{bubbles:true}));
+  }catch(_){b.textContent='offline';setTimeout(()=>{b.textContent=keep;},1200);return;}
+  b.textContent=keep;
+}
+
+/* ── share: YAML deflated into the URL hash ─────────────────────── */
+async function pipeThrough(stream,bytes){
+  const w=stream.writable.getWriter();
+  w.write(bytes); w.close();
+  const out=[];
+  const rd=stream.readable.getReader();
+  for(;;){const {done,value}=await rd.read(); if(done)break; out.push(value);}
+  let n=0; out.forEach(c=>n+=c.length);
+  const all=new Uint8Array(n); let o=0;
+  out.forEach(c=>{all.set(c,o);o+=c.length;});
+  return all;
+}
+async function deflateText(t){
+  const b=await pipeThrough(new CompressionStream('deflate-raw'),new TextEncoder().encode(t));
+  let s2=''; b.forEach(v=>{s2+=String.fromCharCode(v);});
+  return btoa(s2).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+async function inflateText(b64){
+  const s2=atob(b64.replace(/-/g,'+').replace(/_/g,'/'));
+  const bytes=new Uint8Array(s2.length);
+  for(let i=0;i<s2.length;i++) bytes[i]=s2.charCodeAt(i);
+  const out=await pipeThrough(new DecompressionStream('deflate-raw'),bytes);
+  return new TextDecoder().decode(out);
+}
+async function shareLink(){
+  const b=document.getElementById('share');
+  try{
+    const h=await deflateText(srcEl.value);
+    const url=location.origin+location.pathname+'#src='+h;
+    await navigator.clipboard.writeText(url);
+    b.textContent='Link copied';
+  }catch(_){b.textContent='Share failed';}
+  setTimeout(()=>{b.textContent='Share';},1400);
+}
+
 try{
   const d=localStorage.getItem(DRAFTKEY);
   if(d&&d!==ORIGINAL){srcEl.value=d;setDirty(true);}
 }catch(_){}
-buildMap(); paint(null); wireHover(); renderPath();
+/* a #src= permalink outranks the draft — explicit intent wins */
+if(location.hash.indexOf('#src=')===0){
+  inflateText(location.hash.slice(5)).then(t=>{
+    srcEl.value=t; setDirty(t!==ORIGINAL);
+    buildMap(); paint(null);
+    if(serverOK) rerender();
+  }).catch(()=>{});
+}
+buildMap(); paint(null); wireHover(); renderPath(); adaptStage();
 probe().then(()=>{if(serverOK&&dirty)rerender();});
 if(location.protocol.startsWith('http')) setInterval(probe,5000);
 </script>

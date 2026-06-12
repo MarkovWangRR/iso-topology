@@ -120,7 +120,8 @@ go install github.com/MarkovWangRR/iso-topology/cmd/isotopo@latest
 curl -sLO https://raw.githubusercontent.com/MarkovWangRR/iso-topology/main/samples/topology/ai-platform/input.yaml
 isotopo render input.yaml ./out
 open ./out/topology.html        # interactive viewer (zoom/pan + hover-to-source)
-isotopo serve input.yaml        # …or live mode: edit YAML, re-render instantly
+isotopo serve input.yaml        # …or open the Studio: live edit + re-render
+                                # → docs/guides/studio.md
 ```
 
 Or start from a three-line graph and let auto-layout do everything:
