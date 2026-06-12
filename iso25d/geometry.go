@@ -95,9 +95,12 @@ func (BoxShapeProvider) Faces(w, d, h float64, _ map[string]any) []Face {
 	p := func(x, y, z float64) [2]float64 {
 		return [2]float64{(x-y)*cos30 + d*cos30, (x+y)*sin30 - z + h}
 	}
+	// Point order matches the legacy writeFace emission exactly (byte
+	// parity once the live path consumes these): left D-H-G-C,
+	// right B-F-G-C, top E-F-G-H in computeBoxGeom's corner naming.
 	top := [][2]float64{p(0, 0, h), p(w, 0, h), p(w, d, h), p(0, d, h)}
-	left := [][2]float64{p(0, d, h), p(w, d, h), p(w, d, 0), p(0, d, 0)}
-	right := [][2]float64{p(w, 0, h), p(w, d, h), p(w, d, 0), p(w, 0, 0)}
+	left := [][2]float64{p(0, d, 0), p(0, d, h), p(w, d, h), p(w, d, 0)}
+	right := [][2]float64{p(w, 0, 0), p(w, 0, h), p(w, d, h), p(w, d, 0)}
 	return []Face{
 		{Name: "left", Points: left, Normal: [3]float64{0, 1, 0}, ZOrder: 0, Visible: true},
 		{Name: "right", Points: right, Normal: [3]float64{1, 0, 0}, ZOrder: 1, Visible: true},

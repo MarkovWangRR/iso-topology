@@ -101,12 +101,12 @@ func project(x, y, z float64) (float64, float64) {
 // boxGeom holds projected, viewbox-shifted coordinates for the 8 corners of
 // an iso box of given dimensions plus the resulting viewBox size.
 //
-//	   E───────F          z
-//	  /|      /|          |
-//	 H───────G |          o───── x
-//	 | A─────|─B         /
-//	 |/      |/         y
-//	 D───────C
+//	  E───────F          z
+//	 /|      /|          |
+//	H───────G |          o───── x
+//	| A─────|─B         /
+//	|/      |/         y
+//	D───────C
 type boxGeom struct {
 	A, B, C, D, E, F, G, H [2]float64
 	ViewW, ViewH           float64
@@ -376,11 +376,15 @@ func RenderIsoBox(o IsoBoxOpts) string {
 	rightC, rightW, rightD := pickFaceStroke(o.Stroke, o.StrokeWidth, o.StrokeDasharray, o.RightStroke)
 	topC, topW, topD := pickFaceStroke(o.Stroke, o.StrokeWidth, o.StrokeDasharray, o.TopStroke)
 
-	writeFace(&sb, "left", leftFill, leftC, leftW, leftD, 0, g.D, g.H, g.G, g.C)
-	writeFace(&sb, "right", rightFill, rightC, rightW, rightD, 0, g.B, g.F, g.G, g.C)
-	writeFace(&sb, "top", topFill, topC, topW, topD, 0, g.E, g.F, g.G, g.H)
+	// v3.2 (M1) — face polygons come from the geometry provider; the
+	// surface emission below is unchanged. Byte parity with the corner
+	// math this replaces is enforced by golden tests + parity tests.
+	pf := providerFacePoints(o.Width, o.Depth, o.Height, o.Margin)
+	writeFace(&sb, "left", leftFill, leftC, leftW, leftD, 0, pf["left"]...)
+	writeFace(&sb, "right", rightFill, rightC, rightW, rightD, 0, pf["right"]...)
+	writeFace(&sb, "top", topFill, topC, topW, topD, 0, pf["top"]...)
 	if patID != "" {
-		writeFace(&sb, "top-pattern", "url(#"+patID+")", "", 0, "", 0, g.E, g.F, g.G, g.H)
+		writeFace(&sb, "top-pattern", "url(#"+patID+")", "", 0, "", 0, pf["top"]...)
 	}
 	if grainID != "" {
 		sb.WriteString(`</g>`)
@@ -628,4 +632,20 @@ func escapeAttr(s string) string {
 	s = escapeXML(s)
 	s = strings.ReplaceAll(s, `"`, "&quot;")
 	return s
+}
+
+// providerFacePoints fetches the box faces from the registered
+// geometry provider and shifts them into the standalone SVG frame
+// (margin offset). The bridge that makes the provider the live
+// path's single source of geometric truth.
+func providerFacePoints(w, d, h, m float64) map[string][][2]float64 {
+	out := map[string][][2]float64{}
+	for _, f := range (BoxShapeProvider{}).Faces(w, d, h, nil) {
+		pts := make([][2]float64, len(f.Points))
+		for i, p := range f.Points {
+			pts[i] = [2]float64{p[0] + m, p[1] + m}
+		}
+		out[f.Name] = pts
+	}
+	return out
 }
