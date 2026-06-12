@@ -343,6 +343,27 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo,
 		if !found {
 			return wx, wy
 		}
+		// v3.2.1 — prism family: bbox face-midpoints sit OUTSIDE the
+		// inscribed polygon (hexagon's left-mid is in empty canvas) or on
+		// a vertex, piling arrowheads and detaching exits. Re-anchor on
+		// the base polygon along the bbox-anchor direction.
+		switch p.shape {
+		case "prism", "diamond", "triprism", "hexprism", "octprism":
+			sides := p.sides
+			switch p.shape {
+			case "diamond":
+				sides = 4
+			case "triprism":
+				sides = 3
+			case "hexprism":
+				sides = 6
+			case "octprism":
+				sides = 8
+			}
+			dx, dy := wx-(p.offWX+p.w/2), wy-(p.offWY+p.d/2)
+			ax, ay := iso25d.PrismGroundAnchor(p.w, p.d, sides, dx, dy)
+			return p.offWX + ax, p.offWY + ay
+		}
 		switch p.shape {
 		case "circle":
 			cx := p.offWX + p.w/2
