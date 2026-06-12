@@ -11,6 +11,7 @@ package isotopo
 import (
 	"fmt"
 	"math"
+	"os"
 
 	"github.com/MarkovWangRR/iso-topology/iso25d"
 	"sort"
@@ -347,19 +348,7 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo,
 		// inscribed polygon (hexagon's left-mid is in empty canvas) or on
 		// a vertex, piling arrowheads and detaching exits. Re-anchor on
 		// the base polygon along the bbox-anchor direction.
-		switch p.shape {
-		case "prism", "diamond", "triprism", "hexprism", "octprism":
-			sides := p.sides
-			switch p.shape {
-			case "diamond":
-				sides = 4
-			case "triprism":
-				sides = 3
-			case "hexprism":
-				sides = 6
-			case "octprism":
-				sides = 8
-			}
+		if sides := prismSidesFor(p.shape, p.sides); sides >= 3 {
 			dx, dy := wx-(p.offWX+p.w/2), wy-(p.offWY+p.d/2)
 			ax, ay := iso25d.PrismGroundAnchor(p.w, p.d, sides, dx, dy)
 			return p.offWX + ax, p.offWY + ay
@@ -638,6 +627,18 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo,
 			sWY += sTanY * sStagger
 			tWX += tTanX * tStagger
 			tWY += tTanY * tStagger
+			// v3.2.2 — the fan-out displacement runs along the BBOX face
+			// tangent, which pushes the point back OFF a non-rectangular
+			// boundary (and outside points are invisible to silhouette
+			// clipping — the re-acceptance round's floating endpoints).
+			// Re-refine so the stagger becomes an angular spread along
+			// the part's real outline.
+			if sStagger != 0 {
+				sWX, sWY = anchorRefineSilhouette(effFrom[ci], sWX, sWY, routeZ)
+			}
+			if tStagger != 0 {
+				tWX, tWY = anchorRefineSilhouette(effTo[ci], tWX, tWY, routeZ)
+			}
 
 			// v3.1 — the v1.6.6 arrow-gap pullback is gone: arrowheads now
 			// paint in the top overlay and endpoints clip at the target's
@@ -756,6 +757,32 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo,
 			pts = [][2]float64{{x1, y1}, {x2, y2}}
 		}
 
+		// v3.2.2 — terminal despike: drop a sub-7px final segment that
+		// doubles back against its predecessor (stub overshoot at the
+		// clipped boundary renders as a V-kink under the arrowhead).
+		trimTail := func(p [][2]float64) [][2]float64 {
+			for len(p) >= 3 {
+				n := len(p)
+				lx, ly := p[n-1][0]-p[n-2][0], p[n-1][1]-p[n-2][1]
+				px, py := p[n-2][0]-p[n-3][0], p[n-2][1]-p[n-3][1]
+				if math.Hypot(lx, ly) < 7 && lx*px+ly*py < 0 {
+					p = append(p[:n-2], p[n-1])
+					continue
+				}
+				break
+			}
+			return p
+		}
+		pts = trimTail(pts)
+		// mirror for the start side
+		for i, j := 0, len(pts)-1; i < j; i, j = i+1, j-1 {
+			pts[i], pts[j] = pts[j], pts[i]
+		}
+		pts = trimTail(pts)
+		for i, j := 0, len(pts)-1; i < j; i, j = i+1, j-1 {
+			pts[i], pts[j] = pts[j], pts[i]
+		}
+
 		// v3.0 — endpoint silhouette clipping: when an anchor face is
 		// occluded by its own body (back/right faces under this camera),
 		// the projected endpoint lands INSIDE the silhouette; the line
@@ -764,7 +791,17 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo,
 		// boundary so line + arrow terminate visibly on the entry edge.
 		if len(pts) >= 2 {
 			if tp, ok := byID[func() string { id, _ := parseAnchor(effTo[ci]); return id }()]; ok && !tp.isSubstrate {
-				pts = clipRouteEnd(pts, partSilhouette(tp, tx, ty), 2)
+				sil := partSilhouette(tp, tx, ty)
+				if os.Getenv("ISOTOPO_DEBUG_CLIP") != "" {
+					last := pts[len(pts)-1]
+					fmt.Fprintf(os.Stderr, "CLIP to=%s tip=(%.1f,%.1f) inside=%v sil0=(%.1f,%.1f) silN=%d\n",
+						effTo[ci], last[0], last[1], pointInConvex(last, sil), sil[0][0], sil[0][1], len(sil))
+				}
+				pts = clipRouteEnd(pts, sil, 2)
+				if os.Getenv("ISOTOPO_DEBUG_CLIP") != "" {
+					last := pts[len(pts)-1]
+					fmt.Fprintf(os.Stderr, "  after=(%.1f,%.1f)\n", last[0], last[1])
+				}
 			}
 			if sp, ok := byID[func() string { id, _ := parseAnchor(effFrom[ci]); return id }()]; ok && !sp.isSubstrate {
 				pts = clipRouteStart(pts, partSilhouette(sp, tx, ty), 1)
@@ -1199,7 +1236,9 @@ func partSilhouette(p partInfo, tx, ty float64) [][2]float64 {
 		return silhouetteHex(p, tx, ty)
 	}
 	var params map[string]any
-	if p.sides >= 3 {
+	if n := prismSidesFor(p.shape, p.sides); n >= 3 {
+		params = map[string]any{"sides": n}
+	} else if p.sides >= 3 {
 		params = map[string]any{"sides": p.sides}
 	}
 	local := prov.Silhouette(p.w, p.d, p.h, params)
@@ -1319,4 +1358,26 @@ func clipRouteStart(pts [][2]float64, poly [][2]float64, inset float64) [][2]flo
 		out[len(rev)-1-i] = p
 	}
 	return out
+}
+
+// prismSidesFor resolves the side count for a prism-family shape:
+// named variants carry their count in the NAME; bare "prism" reads
+// geom.sides. Returning 0 means "not a prism".
+func prismSidesFor(shape string, geomSides int) int {
+	switch shape {
+	case "diamond":
+		return 4
+	case "triprism":
+		return 3
+	case "hexprism":
+		return 6
+	case "octprism":
+		return 8
+	case "prism":
+		if geomSides >= 3 {
+			return geomSides
+		}
+		return 6
+	}
+	return 0
 }
