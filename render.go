@@ -35,7 +35,9 @@ func RenderWithCanvas(n *Node, theme *Theme, canvas *Canvas, anns []*Annotation)
 		return renderComposite(n, theme, canvas, anns)
 	}
 	shape, opts := Flatten(n, theme)
-	return iso25d.Convert2DTo25D(shape, opts)
+	// Same integral-dimension contract as the composite path (v3.0):
+	// fractional root width/height grows scrollbars in 1:1 captures.
+	return ceilOuterDims(iso25d.Convert2DTo25D(shape, opts))
 }
 
 // renderComposite walks a composite node's parts, calls the lowering

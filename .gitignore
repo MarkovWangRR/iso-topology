@@ -17,3 +17,4 @@ samples/*/*/actual.svg
 /isotopo-mcp
 /cmd/isotopo-mcp/isotopo-mcp
 /tools/gen-docs/gen-docs
+tools/visreg/baselines/*.actual.png
