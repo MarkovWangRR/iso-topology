@@ -1,0 +1,32 @@
+nodes:
+  hero:
+    shape: rectangle
+    geom: { w: 170, d: 170, h: 56 }
+    icon: "iso://glyph/model/light"
+    label: "Surface v1"
+    style:
+      faces:
+        top:
+          fill:
+            kind: linearGradient
+            angle: 135
+            stops:
+              - { offset: 0, color: "#A78BFA" }
+              - { offset: 0.55, color: "#7C5CFC" }
+              - { offset: 1, color: "#5B21B6" }
+          strokes:
+            - { color: "#4C1D95", width: 1.6 }
+            - { color: "#DDD6FE", width: 0.7, opacity: 0.9 }
+        left:
+          fill:
+            kind: pattern
+            pattern: { kind: hatch, color: "#312E81", spacing: 7, angle: 0, projected: true }
+        right:
+          fill:
+            kind: radialGradient
+            cx: 0.3
+            cy: 0.25
+            stops:
+              - { offset: 0, color: "#8B5CF6" }
+              - { offset: 1, color: "#4338CA" }
+      text: { color: "#F5F3FF" }

@@ -261,6 +261,12 @@ func RenderIsoPrism(o IsoBoxOpts, sides int) string {
 	}
 
 	m := o.Margin
+	var faceDefs strings.Builder
+	type pend struct {
+		name string
+		pts  [][2]float64
+	}
+	var stroked []pend
 	for _, f := range prov.Faces(o.Width, o.Depth, o.Height, params) {
 		if !f.Visible {
 			continue
@@ -273,11 +279,26 @@ func RenderIsoPrism(o IsoBoxOpts, sides int) string {
 				fill = o.LeftFill
 			}
 		}
+		if fs := surfaceFor(o.FaceSurfaces, f.Name); fs != nil && fs.Fill != nil {
+			if ref := emitFaceFill(&faceDefs, "", f.Name, fs.Fill); ref != "" {
+				fill = ref
+			}
+		}
 		pts := make([][2]float64, len(f.Points))
 		for i, p := range f.Points {
 			pts[i] = [2]float64{p[0] + m, p[1] + m}
 		}
 		writeFace(&sb, f.Name, fill, stroke, sw, "", 0, pts...)
+		if fs := surfaceFor(o.FaceSurfaces, f.Name); fs != nil && len(fs.Strokes) > 0 {
+			stroked = append(stroked, pend{f.Name, pts})
+		}
+	}
+	if faceDefs.Len() > 0 {
+		fmt.Fprintf(&sb, `<defs>%s</defs>`, faceDefs.String())
+	}
+	for _, sd := range stroked {
+		fs := surfaceFor(o.FaceSurfaces, sd.name)
+		writeFaceStrokeLayers(&sb, sd.name, fs.Strokes, sd.pts...)
 	}
 
 	cr := prov.ContentRectFor(o.Width, o.Depth, o.Height, params)

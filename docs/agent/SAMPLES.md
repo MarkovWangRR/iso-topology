@@ -17,6 +17,7 @@ description matches your task, imitate its structure, then check
 | [`cloud`](../../samples/node/cloud/input.yaml) | cloud — free-form rounded outline for external systems; no per-face palette. |
 | [`composite`](../../samples/node/composite/input.yaml) | composite — a stat card built from three primitives sharing one bbox. |
 | [`cylinder`](../../samples/node/cylinder/input.yaml) | cylinder — the database/queue primitive: elliptical top, curved side wall. |
+| [`faces-demo`](../../samples/node/faces-demo/input.yaml) | (no header comment) |
 | [`group`](../../samples/node/group/input.yaml) | group — a low-extrusion translucent substrate that wraps nested parts. |
 | [`hexprism`](../../samples/node/hexprism/input.yaml) | (no header comment) |
 | [`iso-text`](../../samples/node/iso-text/input.yaml) | iso_text — flat text panel (near-zero extrusion); good for titles and captions. |

@@ -1,4 +1,4 @@
-# Capabilities — v0.3.2
+# Capabilities — v0.3.3
 
 Generated from `CapabilityReport()`. Do not edit by hand — run
 `go run ./tools/gen-docs` to regenerate after a code change.
@@ -39,7 +39,7 @@ override per-part via `geom.h`.
 | **octprism** | `octprism` | 1.0 | v3.2 — 8-gon prism: firewall (stop-sign) semantics |
 | **person** | `c4-person`, `c4_person`, `person` | 1.2 |  |
 | **prism** | `prism` | 1.0 | v3.2 — regular n-gon base x vertical extrude; geom.sides picks the base (default 6). Side walls shade left/right palette by facing. NOT yet on prisms: gradients, patterns, shadow, backglow, grain (silently no-op until the Surface/Effect pipelines, M3/M4). Connectors anchor on the true polygon edge. |
-| **rectangle** | `callout`, `class`, `code`, `document`, `hierarchy`, `image`, `package`, `page`, `parallelogram`, `rectangle`, `sequence-diagram`, `sequence_diagram`, `sql-table`, `sql_table`, `square`, `step` | 0.6 |  |
+| **rectangle** | `callout`, `class`, `code`, `document`, `hierarchy`, `image`, `package`, `page`, `parallelogram`, `rectangle`, `sequence-diagram`, `sequence_diagram`, `sql-table`, `sql_table`, `square`, `step` | 0.4 |  |
 | **triprism** | `triprism` | 1.0 | v3.2 — 3-gon prism: alert / one-way fan-out semantics |
 
 ## Composition primitives
@@ -193,6 +193,7 @@ Every field under each `style.*` sub-block.
 |---|---|
 | `palette` | `top`, `left`, `right`, `topGradient {from, to, dir}`, `leftGradient {from, to, dir}`, `rightGradient {from, to, dir}` |
 | `stroke` | `color`, `width`, `dash` |
+| `faces (v3.3)` | `map of face name → {fill, strokes}; names: top|left|right (box family), top|side0..sideN-1 (prisms), "*" wildcard; outranks palette`, `fill {kind: solid|linearGradient|radialGradient|pattern, color, stops: [{offset 0..1, color}], angle (linear, degrees), cx/cy (radial 0..1), pattern {kind: hatch|dots, color, spacing, angle, projected}}`, `projected: true pins the pattern tile to the face's iso plane instead of screen space`, `strokes: [{color, width, dash, opacity}] — multiple re-traces per face, list order = paint order (put thin highlight lines after wide outlines)`, `note: a pattern fill REPLACES the base fill (transparent tile background); supported on the box family + prisms — cylinder/cloud/person/sphere keep palette only for now` |
 | `text` | `family`, `size (a MAXIMUM — top-face labels auto-wrap at word boundaries and auto-shrink so they never overflow the face; icons are clamped to the face too)`, `weight`, `color`, `orient`, `boxBg`, `boxBorder` |
 | `effects` | `opacity`, `margin`, `cornerRadius`, `dropShadow {dx, dy, blur, color}`, `backglow {color, radius, opacity}`, `pattern {kind: hatch|dots, color, spacing, angle}`, `wireframe (bool — line-art: strokes only, no fills; ghost parts are exempt from overlap warnings)`, `grain {intensity 0..1, scale} (film-grain noise on the faces)` |
 

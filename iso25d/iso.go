@@ -37,11 +37,13 @@ type IsoBoxOpts struct {
 	FontWeight string
 
 	// Top-face icon
-	Icon       string
-	IconScale  float64
-	IconAnchor string  // center | topLeft | topRight | bottomLeft | bottomRight
-	IconOffX   float64 // fraction of W
-	IconOffY   float64 // fraction of D
+	Icon      string
+	IconScale float64
+	// v3.3 — per-face surface overrides (style.faces).
+	FaceSurfaces map[string]*FaceSurface
+	IconAnchor   string  // center | topLeft | topRight | bottomLeft | bottomRight
+	IconOffX     float64 // fraction of W
+	IconOffY     float64 // fraction of D
 
 	// Padding around the projected shape in viewBox units
 	Margin float64
@@ -380,9 +382,33 @@ func RenderIsoBox(o IsoBoxOpts) string {
 	// surface emission below is unchanged. Byte parity with the corner
 	// math this replaces is enforced by golden tests + parity tests.
 	pf := providerFacePoints(o.Width, o.Depth, o.Height, o.Margin)
+	// v3.3 — style.faces outranks the palette fills; gradient/pattern
+	// defs are emitted into a local defs block on demand.
+	var faceDefs strings.Builder
+	faceFill := func(name, fallback string) string {
+		fs := surfaceFor(o.FaceSurfaces, name)
+		if fs == nil || fs.Fill == nil {
+			return fallback
+		}
+		if ref := emitFaceFill(&faceDefs, "", name, fs.Fill); ref != "" {
+			return ref
+		}
+		return fallback
+	}
+	leftFill = faceFill("left", leftFill)
+	rightFill = faceFill("right", rightFill)
+	topFill = faceFill("top", topFill)
+	if faceDefs.Len() > 0 {
+		fmt.Fprintf(&sb, `<defs>%s</defs>`, faceDefs.String())
+	}
 	writeFace(&sb, "left", leftFill, leftC, leftW, leftD, 0, pf["left"]...)
 	writeFace(&sb, "right", rightFill, rightC, rightW, rightD, 0, pf["right"]...)
 	writeFace(&sb, "top", topFill, topC, topW, topD, 0, pf["top"]...)
+	for _, name := range []string{"left", "right", "top"} {
+		if fs := surfaceFor(o.FaceSurfaces, name); fs != nil && len(fs.Strokes) > 0 {
+			writeFaceStrokeLayers(&sb, name, fs.Strokes, pf[name]...)
+		}
+	}
 	if patID != "" {
 		writeFace(&sb, "top-pattern", "url(#"+patID+")", "", 0, "", 0, pf["top"]...)
 	}

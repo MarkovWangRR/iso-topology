@@ -70,7 +70,7 @@ type StyleKeyGroup struct {
 // Pure function — no IO, no globals.
 func CapabilityReport() Capabilities {
 	return Capabilities{
-		Version: "0.3.2",
+		Version: "0.3.3",
 		Inputs: []InputFormat{
 			{".yaml", "hand-authored iso composite with precise placement", "manual"},
 			{".json", "same shape as .yaml but JSON-encoded", "manual"},
@@ -266,6 +266,13 @@ func buildStyleKeyGroups() []StyleKeyGroup {
 			"topGradient {from, to, dir}", "leftGradient {from, to, dir}", "rightGradient {from, to, dir}",
 		}},
 		{"stroke", []string{"color", "width", "dash"}},
+		{"faces (v3.3)", []string{
+			"map of face name → {fill, strokes}; names: top|left|right (box family), top|side0..sideN-1 (prisms), \"*\" wildcard; outranks palette",
+			"fill {kind: solid|linearGradient|radialGradient|pattern, color, stops: [{offset 0..1, color}], angle (linear, degrees), cx/cy (radial 0..1), pattern {kind: hatch|dots, color, spacing, angle, projected}}",
+			"projected: true pins the pattern tile to the face's iso plane instead of screen space",
+			"strokes: [{color, width, dash, opacity}] — multiple re-traces per face, list order = paint order (put thin highlight lines after wide outlines)",
+			"note: a pattern fill REPLACES the base fill (transparent tile background); supported on the box family + prisms — cylinder/cloud/person/sphere keep palette only for now",
+		}},
 		{"text", []string{"family", "size (a MAXIMUM — top-face labels auto-wrap at word boundaries and auto-shrink so they never overflow the face; icons are clamped to the face too)", "weight", "color", "orient", "boxBg", "boxBorder"}},
 		{"effects", []string{
 			"opacity", "margin", "cornerRadius",
