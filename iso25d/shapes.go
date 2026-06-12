@@ -19,7 +19,10 @@ type ConvertOpts struct {
 	StrokeWidth                  float64
 
 	// Per-face stroke overrides (v1.2). Empty string / 0 width = inherit.
-	TopStroke, LeftStroke, RightStroke                struct{ Color, Dash string; Width float64 }
+	TopStroke, LeftStroke, RightStroke struct {
+		Color, Dash string
+		Width       float64
+	}
 	// Per-face opacity overrides (v1.2). 0 = inherit base Opacity.
 	TopOpacity, LeftOpacity, RightOpacity float64
 	// Linear-gradient fills per face (v1.2). Non-nil overrides the matching
@@ -66,7 +69,7 @@ type ConvertOpts struct {
 	BackglowOpacity float64
 	GrainIntensity  float64
 	GrainScale      float64
-	PatternKind     string  // hatch | dots | grid
+	PatternKind     string // hatch | dots | grid
 	PatternColor    string
 	PatternSpacing  float64
 	PatternAngle    float64
@@ -127,6 +130,26 @@ func Convert2DTo25D(shapeType string, o ConvertOpts) string {
 		b := DefaultIsoBox()
 		applyBox(o, &b)
 		return RenderIsoText(b)
+
+	// v3.2 (M2) — prism family: regular n-gon base × vertical extrude.
+	case "prism", "diamond", "triprism", "hexprism", "octprism":
+		b := DefaultIsoBox()
+		applyBox(o, &b)
+		sides := o.Sides
+		switch shapeType {
+		case "diamond":
+			sides = 4
+		case "triprism":
+			sides = 3
+		case "hexprism":
+			sides = 6
+		case "octprism":
+			sides = 8
+		}
+		if sides < 3 {
+			sides = 6
+		}
+		return RenderIsoPrism(b, sides)
 
 	// rectangle / square / empty / unknown → plain iso box.
 	case "rectangle", "square", "":
@@ -244,4 +267,3 @@ func applyBox(o ConvertOpts, b *IsoBoxOpts) {
 	b.Cells = o.Cells
 	b.CellColors = o.CellColors
 }
-

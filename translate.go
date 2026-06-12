@@ -52,53 +52,53 @@ type d2ShapeProfile struct {
 // and hyphen variants) because agent-authored .d2 can use any.
 var d2ShapeCatalog = map[string]d2ShapeProfile{
 	// flat documents and labels — render as low panels
-	"text":              {"iso_text", 0.3},
-	"code":              {"rectangle", 0.3},
-	"image":             {"rectangle", 0.3},
-	"document":          {"rectangle", 0.4},
-	"page":              {"rectangle", 0.5},
+	"text":     {"iso_text", 0.3},
+	"code":     {"rectangle", 0.3},
+	"image":    {"rectangle", 0.3},
+	"document": {"rectangle", 0.4},
+	"page":     {"rectangle", 0.5},
 
 	// data containers — cylinder family
-	"cylinder":          {"cylinder", 1.0},
-	"queue":             {"cylinder", 1.0},
-	"stored_data":       {"cylinder", 1.0},
-	"stored-data":       {"cylinder", 1.0},
+	"cylinder":    {"cylinder", 1.0},
+	"queue":       {"cylinder", 1.0},
+	"stored_data": {"cylinder", 1.0},
+	"stored-data": {"cylinder", 1.0},
 
 	// round / oval — sphere
-	"circle":            {"circle", 1.0},
-	"oval":              {"circle", 0.8},
+	"circle": {"circle", 1.0},
+	"oval":   {"circle", 0.8},
 
 	// people
-	"person":            {"person", 1.2},
-	"c4-person":         {"person", 1.2},
-	"c4_person":         {"person", 1.2},
+	"person":    {"person", 1.2},
+	"c4-person": {"person", 1.2},
+	"c4_person": {"person", 1.2},
 
 	// nature / external
-	"cloud":             {"cloud", 0.8},
+	"cloud": {"cloud", 0.8},
 
 	// polygon family — we don't have native polygons yet, so render as
 	// rectangle. Stamping with the d2 type means future polygon support
 	// can light up retroactively without rewriting this map.
-	"diamond":           {"rectangle", 0.7},
-	"hexagon":           {"rectangle", 0.7},
-	"parallelogram":     {"rectangle", 0.6},
-	"step":              {"rectangle", 0.6},
-	"callout":           {"rectangle", 0.5},
+	"diamond":       {"diamond", 0.7},
+	"hexagon":       {"hexprism", 0.7},
+	"parallelogram": {"rectangle", 0.6},
+	"step":          {"rectangle", 0.6},
+	"callout":       {"rectangle", 0.5},
 
 	// structural / sql_table / class — paint as tall rectangles so the
 	// "stack of rows" look reads on the side face
-	"class":             {"rectangle", 1.4},
-	"sql_table":         {"rectangle", 1.4},
-	"sql-table":         {"rectangle", 1.4},
+	"class":     {"rectangle", 1.4},
+	"sql_table": {"rectangle", 1.4},
+	"sql-table": {"rectangle", 1.4},
 
 	// container-ish — treated as box, container detection happens at the
 	// graph-walking stage (Step 4), not at the leaf-shape level
-	"package":           {"rectangle", 1.0},
-	"rectangle":         {"rectangle", 1.0},
-	"square":            {"rectangle", 1.0},
-	"sequence_diagram":  {"rectangle", 1.0},
-	"sequence-diagram":  {"rectangle", 1.0},
-	"hierarchy":         {"rectangle", 1.0},
+	"package":          {"rectangle", 1.0},
+	"rectangle":        {"rectangle", 1.0},
+	"square":           {"rectangle", 1.0},
+	"sequence_diagram": {"rectangle", 1.0},
+	"sequence-diagram": {"rectangle", 1.0},
+	"hierarchy":        {"rectangle", 1.0},
 }
 
 // mapD2Shape lowers a d2 shape-type string to an iso (shape, heightMul)

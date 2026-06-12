@@ -1,0 +1,239 @@
+package iso25d
+
+import (
+	"fmt"
+	"math"
+	"sort"
+	"strings"
+)
+
+// PrismShapeProvider — M2 of the flexible-geometry plan, and the first
+// genuinely NEW geometry to flow through the ShapeProvider interface
+// (category A of the design doc: any regular base × vertical extrude).
+//
+// The base is a regular n-gon inscribed in the part's w×d footprint,
+// first vertex pointing back (-y). diamond / triprism / hexprism /
+// octprism are fixed-side aliases; bare "prism" reads geom.sides.
+type PrismShapeProvider struct{}
+
+func (PrismShapeProvider) Names() []string {
+	return []string{"prism", "diamond", "triprism", "hexprism", "octprism"}
+}
+
+// prismSides resolves the side count from params (set by the renderer
+// from shape name or geom.sides). Default hexagon.
+func prismSides(params map[string]any) int {
+	if params != nil {
+		if n, ok := params["sides"].(int); ok && n >= 3 {
+			return n
+		}
+	}
+	return 6
+}
+
+// prismBase returns the ground-plane vertices of the regular n-gon.
+func prismBase(w, d float64, n int) [][2]float64 {
+	cx, cy := w/2, d/2
+	rx, ry := w/2, d/2
+	out := make([][2]float64, n)
+	for k := 0; k < n; k++ {
+		th := -math.Pi/2 + 2*math.Pi*float64(k)/float64(n)
+		out[k] = [2]float64{cx + rx*math.Cos(th), cy + ry*math.Sin(th)}
+	}
+	return out
+}
+
+// prismLocal projects a world-relative point into the provider's local
+// frame — same convention as BoxShapeProvider (origin at the projected
+// (0,d,0)/(0,0,h) extremes of the BOUNDING box, so PartOriginOffset's
+// default branch stays correct without changes).
+func prismLocal(d, h, x, y, z float64) [2]float64 {
+	return [2]float64{(x-y)*cos30 + d*cos30, (x+y)*sin30 - z + h}
+}
+
+func (PrismShapeProvider) Faces(w, d, h float64, params map[string]any) []Face {
+	n := prismSides(params)
+	base := prismBase(w, d, n)
+	cx, cy := w/2, d/2
+
+	var faces []Face
+	for k := 0; k < n; k++ {
+		a, b := base[k], base[(k+1)%n]
+		// outward normal: perpendicular of the edge, oriented away from
+		// the centroid (robust to winding).
+		nx, ny := b[1]-a[1], a[0]-b[0]
+		mx, my := (a[0]+b[0])/2-cx, (a[1]+b[1])/2-cy
+		if nx*mx+ny*my < 0 {
+			nx, ny = -nx, -ny
+		}
+		l := math.Hypot(nx, ny)
+		if l == 0 {
+			continue
+		}
+		nx, ny = nx/l, ny/l
+		visible := nx+ny > 1e-9
+		faces = append(faces, Face{
+			Name: fmt.Sprintf("side%d", k),
+			Points: [][2]float64{
+				prismLocal(d, h, a[0], a[1], 0),
+				prismLocal(d, h, a[0], a[1], h),
+				prismLocal(d, h, b[0], b[1], h),
+				prismLocal(d, h, b[0], b[1], 0),
+			},
+			Normal:  [3]float64{nx, ny, 0},
+			Visible: visible,
+		})
+	}
+	// painter order: farther side walls (smaller x+y at edge midpoint)
+	// first; hidden faces first of all; top face always last.
+	sort.SliceStable(faces, func(i, j int) bool {
+		if faces[i].Visible != faces[j].Visible {
+			return !faces[i].Visible
+		}
+		di := faces[i].Points[0][0] + faces[i].Points[0][1] + faces[i].Points[2][0] + faces[i].Points[2][1]
+		dj := faces[j].Points[0][0] + faces[j].Points[0][1] + faces[j].Points[2][0] + faces[j].Points[2][1]
+		return di < dj
+	})
+	top := Face{
+		Name:    "top",
+		Normal:  [3]float64{0, 0, 1},
+		Visible: true,
+	}
+	for _, v := range base {
+		top.Points = append(top.Points, prismLocal(d, h, v[0], v[1], h))
+	}
+	faces = append(faces, top)
+	for i := range faces {
+		faces[i].ZOrder = i
+	}
+	return faces
+}
+
+// Silhouette is the convex hull of every projected vertex (top + base
+// rings) — exact for convex bases.
+func (PrismShapeProvider) Silhouette(w, d, h float64, params map[string]any) [][2]float64 {
+	n := prismSides(params)
+	base := prismBase(w, d, n)
+	pts := make([][2]float64, 0, 2*n)
+	for _, v := range base {
+		pts = append(pts, prismLocal(d, h, v[0], v[1], 0))
+		pts = append(pts, prismLocal(d, h, v[0], v[1], h))
+	}
+	return convexHull(pts)
+}
+
+func (PrismShapeProvider) ContentAnchor() string { return "top" }
+
+// ContentRectFor inscribes an axis-aligned rectangle in the n-gon top
+// face: a centered box scaled by cos(π/n) is always inside a regular
+// polygon's inscribed ellipse.
+func (PrismShapeProvider) ContentRectFor(w, d, h float64, params map[string]any) ContentRect {
+	n := prismSides(params)
+	f := math.Cos(math.Pi/float64(n)) * 0.92
+	if n == 3 {
+		// the triangle narrows fast above its centroid; a centered rect
+		// at the inscribed-square factor grazes the slanted edges.
+		f *= 0.8
+	}
+	cw, ch := w*f/math.Sqrt2, d*f/math.Sqrt2
+	return ContentRect{X: (w - cw) / 2, Y: (d - ch) / 2, W: cw, H: ch}
+}
+
+func (PrismShapeProvider) Footprint(w, d, _ float64) (float64, float64) { return w, d }
+
+func init() {
+	RegisterShape(PrismShapeProvider{})
+}
+
+// convexHull — Andrew's monotone chain, returns CCW hull.
+func convexHull(pts [][2]float64) [][2]float64 {
+	if len(pts) < 3 {
+		return pts
+	}
+	sorted := append([][2]float64(nil), pts...)
+	sort.Slice(sorted, func(i, j int) bool {
+		if sorted[i][0] != sorted[j][0] {
+			return sorted[i][0] < sorted[j][0]
+		}
+		return sorted[i][1] < sorted[j][1]
+	})
+	cross := func(o, a, b [2]float64) float64 {
+		return (a[0]-o[0])*(b[1]-o[1]) - (a[1]-o[1])*(b[0]-o[0])
+	}
+	var lower, upper [][2]float64
+	for _, p := range sorted {
+		for len(lower) >= 2 && cross(lower[len(lower)-2], lower[len(lower)-1], p) <= 0 {
+			lower = lower[:len(lower)-1]
+		}
+		lower = append(lower, p)
+	}
+	for i := len(sorted) - 1; i >= 0; i-- {
+		p := sorted[i]
+		for len(upper) >= 2 && cross(upper[len(upper)-2], upper[len(upper)-1], p) <= 0 {
+			upper = upper[:len(upper)-1]
+		}
+		upper = append(upper, p)
+	}
+	return append(lower[:len(lower)-1], upper[:len(upper)-1]...)
+}
+
+// ---------------------------------------------------------------------------
+// Renderer
+// ---------------------------------------------------------------------------
+
+// RenderIsoPrism draws an n-gon prism with the box family's surface
+// vocabulary: palette top/left/right (side walls pick left or right by
+// normal dominance), stroke, opacity, dash, label + icon on the top
+// face's inscribed content rect. Gradients / patterns / shadow join in
+// M3/M4 with the Surface and Effect pipelines.
+func RenderIsoPrism(o IsoBoxOpts, sides int) string {
+	g := computeBoxGeom(o.Width, o.Depth, o.Height, o.Margin)
+	params := map[string]any{"sides": sides}
+	var prov PrismShapeProvider
+
+	var sb strings.Builder
+	sb.WriteString(svgHeader(g.ViewW, g.ViewH))
+	openWrapper(&sb, g.ViewW, g.ViewH, o.Background, o.Opacity, o.StrokeDasharray, "")
+
+	stroke := o.Stroke
+	if stroke == "" {
+		stroke = "#1F2433"
+	}
+	sw := o.StrokeWidth
+	if sw <= 0 {
+		sw = 1.4
+	}
+
+	m := o.Margin
+	for _, f := range prov.Faces(o.Width, o.Depth, o.Height, params) {
+		if !f.Visible {
+			continue
+		}
+		fill := o.TopFill
+		if f.Name != "top" {
+			if f.Normal[0] >= f.Normal[1] {
+				fill = o.RightFill
+			} else {
+				fill = o.LeftFill
+			}
+		}
+		pts := make([][2]float64, len(f.Points))
+		for i, p := range f.Points {
+			pts[i] = [2]float64{p[0] + m, p[1] + m}
+		}
+		writeFace(&sb, f.Name, fill, stroke, sw, "", 0, pts...)
+	}
+
+	cr := prov.ContentRectFor(o.Width, o.Depth, o.Height, params)
+	ox, oy := project(cr.X, cr.Y, o.Height)
+	writeTopLabelAndIconV12(
+		&sb,
+		ox+g.Tx, oy+g.Ty, cr.W, cr.H,
+		o.Label, o.LabelLines, o.Icon, o.IconScale, o.IconAnchor, o.IconOffX, o.IconOffY,
+		o.FontFamily, o.FontSize, o.FontWeight, o.FontColor,
+	)
+
+	closeWrapper(&sb)
+	sb.WriteString(`</svg>`)
+	return sb.String()
+}

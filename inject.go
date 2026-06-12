@@ -11,6 +11,8 @@ package isotopo
 import (
 	"fmt"
 	"math"
+
+	"github.com/MarkovWangRR/iso-topology/iso25d"
 	"sort"
 	"strings"
 )
@@ -741,10 +743,10 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo,
 		// boundary so line + arrow terminate visibly on the entry edge.
 		if len(pts) >= 2 {
 			if tp, ok := byID[func() string { id, _ := parseAnchor(effTo[ci]); return id }()]; ok && !tp.isSubstrate {
-				pts = clipRouteEnd(pts, silhouetteHex(tp, tx, ty), 2)
+				pts = clipRouteEnd(pts, partSilhouette(tp, tx, ty), 2)
 			}
 			if sp, ok := byID[func() string { id, _ := parseAnchor(effFrom[ci]); return id }()]; ok && !sp.isSubstrate {
-				pts = clipRouteStart(pts, silhouetteHex(sp, tx, ty), 1)
+				pts = clipRouteStart(pts, partSilhouette(sp, tx, ty), 1)
 			}
 		}
 		if len(pts) < 2 {
@@ -1165,6 +1167,36 @@ func partGroupEnd(svg string, from int) (int, bool) {
 		}
 	}
 	return 0, false
+}
+
+// partSilhouette returns the part's screen silhouette in composite
+// coords. Shapes with a registered geometry provider (M1+) get their
+// EXACT outline; everything else falls back to the bbox hexagon.
+func partSilhouette(p partInfo, tx, ty float64) [][2]float64 {
+	prov := iso25d.LookupShape(p.shape)
+	if prov == nil {
+		return silhouetteHex(p, tx, ty)
+	}
+	var params map[string]any
+	if p.sides >= 3 {
+		params = map[string]any{"sides": p.sides}
+	}
+	local := prov.Silhouette(p.w, p.d, p.h, params)
+	if len(local) < 3 {
+		return silhouetteHex(p, tx, ty)
+	}
+	// Provider local frame: origin sits at the projected bbox extremes,
+	// i.e. world-origin projection + (d*cos30, h). Convert to composite.
+	const c30 = 0.8660254037844386
+	ox, oy := projectIso(p.offWX, p.offWY, p.offWZ)
+	out := make([][2]float64, len(local))
+	for i, q := range local {
+		out[i] = [2]float64{
+			q[0] - p.d*c30 + ox + tx,
+			q[1] - p.h + oy + ty,
+		}
+	}
+	return out
 }
 
 // silhouetteHex returns the 6-corner screen silhouette of a part's

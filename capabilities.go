@@ -70,7 +70,7 @@ type StyleKeyGroup struct {
 // Pure function — no IO, no globals.
 func CapabilityReport() Capabilities {
 	return Capabilities{
-		Version: "0.3.1",
+		Version: "0.3.2",
 		Inputs: []InputFormat{
 			{".yaml", "hand-authored iso composite with precise placement", "manual"},
 			{".json", "same shape as .yaml but JSON-encoded", "manual"},
@@ -105,7 +105,8 @@ func buildShapeCaps() []ShapeCap {
 		b.acceptedAs[d2name] = struct{}{}
 	}
 	// Add native iso names that aren't in the d2 catalog.
-	for _, iso := range []string{"rectangle", "cylinder", "circle", "cloud", "person", "iso_text", "composite", "group"} {
+	for _, iso := range []string{"rectangle", "cylinder", "circle", "cloud", "person", "iso_text", "composite", "group",
+		"prism", "diamond", "triprism", "hexprism", "octprism"} {
 		if _, ok := by[iso]; !ok {
 			by[iso] = &bucket{isoName: iso, hMul: 1.0, acceptedAs: map[string]struct{}{iso: {}}}
 		}
@@ -115,6 +116,11 @@ func buildShapeCaps() []ShapeCap {
 		"group":     "v2 primitive — translucent labeled substrate wrapping nested parts",
 		"iso_text":  "flat text panel (low extrusion)",
 		"cloud":     "free-form rounded outline; no per-face palette overrides",
+		"prism":     "v3.2 — regular n-gon base x vertical extrude; geom.sides picks the base (default 6). Side walls shade left/right palette by facing; gradients/patterns/shadow arrive with the Surface pipeline",
+		"diamond":   "v3.2 — 4-gon prism (rotated square): decision / routing semantics",
+		"triprism":  "v3.2 — 3-gon prism: alert / one-way fan-out semantics",
+		"hexprism":  "v3.2 — 6-gon prism: API gateway / middleware semantics",
+		"octprism":  "v3.2 — 8-gon prism: firewall (stop-sign) semantics",
 	}
 	out := make([]ShapeCap, 0, len(by))
 	for _, b := range by {

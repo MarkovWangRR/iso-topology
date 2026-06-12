@@ -20,6 +20,7 @@ type partInfo struct {
 	labelFamily   string
 	labelWeight   string
 	labelFontSize float64
+	sides         int // prism family: geom.sides
 	isSubstrate   bool
 }
 

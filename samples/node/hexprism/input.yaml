@@ -1,0 +1,9 @@
+nodes:
+  gateway:
+    shape: hexprism
+    geom: { w: 150, d: 150, h: 44 }
+    icon: "iso://glyph/cloud"
+    label: "API Gateway"
+    style:
+      palette: { top: "#EDE9FE", left: "#6D28D9", right: "#8B5CF6" }
+      stroke: { color: "#4C1D95", width: 1.6 }

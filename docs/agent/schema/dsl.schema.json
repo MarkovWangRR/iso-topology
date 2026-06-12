@@ -1,7 +1,7 @@
 {
   "$id": "https://github.com/MarkovWangRR/iso-topology/blob/main/docs/agent/schema/dsl.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "description": "YAML/JSON DSL accepted by isotopo render. Generated for capabilities v0.3.1.",
+  "description": "YAML/JSON DSL accepted by isotopo render. Generated for capabilities v0.3.2.",
   "properties": {
     "annotations": {
       "items": {
@@ -384,14 +384,17 @@
                     "document",
                     "group",
                     "hexagon",
+                    "hexprism",
                     "hierarchy",
                     "image",
                     "iso_text",
+                    "octprism",
                     "oval",
                     "package",
                     "page",
                     "parallelogram",
                     "person",
+                    "prism",
                     "queue",
                     "rectangle",
                     "sequence-diagram",
@@ -402,7 +405,8 @@
                     "step",
                     "stored-data",
                     "stored_data",
-                    "text"
+                    "text",
+                    "triprism"
                   ],
                   "type": "string"
                 },
@@ -469,14 +473,17 @@
               "document",
               "group",
               "hexagon",
+              "hexprism",
               "hierarchy",
               "image",
               "iso_text",
+              "octprism",
               "oval",
               "package",
               "page",
               "parallelogram",
               "person",
+              "prism",
               "queue",
               "rectangle",
               "sequence-diagram",
@@ -487,7 +494,8 @@
               "step",
               "stored-data",
               "stored_data",
-              "text"
+              "text",
+              "triprism"
             ],
             "type": "string"
           },

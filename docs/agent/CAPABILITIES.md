@@ -1,4 +1,4 @@
-# Capabilities — v0.3.1
+# Capabilities — v0.3.2
 
 Generated from `CapabilityReport()`. Do not edit by hand — run
 `go run ./tools/gen-docs` to regenerate after a code change.
@@ -28,14 +28,19 @@ override per-part via `geom.h`.
 
 | Iso shape | Accepted aliases | Height hint | Notes |
 |---|---|---|---|
-| **circle** | `circle`, `oval` | 0.8 |  |
+| **circle** | `circle`, `oval` | 1.0 |  |
 | **cloud** | `cloud` | 0.8 | free-form rounded outline; no per-face palette overrides |
 | **composite** | `composite` | 1.0 | container — holds parts: [] of CompositePart entries |
 | **cylinder** | `cylinder`, `queue`, `stored-data`, `stored_data` | 1.0 |  |
+| **diamond** | `diamond` | 0.7 | v3.2 — 4-gon prism (rotated square): decision / routing semantics |
 | **group** | `group` | 1.0 | v2 primitive — translucent labeled substrate wrapping nested parts |
+| **hexprism** | `hexagon` | 0.7 | v3.2 — 6-gon prism: API gateway / middleware semantics |
 | **iso_text** | `text` | 0.3 | flat text panel (low extrusion) |
+| **octprism** | `octprism` | 1.0 | v3.2 — 8-gon prism: firewall (stop-sign) semantics |
 | **person** | `c4-person`, `c4_person`, `person` | 1.2 |  |
-| **rectangle** | `callout`, `class`, `code`, `diamond`, `document`, `hexagon`, `hierarchy`, `image`, `package`, `page`, `parallelogram`, `rectangle`, `sequence-diagram`, `sequence_diagram`, `sql-table`, `sql_table`, `square`, `step` | 0.4 |  |
+| **prism** | `prism` | 1.0 | v3.2 — regular n-gon base x vertical extrude; geom.sides picks the base (default 6). Side walls shade left/right palette by facing; gradients/patterns/shadow arrive with the Surface pipeline |
+| **rectangle** | `callout`, `class`, `code`, `document`, `hierarchy`, `image`, `package`, `page`, `parallelogram`, `rectangle`, `sequence-diagram`, `sequence_diagram`, `sql-table`, `sql_table`, `square`, `step` | 1.4 |  |
+| **triprism** | `triprism` | 1.0 | v3.2 — 3-gon prism: alert / one-way fan-out semantics |
 
 ## Composition primitives
 

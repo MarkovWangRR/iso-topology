@@ -208,6 +208,7 @@ func renderComposite(n *Node, theme *Theme, canvas *Canvas, anns []*Annotation) 
 			screenLabel: screenLabel, labelBg: labelBg, labelBorder: labelBorder,
 			labelColor: labelColor, labelFamily: labelFamily, labelWeight: labelWeight,
 			labelFontSize: labelSize,
+			sides:         sidesOf(p),
 			isSubstrate:   p.isSubstrate,
 		}
 	}
@@ -301,4 +302,12 @@ func RenderParts(doc *Document) map[string]string {
 		_ = id
 	}
 	return out
+}
+
+// sidesOf extracts geom.sides for the prism family (0 = unset).
+func sidesOf(p *CompositePart) int {
+	if p.Geom != nil {
+		return p.Geom.Sides
+	}
+	return 0
 }
