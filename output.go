@@ -328,6 +328,9 @@ function setDirty(d){
 }
 function discardDraft(){
   try{localStorage.removeItem(DRAFTKEY);}catch(_){}
+  if(location.hash.indexOf('#src=')===0){
+    try{history.replaceState(null,'',location.pathname+location.search);}catch(_){}
+  }
   srcEl.value=ORIGINAL; setDirty(false);
   buildMap(); paint(null);
   if(serverOK) rerender();
@@ -567,6 +570,9 @@ function jumpToIssue(path){
 
 /* ── live re-render against isotopo serve ───────────────────────── */
 const liveEl=document.getElementById('live'), renderBtn=document.getElementById('render');
+document.getElementById('auto').addEventListener('change',e=>{
+  if(!e.target.checked) clearTimeout(timer);
+});
 let serverOK=false, timer=null;
 async function probe(){
   if(!location.protocol.startsWith('http')){
@@ -623,7 +629,7 @@ srcEl.addEventListener('input',()=>{
     else localStorage.removeItem(DRAFTKEY);
   }catch(_){}
   if(document.getElementById('auto').checked && serverOK){
-    clearTimeout(timer); timer=setTimeout(rerender,600);
+    clearTimeout(timer); timer=setTimeout(()=>{if(document.getElementById('auto').checked)rerender();},600);
   }
 });
 window.addEventListener('keydown',e=>{
@@ -631,7 +637,7 @@ window.addEventListener('keydown',e=>{
   if((e.metaKey||e.ctrlKey)&&e.key==='0'){e.preventDefault();fitView();return;}
   if((e.metaKey||e.ctrlKey)&&(e.key==='='||e.key==='+')){e.preventDefault();zoomBy(1.25);return;}
   if((e.metaKey||e.ctrlKey)&&e.key==='-'){e.preventDefault();zoomBy(0.8);return;}
-  if(e.key==='Escape'){document.getElementById('help').hidden=true;return;}
+  if(e.key==='Escape'){document.getElementById('help').hidden=true;document.getElementById('expanel').hidden=true;return;}
   if(e.key==='?'&&document.activeElement!==srcEl){toggleHelp();}
 });
 function toggleHelp(){
@@ -711,7 +717,17 @@ async function copyPath(){
 }
 
 /* ── export the CURRENT render (incl. unsaved edits) ───────────── */
-function currentSVG(){const el=zoomer.querySelector('svg');return el?el.outerHTML:'';}
+function currentSVG(){
+  const el=zoomer.querySelector('svg'); if(!el) return '';
+  const c=el.cloneNode(true);
+  c.querySelectorAll('[data-part-id]').forEach(g=>{
+    g.classList.remove('hi');
+    if(!g.getAttribute('class')) g.removeAttribute('class');
+    g.style.removeProperty('cursor');
+    if(!g.getAttribute('style')) g.removeAttribute('style');
+  });
+  return c.outerHTML;
+}
 function exportName(ext){
   return FILENAME.replace(/\.[a-z0-9]+$/i,'')+(dirty?'.edited':'')+'.'+ext;
 }
