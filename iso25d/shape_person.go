@@ -243,7 +243,6 @@ func RenderIsoPerson(o IsoPersonOpts) string {
 // Hex prism (pointy-top hexagon extruded)
 // ---------------------------------------------------------------------------
 
-
 func applyPerson(o ConvertOpts, p *IsoPersonOpts) {
 	if o.Width > 0 {
 		p.BodyWidth = o.Width
@@ -301,4 +300,56 @@ func applyPerson(o ConvertOpts, p *IsoPersonOpts) {
 	if o.Background != "" {
 		p.Background = o.Background
 	}
+}
+
+// PersonShapeProvider — geometry-only (M2.2): the true outline so
+// connectors stop floating at the bbox corners ~50px from the figure.
+// Approximated as the body capsule extended upward over the head.
+type PersonShapeProvider struct{}
+
+func (PersonShapeProvider) Names() []string { return []string{"person", "c4-person"} }
+
+func (PersonShapeProvider) Faces(w, d, h float64, _ map[string]any) []Face {
+	sil := (PersonShapeProvider{}).Silhouette(w, d, h, nil)
+	return []Face{{Name: "body", Points: sil, Normal: [3]float64{0.7, 0.7, 0}, ZOrder: 0, Visible: true}}
+}
+
+func (PersonShapeProvider) Silhouette(w, d, h float64, _ map[string]any) [][2]float64 {
+	rx := w / 2
+	ry := rx * sin30 / cos30
+	headR := w * 0.27
+	headGap := 4.0
+	cx := (w-d)/2*cos30 + d*cos30
+	cyTop := (w + d) / 2 * sin30
+	top := cyTop - h + rx - (headGap + 2*headR) // crown of the head zone
+	_ = top
+	var pts [][2]float64
+	const n = 10
+	// crown arc over the head (narrower than the body)
+	hy := cyTop - h + rx - headGap - headR // head centre height in this frame is approximate;
+	for i := 0; i <= n; i++ {
+		th := math.Pi - math.Pi*float64(i)/float64(n)
+		pts = append(pts, [2]float64{cx + headR*math.Cos(th), hy - headR*math.Sin(th)})
+	}
+	// shoulders out to the body radius at the body top
+	pts = append(pts, [2]float64{cx + rx, cyTop})
+	// body bottom front arc, right → left
+	for i := 0; i <= n; i++ {
+		th := math.Pi * float64(i) / float64(n)
+		pts = append(pts, [2]float64{cx + rx*math.Cos(th), cyTop + h - rx + ry*math.Sin(th)})
+	}
+	pts = append(pts, [2]float64{cx - rx, cyTop})
+	return pts
+}
+
+func (PersonShapeProvider) ContentAnchor() string { return "top" }
+
+func (PersonShapeProvider) ContentRectFor(w, d, h float64, _ map[string]any) ContentRect {
+	return ContentRect{X: 0, Y: 0, W: w, H: d}
+}
+
+func (PersonShapeProvider) Footprint(w, d, _ float64) (float64, float64) { return w, d }
+
+func init() {
+	RegisterShape(PersonShapeProvider{})
 }
