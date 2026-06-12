@@ -172,3 +172,33 @@ func writeFaceStrokeLayers(sb *strings.Builder, name string, layers []FaceStroke
 		)
 	}
 }
+
+// emitBackglowHalo writes the blur filter def + a silhouette-shaped
+// halo path (painted before the faces). Shared by the sharp box and
+// prism paths — the rounded path has had its own since v2.1.
+func emitBackglowHalo(sb, defs *strings.Builder, id, color string, radius, opacity float64, pts [][2]float64) {
+	if strings.TrimSpace(color) == "" || radius <= 0 || len(pts) < 3 {
+		return
+	}
+	if opacity <= 0 {
+		opacity = 0.6
+	}
+	fmt.Fprintf(defs,
+		`<filter id="%s" x="-50%%" y="-50%%" width="200%%" height="200%%">`+
+			`<feGaussianBlur in="SourceGraphic" stdDeviation="%.2f"/>`+
+			`<feComponentTransfer><feFuncA type="linear" slope="%.2f"/></feComponentTransfer>`+
+			`</filter>`,
+		id, radius, opacity,
+	)
+	var d strings.Builder
+	for i, p := range pts {
+		if i == 0 {
+			fmt.Fprintf(&d, "M %.2f %.2f", p[0], p[1])
+		} else {
+			fmt.Fprintf(&d, " L %.2f %.2f", p[0], p[1])
+		}
+	}
+	d.WriteString(" Z")
+	fmt.Fprintf(sb, `<path data-face="backglow" d="%s" fill="%s" stroke="none" filter="url(#%s)"/>`,
+		d.String(), escapeAttr(color), id)
+}

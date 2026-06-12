@@ -365,6 +365,20 @@ func RenderIsoBox(o IsoBoxOpts) string {
 
 	topFill, leftFill, rightFill, shadowID, patID, grainID := emitBoxDefs(&sb, &o)
 
+	// v3.3.1 — backglow on the sharp path (was rounded-only, making
+	// faces and backglow mutually exclusive on boxes).
+	if strings.TrimSpace(o.BackglowColor) != "" && o.BackglowRadius > 0 {
+		var gdefs strings.Builder
+		sil := (BoxShapeProvider{}).Silhouette(o.Width, o.Depth, o.Height, nil)
+		hpts := make([][2]float64, len(sil))
+		for k, q := range sil {
+			hpts[k] = [2]float64{q[0] + o.Margin, q[1] + o.Margin}
+		}
+		var halo strings.Builder
+		emitBackglowHalo(&halo, &gdefs, "box-backglow", o.BackglowColor, o.BackglowRadius, o.BackglowOpacity, hpts)
+		fmt.Fprintf(&sb, `<defs>%s</defs>%s`, gdefs.String(), halo.String())
+	}
+
 	openWrapper(&sb, g.ViewW, g.ViewH, o.Background, o.Opacity, o.StrokeDasharray, shadowID)
 	if grainID != "" {
 		fmt.Fprintf(&sb, `<g filter="url(#%s)">`, grainID)

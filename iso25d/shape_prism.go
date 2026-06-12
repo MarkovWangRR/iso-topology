@@ -249,6 +249,16 @@ func RenderIsoPrism(o IsoBoxOpts, sides int) string {
 
 	var sb strings.Builder
 	sb.WriteString(svgHeader(g.ViewW, g.ViewH))
+	if strings.TrimSpace(o.BackglowColor) != "" && o.BackglowRadius > 0 {
+		var gdefs, halo strings.Builder
+		sil := prov.Silhouette(o.Width, o.Depth, o.Height, params)
+		hpts := make([][2]float64, len(sil))
+		for k, q := range sil {
+			hpts[k] = [2]float64{q[0] + o.Margin, q[1] + o.Margin}
+		}
+		emitBackglowHalo(&halo, &gdefs, "prism-backglow", o.BackglowColor, o.BackglowRadius, o.BackglowOpacity, hpts)
+		fmt.Fprintf(&sb, `<defs>%s</defs>%s`, gdefs.String(), halo.String())
+	}
 	openWrapper(&sb, g.ViewW, g.ViewH, o.Background, o.Opacity, o.StrokeDasharray, "")
 
 	stroke := o.Stroke
