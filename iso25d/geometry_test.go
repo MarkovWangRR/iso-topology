@@ -34,7 +34,7 @@ func TestBoxProviderParity(t *testing.T) {
 			if !ok {
 				t.Fatalf("dims %v: legacy output has no data-face=%q polygon", dims, f.Name)
 			}
-			if !samePointSet(want, emitted, 0.011) {
+			if !samePointSeq(want, emitted, 0.011) {
 				t.Errorf("dims %v face %s: provider %v vs legacy %v", dims, f.Name, want, emitted)
 			}
 		}
@@ -141,20 +141,17 @@ func facePolysFromSVG(t *testing.T, svg string) map[string][][2]float64 {
 	return out
 }
 
-func samePointSet(a, b [][2]float64, tol float64) bool {
+// samePointSeq requires the SAME order, not just the same set — the
+// live renderer consumes provider points verbatim, so sequence is part
+// of the byte-parity contract.
+func samePointSeq(a, b [][2]float64, tol float64) bool {
 	if len(a) != len(b) {
 		return false
 	}
-	used := make([]bool, len(b))
-outer:
-	for _, p := range a {
-		for j, q := range b {
-			if !used[j] && math.Abs(p[0]-q[0]) <= tol && math.Abs(p[1]-q[1]) <= tol {
-				used[j] = true
-				continue outer
-			}
+	for i := range a {
+		if math.Abs(a[i][0]-b[i][0]) > tol || math.Abs(a[i][1]-b[i][1]) > tol {
+			return false
 		}
-		return false
 	}
 	return true
 }
