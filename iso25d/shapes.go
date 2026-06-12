@@ -12,7 +12,8 @@ import (
 // renderers live in shape_*.go files; this file owns the dispatch.
 type ConvertOpts struct {
 	Width, Depth, Height float64
-	Sides                int // polygon sides (3+); only used by shape=polygon
+	Sides                int                     // polygon sides (3+); only used by shape=polygon
+	FaceSurfaces         map[string]*FaceSurface // v3.3 — style.faces overrides
 
 	TopFill, LeftFill, RightFill string
 	Stroke                       string
@@ -252,6 +253,7 @@ func applyBox(o ConvertOpts, b *IsoBoxOpts) {
 	b.IconOffX = o.IconOffX
 	b.IconOffY = o.IconOffY
 	b.CornerRadius = o.CornerRadius
+	b.FaceSurfaces = o.FaceSurfaces
 	b.ShadowDx, b.ShadowDy, b.ShadowBlur, b.ShadowColor = o.ShadowDx, o.ShadowDy, o.ShadowBlur, o.ShadowColor
 	// v1.3
 	b.Wireframe = o.Wireframe

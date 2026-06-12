@@ -219,6 +219,8 @@ type Style struct {
 	Stroke  *Stroke  `yaml:"stroke,omitempty" json:"stroke,omitempty"`
 	Text    *Text    `yaml:"text,omitempty" json:"text,omitempty"`
 	Effects *Effects `yaml:"effects,omitempty" json:"effects,omitempty"`
+	// v3.3 — per-face surface overrides; outranks Palette.
+	Faces map[string]*FaceStyle `yaml:"faces,omitempty" json:"faces,omitempty"`
 }
 
 // Palette assigns the three iso-face fills. Each face may be either a
@@ -312,6 +314,44 @@ type DropShadow struct {
 	Dy    float64 `yaml:"dy,omitempty" json:"dy,omitempty"`
 	Blur  float64 `yaml:"blur,omitempty" json:"blur,omitempty"`
 	Color string  `yaml:"color,omitempty" json:"color,omitempty"`
+}
+
+// v3.3 (M3) — per-face surface overrides: style.faces maps a face name
+// ("top" / "left" / "right", prism "side0".."sideN", or "*" wildcard)
+// to a fill + stroke-layer description that outranks style.palette.
+type FaceStyle struct {
+	Fill    *FillSpec     `yaml:"fill,omitempty" json:"fill,omitempty"`
+	Strokes []StrokeLayer `yaml:"strokes,omitempty" json:"strokes,omitempty"`
+}
+
+type FillSpec struct {
+	Kind    string       `yaml:"kind,omitempty" json:"kind,omitempty"` // solid | linearGradient | radialGradient | pattern
+	Color   string       `yaml:"color,omitempty" json:"color,omitempty"`
+	Stops   []ColorStop  `yaml:"stops,omitempty" json:"stops,omitempty"`
+	Angle   float64      `yaml:"angle,omitempty" json:"angle,omitempty"` // linear: degrees, 0 = left→right
+	Cx      *float64     `yaml:"cx,omitempty" json:"cx,omitempty"`       // radial: centre 0..1
+	Cy      *float64     `yaml:"cy,omitempty" json:"cy,omitempty"`
+	Pattern *FacePattern `yaml:"pattern,omitempty" json:"pattern,omitempty"`
+}
+
+type ColorStop struct {
+	Offset float64 `yaml:"offset" json:"offset"`
+	Color  string  `yaml:"color" json:"color"`
+}
+
+type FacePattern struct {
+	Kind      string  `yaml:"kind,omitempty" json:"kind,omitempty"` // hatch | dots
+	Color     string  `yaml:"color,omitempty" json:"color,omitempty"`
+	Spacing   float64 `yaml:"spacing,omitempty" json:"spacing,omitempty"`
+	Angle     float64 `yaml:"angle,omitempty" json:"angle,omitempty"`
+	Projected bool    `yaml:"projected,omitempty" json:"projected,omitempty"` // tile follows the face's iso transform
+}
+
+type StrokeLayer struct {
+	Color   string  `yaml:"color,omitempty" json:"color,omitempty"`
+	Width   float64 `yaml:"width,omitempty" json:"width,omitempty"`
+	Dash    string  `yaml:"dash,omitempty" json:"dash,omitempty"`
+	Opacity float64 `yaml:"opacity,omitempty" json:"opacity,omitempty"`
 }
 
 // Backglow is the soft radial halo painted BEHIND the part's silhouette.

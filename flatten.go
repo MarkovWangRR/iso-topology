@@ -33,6 +33,39 @@ func Flatten(n *Node, theme *Theme) (string, iso25d.ConvertOpts) {
 				o.RightGradient = &iso25d.FaceGradient{From: g.From, To: g.To, Dir: g.Dir}
 			}
 		}
+		if merged.Faces != nil {
+			fsm := map[string]*iso25d.FaceSurface{}
+			for name, face := range merged.Faces {
+				if face == nil {
+					continue
+				}
+				out := &iso25d.FaceSurface{}
+				if ff := face.Fill; ff != nil {
+					nf := &iso25d.FaceFill{Kind: ff.Kind, Color: ff.Color, Angle: ff.Angle}
+					for _, st := range ff.Stops {
+						nf.Stops = append(nf.Stops, iso25d.FaceStop{Offset: st.Offset, Color: st.Color})
+					}
+					if ff.Cx != nil && ff.Cy != nil {
+						nf.Cx, nf.Cy, nf.HasC = *ff.Cx, *ff.Cy, true
+					}
+					if ff.Pattern != nil {
+						nf.Pattern = &iso25d.FacePatternSpec{
+							Kind: ff.Pattern.Kind, Color: ff.Pattern.Color,
+							Spacing: ff.Pattern.Spacing, Angle: ff.Pattern.Angle,
+							Projected: ff.Pattern.Projected,
+						}
+					}
+					out.Fill = nf
+				}
+				for _, sl := range face.Strokes {
+					out.Strokes = append(out.Strokes, iso25d.FaceStrokeLayer{
+						Color: sl.Color, Width: sl.Width, Dash: sl.Dash, Opacity: sl.Opacity,
+					})
+				}
+				fsm[name] = out
+			}
+			o.FaceSurfaces = fsm
+		}
 		if s := merged.Stroke; s != nil {
 			o.Stroke = s.Color
 			if s.Width != nil {

@@ -39,6 +39,7 @@ func MergeStyle(base, over *Style) *Style {
 	}
 	return &Style{
 		Palette: mergePalette(base.Palette, over.Palette),
+		Faces:   mergeFaces(base.Faces, over.Faces),
 		Stroke:  mergeStroke(base.Stroke, over.Stroke),
 		Text:    mergeText(base.Text, over.Text),
 		Effects: mergeEffects(base.Effects, over.Effects),
@@ -170,4 +171,20 @@ func firstNonNilFloat(a, b *float64) *float64 {
 		return a
 	}
 	return b
+}
+
+// mergeFaces — per-key override: a part's face entry wins wholesale
+// over the preset's entry for the same face name.
+func mergeFaces(b, o map[string]*FaceStyle) map[string]*FaceStyle {
+	if b == nil && o == nil {
+		return nil
+	}
+	out := map[string]*FaceStyle{}
+	for k, v := range b {
+		out[k] = v
+	}
+	for k, v := range o {
+		out[k] = v
+	}
+	return out
 }

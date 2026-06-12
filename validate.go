@@ -202,6 +202,71 @@ func Validate(doc *Document) []Issue {
 		walkIcons(n.Parts, "nodes."+nodeID)
 	}
 
+	// v3.3 — style.faces structural checks.
+	checkFaces := func(st *Style, path string) {
+		if st == nil || st.Faces == nil {
+			return
+		}
+		kinds := []string{"solid", "linearGradient", "radialGradient", "pattern"}
+		for name, face := range st.Faces {
+			if face == nil || face.Fill == nil {
+				continue
+			}
+			fp := fmt.Sprintf("%s.faces.%s.fill", path, name)
+			f := face.Fill
+			if f.Kind != "" && !contains(kinds, f.Kind) {
+				issues = append(issues, Issue{
+					Severity: SeverityError, Path: fp + ".kind",
+					Message: fmt.Sprintf("unknown fill kind %q", f.Kind),
+					Suggest: nearest(f.Kind, kinds),
+				})
+			}
+			if strings.Contains(f.Kind, "Gradient") {
+				if len(f.Stops) < 2 {
+					issues = append(issues, Issue{
+						Severity: SeverityError, Path: fp + ".stops",
+						Message: "gradient needs at least 2 stops",
+					})
+				}
+				for i, s := range f.Stops {
+					if s.Offset < 0 || s.Offset > 1 {
+						issues = append(issues, Issue{
+							Severity: SeverityError,
+							Path:     fmt.Sprintf("%s.stops[%d].offset", fp, i),
+							Message:  "offset must be within 0..1",
+						})
+					}
+				}
+			}
+			if f.Kind == "pattern" && f.Pattern == nil {
+				issues = append(issues, Issue{
+					Severity: SeverityError, Path: fp + ".pattern",
+					Message: "kind: pattern requires a pattern block",
+				})
+			}
+		}
+	}
+	for nodeID, n := range doc.Nodes {
+		checkFaces(n.Style, "nodes."+nodeID+".style")
+		var walkFaceStyles func(parts []*CompositePart, prefix string)
+		walkFaceStyles = func(parts []*CompositePart, prefix string) {
+			for i, p := range parts {
+				if p == nil {
+					continue
+				}
+				pp := fmt.Sprintf("%s.parts[%d]", prefix, i)
+				checkFaces(p.Style, pp+".style")
+				walkFaceStyles(p.Parts, pp)
+			}
+		}
+		walkFaceStyles(n.Parts, "nodes."+nodeID)
+	}
+	if doc.Theme != nil {
+		for name, ps := range doc.Theme.Presets {
+			checkFaces(ps, "theme.presets."+name)
+		}
+	}
+
 	// v2.2 — layout/place dry run (dangling refs, cycles, conflicting
 	// constraints → errors; post-solve sibling overlaps → warnings).
 	// Runs against a clone so Validate never mutates the document.
