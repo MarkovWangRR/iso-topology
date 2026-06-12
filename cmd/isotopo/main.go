@@ -359,7 +359,17 @@ func serveFile(in string) error {
 				return "", issues, nil
 			}
 		}
-		return renderTopologySVG(doc), issues, nil
+		svg := renderTopologySVG(doc)
+		if svg == "" {
+			// BUG3 (cross-test suite): a doc with zero nodes parses and
+			// validates clean, then renders nothing — the page showed the
+			// stale badge with an EMPTY issues panel. Say why instead.
+			issues = append(issues, isotopo.Issue{
+				Severity: isotopo.SeverityError, Path: "$",
+				Message: "document renders no scene — it has no nodes (or the scene resolves empty)",
+			})
+		}
+		return svg, issues, nil
 	}
 
 	mux := http.NewServeMux()
