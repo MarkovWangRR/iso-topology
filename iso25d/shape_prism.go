@@ -32,12 +32,21 @@ func prismSides(params map[string]any) int {
 }
 
 // prismBase returns the ground-plane vertices of the regular n-gon.
+// n == 4 is rotated 22.5°: a square whose vertices sit ON the world
+// axes projects to a screen-aligned rectangle (its diagonals coincide
+// with the iso axes), collapsing both visible walls into one band —
+// the M2 acceptance round's top finding. The offset restores a true
+// lozenge silhouette with two distinctly-shaded walls.
 func prismBase(w, d float64, n int) [][2]float64 {
 	cx, cy := w/2, d/2
 	rx, ry := w/2, d/2
+	th0 := -math.Pi / 2
+	if n == 4 {
+		th0 += math.Pi / 8
+	}
 	out := make([][2]float64, n)
 	for k := 0; k < n; k++ {
-		th := -math.Pi/2 + 2*math.Pi*float64(k)/float64(n)
+		th := th0 + 2*math.Pi*float64(k)/float64(n)
 		out[k] = [2]float64{cx + rx*math.Cos(th), cy + ry*math.Sin(th)}
 	}
 	return out
@@ -129,14 +138,61 @@ func (PrismShapeProvider) ContentAnchor() string { return "top" }
 // polygon's inscribed ellipse.
 func (PrismShapeProvider) ContentRectFor(w, d, h float64, params map[string]any) ContentRect {
 	n := prismSides(params)
-	f := math.Cos(math.Pi/float64(n)) * 0.92
-	if n == 3 {
-		// the triangle narrows fast above its centroid; a centered rect
-		// at the inscribed-square factor grazes the slanted edges.
-		f *= 0.8
+	return largestInscribedRect(prismBase(w, d, n), w, d)
+}
+
+// largestInscribedRect coarse-searches the biggest axis-aligned rect
+// inside a convex ground polygon. A centered inscribed-square estimate
+// starved asymmetric bases (a triangle's usable area sits toward its
+// wide edge, not its centroid) down to unreadable 5px labels.
+func largestInscribedRect(poly [][2]float64, w, d float64) ContentRect {
+	const steps = 24
+	best := ContentRect{X: w * 0.3, Y: d * 0.3, W: w * 0.4, H: d * 0.4}
+	bestArea := 0.0
+	inside := func(x, y float64) bool {
+		return pointInConvexGround([2]float64{x, y}, poly)
 	}
-	cw, ch := w*f/math.Sqrt2, d*f/math.Sqrt2
-	return ContentRect{X: (w - cw) / 2, Y: (d - ch) / 2, W: cw, H: ch}
+	for i0 := 0; i0 < steps; i0++ {
+		for j0 := 0; j0 < steps; j0++ {
+			x0, y0 := w*float64(i0)/steps, d*float64(j0)/steps
+			if !inside(x0, y0) {
+				continue
+			}
+			for i1 := steps; i1 > i0; i1-- {
+				x1 := w * float64(i1) / steps
+				for j1 := steps; j1 > j0; j1-- {
+					y1 := d * float64(j1) / steps
+					if (x1-x0)*(y1-y0) <= bestArea {
+						break
+					}
+					if inside(x1, y0) && inside(x0, y1) && inside(x1, y1) &&
+						inside((x0+x1)/2, y0) && inside((x0+x1)/2, y1) {
+						bestArea = (x1 - x0) * (y1 - y0)
+						best = ContentRect{X: x0, Y: y0, W: x1 - x0, H: y1 - y0}
+					}
+				}
+			}
+		}
+	}
+	return best
+}
+
+func pointInConvexGround(pt [2]float64, poly [][2]float64) bool {
+	n := len(poly)
+	sign := 0.0
+	for i := 0; i < n; i++ {
+		a, b := poly[i], poly[(i+1)%n]
+		cross := (b[0]-a[0])*(pt[1]-a[1]) - (b[1]-a[1])*(pt[0]-a[0])
+		if math.Abs(cross) < 1e-9 {
+			continue
+		}
+		if sign == 0 {
+			sign = cross
+		} else if sign*cross < 0 {
+			return false
+		}
+	}
+	return true
 }
 
 func (PrismShapeProvider) Footprint(w, d, _ float64) (float64, float64) { return w, d }
@@ -236,4 +292,39 @@ func RenderIsoPrism(o IsoBoxOpts, sides int) string {
 	closeWrapper(&sb)
 	sb.WriteString(`</svg>`)
 	return sb.String()
+}
+
+// PrismGroundAnchor returns the point where a ray from the base
+// polygon's center along (dx, dy) crosses the polygon boundary — the
+// correct world-plane anchor for a prism connector. Falls back to the
+// bbox edge when the ray math degenerates.
+func PrismGroundAnchor(w, d float64, sides int, dx, dy float64) (float64, float64) {
+	if sides < 3 {
+		sides = 6
+	}
+	poly := prismBase(w, d, sides)
+	cx, cy := w/2, d/2
+	l := math.Hypot(dx, dy)
+	if l == 0 {
+		return cx, cy
+	}
+	dx, dy = dx/l, dy/l
+	bestT := math.Inf(1)
+	for i := 0; i < len(poly); i++ {
+		a, b := poly[i], poly[(i+1)%len(poly)]
+		ex, ey := b[0]-a[0], b[1]-a[1]
+		den := dx*ey - dy*ex
+		if math.Abs(den) < 1e-12 {
+			continue
+		}
+		t := ((a[0]-cx)*ey - (a[1]-cy)*ex) / den
+		u := ((a[0]-cx)*dy - (a[1]-cy)*dx) / den
+		if t > 0 && u >= -1e-9 && u <= 1+1e-9 && t < bestT {
+			bestT = t
+		}
+	}
+	if math.IsInf(bestT, 1) {
+		return cx + dx*w/2, cy + dy*d/2
+	}
+	return cx + dx*bestT, cy + dy*bestT
 }

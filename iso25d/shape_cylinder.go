@@ -262,3 +262,62 @@ func applyCylinder(o ConvertOpts, c *IsoCylinderOpts) {
 		c.Background = o.Background
 	}
 }
+
+// CylinderShapeProvider — M2.1: geometry-only provider so connector
+// clipping uses the cylinder's true capsule outline instead of the
+// bbox hexagon (whose empty corners left arrowheads floating 30-60px
+// off the body — the acceptance round's most-reported defect class).
+type CylinderShapeProvider struct{}
+
+func (CylinderShapeProvider) Names() []string {
+	return []string{"cylinder", "stored_data", "queue", "oval"}
+}
+
+// Faces gives a coarse description (top disc + one side band) — enough
+// for invariants; the legacy renderer still draws the pixels.
+func (CylinderShapeProvider) Faces(w, d, h float64, _ map[string]any) []Face {
+	sil := (CylinderShapeProvider{}).Silhouette(w, d, h, nil)
+	return []Face{{Name: "body", Points: sil, Normal: [3]float64{0.7, 0.7, 0}, ZOrder: 0, Visible: true}}
+}
+
+// Silhouette samples the capsule: top ellipse arc, vertical tangents,
+// bottom front arc. Local frame matches PartOriginOffset's cylinder
+// case: top-ellipse centre at (rx, ry); world-origin corner offset is
+// handled by the generic frame conversion in partSilhouette.
+func (CylinderShapeProvider) Silhouette(w, d, h float64, _ map[string]any) [][2]float64 {
+	rx := w / 2
+	ry := rx * sin30 / cos30
+	// Local frame contract (see partSilhouette): local − (d·cos30, h) =
+	// projection of the world-relative point, so the top-ellipse centre
+	// (world (w/2, d/2, h)) sits at local ((w−d)/2·c30 + d·c30, (w+d)/2·s30).
+	cx := (w-d)/2*cos30 + d*cos30
+	cyTop := (w + d) / 2 * sin30
+	cyBot := cyTop + h
+	var pts [][2]float64
+	const n = 12
+	// upper back arc of the top ellipse, left → right
+	for i := 0; i <= n; i++ {
+		th := math.Pi - math.Pi*float64(i)/float64(n)
+		pts = append(pts, [2]float64{cx + rx*math.Cos(th), cyTop - ry*math.Sin(th)})
+	}
+	// lower front arc of the bottom ellipse, right → left (the straight
+	// vertical tangents fall out of joining the arc endpoints)
+	for i := 0; i <= n; i++ {
+		th := math.Pi * float64(i) / float64(n)
+		pts = append(pts, [2]float64{cx + rx*math.Cos(th), cyBot + ry*math.Sin(th)})
+	}
+	return pts
+}
+
+func (CylinderShapeProvider) ContentAnchor() string { return "top" }
+
+func (CylinderShapeProvider) ContentRectFor(w, d, h float64, _ map[string]any) ContentRect {
+	s := w / math.Sqrt2
+	return ContentRect{X: (w - s) / 2, Y: (d - s) / 2, W: s, H: s}
+}
+
+func (CylinderShapeProvider) Footprint(w, d, _ float64) (float64, float64) { return w, d }
+
+func init() {
+	RegisterShape(CylinderShapeProvider{})
+}
