@@ -70,7 +70,7 @@ type StyleKeyGroup struct {
 // Pure function — no IO, no globals.
 func CapabilityReport() Capabilities {
 	return Capabilities{
-		Version: "0.3.3",
+		Version: "0.3.4",
 		Inputs: []InputFormat{
 			{".yaml", "hand-authored iso composite with precise placement", "manual"},
 			{".json", "same shape as .yaml but JSON-encoded", "manual"},
@@ -116,7 +116,7 @@ func buildShapeCaps() []ShapeCap {
 		"group":     "v2 primitive — translucent labeled substrate wrapping nested parts",
 		"iso_text":  "flat text panel (low extrusion)",
 		"cloud":     "free-form rounded outline; no per-face palette overrides",
-		"prism":     "v3.2 — regular n-gon base x vertical extrude; geom.sides picks the base (default 6). Side walls shade left/right palette by facing. NOT yet on prisms: gradients, patterns, shadow, backglow, grain (silently no-op until the Surface/Effect pipelines, M3/M4). Connectors anchor on the true polygon edge.",
+		"prism":     "v3.2 — regular n-gon base x vertical extrude; geom.sides picks the base (default 6). Side walls shade left/right palette by facing. Prisms take gradients/patterns/strokes via style.faces (v3.3) and backglow (v3.3.1); dropShadow/grain remain box-family-only for now. Connectors anchor on the true polygon edge.",
 		"diamond":   "v3.2 — 4-gon prism, base rotated 22.5 deg so the projection is a real lozenge with two shaded walls: decision / routing semantics",
 		"triprism":  "v3.2 — 3-gon prism: alert / one-way fan-out semantics",
 		"hexprism":  "v3.2 — 6-gon prism: API gateway / middleware semantics",

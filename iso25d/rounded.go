@@ -216,6 +216,28 @@ func RenderIsoBoxRounded(o IsoBoxOpts) string {
 	} else if o.LeftFill != "" {
 		sideFill = o.LeftFill
 	}
+	// v3.3.1 — style.faces was silently discarded on the rounded path
+	// (the M3 acceptance round's one HIGH finding: cornerRadius + faces
+	// were mutually exclusive with zero warning). The rounded silhouette
+	// has two surfaces: "top" and the continuous "side" band (left/right
+	// accepted as aliases for the band).
+	var faceDefs strings.Builder
+	if fs := surfaceFor(o.FaceSurfaces, "top"); fs != nil && fs.Fill != nil {
+		if ref := emitFaceFill(&faceDefs, "", "top", fs.Fill); ref != "" {
+			topFill = ref
+		}
+	}
+	for _, alias := range []string{"side", "left", "right"} {
+		if fs := surfaceFor(o.FaceSurfaces, alias); fs != nil && fs.Fill != nil {
+			if ref := emitFaceFill(&faceDefs, "", "side", fs.Fill); ref != "" {
+				sideFill = ref
+			}
+			break
+		}
+	}
+	if faceDefs.Len() > 0 {
+		fmt.Fprintf(&sb, `<defs>%s</defs>`, faceDefs.String())
+	}
 
 	// Build paths.
 	frontIdx := []int{}
@@ -258,6 +280,22 @@ func RenderIsoBoxRounded(o IsoBoxOpts) string {
 		// 2. Top face filled + stroked (full rounded perimeter at z=h).
 		fmt.Fprintf(&sb, `<path data-face="top" d="%s" fill="%s" stroke="%s" stroke-width="%.2f" stroke-linejoin="round"/>`,
 			perimeterPath(p, false), topFill, escapeAttr(stroke), sw)
+		if fs := surfaceFor(o.FaceSurfaces, "top"); fs != nil {
+			for i, l := range fs.Strokes {
+				if l.Width <= 0 || l.Color == "" {
+					continue
+				}
+				extra := ""
+				if l.Dash != "" {
+					extra += fmt.Sprintf(` stroke-dasharray="%s"`, escapeAttr(l.Dash))
+				}
+				if l.Opacity > 0 && l.Opacity < 1 {
+					extra += fmt.Sprintf(` stroke-opacity="%.3f"`, l.Opacity)
+				}
+				fmt.Fprintf(&sb, `<path data-face="top-stroke%d" d="%s" fill="none" stroke="%s" stroke-width="%.2f" stroke-linejoin="round"%s/>`,
+					i, perimeterPath(p, false), escapeAttr(l.Color), l.Width, extra)
+			}
+		}
 		if patID != "" {
 			fmt.Fprintf(&sb, `<path data-face="top-pattern" d="%s" fill="url(#%s)" stroke="none"/>`,
 				perimeterPath(p, false), patID)
