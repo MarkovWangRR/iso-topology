@@ -243,6 +243,10 @@ svg path[data-connector].pinned{stroke:var(--accent-deep);filter:drop-shadow(0 0
 .df-color{display:flex;gap:7px;align-items:center;}
 .df-color input[type=color]{width:34px;height:32px;padding:0;border:1px solid var(--border);border-radius:7px;background:none;cursor:pointer;flex:none;}
 .df-color input[type=text]{flex:1;}
+.df-icon{display:flex;gap:7px;align-items:center;}
+.df-icon input[type=text]{flex:1;min-width:0;}
+.df-browse{font:600 11px Inter,sans-serif;border:1px solid var(--border);background:white;color:#475569;border-radius:7px;padding:7px 11px;cursor:pointer;white-space:nowrap;flex:none;}
+.df-browse:hover{background:var(--accent-soft);color:var(--accent-deep);border-color:var(--accent);}
 .df-row input,.df-row select{font:13px ui-monospace,Menlo,monospace;color:#0F172A;background:var(--code-bg);
   border:1px solid var(--border);border-radius:7px;padding:7px 10px;outline:none;}
 .df-row input:focus,.df-row select:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);}
@@ -710,6 +714,10 @@ async function openDetail(t){
           const hex=/^#[0-9a-fA-F]{6}$/.test(f.value)?f.value:'#cccccc';
           inp='<span class="df-color"><input type="color" data-sync="'+id+'" value="'+hex+'">'+
             '<input type="text" id="'+id+'" data-key="'+key+'" data-orig="'+orig+'" value="'+escAttr(f.value)+'" placeholder="CSS color"></span>';
+        }else if(f.type==='icon'){
+          inp='<span class="df-icon"><input type="text" id="'+id+'" data-key="'+key+'" data-orig="'+orig+'" value="'+escAttr(f.value)+'" placeholder="iso://… or pick a file">'+
+            '<button type="button" class="df-browse" data-pick="'+id+'">Browse…</button>'+
+            '<input type="file" class="df-file" data-pick="'+id+'" accept="image/svg+xml,image/png,image/jpeg,image/gif,image/webp,.svg,.png,.jpg,.jpeg,.gif,.webp" hidden></span>';
         }else{
           const t2=f.type==='number'?'number':'text';
           inp='<input type="'+t2+'" id="'+id+'" data-key="'+key+'" data-orig="'+orig+'" value="'+escAttr(f.value)+'">';
@@ -720,6 +728,20 @@ async function openDetail(t){
       // keep the color picker and its text input in sync (text is the source of truth)
       detailFields.querySelectorAll('input[type="color"][data-sync]').forEach(cp=>{
         cp.addEventListener('input',()=>{const t=document.getElementById(cp.getAttribute('data-sync')); if(t){t.value=cp.value;}});
+      });
+      // Icon "Browse…": open the OS file picker. The browser can't expose the
+      // real path, so we read the chosen file and embed it as a data URI —
+      // self-contained, renders on the canvas and exports standalone.
+      detailFields.querySelectorAll('.df-browse[data-pick]').forEach(btn=>{
+        const file=detailFields.querySelector('.df-file[data-pick="'+btn.getAttribute('data-pick')+'"]');
+        const text=document.getElementById(btn.getAttribute('data-pick'));
+        btn.addEventListener('click',()=>file.click());
+        file.addEventListener('change',()=>{
+          const f=file.files&&file.files[0]; if(!f) return;
+          const rd=new FileReader();
+          rd.onload=()=>{ text.value=rd.result; };
+          rd.readAsDataURL(f);
+        });
       });
     }
     detailModal.hidden=false;

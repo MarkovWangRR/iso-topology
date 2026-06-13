@@ -254,7 +254,7 @@ func nodeSchema() []schemaField {
 		{Path: "label", Label: "Label", Desc: "Text rendered on the node's top face", Type: "text"},
 		{Path: "shape", Label: "Shape", Desc: "Geometric form of the node", Type: "select",
 			Options: []string{"rectangle", "box", "cylinder", "sphere", "cloud", "person", "prism", "hexprism", "polygon", "group", "text"}},
-		{Path: "icon", Label: "Icon", Desc: "Glyph or brand mark, e.g. iso://glyph/cloud", Type: "text"},
+		{Path: "icon", Label: "Icon", Desc: "iso://… ref, image URL, or pick a local file", Type: "icon"},
 		{Path: "preset", Label: "Style preset", Desc: "Named style from theme.presets", Type: "text"},
 		{Path: "geom.w", Label: "Width", Desc: "Footprint width, world units", Type: "number"},
 		{Path: "geom.d", Label: "Depth", Desc: "Footprint depth, world units", Type: "number"},

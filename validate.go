@@ -176,7 +176,16 @@ func Validate(doc *Document) []Issue {
 	// v2.9 — icon URIs must resolve: an unknown iso://… icon renders
 	// as a silently-missing image, which is worse than an error.
 	checkIcon := func(icon, path string) {
-		if icon == "" || iso25d.KnownIsoIconURI(icon) {
+		if icon == "" {
+			return
+		}
+		// Only built-in iso://… refs are validated against the catalog. Any
+		// other value (a data: URI, an http(s) URL, or a local file path the
+		// renderer inlines) is an external resource — pass it through.
+		if !strings.HasPrefix(icon, "iso://") {
+			return
+		}
+		if iso25d.KnownIsoIconURI(icon) {
 			return
 		}
 		issues = append(issues, Issue{
