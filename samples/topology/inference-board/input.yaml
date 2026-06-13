@@ -1,9 +1,7 @@
 # inference-board — LLM inference PCB, dark green / copper engineering look.
+# v4.2 connector-driven auto-layout: zero hand-placed coordinates.
 # Showcases v3.3 style.faces: multi-stop linear + radial gradients,
-# multi-layer face strokes, projected patterns (silk-screen via grid,
-# gold-finger edge connector), and the prism family (hexprism scheduler
-# with per-face gradient walls). Zero hand-computed coordinates beyond
-# one composition offset on the hero anchor.
+# multi-layer face strokes, projected patterns, and the prism family.
 
 canvas:
   background: "#070A08"
@@ -59,57 +57,11 @@ theme:
 nodes:
   scene:
     shape: composite
+    layout: { mode: auto }
     parts:
-      # ── The PCB itself: gradient top, multi-layer outline ─────────
-      - id: board
-        shape: rectangle
-        geom: { w: 760, d: 480, h: 18 }
-        style:
-          faces:
-            top:
-              fill:
-                kind: linearGradient
-                angle: 25
-                stops:
-                  - { offset: 0,    color: "#0E3B26" }
-                  - { offset: 0.55, color: "#114B2F" }
-                  - { offset: 1,    color: "#0A2C1C" }
-              strokes:
-                - { color: "#041009", width: 2.4 }
-                - { color: "#B87333", width: 0.8, opacity: 0.45 }
-            left:
-              fill: { kind: solid, color: "#05130C" }
-            right:
-              fill:
-                kind: linearGradient
-                angle: 90
-                stops:
-                  - { offset: 0, color: "#0A2418" }
-                  - { offset: 1, color: "#061710" }
-          stroke: { color: "#041009", width: 1.6 }
-          effects:
-            dropShadow: { dx: 0, dy: 16, blur: 24, color: "rgba(0,0,0,0.55)" }
-
-      # ── Silk-screen layer: projected via-dot grid + dashed frame ──
-      - id: silk
-        shape: rectangle
-        place: { above: board }
-        geom: { w: 700, d: 420, h: 1 }
-        style:
-          palette: { top: "none", left: "none", right: "none" }
-          faces:
-            top:
-              fill:
-                kind: pattern
-                pattern: { kind: dots, color: "rgba(184,115,51,0.40)", spacing: 16, projected: true }
-              strokes:
-                - { color: "#B87333", width: 1, dash: "6 7", opacity: 0.5 }
-
       # ── Hero: hexprism token scheduler, copper radial-glow top ────
       - id: sched
         shape: hexprism
-        place: { above: board }
-        offset: { wx: -160, wy: 16 }
         geom: { w: 170, d: 170, h: 64 }
         icon: "iso://glyph/gear/3A2008"
         label: "Scheduler"
@@ -143,7 +95,6 @@ nodes:
       # ── KV cache (palette-only cylinder, deliberately quiet) ──────
       - id: kv
         shape: cylinder
-        place: { above: board, inFrontOf: sched, gap: 0.9, align: start }
         geom: { w: 90, d: 90, h: 58 }
         icon: "iso://glyph/database/light"
         label: "KV Cache"
@@ -155,7 +106,6 @@ nodes:
       # ── GPU tensor array: 2x2 gradient-top chips on a submount ────
       - id: gpus
         shape: group
-        place: { above: board, rightOf: sched, gap: 1.0 }
         layout: { mode: grid, cols: 2, gap: 0.8, padding: 0.5 }
         geom: { h: 10 }
         style:
@@ -171,13 +121,11 @@ nodes:
       # ── VRM power stages: projected copper hatch tiles ────────────
       - id: vrm0
         shape: rectangle
-        place: { above: board, leftOf: sched, gap: 1.0 }
         geom: { w: 58, d: 58, h: 12 }
         preset: vrm
         label: "VRM"
       - id: vrm1
         shape: rectangle
-        place: { above: board, behind: vrm0, gap: 0.5 }
         geom: { w: 58, d: 58, h: 12 }
         preset: vrm
         label: "VRM"
@@ -185,7 +133,6 @@ nodes:
       # ── DRAM banks: quiet dark tiles, emerald hairline retrace ────
       - id: ddr0
         shape: rectangle
-        place: { above: board, rightOf: pcie, gap: 0.6 }
         geom: { w: 120, d: 34, h: 10 }
         label: "DRAM"
         style:
@@ -203,7 +150,6 @@ nodes:
           text: { color: "#7FD6B4", size: 8, weight: "800" }
       - id: ddr1
         shape: rectangle
-        place: { above: board, rightOf: ddr0, gap: 0.5 }
         geom: { w: 120, d: 34, h: 10 }
         label: "DRAM"
         style:
@@ -223,8 +169,6 @@ nodes:
       # ── PCIe edge connector: projected gold-finger hatch ──────────
       - id: pcie
         shape: rectangle
-        place: { above: board }
-        offset: { wx: -20, wy: 195 }
         geom: { w: 150, d: 30, h: 8 }
         style:
           faces:
@@ -241,6 +185,8 @@ nodes:
           stroke: { color: "#8A5524", width: 1 }
 
     connectors:
+      # PCIe edge connector feeds the scheduler (host ingress).
+      - { from: pcie, to: sched, routing: orthogonal, arrow: triangle, stroke: { color: "#E8AF66", width: 2.4 } }
       # Copper PCB traces: scheduler fans tokens out to the array.
       - { from: sched, to: gpu0, routing: orthogonal, arrow: none, stroke: { color: "#C98445", width: 3 } }
       - { from: sched, to: gpu1, routing: orthogonal, arrow: none, stroke: { color: "#C98445", width: 3 } }
@@ -248,6 +194,12 @@ nodes:
       - { from: sched, to: gpu3, routing: orthogonal, arrow: none, stroke: { color: "#C98445", width: 3 } }
       # Cache lookups: async, dashed.
       - { from: kv, to: sched, routing: orthogonal, arrow: none, stroke: { color: "#D9924C", width: 2, dash: "5 5" } }
+      # Power delivery: VRM stages feed the scheduler rail.
+      - { from: vrm0, to: sched, routing: orthogonal, arrow: none, stroke: { color: "#C98445", width: 2 } }
+      - { from: vrm1, to: sched, routing: orthogonal, arrow: none, stroke: { color: "#C98445", width: 2 } }
+      # DRAM banks back the KV cache.
+      - { from: ddr0, to: kv, routing: orthogonal, arrow: none, stroke: { color: "#2BD9A4", width: 1.8, dash: "5 5" } }
+      - { from: ddr1, to: kv, routing: orthogonal, arrow: none, stroke: { color: "#2BD9A4", width: 1.8, dash: "5 5" } }
 
 annotations:
   - anchor: sched

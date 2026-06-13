@@ -1,11 +1,11 @@
-# edge-security — zero-trust edge, official gallery scene (v0.3.3).
+# edge-security — zero-trust edge, converted to connector-driven auto-layout (v4.2).
 # Two octprism firewalls guard the perimeter: the hero edge firewall
 # shows off style.faces — a radial-gradient crown, a per-side red
 # gradient ladder around all eight walls, and dual-layer re-traced
 # strokes. An amber diamond is the policy decision point; allowed
 # traffic lands on a projected-hatch platform deck carrying three
 # service chips. Dark slate neutrals, red = untrusted/deny,
-# amber = policy/allow. Zero hand-computed coordinates.
+# amber = policy/allow. Layout fully engine-driven (no coordinates).
 
 canvas:
   background: "#0E1116"
@@ -42,6 +42,7 @@ theme:
 nodes:
   scene:
     shape: composite
+    layout: { mode: auto }
     parts:
       # ── Hero: edge firewall (octprism, faces v3.3 showcase) ──────
       - id: fw_edge
@@ -92,7 +93,6 @@ nodes:
       # ── Second perimeter firewall (quieter rose tonal step) ──────
       - id: fw_vpn
         shape: octprism
-        place: { behind: fw_edge, gap: 1.3 }
         geom: { w: 134, d: 134, h: 44 }
         icon: "iso://glyph/lock/light"
         label: "VPN Firewall"
@@ -122,14 +122,12 @@ nodes:
       # ── Untrusted sources ─────────────────────────────────────────
       - id: inet
         shape: rectangle
-        place: { leftOf: fw_edge, gap: 3 }
         geom: { w: 108, d: 108, h: 18 }
         icon: "iso://glyph/globe/94A3B8"
         label: "Internet"
         preset: source
       - id: partners
         shape: rectangle
-        place: { leftOf: fw_vpn, gap: 2.2, align: center }
         geom: { w: 108, d: 108, h: 18 }
         icon: "iso://glyph/key/94A3B8"
         label: "Partner VPN"
@@ -138,7 +136,6 @@ nodes:
       # ── Policy decision point (diamond, amber) ───────────────────
       - id: policy
         shape: diamond
-        place: { rightOf: fw_edge, gap: 2.4 }
         geom: { w: 142, d: 142, h: 36 }
         icon: "iso://glyph/etl/451A03"
         label: "Policy?"
@@ -163,7 +160,6 @@ nodes:
       # ── Deny sink (triprism alert) ────────────────────────────────
       - id: siem
         shape: triprism
-        place: { inFrontOf: policy, gap: 1.7 }
         geom: { w: 96, d: 96, h: 30 }
         icon: "iso://glyph/bell/FCA5A5"
         label: "Drop + SIEM"
@@ -181,7 +177,6 @@ nodes:
       # ── Trusted platform deck: projected-hatch top face ──────────
       - id: platform
         shape: rectangle
-        place: { rightOf: policy, gap: 2.4 }
         geom: { w: 340, d: 220, h: 16 }
         style:
           palette: { left: "#12161E", right: "#171C26" }
@@ -197,37 +192,22 @@ nodes:
       # ── Service chips riding the deck ─────────────────────────────
       - id: svc_id
         shape: rectangle
-        place: { above: platform }
         geom: { w: 82, d: 82, h: 12 }
         icon: "iso://glyph/lock/F59E0B"
         label: "mTLS"
         preset: chip
       - id: svc_api
         shape: rectangle
-        place: { above: platform, leftOf: svc_id, gap: 0.6 }
         geom: { w: 82, d: 82, h: 12 }
         icon: "iso://glyph/code/F59E0B"
         label: "Services"
         preset: chip
       - id: svc_data
         shape: rectangle
-        place: { above: platform, rightOf: svc_id, gap: 0.6 }
         geom: { w: 82, d: 82, h: 12 }
         icon: "iso://glyph/database/F59E0B"
         label: "Data"
         preset: chip
-
-      # ── Quiet pedestals filling negative space ───────────────────
-      - id: ped_a
-        shape: rectangle
-        place: { inFrontOf: inet, gap: 1.4 }
-        geom: { w: 84, d: 84, h: 10 }
-        preset: source
-      - id: ped_b
-        shape: rectangle
-        place: { inFrontOf: ped_a, gap: 0.9, rightOf: ped_a, gapX: 0.9 }
-        geom: { w: 56, d: 56, h: 8 }
-        preset: source
 
     connectors:
       # untrusted ingress (red)
@@ -239,9 +219,13 @@ nodes:
       # decision outcomes
       - { from: policy, to: platform, routing: orthogonal, arrow: triangle, label: "allow", stroke: { color: "#F59E0B", width: 2 }, labelBg: "#141A23EE", labelColor: "#FCD34D" }
       - { from: policy, to: siem,     routing: orthogonal, arrow: triangle, label: "deny",  stroke: { color: "#DC2626", width: 1.4, dash: "5 4" }, labelBg: "#141A23EE", labelColor: "#FCA5A5" }
+      # platform fans out to the trusted service chips
+      - { from: platform, to: svc_api,  routing: orthogonal, arrow: triangle, stroke: { color: "#B45309", width: 1.4 } }
+      - { from: platform, to: svc_id,   routing: orthogonal, arrow: triangle, stroke: { color: "#B45309", width: 1.4 } }
+      - { from: platform, to: svc_data, routing: orthogonal, arrow: triangle, stroke: { color: "#B45309", width: 1.4 } }
       # service traces on the deck
-      - { from: svc_api.right-mid, to: svc_id.left-mid,    routing: orthogonal, arrow: none, stroke: { color: "#B45309", width: 1.2 } }
-      - { from: svc_id.right-mid,  to: svc_data.left-mid,  routing: orthogonal, arrow: none, stroke: { color: "#B45309", width: 1.2 } }
+      - { from: svc_api, to: svc_id,    routing: orthogonal, arrow: none, stroke: { color: "#B45309", width: 1.2 } }
+      - { from: svc_id,  to: svc_data,  routing: orthogonal, arrow: none, stroke: { color: "#B45309", width: 1.2 } }
 
 annotations:
   - anchor: platform

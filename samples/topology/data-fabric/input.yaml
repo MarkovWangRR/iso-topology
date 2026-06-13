@@ -1,9 +1,8 @@
-# data-fabric — a clean left-to-right data-mesh flow: three domain lanes
-# (commerce / logistics / telemetry), each a service tile + a gradient
-# data-product cylinder, all publishing into a central radial-gradient
-# Data Catalog hero, which serves an Analytics consumer and pages a
-# coral Alert Sink on contract breaches. Declarative place/layout only,
-# no filler. Showcases style.faces (radial + linear gradients, layered
+# data-fabric — connector-driven AUTO layout (v4.2).
+# Three domain lanes (commerce / logistics / telemetry) publish into a
+# central Data Catalog hero, which serves Analytics and pages an Alert
+# Sink. No place/coords — the engine arranges purely from the connector
+# graph. Showcases style.faces (radial + linear gradients, layered
 # strokes), cylinder side gradients, and the prism family.
 
 canvas:
@@ -26,8 +25,9 @@ theme:
 nodes:
   scene:
     shape: composite
+    layout: { mode: auto }
     parts:
-      # ── Three domain lanes, stacked front-to-back on the left ────
+      # ── Three domain lanes ───────────────────────────────────────
       - id: dom_commerce
         shape: group
         label: "Commerce"
@@ -63,7 +63,6 @@ nodes:
       - id: dom_logistics
         shape: group
         label: "Logistics"
-        place: { inFrontOf: dom_commerce, gap: 1.8, align: start }
         geom: { h: 8 }
         layout: { mode: row, gap: 0.7, padding: 0.8 }
         style:
@@ -96,7 +95,6 @@ nodes:
       - id: dom_telemetry
         shape: group
         label: "Telemetry"
-        place: { inFrontOf: dom_logistics, gap: 1.8, align: start }
         geom: { h: 8 }
         layout: { mode: row, gap: 0.7, padding: 0.8 }
         style:
@@ -126,10 +124,9 @@ nodes:
               stroke: { color: "#4A6FA8", width: 1 }
               text:   { color: "#39598C", size: 10, weight: "700" }
 
-      # ── Hero: the Data Catalog, centred to the right of the lanes ──
+      # ── Hero: the Data Catalog ───────────────────────────────────
       - id: catalog
         shape: rectangle
-        place: { rightOf: dom_logistics, gap: 2.4 }
         geom: { w: 180, d: 180, h: 28 }
         icon: "iso://glyph/layers/6D5BAE"
         label: "Data Catalog"
@@ -156,10 +153,9 @@ nodes:
             backglow:   { color: "#C9BCEC", radius: 44, opacity: 0.5 }
             dropShadow: { dx: 0, dy: 11, blur: 16, color: "rgba(122,102,184,0.25)" }
 
-      # ── Consumers, stacked front-to-back on the right ────────────
+      # ── Consumers ────────────────────────────────────────────────
       - id: analytics
         shape: rectangle
-        place: { rightOf: catalog, gap: 2.4 }
         geom: { w: 100, d: 100, h: 16 }
         icon: "iso://glyph/chart/6D5BAE"
         label: "Analytics"
@@ -170,7 +166,6 @@ nodes:
 
       - id: alert_sink
         shape: triprism
-        place: { inFrontOf: analytics, gap: 1.6 }
         geom: { w: 92, d: 92, h: 52 }
         icon: "iso://glyph/bell/A8453A"
         label: "Alerts"
