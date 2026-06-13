@@ -36,37 +36,70 @@ import (
 
 func indentOf(s string) int { return len(s) - len(strings.TrimLeft(s, " ")) }
 
-// stripAutoLayout removes the scene's layout:{mode:auto} (inline or a
-// layout: block whose mode is auto) so a frozen scene renders purely
-// from explicit offsets. Other layout modes are left intact.
-func stripAutoLayout(src string) string {
+// freezeLayoutText strips the layout that drives root-part positions so
+// a frozen scene renders purely from explicit offsets: the scene-root
+// `layout:` (inline or block, ANY mode) and every root part's `place:`
+// (inline or block). Nested-group layouts and child place are left
+// intact — only the root parts the user drags are detached from the
+// engine. Identifies "root" by indentation: the shallowest `- ` item
+// depth under the parts: list.
+func freezeLayoutText(src string) string {
 	lines := strings.Split(src, "\n")
-	inlineRe := regexp.MustCompile(`^\s*layout:\s*\{[^}]*\bmode:\s*auto\b[^}]*\}\s*$`)
-	blockRe := regexp.MustCompile(`^\s*layout:\s*$`)
-	modeAutoRe := regexp.MustCompile(`^\s*mode:\s*auto\b`)
-	out := make([]string, 0, len(lines))
-	for i := 0; i < len(lines); i++ {
-		if inlineRe.MatchString(lines[i]) {
-			continue
-		}
-		if blockRe.MatchString(lines[i]) {
-			ind := indentOf(lines[i])
-			j, isAuto := i+1, false
-			for j < len(lines) && (strings.TrimSpace(lines[j]) == "" || indentOf(lines[j]) > ind) {
-				if modeAutoRe.MatchString(lines[j]) {
-					isAuto = true
+	keyBlock := func(re *regexp.Regexp) {
+		inlineRe := regexp.MustCompile(re.String() + `\s*\{`)
+		out := make([]string, 0, len(lines))
+		for i := 0; i < len(lines); i++ {
+			if re.MatchString(lines[i]) {
+				if inlineRe.MatchString(lines[i]) || strings.Contains(lines[i], "{") {
+					continue // inline form: drop the one line
 				}
-				j++
-			}
-			if isAuto {
+				// block form: drop this line + its deeper-indented body
+				ind := indentOf(lines[i])
+				j := i + 1
+				for j < len(lines) && (strings.TrimSpace(lines[j]) == "" || indentOf(lines[j]) > ind) {
+					j++
+				}
 				i = j - 1
 				continue
 			}
+			out = append(out, lines[i])
 		}
-		out = append(out, lines[i])
+		lines = out
 	}
-	return strings.Join(out, "\n")
+	// The scene's own keys (shape/layout/parts) share one indent: the
+	// SHALLOWEST `parts:`. Strip only the layout: at that indent (the
+	// scene root) — nested group layouts sit deeper and must survive.
+	rootIndent := -1
+	partsRe := regexp.MustCompile(`^( *)parts:\s*$`)
+	for _, l := range lines {
+		if m := partsRe.FindStringSubmatch(l); m != nil {
+			if rootIndent < 0 || len(m[1]) < rootIndent {
+				rootIndent = len(m[1])
+			}
+		}
+	}
+	if rootIndent >= 0 {
+		keyBlock(regexp.MustCompile(`^ {` + itoa(rootIndent) + `}layout:`))
+		// Root-part `place:` sits one list level under parts: — at the
+		// root part's key indent (rootIndent+4 in block form). Strip place
+		// only at root-part depth; nested children's place is deeper.
+		keyBlock(regexp.MustCompile(`^ {` + itoa(rootIndent+4) + `}place:`))
+	}
+	// Flow-form root parts carry place inline on the `- { … }` line;
+	// strip an inline place: { … } from those (root depth = rootIndent+2).
+	if rootIndent >= 0 {
+		inlinePlace := regexp.MustCompile(`,?\s*place:\s*\{[^}]*\}`)
+		dash := regexp.MustCompile(`^ {` + itoa(rootIndent+2) + `}- \{`)
+		for i, l := range lines {
+			if dash.MatchString(l) {
+				lines[i] = inlinePlace.ReplaceAllString(l, "")
+			}
+		}
+	}
+	return strings.Join(lines, "\n")
 }
+
+func itoa(n int) string { return strconv.Itoa(n) }
 
 // upsertInlineKey replaces or inserts an inline `key: { wx: X, wy: Y }`
 // line inside the YAML block that begins at startLine (an `id:` line or
@@ -576,9 +609,9 @@ func serveFile(in string) error {
 			// into explicit coordinates and drops auto-layout, so the
 			// engine never re-decides positions again — no unexpected
 			// jumps. Every later move just nudges that one node.
-			if isotopo.SceneIsAuto(doc) {
+			if isotopo.SceneNeedsFreeze(doc) {
 				offs := isotopo.ResolveAllOffsets(doc)
-				out = stripAutoLayout(src)
+				out = freezeLayoutText(src)
 				ids := make([]string, 0, len(offs))
 				for id := range offs {
 					ids = append(ids, id)
