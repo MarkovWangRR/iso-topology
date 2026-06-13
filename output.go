@@ -231,7 +231,7 @@ svg path[data-connector].pinned{stroke:var(--accent-deep);filter:drop-shadow(0 0
    would lose to the id-only display rule and leave them painted. */
 #detailModal[hidden]{display:none;}
 #ctxmenu[hidden]{display:none;}
-.detail-card{background:white;border-radius:12px;box-shadow:0 24px 60px rgba(15,23,42,.30);width:min(440px,92vw);
+.detail-card{background:white;border-radius:12px;box-shadow:0 24px 60px rgba(15,23,42,.30);width:min(560px,94vw);
   max-height:84vh;display:flex;flex-direction:column;overflow:hidden;}
 .detail-head{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border);}
 .detail-head b{font:600 14px Inter,sans-serif;color:#0F172A;}
@@ -735,8 +735,8 @@ function choiceHTML(f,key,orig){
   // case-insensitive match; keep an out-of-list / odd-case value as its own tile
   if(cur && !opts.some(o=>o.toLowerCase()===cur.toLowerCase())) opts.unshift(cur);
   const tiles=opts.map(o=>{
-    const on=(cur && o.toLowerCase()===cur.toLowerCase())?' on':'';
-    return '<button type="button" class="df-tile'+on+'" data-val="'+escAttr(o)+'">'+optGlyph(f.key,o)+'<span>'+esc(o)+'</span></button>';
+    const on=(o.toLowerCase()===cur.toLowerCase())?' on':'';   // '' (solid) matches cur='' too
+    return '<button type="button" class="df-tile'+on+'" data-val="'+escAttr(o)+'">'+optGlyph(f.key,o)+'<span>'+esc(optLabel(f.key,o))+'</span></button>';
   }).join('');
   return '<div class="df-choice" data-key="'+key+'" data-orig="'+orig+'" data-val="'+escAttr(cur)+'">'+tiles+'</div>';
 }
@@ -760,8 +760,15 @@ function iconHTML(f,id,key,orig){
 }
 // optGlyph returns a small inline SVG illustrating an enum value, so the
 // choice tiles read at a glance instead of being bare words.
+function optLabel(key,val){
+  const L={'stroke.dash:':'Solid','stroke.dash:6 4':'Dashed','stroke.dash:1 5':'Dotted'};
+  return L[key+':'+val] || (val||'(none)');
+}
 function optGlyph(key,val){
   const G={
+    'stroke.dash:':'<path d="M3 10 17 10"/>',
+    'stroke.dash:6 4':'<path d="M3 10 17 10" stroke-dasharray="5 3"/>',
+    'stroke.dash:1 5':'<path d="M3 10 17 10" stroke-dasharray="0.5 4"/>',
     'grid:none':'<rect x="3" y="3" width="14" height="14" rx="2"/>',
     'grid:iso':'<path d="M10 3 17 10 10 17 3 10Z"/><path d="M10 7 13 10 10 13 7 10Z"/>',
     'grid:dots':'<circle cx="6" cy="6" r="1.4"/><circle cx="14" cy="6" r="1.4"/><circle cx="10" cy="10" r="1.4"/><circle cx="6" cy="14" r="1.4"/><circle cx="14" cy="14" r="1.4"/>',

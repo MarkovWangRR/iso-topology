@@ -289,7 +289,8 @@ func edgeSchema() []schemaField {
 			Options: []string{"orthogonal", "straight", "bezier"}},
 		{Group: "Style", Path: "stroke.color", Label: "Line color", Desc: "Stroke color (CSS color)", Type: "color"},
 		{Group: "Style", Path: "stroke.width", Label: "Line width", Desc: "Stroke width", Type: "number"},
-		{Group: "Style", Path: "stroke.dash", Label: "Dash", Desc: "SVG dash pattern, e.g. 4 3", Type: "text"},
+		{Group: "Style", Path: "stroke.dash", Label: "Line style", Desc: "Solid, dashed, or dotted",
+			Type: "choice", Options: []string{"", "6 4", "1 5"}},
 	}
 }
 
