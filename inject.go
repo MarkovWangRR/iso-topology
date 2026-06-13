@@ -245,6 +245,25 @@ func injectScreenLabels(svg string, infos []partInfo, extraObstacles []screenRec
 // nSubstrates part groups (group slabs) and BELOW every body part, and
 // paints arrowheads + label pills in a separate top overlay so they are
 // never occluded. Returns the inflated screen rects of every emitted
+// orthoThread inserts an L corner between any consecutive pair of world
+// points that differ in BOTH the x and y axes, so the rendered polyline is
+// always iso-axis-aligned (every segment ±30° or vertical in screen). Used
+// to thread an edge's endpoints through user-set waypoints even if a moved
+// node left a pair off-axis.
+func orthoThread(p [][3]float64) [][3]float64 {
+	const eps = 0.01
+	out := make([][3]float64, 0, len(p)*2)
+	out = append(out, p[0])
+	for i := 1; i < len(p); i++ {
+		a, b := out[len(out)-1], p[i]
+		if math.Abs(b[0]-a[0]) > eps && math.Abs(b[1]-a[1]) > eps {
+			out = append(out, [3]float64{b[0], a[1], a[2]}) // x-first corner
+		}
+		out = append(out, b)
+	}
+	return out
+}
+
 // route segment so later layers (screen labels, annotations) can treat
 // routes as collision obstacles.
 func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo, nSubstrates int) (string, []screenRect) {
@@ -563,6 +582,11 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo,
 
 		// Build the polyline waypoints in screen coords.
 		var pts [][2]float64
+		// routeWorld/routeScreen mirror pts in WORLD (wx,wy) and pre-clip
+		// SCREEN-user coords for the orthogonal route, emitted together as
+		// data-route so Studio can hit-test a segment (screen) and edit it in
+		// world space without re-deriving the route server-side.
+		var routeWorld, routeScreen [][2]float64
 		switch c.Routing {
 		case "orthogonal":
 			// Anchor-aware L/Z in the iso world ground plane.
@@ -729,6 +753,19 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo,
 				np = append(np, [3]float64{tWX, tWY, routeZ})
 				worldPts = np
 			}
+			// v4.6 — explicit waypoints supersede the auto route + bend:
+			// thread the docked endpoints through the user-set interior
+			// corners, inserting an orthogonal corner for any pair that is
+			// not axis-aligned (e.g. after a connected node moved) so every
+			// segment stays iso-clean.
+			if len(c.Waypoints) > 0 {
+				np := [][3]float64{{sWX, sWY, routeZ}}
+				for _, wp := range c.Waypoints {
+					np = append(np, [3]float64{wp.WX, wp.WY, routeZ})
+				}
+				np = append(np, [3]float64{tWX, tWY, routeZ})
+				worldPts = orthoThread(np)
+			}
 			// v1.6 — if every waypoint shares the same world x OR the same
 			// world y, the L-shape has degenerated to a single iso-axis line.
 			// Emit just (source, target) so the path doesn't render multiple
@@ -749,6 +786,8 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo,
 				x2, y2 := project(last[0], last[1], last[2])
 				pts = append(pts, [2]float64{x1 + tx, y1 + ty})
 				pts = append(pts, [2]float64{x2 + tx, y2 + ty})
+				routeWorld = [][2]float64{{worldPts[0][0], worldPts[0][1]}, {last[0], last[1]}}
+				routeScreen = [][2]float64{{x1 + tx, y1 + ty}, {x2 + tx, y2 + ty}}
 				break
 			}
 			// v3.1 despike: stub-driven waypoints can walk an axis one way
@@ -779,6 +818,8 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo,
 					continue
 				}
 				pts = append(pts, [2]float64{sx, sy})
+				routeWorld = append(routeWorld, [2]float64{p[0], p[1]})
+				routeScreen = append(routeScreen, [2]float64{sx, sy})
 			}
 		case "bezier":
 			// v2.1 — single quadratic curve from c.From to c.To, control
@@ -884,9 +925,24 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo,
 				}
 			}
 		}
+		// data-route = "sx,sy,wx,wy sx,sy,wx,wy ..." — each rendered corner in
+		// pre-clip SCREEN-user and WORLD coords, source→target. Studio reads it
+		// to move one segment at a time (see wireDrag/editSegment).
+		var routeAttr string
+		if len(routeScreen) == len(routeWorld) && len(routeWorld) >= 2 {
+			var rb strings.Builder
+			for i := range routeWorld {
+				if i > 0 {
+					rb.WriteByte(' ')
+				}
+				fmt.Fprintf(&rb, "%.2f,%.2f,%.3f,%.3f",
+					routeScreen[i][0], routeScreen[i][1], routeWorld[i][0], routeWorld[i][1])
+			}
+			routeAttr = fmt.Sprintf(` data-route="%s"`, rb.String())
+		}
 		fmt.Fprintf(&sb,
-			`<path data-connector="%d" d="%s" fill="none" stroke="%s" stroke-width="%.2f" stroke-linecap="round" stroke-linejoin="round"%s/>`,
-			ci, d.String(), stroke, width, dashAttr,
+			`<path data-connector="%d"%s d="%s" fill="none" stroke="%s" stroke-width="%.2f" stroke-linecap="round" stroke-linejoin="round"%s/>`,
+			ci, routeAttr, d.String(), stroke, width, dashAttr,
 		)
 
 		// Record inflated segment rects (route obstacles for later layers).

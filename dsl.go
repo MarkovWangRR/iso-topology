@@ -82,6 +82,12 @@ type Connector struct {
 	// INTERIOR waypoints, so a Studio edge-drag shifts the line while
 	// both endpoints stay docked to their anchors.
 	Bend *WorldPoint `yaml:"bend,omitempty" json:"bend,omitempty"`
+	// v4.6 — waypoints: explicit interior CORNER points (world wx/wy) the
+	// route must thread through, source→target. Lets a Studio edge-drag move
+	// ONE segment independently (drawio-style orthogonal editing) instead of
+	// shifting the whole line. When set, it supersedes Bend and the auto
+	// staircase; endpoints stay docked to their anchors.
+	Waypoints []WorldPoint `yaml:"waypoints,omitempty" json:"waypoints,omitempty"`
 
 	// v1.5 — routing strategy:
 	//   "straight"   — single segment from anchor to anchor (default)
