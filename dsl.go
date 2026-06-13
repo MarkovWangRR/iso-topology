@@ -489,3 +489,9 @@ func (d *Document) Scene() *Node {
 	}
 	return nil
 }
+
+// isContainerShape reports whether a part shape wraps nested parts.
+// "boundary" (v3.5, family F) is a group whose substrate renders as a
+// dashed outline-only region — the VPC/subnet/trust-zone semantic —
+// instead of a solid slab.
+func isContainerShape(s string) bool { return s == "group" || s == "boundary" }

@@ -73,7 +73,7 @@ func Validate(doc *Document) []Issue {
 		var collectGroupIDs func(parts []*CompositePart)
 		collectGroupIDs = func(parts []*CompositePart) {
 			for _, p := range parts {
-				if p.Shape == "group" {
+				if isContainerShape(p.Shape) {
 					registerID(p)
 					collectGroupIDs(p.Parts)
 				}
@@ -338,7 +338,7 @@ func validatePart(p *CompositePart, path string, validShapes []string, issues *[
 			Suggest:  nearest(p.Shape, validShapes),
 		})
 	}
-	if p.Shape == "group" && len(p.Parts) == 0 {
+	if isContainerShape(p.Shape) && len(p.Parts) == 0 {
 		*issues = append(*issues, Issue{
 			Severity: SeverityWarning,
 			Path:     path + ".parts",

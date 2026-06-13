@@ -70,7 +70,7 @@ type StyleKeyGroup struct {
 // Pure function — no IO, no globals.
 func CapabilityReport() Capabilities {
 	return Capabilities{
-		Version: "0.3.5",
+		Version: "0.3.6",
 		Inputs: []InputFormat{
 			{".yaml", "hand-authored iso composite with precise placement", "manual"},
 			{".json", "same shape as .yaml but JSON-encoded", "manual"},
@@ -106,7 +106,7 @@ func buildShapeCaps() []ShapeCap {
 	}
 	// Add native iso names that aren't in the d2 catalog.
 	for _, iso := range []string{"rectangle", "cylinder", "circle", "cloud", "person", "iso_text", "composite", "group",
-		"prism", "diamond", "triprism", "hexprism", "octprism"} {
+		"prism", "diamond", "triprism", "hexprism", "octprism", "boundary"} {
 		if _, ok := by[iso]; !ok {
 			by[iso] = &bucket{isoName: iso, hMul: 1.0, acceptedAs: map[string]struct{}{iso: {}}}
 		}
@@ -114,6 +114,7 @@ func buildShapeCaps() []ShapeCap {
 	notes := map[string]string{
 		"composite": "container — holds parts: [] of CompositePart entries",
 		"group":     "v2 primitive — translucent labeled substrate wrapping nested parts",
+		"boundary":  "v3.5 — a group whose substrate is a dashed OUTLINE-ONLY flat region (VPC / subnet / trust zone). Same nesting/layout/autosize as group; style.stroke restyles the dashes. EXPERIMENTAL: large autosized boundaries can show a doubled outline (top face vs silhouette) — under investigation",
 		"iso_text":  "flat text panel (low extrusion)",
 		"cloud":     "free-form rounded outline; no per-face palette overrides",
 		"prism":     "v3.2 — regular n-gon base x vertical extrude; geom.sides picks the base (default 6). Side walls shade left/right palette by facing. Prisms take gradients/patterns/strokes via style.faces (v3.3) and backglow (v3.3.1); Full effects parity with the box family as of v3.4 (dropShadow, grain, backglow). Connectors anchor on the true polygon edge.",

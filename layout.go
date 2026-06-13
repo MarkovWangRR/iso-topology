@@ -60,7 +60,7 @@ func applyLayout(n *Node, canvas *Canvas) []Issue {
 // (nil at the composite root) — it is the auto-size target.
 func solveContainer(parts []*CompositePart, lay *Layout, owner *CompositePart, cell float64, path string, issues *[]Issue) {
 	for i, p := range parts {
-		if p != nil && p.Shape == "group" && len(p.Parts) > 0 {
+		if p != nil && isContainerShape(p.Shape) && len(p.Parts) > 0 {
 			solveContainer(p.Parts, p.Layout, p, cell, fmt.Sprintf("%s.parts[%d]", path, i), issues)
 			p.Layout = nil
 		}
@@ -78,7 +78,7 @@ func solveContainer(parts []*CompositePart, lay *Layout, owner *CompositePart, c
 
 func partFootprint(p *CompositePart) (w, d float64) {
 	w, d = defaultPartW, defaultPartD
-	if p.Shape == "group" {
+	if isContainerShape(p.Shape) {
 		w, d = defaultGroupW, defaultGroupD
 	}
 	if p.Geom != nil {
@@ -96,7 +96,7 @@ func partHeight(p *CompositePart) float64 {
 	if p.Geom != nil && p.Geom.H > 0 {
 		return p.Geom.H
 	}
-	if p.Shape == "group" {
+	if isContainerShape(p.Shape) {
 		return 8
 	}
 	return defaultPartH
