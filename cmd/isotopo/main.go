@@ -795,6 +795,125 @@ func findCanvasLine(src string) int {
 	return -1
 }
 
+// itemEnd returns the line index just past the YAML list item that starts at
+// `start` — the next non-blank line indented ≤ the item, or EOF.
+func itemEnd(lines []string, start int) int {
+	ind := indentOf(lines[start])
+	for i := start + 1; i < len(lines); i++ {
+		if strings.TrimSpace(lines[i]) == "" {
+			continue
+		}
+		if indentOf(lines[i]) <= ind {
+			return i
+		}
+	}
+	return len(lines)
+}
+
+// findPartItemRange locates the `- ` list item that declares part `id`,
+// returning [start,end) line indices (covers flow `- { id: x … }` and block
+// `- id: x` / `- shape: …\n  id: x` forms, at any nesting depth).
+func findPartItemRange(src, id string) (int, int, bool) {
+	lines := strings.Split(src, "\n")
+	reDash := regexp.MustCompile(`(?:^|[-{,]\s*)id:\s*"?` + regexp.QuoteMeta(id) + `"?\s*(?:,|}|$)`)
+	reIndented := regexp.MustCompile(`^\s*id:\s*"?` + regexp.QuoteMeta(id) + `"?\s*$`)
+	idLine := -1
+	for i, l := range lines {
+		if reDash.MatchString(l) || reIndented.MatchString(l) {
+			idLine = i
+			break
+		}
+	}
+	if idLine < 0 {
+		return 0, 0, false
+	}
+	start := idLine
+	for start >= 0 && !strings.HasPrefix(strings.TrimSpace(lines[start]), "- ") {
+		start--
+	}
+	if start < 0 {
+		return 0, 0, false
+	}
+	return start, itemEnd(lines, start), true
+}
+
+// connectorItemRange returns [start,end) for the ci-th connector item.
+func connectorItemRange(src string, ci int) (int, int, bool) {
+	start := findConnectorLine(src, ci)
+	if start < 0 {
+		return 0, 0, false
+	}
+	return start, itemEnd(strings.Split(src, "\n"), start), true
+}
+
+func deleteLineRange(src string, start, end int) string {
+	lines := strings.Split(src, "\n")
+	if start < 0 || start >= len(lines) || end < start {
+		return src
+	}
+	return strings.Join(append(append([]string{}, lines[:start]...), lines[end:]...), "\n")
+}
+
+// deletePart removes a node and any connectors that reference it (so the
+// scene stays valid — no dangling from/to). Connectors are removed
+// bottom-up so earlier indices don't shift.
+func deletePart(src, id string) (string, bool) {
+	conns := findConnectors(mustParse(src))
+	var refs []int
+	for i, c := range conns {
+		if m, ok := c.(map[string]interface{}); ok {
+			if m["from"] == id || m["to"] == id {
+				refs = append(refs, i)
+			}
+		}
+	}
+	out := src
+	for i := len(refs) - 1; i >= 0; i-- {
+		if s, e, ok := connectorItemRange(out, refs[i]); ok {
+			out = deleteLineRange(out, s, e)
+		}
+	}
+	s, e, ok := findPartItemRange(out, id)
+	if !ok {
+		return src, false
+	}
+	return deleteLineRange(out, s, e), true
+}
+
+// duplicatePart clones a node's block under a fresh id, placed at (ox,oy).
+func duplicatePart(src, id string, ox, oy float64) (string, bool) {
+	lines := strings.Split(src, "\n")
+	s, e, ok := findPartItemRange(src, id)
+	if !ok {
+		return src, false
+	}
+	newID := uniquePartID(src, id+"_copy")
+	clone := append([]string{}, lines[s:e]...)
+	cloneStr := strings.Join(clone, "\n")
+	// rename only the item's own id (first id: occurrence in the block)
+	cloneStr = regexp.MustCompile(`id:\s*"?`+regexp.QuoteMeta(id)+`"?`).
+		ReplaceAllString(cloneStr, "id: "+newID)
+	out := strings.Join(append(append(append([]string{}, lines[:e]...), strings.Split(cloneStr, "\n")...), lines[e:]...), "\n")
+	out, _ = upsertInlineKey(out, findPartIDLine(out, newID), "offset", ox, oy)
+	return out, true
+}
+
+func uniquePartID(src, base string) string {
+	id := base
+	for n := 2; ; n++ {
+		if _, _, ok := findPartItemRange(src, id); !ok {
+			return id
+		}
+		id = fmt.Sprintf("%s%d", base, n)
+	}
+}
+
+func mustParse(src string) map[string]interface{} {
+	var m map[string]interface{}
+	_ = yaml.Unmarshal([]byte(src), &m)
+	return m
+}
+
 // CLI flag state — set by parseFlags. Layout is consulted only for .d2
 // inputs (YAML/JSON have no layout step).
 var (
@@ -1314,6 +1433,50 @@ func serveFile(in string) error {
 		lang := q.Get("format")
 		if lang == "" {
 			lang = sourceLang
+		}
+		svg, issues, _ := render(lang, []byte(out))
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]any{"yaml": out, "svg": svg, "issues": issues})
+	})
+	// v4.8 — structural ops: delete a node (+its connectors) or edge, or
+	// duplicate a node. Comment-preserving text surgery on the posted source.
+	mux.HandleFunc("POST /api/op", func(w http.ResponseWriter, r *http.Request) {
+		body, err := io.ReadAll(io.LimitReader(r.Body, 4<<20))
+		if err != nil {
+			http.Error(w, err.Error(), 400)
+			return
+		}
+		q := r.URL.Query()
+		src := string(body)
+		lang := q.Get("format")
+		if lang == "" {
+			lang = sourceLang
+		}
+		var out string
+		ok := false
+		switch q.Get("op") + ":" + q.Get("kind") {
+		case "delete:node":
+			out, ok = deletePart(src, q.Get("id"))
+		case "delete:edge":
+			ci, _ := strconv.Atoi(q.Get("ci"))
+			if s, e, found := connectorItemRange(src, ci); found {
+				out, ok = deleteLineRange(src, s, e), true
+			}
+		case "duplicate:node":
+			ox, oy := 40.0, 40.0
+			if doc, derr := loadDocument(lang, body); derr == nil {
+				if cx, cy, found := isotopo.ResolvePartOffset(doc, q.Get("id")); found {
+					ox, oy = cx+40, cy+40
+				}
+			}
+			out, ok = duplicatePart(src, q.Get("id"), ox, oy)
+		default:
+			http.Error(w, "op must be delete|duplicate, kind node|edge", 400)
+			return
+		}
+		if !ok {
+			http.Error(w, "target not found in source", 422)
+			return
 		}
 		svg, issues, _ := render(lang, []byte(out))
 		w.Header().Set("Content-Type", "application/json")

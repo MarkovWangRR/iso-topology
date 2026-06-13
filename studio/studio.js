@@ -268,6 +268,7 @@ function shiftEnds(d,moveFrom,moveTo,dx,dy){
 }
 async function commitMove(kind,key,dwx,dwy,dropX,dropY,wp){
   if(!serverOK) return;
+  pushUndo();
   let qp = kind==='node' ? 'kind=node&id='+encodeURIComponent(key) : 'kind=edge&ci='+key;
   if(wp) qp += '&wp='+encodeURIComponent(JSON.stringify(wp));
   try{
@@ -320,14 +321,46 @@ let ctxTarget=null, detailTarget=null;
 function escAttr(t){return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');}
 function showCtx(x,y,kind,key){
   ctxTarget={kind,key};
-  ctxmenu.style.left=Math.min(x,innerWidth-150)+'px';
-  ctxmenu.style.top=Math.min(y,innerHeight-60)+'px';
+  // Duplicate applies to nodes only; Delete to nodes/edges; canvas is edit-only.
+  document.getElementById('ctxdup').hidden = kind!=='node';
+  document.getElementById('ctxdel').hidden = kind==='canvas';
+  ctxmenu.style.left=Math.min(x,innerWidth-160)+'px';
+  ctxmenu.style.top=Math.min(y,innerHeight-110)+'px';
   ctxmenu.hidden=false;
 }
 function hideCtx(){ctxmenu.hidden=true;}
 document.addEventListener('mousedown',e=>{ if(!ctxmenu.hidden && !ctxmenu.contains(e.target)) hideCtx(); });
 document.addEventListener('scroll',hideCtx,true);
 document.getElementById('ctxedit').addEventListener('click',()=>{ if(ctxTarget) openDetail(ctxTarget); });
+document.getElementById('ctxdup').addEventListener('click',()=>{ if(ctxTarget) opCommit('duplicate',ctxTarget); });
+document.getElementById('ctxdel').addEventListener('click',()=>{ if(ctxTarget) opCommit('delete',ctxTarget); });
+// Structural op (delete/duplicate): same write-back shape as commitMove.
+async function opCommit(op,t){
+  hideCtx();
+  if(!serverOK) return;
+  pushUndo();
+  try{
+    const r=await fetch('/api/op?op='+op+'&'+qpFor(t)+'&format='+encodeURIComponent(LANG),{method:'POST',body:srcEl.value});
+    if(!r.ok) return;
+    const data=await r.json();
+    if(typeof data.yaml==='string'){ srcEl.value=data.yaml; setDirty(srcEl.value!==ORIGINAL);
+      try{localStorage.setItem(DRAFTKEY,srcEl.value);}catch(_){} }
+    if(data.svg){ zoomer.innerHTML=data.svg; buildMap(); paint(pinnedRange()); wireHover(); wireDrag(); adaptStage(); markRendered(); }
+    showIssues(data.issues||[]);
+  }catch(_){}
+}
+/* ── undo / redo of STRUCTURAL edits (drag, detail, delete, duplicate).
+   Each commit snapshots the pre-change YAML; ⌘Z/⌘⇧Z restore it. Plain
+   typing in the editor keeps the textarea's own native undo. ────────────── */
+let undoStack=[], redoStack=[];
+function pushUndo(){ undoStack.push(srcEl.value); if(undoStack.length>100) undoStack.shift(); redoStack=[]; }
+function applyHistory(v){
+  srcEl.value=v; setDirty(v!==ORIGINAL);
+  try{ v===ORIGINAL?localStorage.removeItem(DRAFTKEY):localStorage.setItem(DRAFTKEY,v); }catch(_){}
+  buildMap(); paint(pinnedRange()); if(serverOK) rerender();
+}
+function undo(){ if(!undoStack.length) return; redoStack.push(srcEl.value); applyHistory(undoStack.pop()); }
+function redo(){ if(!redoStack.length) return; undoStack.push(srcEl.value); applyHistory(redoStack.pop()); }
 function qpFor(t){
   if(t.kind==='node') return 'kind=node&id='+encodeURIComponent(t.key);
   if(t.kind==='edge') return 'kind=edge&ci='+t.key;
@@ -494,6 +527,7 @@ async function applyDetail(){
     if(v!==el.getAttribute('data-orig')) changes[el.getAttribute('data-key')]=v;
   });
   if(!Object.keys(changes).length){ closeDetail(); return; }
+  pushUndo();
   const qp = qpFor(t);
   try{
     const r=await fetch('/api/edit?'+qp+'&f='+encodeURIComponent(JSON.stringify(changes))+'&format='+encodeURIComponent(LANG),
@@ -819,6 +853,11 @@ srcEl.addEventListener('input',()=>{
   }
 });
 window.addEventListener('keydown',e=>{
+  // ⌘Z / ⌘⇧Z undo-redo of structural edits — only when not typing in the
+  // editor (the textarea keeps its own native text undo).
+  if((e.metaKey||e.ctrlKey)&&(e.key==='z'||e.key==='Z')&&document.activeElement!==srcEl){
+    e.preventDefault(); e.shiftKey?redo():undo(); return;
+  }
   if((e.metaKey||e.ctrlKey)&&e.key==='Enter'){e.preventDefault();rerender();return;}
   if((e.metaKey||e.ctrlKey)&&e.key==='0'){e.preventDefault();fitView();return;}
   if((e.metaKey||e.ctrlKey)&&(e.key==='='||e.key==='+')){e.preventDefault();zoomBy(1.25);return;}
