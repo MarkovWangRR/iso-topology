@@ -41,3 +41,4 @@ description matches your task, imitate its structure, then check
 | [`platform-board`](../../samples/topology/platform-board/input.yaml) | platform-board — PCB / circuit-board hero shot, landing-page style. |
 | [`rag-pipeline`](../../samples/topology/rag-pipeline/input.yaml) | rag-pipeline — a RAG system on two planes. |
 | [`training-compute`](../../samples/topology/training-compute/input.yaml) | training-compute — where the GPU hours of a training run go. |
+| [`vpc-boundary`](../../samples/topology/vpc-boundary/input.yaml) | (no header comment) |

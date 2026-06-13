@@ -119,6 +119,13 @@ func RenderIsoBoxRounded(o IsoBoxOpts) string {
 	if botStop == "" {
 		botStop = topStop
 	}
+	// v3.6.1 — palette "none" (ghosts, boundary containers) is a FILL
+	// keyword, not a color: feeding it to a gradient stop renders an
+	// invalid-color BLACK band along the side wall (the boundary
+	// container's phantom "solid second outline").
+	if strings.EqualFold(topStop, "none") || strings.EqualFold(botStop, "none") {
+		topStop, botStop = "", ""
+	}
 	wantGradient := !o.Wireframe && botStop != ""
 	var defs strings.Builder
 	if hasShadow {

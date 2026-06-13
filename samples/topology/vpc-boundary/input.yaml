@@ -1,0 +1,24 @@
+canvas: { background: "#F6F8FB", grid: iso, gridColor: "#E5EAF3", padding: 30 }
+nodes:
+  scene:
+    shape: composite
+    parts:
+      - id: vpc
+        shape: boundary
+        label: "Production VPC"
+        layout: { mode: row, gap: 1.2, padding: 1 }
+        style: { stroke: { color: "#5B7BB4", width: 1.4, dash: "7 5" } }
+        parts:
+          - id: subnet_a
+            shape: boundary
+            label: "Private Subnet"
+            layout: { mode: row, gap: 0.8, padding: 0.8 }
+            style: { stroke: { color: "#9AA9C8", width: 1.1, dash: "4 4" } }
+            parts:
+              - { id: api, shape: rectangle, geom: {w: 90, d: 90, h: 34}, label: "API", icon: "iso://glyph/bolt", style: { palette: { top: "#FFFFFF", left: "#3B5C9E", right: "#5B7BB4" } } }
+              - { id: db, shape: cylinder, geom: {w: 80, d: 80, h: 44}, label: "DB", style: { palette: { top: "#E8EEF9", left: "#3B5C9E", right: "#5B7BB4" } } }
+          - id: gw
+            shape: hexprism
+            geom: { w: 100, d: 100, h: 36 }
+            label: "IGW"
+            style: { palette: { top: "#FFF7ED", left: "#B45309", right: "#F59E0B" } }
