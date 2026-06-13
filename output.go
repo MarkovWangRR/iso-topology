@@ -880,20 +880,26 @@ function downloadCopy(){
   a.download=FILENAME.replace(/(\.[a-z0-9]+)$/i,'.edited$1');
   a.click();
 }
-/* ── examples menu (fetched from the public gallery) ────────────── */
-const EXAMPLES=['ai-platform','llm-serving','rag-pipeline','training-compute','platform-board','identity-flow'];
-const RAWBASE='https://raw.githubusercontent.com/MarkovWangRR/iso-topology/main/samples/topology/';
-function toggleExamples(){
+/* ── examples menu (served locally from this build) ─────────────── */
+let exLoaded=false;
+async function toggleExamples(){
   const p=document.getElementById('expanel');
   if(!p.hidden){p.hidden=true;return;}
-  if(!p.childElementCount){
+  p.hidden=false;
+  if(exLoaded) return;
+  p.innerHTML='<div class="hint">loading…</div>';
+  try{
+    const r=await fetch('/api/examples');
+    const list=(await r.json()).examples||[];
     p.innerHTML='<div class="hint">loads into the editor — your file is untouched</div>'+
-      EXAMPLES.map(n=>'<button data-ex="'+n+'">'+n+'</button>').join('');
+      list.map(n=>'<button data-ex="'+n+'">'+n+'</button>').join('');
     p.querySelectorAll('[data-ex]').forEach(b=>{
       b.addEventListener('click',()=>loadExample(b.getAttribute('data-ex')));
     });
+    exLoaded=true;
+  }catch(_){
+    p.innerHTML='<div class="hint">examples need a running server (isotopo serve)</div>';
   }
-  p.hidden=false;
 }
 document.addEventListener('click',e=>{
   if(!e.target.closest('.menu')) document.getElementById('expanel').hidden=true;
@@ -901,13 +907,13 @@ document.addEventListener('click',e=>{
 async function loadExample(name){
   document.getElementById('expanel').hidden=true;
   const b=document.getElementById('exbtn'), keep=b.textContent;
-  b.textContent='loading…';
+  b.textContent='loading '+name+'…';
   try{
-    const r=await fetch(RAWBASE+name+'/input.yaml');
+    const r=await fetch('/api/example?name='+encodeURIComponent(name));
     if(!r.ok) throw new Error(r.status);
-    srcEl.value=await r.text();
+    srcEl.value=(await r.json()).yaml;
     srcEl.dispatchEvent(new Event('input',{bubbles:true}));
-  }catch(_){b.textContent='offline';setTimeout(()=>{b.textContent=keep;},1200);return;}
+  }catch(_){b.textContent='load failed';setTimeout(()=>{b.textContent=keep;},1400);return;}
   b.textContent=keep;
 }
 

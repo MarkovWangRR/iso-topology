@@ -261,10 +261,9 @@ return JSON.stringify({roundtrip: back===s, compact: h.length < s.length});})()
 
 # T19 examples menu populates
 check("examples-menu", ev("""
-(()=>{toggleExamples();
-const p=document.getElementById('expanel');
-const items=p.querySelectorAll('[data-ex]').length;
-toggleExamples();
+(async()=>{await toggleExamples();
+await new Promise(r=>setTimeout(r,400));
+const items=document.getElementById('expanel').querySelectorAll('[data-ex]').length;
 return JSON.stringify({items: items>=5});})()
 """), lambda v: json.loads(v)=={"items":True})
 
