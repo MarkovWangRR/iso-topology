@@ -240,54 +240,56 @@ func upsertInlineList(src string, startLine int, key string, pts [][2]float64) (
 // path) and changes are written back in place (comment-preserving).
 
 type schemaField struct {
-	Path    string   `json:"key"`   // dotted YAML path; also the form key
-	Label   string   `json:"label"` // English, human-readable
-	Desc    string   `json:"desc"`  // one-line semantic description
-	Type    string   `json:"type"`  // text | number | select | color
+	Path    string   `json:"key"`             // dotted YAML path; also the form key
+	Label   string   `json:"label"`           // English, human-readable
+	Desc    string   `json:"desc"`            // one-line semantic description
+	Type    string   `json:"type"`            // text | number | color | icon | choice
 	Options []string `json:"options,omitempty"`
-	Value   string   `json:"value"` // current value, filled per request
+	Group   string   `json:"group,omitempty"` // section header in the modal
+	Inline  bool     `json:"inline,omitempty"` // compact, laid out side-by-side
+	Value   string   `json:"value"`           // current value, filled per request
 }
 
 // nodeSchema / edgeSchema declare the editable, visually-impactful fields.
 func nodeSchema() []schemaField {
 	return []schemaField{
-		{Path: "label", Label: "Label", Desc: "Text rendered on the node's top face", Type: "text"},
-		{Path: "shape", Label: "Shape", Desc: "Geometric form of the node", Type: "select",
+		{Group: "Content", Path: "label", Label: "Label", Desc: "Text rendered on the node's top face", Type: "text"},
+		{Group: "Content", Path: "shape", Label: "Shape", Desc: "Geometric form of the node", Type: "choice",
 			Options: []string{"rectangle", "box", "cylinder", "sphere", "cloud", "person", "prism", "hexprism", "polygon", "group", "text"}},
-		{Path: "icon", Label: "Icon", Desc: "iso://… ref, image URL, or pick a local file", Type: "icon"},
-		{Path: "preset", Label: "Style preset", Desc: "Named style from theme.presets", Type: "text"},
-		{Path: "geom.w", Label: "Width", Desc: "Footprint width, world units", Type: "number"},
-		{Path: "geom.d", Label: "Depth", Desc: "Footprint depth, world units", Type: "number"},
-		{Path: "geom.h", Label: "Height", Desc: "Extrusion height, world units", Type: "number"},
-		{Path: "style.palette.top", Label: "Top color", Desc: "Top face fill (CSS color)", Type: "color"},
-		{Path: "style.palette.left", Label: "Left color", Desc: "Left face fill (CSS color)", Type: "color"},
-		{Path: "style.palette.right", Label: "Right color", Desc: "Right face fill (CSS color)", Type: "color"},
+		{Group: "Content", Path: "icon", Label: "Icon", Desc: "iso://… ref, image URL, or pick a local file", Type: "icon"},
+		{Group: "Content", Path: "preset", Label: "Style preset", Desc: "Named style from theme.presets", Type: "text"},
+		{Group: "Size — world units", Path: "geom.w", Label: "Width", Type: "number", Inline: true},
+		{Group: "Size — world units", Path: "geom.d", Label: "Depth", Type: "number", Inline: true},
+		{Group: "Size — world units", Path: "geom.h", Label: "Height", Type: "number", Inline: true},
+		{Group: "Face colors", Path: "style.palette.top", Label: "Top", Type: "color", Inline: true},
+		{Group: "Face colors", Path: "style.palette.left", Label: "Left", Type: "color", Inline: true},
+		{Group: "Face colors", Path: "style.palette.right", Label: "Right", Type: "color", Inline: true},
 	}
 }
 
 func canvasSchema() []schemaField {
 	return []schemaField{
-		{Path: "background", Label: "Background", Desc: "Canvas fill behind the diagram (CSS color)", Type: "color"},
-		{Path: "grid", Label: "Grid pattern", Desc: "Background texture", Type: "select",
+		{Group: "Background", Path: "background", Label: "Fill color", Desc: "Canvas fill behind the diagram (CSS color)", Type: "color"},
+		{Group: "Background", Path: "grid", Label: "Grid pattern", Desc: "Background texture", Type: "choice",
 			Options: []string{"none", "iso", "dots", "hatch", "solid"}},
-		{Path: "gridColor", Label: "Grid color", Desc: "Grid/texture line color (CSS color)", Type: "color"},
-		{Path: "gridStep", Label: "Grid step", Desc: "Grid cell size in world units (blank = default)", Type: "number"},
-		{Path: "padding", Label: "Padding", Desc: "Outer breathing margin around the scene, px", Type: "number"},
+		{Group: "Background", Path: "gridColor", Label: "Grid color", Desc: "Grid/texture line color (CSS color)", Type: "color"},
+		{Group: "Background", Path: "gridStep", Label: "Grid step", Desc: "Grid cell size in world units (blank = default)", Type: "number"},
+		{Group: "Layout", Path: "padding", Label: "Padding", Desc: "Outer breathing margin around the scene, px", Type: "number"},
 	}
 }
 
 func edgeSchema() []schemaField {
 	return []schemaField{
-		{Path: "label", Label: "Label", Desc: "Text rendered mid-route", Type: "text"},
-		{Path: "from", Label: "From", Desc: "Source anchor — node id or node.face", Type: "text"},
-		{Path: "to", Label: "To", Desc: "Target anchor — node id or node.face", Type: "text"},
-		{Path: "arrow", Label: "Arrowhead", Desc: "Marker drawn at the target end", Type: "select",
+		{Group: "Connection", Path: "from", Label: "From", Desc: "Source anchor — node id or node.face", Type: "text"},
+		{Group: "Connection", Path: "to", Label: "To", Desc: "Target anchor — node id or node.face", Type: "text"},
+		{Group: "Style", Path: "label", Label: "Label", Desc: "Text rendered mid-route", Type: "text"},
+		{Group: "Style", Path: "arrow", Label: "Arrowhead", Desc: "Marker drawn at the target end", Type: "choice",
 			Options: []string{"none", "triangle"}},
-		{Path: "routing", Label: "Routing", Desc: "Path style between endpoints", Type: "select",
+		{Group: "Style", Path: "routing", Label: "Routing", Desc: "Path style between endpoints", Type: "choice",
 			Options: []string{"orthogonal", "straight", "bezier"}},
-		{Path: "stroke.color", Label: "Line color", Desc: "Stroke color (CSS color)", Type: "color"},
-		{Path: "stroke.width", Label: "Line width", Desc: "Stroke width", Type: "number"},
-		{Path: "stroke.dash", Label: "Dash", Desc: "SVG dash pattern, e.g. 4 3", Type: "text"},
+		{Group: "Style", Path: "stroke.color", Label: "Line color", Desc: "Stroke color (CSS color)", Type: "color"},
+		{Group: "Style", Path: "stroke.width", Label: "Line width", Desc: "Stroke width", Type: "number"},
+		{Group: "Style", Path: "stroke.dash", Label: "Dash", Desc: "SVG dash pattern, e.g. 4 3", Type: "text"},
 	}
 }
 
