@@ -467,7 +467,7 @@ function wireDrag(){
       e.stopPropagation();  // don't let the viewport start a pan
       g.style.cursor='grabbing';
       g.classList.add('dragging');
-      nodeDrag={el:g,id:g.getAttribute('data-part-id').replace(/~\d+$/,''),x:e.clientX,y:e.clientY};
+      nodeDrag={el:g,id:g.getAttribute('data-part-id').replace(/~\d+$/,''),x:e.clientX,y:e.clientY,base:g.getAttribute('transform')||''};
     });
   });
   zoomer.querySelectorAll('path[data-connector]').forEach(p=>{
@@ -477,31 +477,39 @@ function wireDrag(){
       e.preventDefault();
       e.stopPropagation();
       p.style.cursor='grabbing';
-      edgeDrag={el:p,ci:p.getAttribute('data-connector'),x:e.clientX,y:e.clientY};
+      edgeDrag={el:p,ci:p.getAttribute('data-connector'),x:e.clientX,y:e.clientY,base:p.getAttribute('transform')||''};
     });
   });
 }
-// Live follow: translate the grabbed element under the cursor so the
-// drag feels direct; the real position is committed (re-rendered) on
-// drop. Lengths are in SVG user units, hence /scale.
-window.addEventListener('mousemove',e=>{
-  if(nodeDrag){
-    nodeDrag.el.style.transform='translate('+((e.clientX-nodeDrag.x)/scale)+'px,'+((e.clientY-nodeDrag.y)/scale)+'px)';
-  }else if(edgeDrag){
-    edgeDrag.el.style.transform='translate('+((e.clientX-edgeDrag.x)/scale)+'px,'+((e.clientY-edgeDrag.y)/scale)+'px)';
+// Live follow by COMPOSING with the element's existing transform
+// attribute. A node <g> already carries transform="translate(x y)";
+// setting CSS style.transform would OVERRIDE that attribute in SVG and
+// teleport the node to the origin — the real-browser "completely
+// unusable" bug. So we add the drag delta to the attribute's own
+// translate instead. Lengths are SVG user units → screen px / scale.
+function liveTranslate(el, base, dx, dy){
+  const m = base.match(/translate\(\s*(-?[\d.]+)[ ,]+(-?[\d.]+)\s*\)/);
+  if(m){
+    const nx=parseFloat(m[1])+dx, ny=parseFloat(m[2])+dy;
+    el.setAttribute('transform', base.slice(0,m.index)+'translate('+nx+' '+ny+')'+base.slice(m.index+m[0].length));
+  }else{
+    el.setAttribute('transform', ('translate('+dx+' '+dy+') ')+base);
   }
+}
+window.addEventListener('mousemove',e=>{
+  const d=nodeDrag||edgeDrag; if(!d) return;
+  liveTranslate(d.el, d.base, (e.clientX-d.x)/scale, (e.clientY-d.y)/scale);
 });
 window.addEventListener('mouseup',e=>{
-  if(nodeDrag){
-    const d=nodeDrag; nodeDrag=null;
-    d.el.style.transform=''; d.el.classList.remove('dragging'); d.el.style.cursor='grab';
-    const wd=screenToWorldDelta((e.clientX-d.x)/scale,(e.clientY-d.y)/scale);
-    if(Math.abs(wd[0])>2||Math.abs(wd[1])>2) commitMove('node',d.id,Math.round(wd[0]),Math.round(wd[1]));
-  }else if(edgeDrag){
-    const d=edgeDrag; edgeDrag=null;
-    d.el.style.transform=''; d.el.style.cursor='grab';
-    const wd=screenToWorldDelta((e.clientX-d.x)/scale,(e.clientY-d.y)/scale);
-    if(Math.abs(wd[0])>2||Math.abs(wd[1])>2) commitMove('edge',d.ci,Math.round(wd[0]),Math.round(wd[1]));
+  const d=nodeDrag||edgeDrag, kind=nodeDrag?'node':(edgeDrag?'edge':null);
+  if(!kind) return;
+  nodeDrag=null; edgeDrag=null;
+  // restore the pre-drag transform; commit re-renders the SVG fresh
+  d.el.setAttribute('transform', d.base);
+  d.el.classList.remove('dragging'); d.el.style.cursor='grab';
+  const wd=screenToWorldDelta((e.clientX-d.x)/scale,(e.clientY-d.y)/scale);
+  if(Math.abs(wd[0])>2||Math.abs(wd[1])>2){
+    commitMove(kind, kind==='node'?d.id:d.ci, Math.round(wd[0]), Math.round(wd[1]));
   }
 });
 
