@@ -237,8 +237,12 @@ svg path[data-connector].pinned{stroke:var(--accent-deep);filter:drop-shadow(0 0
 .detail-x{cursor:pointer;color:#94A3B8;font-size:15px;line-height:1;padding:2px 4px;border-radius:5px;}
 .detail-x:hover{background:#F1F5F9;color:#334155;}
 .detail-fields{padding:14px 18px;overflow:auto;display:flex;flex-direction:column;gap:11px;}
-.df-row{display:flex;flex-direction:column;gap:4px;}
-.df-k{font:600 11px Inter,sans-serif;color:#64748B;letter-spacing:.02em;}
+.df-row{display:flex;flex-direction:column;gap:3px;}
+.df-k{font:600 11px Inter,sans-serif;color:#334155;letter-spacing:.02em;}
+.df-desc{font:11px Inter,sans-serif;color:#94A3B8;margin-bottom:2px;}
+.df-color{display:flex;gap:7px;align-items:center;}
+.df-color input[type=color]{width:34px;height:32px;padding:0;border:1px solid var(--border);border-radius:7px;background:none;cursor:pointer;flex:none;}
+.df-color input[type=text]{flex:1;}
 .df-row input,.df-row select{font:13px ui-monospace,Menlo,monospace;color:#0F172A;background:var(--code-bg);
   border:1px solid var(--border);border-radius:7px;padding:7px 10px;outline:none;}
 .df-row input:focus,.df-row select:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);}
@@ -324,14 +328,14 @@ svg path[data-connector].pinned{stroke:var(--accent-deep);filter:drop-shadow(0 0
     <div class="hrow"><span>Jump to an error</span><span>click it in the issues panel</span></div>
   </div>
 </div>
-<div id="ctxmenu" hidden><button id="ctxedit" type="button">✎ 修改细节</button></div>
+<div id="ctxmenu" hidden><button id="ctxedit" type="button">✎ Edit details</button></div>
 <div id="detailModal" hidden>
   <div class="detail-card">
-    <div class="detail-head"><b id="detailTitle">修改细节</b><span class="detail-x" onclick="closeDetail()">✕</span></div>
+    <div class="detail-head"><b id="detailTitle">Edit details</b><span class="detail-x" onclick="closeDetail()">✕</span></div>
     <div id="detailFields" class="detail-fields"></div>
     <div class="detail-foot">
-      <button type="button" class="btn-ghost" onclick="closeDetail()">取消</button>
-      <button type="button" id="detailApply" onclick="applyDetail()">更新</button>
+      <button type="button" class="btn-ghost" onclick="closeDetail()">Cancel</button>
+      <button type="button" id="detailApply" onclick="applyDetail()">Update</button>
     </div>
   </div>
 </div>
@@ -659,7 +663,7 @@ async function commitMove(kind,key,dwx,dwy,dropX,dropY,wp){
     showIssues(data.issues||[]);
   }catch(_){}
 }
-/* ── right-click → context menu → "修改细节" detail editor ──────────── */
+/* ── right-click → context menu → "Edit details" detail editor ──────── */
 const ctxmenu=document.getElementById('ctxmenu');
 const detailModal=document.getElementById('detailModal');
 const detailFields=document.getElementById('detailFields');
@@ -685,22 +689,38 @@ async function openDetail(t){
     if(!r.ok) return;
     const data=await r.json();
     detailTarget=t;
-    detailTitle.textContent=(t.kind==='node'?'节点 · ':'连线 · ')+t.key;
     const fields=data.fields||[];
+    if(t.kind==='node'){
+      detailTitle.textContent='Edit node — '+t.key;
+    }else{
+      const fv=k=>{const f=fields.find(x=>x.key===k);return f?f.value:'';};
+      detailTitle.textContent='Edit edge — '+(fv('from')||'?')+' → '+(fv('to')||'?');
+    }
     if(!fields.length){
-      detailFields.innerHTML='<div class="df-k" style="padding:8px 0">此元素暂无可编辑的简单字段。</div>';
+      detailFields.innerHTML='<div class="df-k" style="padding:8px 0">No editable fields.</div>';
     }else{
       detailFields.innerHTML=fields.map((f,i)=>{
-        const id='df_'+i, dis=f.readonly?' disabled':'';
+        const id='df_'+i, key=escAttr(f.key), orig=escAttr(f.value);
         let inp;
         if(f.type==='select'){
-          inp='<select id="'+id+'" data-key="'+escAttr(f.key)+'" data-orig="'+escAttr(f.value)+'"'+dis+'>'+
-            (f.options||[]).map(o=>'<option'+(o===f.value?' selected':'')+'>'+esc(o)+'</option>').join('')+'</select>';
+          const opts=['<option value="">(unset)</option>'].concat((f.options||[]).map(o=>
+            '<option'+(o===f.value?' selected':'')+'>'+esc(o)+'</option>')).join('');
+          inp='<select id="'+id+'" data-key="'+key+'" data-orig="'+orig+'">'+opts+'</select>';
+        }else if(f.type==='color'){
+          const hex=/^#[0-9a-fA-F]{6}$/.test(f.value)?f.value:'#cccccc';
+          inp='<span class="df-color"><input type="color" data-sync="'+id+'" value="'+hex+'">'+
+            '<input type="text" id="'+id+'" data-key="'+key+'" data-orig="'+orig+'" value="'+escAttr(f.value)+'" placeholder="CSS color"></span>';
         }else{
-          inp='<input id="'+id+'" data-key="'+escAttr(f.key)+'" data-orig="'+escAttr(f.value)+'" value="'+escAttr(f.value)+'"'+dis+'>';
+          const t2=f.type==='number'?'number':'text';
+          inp='<input type="'+t2+'" id="'+id+'" data-key="'+key+'" data-orig="'+orig+'" value="'+escAttr(f.value)+'">';
         }
-        return '<label class="df-row" for="'+id+'"><span class="df-k">'+esc(f.label)+'</span>'+inp+'</label>';
+        return '<div class="df-row"><label class="df-k" for="'+id+'">'+esc(f.label)+'</label>'+
+          '<div class="df-desc">'+esc(f.desc||'')+'</div>'+inp+'</div>';
       }).join('');
+      // keep the color picker and its text input in sync (text is the source of truth)
+      detailFields.querySelectorAll('input[type="color"][data-sync]').forEach(cp=>{
+        cp.addEventListener('input',()=>{const t=document.getElementById(cp.getAttribute('data-sync')); if(t){t.value=cp.value;}});
+      });
     }
     detailModal.hidden=false;
   }catch(_){}

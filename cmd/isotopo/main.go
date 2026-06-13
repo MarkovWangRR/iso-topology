@@ -33,6 +33,7 @@ import (
 	"strings"
 
 	isotopo "github.com/MarkovWangRR/iso-topology"
+	"gopkg.in/yaml.v3"
 )
 
 func indentOf(s string) int { return len(s) - len(strings.TrimLeft(s, " ")) }
@@ -229,46 +230,55 @@ func upsertInlineList(src string, startLine int, key string, pts [][2]float64) (
 	return strings.Join(lines, "\n"), true
 }
 
-// ── Detail editor: extract a node/edge's scalar fields and write them back,
-// with human-friendly labels, for the Studio right-click "edit details" UI.
+// ── Detail editor (Studio right-click → Edit details) ────────────────────
+//
+// The form is SCHEMA-DRIVEN, not "show whatever scalar keys exist": each DSL
+// key that matters for visual tuning is declared here ONCE with an English
+// label, a one-line description, and an input type. detailSchema is the single
+// source of truth — designing the DSL means deciding each key's semantics up
+// front. Values are read from the element's current YAML (any depth, dotted
+// path) and changes are written back in place (comment-preserving).
 
-type editField struct {
-	Key      string   `json:"key"`
-	Label    string   `json:"label"`
-	Value    string   `json:"value"`
-	Type     string   `json:"type"`              // "text" | "select"
-	Options  []string `json:"options,omitempty"` // for select
-	ReadOnly bool     `json:"readonly,omitempty"`
+type schemaField struct {
+	Path    string   `json:"key"`   // dotted YAML path; also the form key
+	Label   string   `json:"label"` // English, human-readable
+	Desc    string   `json:"desc"`  // one-line semantic description
+	Type    string   `json:"type"`  // text | number | select | color
+	Options []string `json:"options,omitempty"`
+	Value   string   `json:"value"` // current value, filled per request
 }
 
-// fieldLabels maps raw YAML keys to a semantic, human-readable label so the
-// detail modal reads as plain language rather than the bare DSL keys.
-var fieldLabels = map[string]string{
-	"id": "标识 ID", "label": "名称 Label", "icon": "图标 Icon",
-	"shape": "形状 Shape", "preset": "预设 Preset", "from": "起点 From",
-	"to": "终点 To", "arrow": "箭头 Arrow", "routing": "走线方式 Routing",
-	"labelBg": "标签底色 Label BG", "labelColor": "标签文字色 Label Color",
-	"labelFontSize": "标签字号 Label Size", "elbow": "拐弯方向 Elbow",
-	"grid": "网格 Grid", "color": "颜色 Color", "dash": "虚线 Dash",
-	"width": "线宽 Width", "group": "分组 Group", "kind": "类型 Kind",
-}
-
-func fieldLabel(k string) string {
-	if v, ok := fieldLabels[k]; ok {
-		return v
+// nodeSchema / edgeSchema declare the editable, visually-impactful fields.
+func nodeSchema() []schemaField {
+	return []schemaField{
+		{Path: "label", Label: "Label", Desc: "Text rendered on the node's top face", Type: "text"},
+		{Path: "shape", Label: "Shape", Desc: "Geometric form of the node", Type: "select",
+			Options: []string{"rectangle", "box", "cylinder", "sphere", "cloud", "person", "prism", "hexprism", "polygon", "group", "text"}},
+		{Path: "icon", Label: "Icon", Desc: "Glyph or brand mark, e.g. iso://glyph/cloud", Type: "text"},
+		{Path: "preset", Label: "Style preset", Desc: "Named style from theme.presets", Type: "text"},
+		{Path: "geom.w", Label: "Width", Desc: "Footprint width, world units", Type: "number"},
+		{Path: "geom.d", Label: "Depth", Desc: "Footprint depth, world units", Type: "number"},
+		{Path: "geom.h", Label: "Height", Desc: "Extrusion height, world units", Type: "number"},
+		{Path: "style.palette.top", Label: "Top color", Desc: "Top face fill (CSS color)", Type: "color"},
+		{Path: "style.palette.left", Label: "Left color", Desc: "Left face fill (CSS color)", Type: "color"},
+		{Path: "style.palette.right", Label: "Right color", Desc: "Right face fill (CSS color)", Type: "color"},
 	}
-	return k
 }
 
-// fieldEnums lists the allowed values for keys rendered as a dropdown.
-var fieldEnums = map[string][]string{
-	"arrow":   {"none", "triangle"},
-	"routing": {"orthogonal", "straight", "bezier"},
-	"elbow":   {"xFirst", "yFirst"},
+func edgeSchema() []schemaField {
+	return []schemaField{
+		{Path: "label", Label: "Label", Desc: "Text rendered mid-route", Type: "text"},
+		{Path: "from", Label: "From", Desc: "Source anchor — node id or node.face", Type: "text"},
+		{Path: "to", Label: "To", Desc: "Target anchor — node id or node.face", Type: "text"},
+		{Path: "arrow", Label: "Arrowhead", Desc: "Marker drawn at the target end", Type: "select",
+			Options: []string{"none", "triangle"}},
+		{Path: "routing", Label: "Routing", Desc: "Path style between endpoints", Type: "select",
+			Options: []string{"orthogonal", "straight", "bezier"}},
+		{Path: "stroke.color", Label: "Line color", Desc: "Stroke color (CSS color)", Type: "color"},
+		{Path: "stroke.width", Label: "Line width", Desc: "Stroke width", Type: "number"},
+		{Path: "stroke.dash", Label: "Dash", Desc: "SVG dash pattern, e.g. 4 3", Type: "text"},
+	}
 }
-
-// readOnlyKeys can be shown but not edited (changing them breaks references).
-var readOnlyKeys = map[string]bool{"id": true}
 
 // splitTopCommas splits a YAML flow-map body on top-level commas, respecting
 // nested {}/[] and double-quoted strings.
@@ -314,106 +324,268 @@ func unquoteYAML(v string) string {
 	return v
 }
 
-// scalarKV reports whether a "key: value" pair carries an editable scalar
-// (non-empty, not the start of a nested map/list), returning (key, value).
-func scalarKV(s string) (string, string, bool) {
-	kv := strings.SplitN(s, ":", 2)
-	if len(kv) != 2 {
-		return "", "", false
+// stringifyYAML renders a parsed YAML scalar as the string the form shows.
+func stringifyYAML(v interface{}) string {
+	switch t := v.(type) {
+	case nil:
+		return ""
+	case string:
+		return t
+	case bool:
+		if t {
+			return "true"
+		}
+		return "false"
+	case int:
+		return strconv.Itoa(t)
+	case float64:
+		return strconv.FormatFloat(t, 'f', -1, 64)
+	default:
+		return fmt.Sprintf("%v", t)
 	}
-	key := strings.TrimSpace(kv[0])
-	val := strings.TrimSpace(kv[1])
-	if c := strings.Index(val, " #"); c >= 0 { // strip trailing comment
-		val = strings.TrimSpace(val[:c])
-	}
-	if key == "" || val == "" {
-		return "", "", false
-	}
-	// Skip non-scalar values: flow map/list, YAML anchor (&x) / alias (*x) /
-	// tag (!x), and block scalars (| >). These head nested structures the
-	// detail editor must not flatten into a single input.
-	switch val[0] {
-	case '{', '[', '&', '*', '!', '|', '>':
-		return "", "", false
-	}
-	return key, val, true
 }
 
-func mkField(key, val string) editField {
-	f := editField{Key: key, Label: fieldLabel(key), Value: unquoteYAML(val), Type: "text", ReadOnly: readOnlyKeys[key]}
-	if opts, ok := fieldEnums[key]; ok {
-		f.Type = "select"
-		f.Options = opts
+// readPath walks a dotted path (e.g. "style.palette.top") through a parsed
+// YAML map and returns the scalar at the leaf as a string ("" if absent).
+func readPath(m map[string]interface{}, path string) string {
+	var cur interface{} = m
+	for _, seg := range strings.Split(path, ".") {
+		mm, ok := cur.(map[string]interface{})
+		if !ok {
+			return ""
+		}
+		cur, ok = mm[seg]
+		if !ok {
+			return ""
+		}
 	}
-	return f
+	if _, isMap := cur.(map[string]interface{}); isMap {
+		return ""
+	}
+	return stringifyYAML(cur)
 }
 
-// extractFields returns the scalar key/value pairs actually present in the
-// node/edge block at startLine (flow or block form), in source order — what
-// the detail modal renders. Nested maps/lists are skipped.
-func extractFields(src string, startLine int) []editField {
-	lines := strings.Split(src, "\n")
-	if startLine < 0 || startLine >= len(lines) {
+// findNodeMap locates a node/part subtree by id anywhere in the parsed doc:
+// a top-level node keyed by name, or any nested part whose `id` matches.
+func findNodeMap(root map[string]interface{}, id string) map[string]interface{} {
+	if nodes, ok := root["nodes"].(map[string]interface{}); ok {
+		if n, ok := nodes[id].(map[string]interface{}); ok {
+			return n
+		}
+	}
+	var walk func(v interface{}) map[string]interface{}
+	walk = func(v interface{}) map[string]interface{} {
+		switch t := v.(type) {
+		case map[string]interface{}:
+			if s, _ := t["id"].(string); s == id {
+				return t
+			}
+			for _, vv := range t {
+				if r := walk(vv); r != nil {
+					return r
+				}
+			}
+		case []interface{}:
+			for _, vv := range t {
+				if r := walk(vv); r != nil {
+					return r
+				}
+			}
+		}
 		return nil
 	}
-	var fields []editField
-	seen := map[string]bool{}
-	add := func(k, v string) {
-		if seen[k] {
-			return
+	return walk(root)
+}
+
+// findConnectors returns the first `connectors` list in the parsed doc
+// (matching findConnectorLine's "first connectors block" convention).
+func findConnectors(root map[string]interface{}) []interface{} {
+	if nodes, ok := root["nodes"].(map[string]interface{}); ok {
+		if scene, ok := nodes["scene"].(map[string]interface{}); ok {
+			if c, ok := scene["connectors"].([]interface{}); ok {
+				return c
+			}
 		}
-		seen[k] = true
-		fields = append(fields, mkField(k, v))
+	}
+	var walk func(v interface{}) []interface{}
+	walk = func(v interface{}) []interface{} {
+		switch t := v.(type) {
+		case map[string]interface{}:
+			if c, ok := t["connectors"].([]interface{}); ok {
+				return c
+			}
+			for _, vv := range t {
+				if r := walk(vv); r != nil {
+					return r
+				}
+			}
+		case []interface{}:
+			for _, vv := range t {
+				if r := walk(vv); r != nil {
+					return r
+				}
+			}
+		}
+		return nil
+	}
+	return walk(root)
+}
+
+// schemaWithValues returns the kind's schema with each field's Value read
+// from the element's current YAML.
+func schemaWithValues(src, kind, id string, ci int) ([]schemaField, bool) {
+	var root map[string]interface{}
+	if err := yaml.Unmarshal([]byte(src), &root); err != nil {
+		return nil, false
+	}
+	var subtree map[string]interface{}
+	var fields []schemaField
+	switch kind {
+	case "node":
+		subtree = findNodeMap(root, id)
+		fields = nodeSchema()
+	case "edge":
+		conns := findConnectors(root)
+		if ci >= 0 && ci < len(conns) {
+			subtree, _ = conns[ci].(map[string]interface{})
+		}
+		fields = edgeSchema()
+	default:
+		return nil, false
+	}
+	if subtree == nil {
+		return nil, false
+	}
+	for i := range fields {
+		fields[i].Value = readPath(subtree, fields[i].Path)
+	}
+	return fields, true
+}
+
+// buildChain renders a nested inline map "{ k1: { k2: … : v } }" for a
+// dotted path that doesn't yet exist in the source.
+func buildChain(keys []string, v string) string {
+	if len(keys) == 1 {
+		return "{ " + keys[0] + ": " + yamlScalar(v) + " }"
+	}
+	return "{ " + keys[0] + ": " + buildChain(keys[1:], v) + " }"
+}
+
+// setInInlineMap sets a (possibly nested) path inside a YAML flow map string
+// "{ … }", creating intermediate maps as needed; empty value removes the leaf.
+func setInInlineMap(s string, path []string, value string) string {
+	open := strings.Index(s, "{")
+	close := strings.LastIndex(s, "}")
+	if open < 0 || close <= open {
+		return s
+	}
+	pre, post := s[:open], s[close+1:]
+	inner := s[open+1 : close]
+	entries := splitTopCommas(inner)
+	idx := -1
+	for i, e := range entries {
+		k := strings.TrimSpace(strings.SplitN(e, ":", 2)[0])
+		if k == path[0] {
+			idx = i
+			break
+		}
+	}
+	if idx >= 0 {
+		if len(path) == 1 {
+			if value == "" {
+				entries = append(entries[:idx], entries[idx+1:]...)
+			} else {
+				entries[idx] = path[0] + ": " + yamlScalar(value)
+			}
+		} else {
+			cur := strings.TrimSpace(strings.SplitN(entries[idx], ":", 2)[1])
+			if strings.HasPrefix(cur, "{") {
+				entries[idx] = path[0] + ": " + setInInlineMap(cur, path[1:], value)
+			} else {
+				entries[idx] = path[0] + ": " + buildChain(path[1:], value)
+			}
+		}
+	} else if value != "" {
+		if len(path) == 1 {
+			entries = append(entries, path[0]+": "+yamlScalar(value))
+		} else {
+			entries = append(entries, path[0]+": "+buildChain(path[1:], value))
+		}
+	}
+	// trim blanks
+	out := entries[:0]
+	for _, e := range entries {
+		if strings.TrimSpace(e) != "" {
+			out = append(out, strings.TrimSpace(e))
+		}
+	}
+	if len(out) == 0 {
+		return pre + "{}" + post
+	}
+	return pre + "{ " + strings.Join(out, ", ") + " }" + post
+}
+
+// setField writes a dotted path into the node/edge block at startLine,
+// preserving comments. Flow-form items edit inside their braces; block-form
+// items recurse into inline child maps or deeper blocks, creating inline maps
+// for missing intermediates. Empty value removes a scalar leaf.
+func setField(src string, startLine int, path []string, value string) (string, bool) {
+	lines := strings.Split(src, "\n")
+	if startLine < 0 || startLine >= len(lines) {
+		return src, false
 	}
 	line := lines[startLine]
-	// Flow form: `- { id: c, label: "X", ... }`
-	if i := strings.Index(line, "{"); i >= 0 && strings.Contains(line[i:], "}") {
-		inner := line[i+1:]
-		if j := strings.LastIndex(inner, "}"); j >= 0 {
-			inner = inner[:j]
+	// Flow-form item: the whole element lives in `{ … }` on this line.
+	if open := strings.Index(line, "{"); open >= 0 {
+		if close := strings.LastIndex(line, "}"); close > open {
+			lines[startLine] = line[:open] + setInInlineMap(line[open:close+1], path, value) + line[close+1:]
+			return strings.Join(lines, "\n"), true
 		}
-		for _, part := range splitTopCommas(inner) {
-			if k, v, ok := scalarKV(part); ok {
-				add(k, v)
-			}
-		}
-		return fields
 	}
-	// Block form: the start line may itself hold `- key: value`.
-	itemIndent := indentOf(lines[startLine])
-	if k, v, ok := scalarKV(strings.TrimPrefix(strings.TrimSpace(line), "- ")); ok {
-		add(k, v)
+	if len(path) == 1 {
+		return upsertScalar(src, startLine, path[0], value)
 	}
+	// Block-form item: descend into path[0].
+	itemIndent := indentOf(line)
 	childIndent := itemIndent + 2
-	for i := startLine + 1; i < len(lines); i++ {
-		if strings.TrimSpace(lines[i]) == "" {
+	blockEnd := len(lines)
+	for k := startLine + 1; k < len(lines); k++ {
+		if strings.TrimSpace(lines[k]) == "" {
 			continue
 		}
-		ind := indentOf(lines[i])
-		if ind <= itemIndent {
+		if indentOf(lines[k]) <= itemIndent {
+			blockEnd = k
 			break
-		}
-		if ind != childIndent || strings.HasPrefix(strings.TrimSpace(lines[i]), "#") {
-			continue
-		}
-		// A key whose NEXT non-blank line is deeper heads a nested block — skip
-		// it (its inline value, if any, is an anchor/tag, not editable content).
-		nested := false
-		for j := i + 1; j < len(lines); j++ {
-			if strings.TrimSpace(lines[j]) == "" {
-				continue
-			}
-			nested = indentOf(lines[j]) > childIndent
-			break
-		}
-		if nested {
-			continue
-		}
-		if k, v, ok := scalarKV(strings.TrimSpace(lines[i])); ok {
-			add(k, v)
 		}
 	}
-	return fields
+	keyRe := regexp.MustCompile(`^\s*` + regexp.QuoteMeta(path[0]) + `:`)
+	for k := startLine + 1; k < blockEnd; k++ {
+		if indentOf(lines[k]) != childIndent || !keyRe.MatchString(lines[k]) {
+			continue
+		}
+		rest := strings.TrimSpace(lines[k][strings.Index(lines[k], ":")+1:])
+		switch {
+		case strings.HasPrefix(rest, "{"):
+			open := strings.Index(lines[k], "{")
+			close := strings.LastIndex(lines[k], "}")
+			lines[k] = lines[k][:open] + setInInlineMap(lines[k][open:close+1], path[1:], value) + lines[k][close+1:]
+			return strings.Join(lines, "\n"), true
+		case rest == "" || strings.HasPrefix(rest, "&"):
+			return setField(strings.Join(lines, "\n"), k, path[1:], value) // recurse into sub-block
+		default:
+			pre := lines[k][:strings.Index(lines[k], ":")+1]
+			lines[k] = pre + " " + buildChain(path[1:], value)
+			return strings.Join(lines, "\n"), true
+		}
+	}
+	if value == "" {
+		return strings.Join(lines, "\n"), true
+	}
+	newLine := strings.Repeat(" ", childIndent) + path[0] + ": " + buildChain(path[1:], value)
+	out := append([]string{}, lines[:startLine+1]...)
+	out = append(out, newLine)
+	out = append(out, lines[startLine+1:]...)
+	return strings.Join(out, "\n"), true
 }
 
 // yamlScalar renders a value for write-back, quoting when it contains
@@ -1016,17 +1188,15 @@ func serveFile(in string) error {
 			return
 		}
 		src := string(body)
-		line, ok := targetLine(src, r.URL.Query())
+		q := r.URL.Query()
+		ci, _ := strconv.Atoi(q.Get("ci"))
+		fields, ok := schemaWithValues(src, q.Get("kind"), q.Get("id"), ci)
 		if !ok {
-			http.Error(w, "kind must be node|edge", 400)
-			return
-		}
-		if line < 0 {
 			http.Error(w, "target not found in source", 422)
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]any{"fields": extractFields(src, line)})
+		json.NewEncoder(w).Encode(map[string]any{"fields": fields})
 	})
 	mux.HandleFunc("POST /api/edit", func(w http.ResponseWriter, r *http.Request) {
 		body, err := io.ReadAll(io.LimitReader(r.Body, 4<<20))
@@ -1043,9 +1213,6 @@ func serveFile(in string) error {
 		out := string(body)
 		// Re-find the target after each edit: a write can shift line numbers.
 		for key, val := range changes {
-			if readOnlyKeys[key] {
-				continue
-			}
 			line, ok := targetLine(out, q)
 			if !ok {
 				http.Error(w, "kind must be node|edge", 400)
@@ -1055,7 +1222,7 @@ func serveFile(in string) error {
 				http.Error(w, "target not found in source", 422)
 				return
 			}
-			out, _ = upsertScalar(out, line, key, val)
+			out, _ = setField(out, line, strings.Split(key, "."), val)
 		}
 		lang := q.Get("format")
 		if lang == "" {
