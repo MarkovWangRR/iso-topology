@@ -17,6 +17,7 @@ package isotopo
 import (
 	"fmt"
 	"math"
+	"strings"
 )
 
 const defaultCellSize = 40.0
@@ -49,9 +50,170 @@ func applyLayout(n *Node, canvas *Canvas) []Issue {
 	}
 	cell := layoutCell(n, canvas)
 	var issues []Issue
+	// v4.2 (M6) — connector-driven auto-layout at the root: the engine
+	// positions every part from the connector graph (no place/coords),
+	// while per-part style (faces / prisms / effects) stays authored.
+	// Child containers are solved depth-first first so their footprints
+	// are final before the auto pass arranges them.
+	if n.Layout != nil && n.Layout.Mode == "auto" {
+		for i, p := range n.Parts {
+			if p != nil && isContainerShape(p.Shape) && len(p.Parts) > 0 {
+				solveContainer(p.Parts, p.Layout, p, cell, fmt.Sprintf("nodes.scene.parts[%d]", i), &issues)
+				p.Layout = nil
+			}
+		}
+		arrangeAuto(n.Parts, n.Connectors, n.Layout, cell, "nodes.scene", &issues)
+		checkSiblingOverlaps(n.Parts, "nodes.scene", &issues)
+		n.Layout = nil
+		return issues
+	}
 	solveContainer(n.Parts, n.Layout, nil, cell, "nodes.scene", &issues)
 	n.Layout = nil
 	return issues
+}
+
+// arrangeAuto positions parts by layering the connector graph
+// (Sugiyama-lite): longest-path rank from sources becomes the world +x
+// column; parts within a rank stack along world +y and are centred so
+// the flow is balanced. Shared ranks keep connected parts on aligned
+// grid tracks, so orthogonal routes stay axis-flush. Parts touched by
+// no connector trail into rank 0 with the sources. Deterministic: ties
+// break by declared order; positions snap to the cell lattice.
+func arrangeAuto(parts []*CompositePart, conns []*Connector, lay *Layout, cell float64, path string, issues *[]Issue) {
+	idx := map[string]int{}
+	order := []string{}
+	for _, p := range parts {
+		if p == nil || p.ID == "" {
+			continue
+		}
+		if _, dup := idx[p.ID]; !dup {
+			idx[p.ID] = len(order)
+			order = append(order, p.ID)
+		}
+	}
+	if len(order) == 0 {
+		return
+	}
+
+	target := func(ref string) string {
+		if d := strings.IndexByte(ref, '.'); d >= 0 {
+			return ref[:d]
+		}
+		return ref
+	}
+	indeg := map[string]int{}
+	adj := map[string][]string{}
+	for _, c := range conns {
+		u, v := target(c.From), target(c.To)
+		if _, ok := idx[u]; !ok {
+			continue
+		}
+		if _, ok := idx[v]; !ok {
+			continue
+		}
+		if u == v {
+			continue
+		}
+		adj[u] = append(adj[u], v)
+		indeg[v]++
+	}
+
+	rank := map[string]int{}
+	deg := map[string]int{}
+	queue := []string{}
+	for _, id := range order {
+		rank[id] = 0
+		deg[id] = indeg[id]
+		if deg[id] == 0 {
+			queue = append(queue, id)
+		}
+	}
+	for len(queue) > 0 {
+		u := queue[0]
+		queue = queue[1:]
+		for _, v := range adj[u] {
+			if rank[u]+1 > rank[v] {
+				rank[v] = rank[u] + 1
+			}
+			deg[v]--
+			if deg[v] == 0 {
+				queue = append(queue, v)
+			}
+		}
+	}
+
+	maxRank := 0
+	for _, r := range rank {
+		if r > maxRank {
+			maxRank = r
+		}
+	}
+	ranks := make([][]string, maxRank+1)
+	for _, id := range order {
+		ranks[rank[id]] = append(ranks[rank[id]], id)
+	}
+
+	gap := 1.4
+	if lay != nil && lay.Gap != nil && *lay.Gap >= 0 {
+		gap = *lay.Gap
+	}
+	gapW := gap * cell
+
+	fw := map[string]float64{}
+	fd := map[string]float64{}
+	for _, id := range order {
+		w, d := partFootprint(parts[idx[id]])
+		fw[id], fd[id] = w, d
+	}
+
+	rankX := make([]float64, len(ranks))
+	x := 0.0
+	for r := range ranks {
+		rankX[r] = x
+		maxW := 0.0
+		for _, id := range ranks[r] {
+			if fw[id] > maxW {
+				maxW = fw[id]
+			}
+		}
+		x += maxW + gapW
+	}
+
+	rankExtent := make([]float64, len(ranks))
+	maxExtent := 0.0
+	for r := range ranks {
+		ext := 0.0
+		for _, id := range ranks[r] {
+			ext += fd[id]
+		}
+		if n := len(ranks[r]); n > 1 {
+			ext += float64(n-1) * gapW
+		}
+		rankExtent[r] = ext
+		if ext > maxExtent {
+			maxExtent = ext
+		}
+	}
+
+	snap := func(v float64) float64 { return math.Round(v/cell) * cell }
+	for r := range ranks {
+		y := (maxExtent - rankExtent[r]) / 2
+		maxW := 0.0
+		for _, id := range ranks[r] {
+			if fw[id] > maxW {
+				maxW = fw[id]
+			}
+		}
+		for _, id := range ranks[r] {
+			p := parts[idx[id]]
+			if p.Offset == nil {
+				p.Offset = &WorldPoint{}
+			}
+			p.Offset.WX = snap(rankX[r] + (maxW-fw[id])/2)
+			p.Offset.WY = snap(y)
+			y += fd[id] + gapW
+		}
+	}
 }
 
 // solveContainer resolves one sibling set. Child groups are solved
@@ -158,14 +320,14 @@ func arrangeContainer(parts []*CompositePart, lay *Layout, owner *CompositePart,
 		// `gap` between the hub's footprint and each satellite's.
 		arrangeRing(kids, gapW, padW, owner, path, issues)
 		return
-	case "row", "":
+	case "row", "", "auto":
 		cols = len(kids)
 	default:
 		*issues = append(*issues, Issue{
 			Severity: SeverityError,
 			Path:     path + ".layout.mode",
 			Message:  fmt.Sprintf("unknown layout mode %q", lay.Mode),
-			Suggest:  nearest(lay.Mode, []string{"row", "column", "grid", "ring"}),
+			Suggest:  nearest(lay.Mode, []string{"row", "column", "grid", "ring", "auto"}),
 		})
 		cols = len(kids)
 	}

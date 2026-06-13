@@ -1,4 +1,4 @@
-# Capabilities — v0.4.1
+# Capabilities — v0.4.2
 
 Generated from `CapabilityReport()`. Do not edit by hand — run
 `go run ./tools/gen-docs` to regenerate after a code change.
@@ -40,7 +40,7 @@ override per-part via `geom.h`.
 | **octprism** | `octprism` | 1.0 | v3.2 — 8-gon prism: firewall (stop-sign) semantics |
 | **person** | `c4-person`, `c4_person`, `person` | 1.2 |  |
 | **prism** | `prism` | 1.0 | v3.2 — regular n-gon base x vertical extrude; geom.sides picks the base (default 6). Side walls shade left/right palette by facing. Prisms take gradients/patterns/strokes via style.faces (v3.3) and backglow (v3.3.1); Full effects parity with the box family as of v3.4 (dropShadow, grain, backglow). Connectors anchor on the true polygon edge. |
-| **rectangle** | `callout`, `class`, `code`, `document`, `hierarchy`, `image`, `package`, `page`, `parallelogram`, `rectangle`, `sequence-diagram`, `sequence_diagram`, `sql-table`, `sql_table`, `square`, `step` | 0.4 |  |
+| **rectangle** | `callout`, `class`, `code`, `document`, `hierarchy`, `image`, `package`, `page`, `parallelogram`, `rectangle`, `sequence-diagram`, `sequence_diagram`, `sql-table`, `sql_table`, `square`, `step` | 0.6 |  |
 | **triprism** | `triprism` | 1.0 | v3.2 — 3-gon prism: alert / one-way fan-out semantics |
 
 ## Composition primitives
@@ -138,7 +138,7 @@ Auto-arrange a container's parts along the iso ground axes — the preferred way
 | `align` | cross-axis alignment within each track (default center) |
 | `cols` | grid only; default ceil(sqrt(n)) |
 | `gap` | space between children (ring: hub-to-satellite clearance), in CELLS (1 cell = gridStep, default 40 world units); default 1 |
-| `mode` | row | column | grid | ring (first child = hub, rest clockwise from the back) |
+| `mode` | row | column | grid | ring | auto. auto (v4.2) is connector-driven: declare parts + connectors with NO place/coords and the engine layers the graph into a balanced iso flow — per-part style (faces/prisms/effects) is untouched. The other modes arrange a chosen structure. |
 | `padding` | content inset from the container edge, in cells; defaults to gap |
 
 ### `place`
