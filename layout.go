@@ -1090,6 +1090,31 @@ func SceneIsAuto(doc *Document) bool {
 	return s != nil && s.Layout != nil && s.Layout.Mode == "auto"
 }
 
+// SceneNeedsFreeze reports whether the engine still decides any
+// root-part position — a root layout of ANY mode (auto / ring / grid /
+// row / column) or any root part positioned by `place`. The Studio
+// drag endpoint freezes such a scene into explicit coordinates on the
+// first manual move. A scene with no root layout and no root place is
+// already manual — nothing to freeze.
+func SceneNeedsFreeze(doc *Document) bool {
+	if doc == nil {
+		return false
+	}
+	s := doc.Scene()
+	if s == nil {
+		return false
+	}
+	if s.Layout != nil {
+		return true
+	}
+	for _, p := range s.Parts {
+		if p != nil && p.Place != nil {
+			return true
+		}
+	}
+	return false
+}
+
 // ResolveAllOffsets runs layout on the scene and returns every
 // ROOT-level part's resolved world (wx, wy) keyed by id. Used to bake
 // an auto-layout scene into explicit per-node coordinates on the first
