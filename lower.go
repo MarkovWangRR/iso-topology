@@ -37,7 +37,7 @@ func lowerCompositeParts(in []*CompositePart, offX, offY, offZ float64) []*Compo
 			continue
 		}
 		base := translatePart(p, offX, offY, offZ)
-		if p.Shape == "group" {
+		if isContainerShape(p.Shape) {
 			// Substrate first (z-ordered behind children).
 			sub := groupSubstrate(base)
 			// v3.0 — a populated group's label used to render at the top-
@@ -131,10 +131,37 @@ func expandStack(p *CompositePart, s *Stack) []*CompositePart {
 // for agent generation than auto-bbox math) and its style defaults to
 // a low-opacity tinted panel that reads as "inside this region".
 func groupSubstrate(p *CompositePart) *CompositePart {
+	boundary := p.Shape == "boundary"
 	cp := *p
 	cp.Shape = "rectangle"
 	cp.isSubstrate = true
 	cp.Parts = nil
+	if boundary {
+		// v3.5 — outline-only flat region: transparent faces, dashed
+		// stroke, near-zero height. The author's style still overrides.
+		if cp.Geom == nil {
+			cp.Geom = &Geom{W: 360, D: 240, H: 2}
+		} else if cp.Geom.H == 0 {
+			cp.Geom.H = 2
+		}
+		if cp.Style == nil {
+			cp.Style = &Style{}
+		}
+		if cp.Style.Palette == nil {
+			cp.Style.Palette = &Palette{Top: "none", Left: "none", Right: "none"}
+		}
+		if cp.Style.Stroke == nil {
+			w := 1.3
+			cp.Style.Stroke = &Stroke{Color: "#7C8DB5", Width: &w, Dash: "6 5"}
+		} else if cp.Style.Stroke.Dash == "" {
+			cp.Style.Stroke.Dash = "6 5"
+		}
+		if cp.Style.Effects == nil {
+			r := 12.0
+			cp.Style.Effects = &Effects{CornerRadius: &r}
+		}
+		return &cp
+	}
 	if cp.Geom == nil {
 		cp.Geom = &Geom{W: 360, D: 240, H: groupSubstrateHeight(p)}
 	} else if cp.Geom.H == 0 {
@@ -181,12 +208,12 @@ func groupSubstrateHeight(p *CompositePart) float64 {
 func walkAtomicParts(parts []*CompositePart, fn func(*CompositePart)) {
 	for _, p := range parts {
 		if p == nil || p.ID == "" {
-			if p != nil && p.Shape == "group" {
+			if p != nil && isContainerShape(p.Shape) {
 				walkAtomicParts(p.Parts, fn)
 			}
 			continue
 		}
-		if p.Shape == "group" {
+		if isContainerShape(p.Shape) {
 			walkAtomicParts(p.Parts, fn)
 			continue
 		}
