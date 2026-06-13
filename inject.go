@@ -698,14 +698,36 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo,
 					{tWX, tWY, routeZ},
 				}
 			}
-			// v4.4 — bend: shift the route's INTERIOR waypoints by a world
-			// delta so an edge-drag moves the line while the endpoints stay
-			// docked at their anchors. Interior = all but first and last.
+			// v4.5 — bend: an edge-drag relocates the route's CORNER by a
+			// world delta. Rebuild an orthogonal (iso-axis-aligned) path
+			// through the moved corner rather than uniformly translating the
+			// interior points: the latter leaves the docked endpoints behind,
+			// slanting the two end-legs into arbitrary diagonals. Each half is
+			// a simple L that leaves/arrives along the part's face normal, so
+			// every segment stays on a world axis and the endpoints stay
+			// docked. Redundant/degenerate points are collapsed just below.
 			if c.Bend != nil && (c.Bend.WX != 0 || c.Bend.WY != 0) {
-				for k := 1; k < len(worldPts)-1; k++ {
-					worldPts[k][0] += c.Bend.WX
-					worldPts[k][1] += c.Bend.WY
+				baseCX, baseCY := tStubX, sStubY
+				if !xFirst {
+					baseCX, baseCY = sStubX, tStubY
 				}
+				cx, cy := baseCX+c.Bend.WX, baseCY+c.Bend.WY
+				sAxisX := math.Abs(sdx) >= math.Abs(sdy)
+				tAxisX := math.Abs(tdx) >= math.Abs(tdy)
+				np := [][3]float64{{sWX, sWY, routeZ}}
+				if sAxisX { // source exits along world x → x-leg then y-leg
+					np = append(np, [3]float64{cx, sWY, routeZ})
+				} else {
+					np = append(np, [3]float64{sWX, cy, routeZ})
+				}
+				np = append(np, [3]float64{cx, cy, routeZ})
+				if tAxisX { // target arrives along world x → y-leg then x-leg
+					np = append(np, [3]float64{cx, tWY, routeZ})
+				} else {
+					np = append(np, [3]float64{tWX, cy, routeZ})
+				}
+				np = append(np, [3]float64{tWX, tWY, routeZ})
+				worldPts = np
 			}
 			// v1.6 — if every waypoint shares the same world x OR the same
 			// world y, the L-shape has degenerated to a single iso-axis line.
