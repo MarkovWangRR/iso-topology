@@ -325,13 +325,16 @@ type FaceStyle struct {
 }
 
 type FillSpec struct {
-	Kind    string       `yaml:"kind,omitempty" json:"kind,omitempty"` // solid | linearGradient | radialGradient | pattern
-	Color   string       `yaml:"color,omitempty" json:"color,omitempty"`
-	Stops   []ColorStop  `yaml:"stops,omitempty" json:"stops,omitempty"`
-	Angle   float64      `yaml:"angle,omitempty" json:"angle,omitempty"` // linear: degrees, 0 = left→right
-	Cx      *float64     `yaml:"cx,omitempty" json:"cx,omitempty"`       // radial: centre 0..1
-	Cy      *float64     `yaml:"cy,omitempty" json:"cy,omitempty"`
-	Pattern *FacePattern `yaml:"pattern,omitempty" json:"pattern,omitempty"`
+	Kind  string      `yaml:"kind,omitempty" json:"kind,omitempty"` // solid | linearGradient | radialGradient | pattern
+	Color string      `yaml:"color,omitempty" json:"color,omitempty"`
+	Stops []ColorStop `yaml:"stops,omitempty" json:"stops,omitempty"`
+	Angle float64     `yaml:"angle,omitempty" json:"angle,omitempty"` // linear: degrees, 0 = left→right
+	Cx    *float64    `yaml:"cx,omitempty" json:"cx,omitempty"`       // radial: centre 0..1
+	Cy    *float64    `yaml:"cy,omitempty" json:"cy,omitempty"`
+	// v3.4 — pin the gradient axis to the face's iso plane (like
+	// pattern projected) instead of screen space.
+	Projected bool         `yaml:"projected,omitempty" json:"projected,omitempty"`
+	Pattern   *FacePattern `yaml:"pattern,omitempty" json:"pattern,omitempty"`
 }
 
 type ColorStop struct {
