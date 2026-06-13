@@ -518,6 +518,22 @@ function worldToUser(w,ref){const dx=w.wx-ref.wx,dy=w.wy-ref.wy;
 function routeToPathD(W,ref){
   return W.map((w,i)=>{const u=worldToUser(w,ref);return (i?'L ':'M ')+u[0].toFixed(2)+','+u[1].toFixed(2);}).join(' ');
 }
+// Live edge-follow: shift a path's FROM end (first coord pair) and/or TO end
+// (last pair) by (dx,dy) user units. Used while dragging a node so its docked
+// connector endpoints track it — the node translates rigidly by the same
+// (dx,dy), so the glued endpoint stays on its face and the line rubber-bands.
+function shiftEnds(d,moveFrom,moveTo,dx,dy){
+  const re=/-?\d*\.?\d+/g, nums=[]; let m;
+  while((m=re.exec(d))) nums.push({v:parseFloat(m[0]),i:m.index,len:m[0].length});
+  if(nums.length<4) return d;
+  const edits=[];
+  if(moveFrom){edits.push([0,dx],[1,dy]);}
+  if(moveTo){edits.push([nums.length-2,dx],[nums.length-1,dy]);}
+  edits.sort((a,b)=>b[0]-a[0]);   // right-to-left so earlier offsets stay valid
+  let s=d;
+  for(const ed of edits){const t=nums[ed[0]]; s=s.slice(0,t.i)+(t.v+ed[1]).toFixed(2)+s.slice(t.i+t.len);}
+  return s;
+}
 async function commitMove(kind,key,dwx,dwy,dropX,dropY,wp){
   if(!serverOK) return;
   let qp = kind==='node' ? 'kind=node&id='+encodeURIComponent(key) : 'kind=edge&ci='+key;
@@ -577,7 +593,14 @@ function wireDrag(){
       g.style.cursor='grabbing';
       document.body.style.cursor='grabbing';  // hold feedback if pointer outruns the element
       g.classList.add('dragging');
-      nodeDrag={el:g,id:g.getAttribute('data-part-id').replace(/~\d+$/,''),x:e.clientX,y:e.clientY,base:g.getAttribute('transform')||''};
+      const did=g.getAttribute('data-part-id').replace(/~\d+$/,'');
+      // connectors docked to this node, so they can live-follow the drag
+      const edges=[];
+      zoomer.querySelectorAll('path[data-connector]').forEach(p=>{
+        const mf=p.getAttribute('data-from')===did, mt=p.getAttribute('data-to')===did;
+        if(mf||mt) edges.push({el:p,mf,mt,baseD:p.getAttribute('d')});
+      });
+      nodeDrag={el:g,id:did,x:e.clientX,y:e.clientY,base:g.getAttribute('transform')||'',edges};
     });
   });
   zoomer.querySelectorAll('path[data-connector]').forEach(p=>{
@@ -623,7 +646,10 @@ window.addEventListener('mousemove',e=>{
     d.wp=edited;
     return;
   }
-  liveTranslate(d.el, d.base, (e.clientX-d.x)/scale, (e.clientY-d.y)/scale);
+  const dx=(e.clientX-d.x)/scale, dy=(e.clientY-d.y)/scale;
+  liveTranslate(d.el, d.base, dx, dy);
+  // node drag: docked connector endpoints track the node in real time
+  if(nodeDrag && d.edges) d.edges.forEach(ed=>ed.el.setAttribute('d', shiftEnds(ed.baseD, ed.mf, ed.mt, dx, dy)));
 });
 window.addEventListener('mouseup',e=>{
   const d=nodeDrag||edgeDrag, kind=nodeDrag?'node':(edgeDrag?'edge':null);
@@ -632,6 +658,9 @@ window.addEventListener('mouseup',e=>{
   // restore the pre-drag transform; commit re-renders the SVG fresh
   d.el.setAttribute('transform', d.base);
   if(d.baseD!=null) d.el.setAttribute('d', d.baseD);
+  // restore live-followed edges; the commit re-render replaces them cleanly,
+  // and a below-threshold release leaves nothing changed.
+  if(d.edges) d.edges.forEach(ed=>ed.el.setAttribute('d', ed.baseD));
   d.el.classList.remove('dragging'); d.el.style.cursor='move'; document.body.style.cursor='';
   const wd=screenToWorldDelta((e.clientX-d.x)/scale,(e.clientY-d.y)/scale);
   if(Math.abs(wd[0])<=2 && Math.abs(wd[1])<=2) return;   // below drag threshold

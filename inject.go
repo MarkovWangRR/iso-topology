@@ -940,9 +940,14 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo,
 			}
 			routeAttr = fmt.Sprintf(` data-route="%s"`, rb.String())
 		}
+		// data-from / data-to = the connected part ids, so Studio can live-
+		// follow a dragged node: the endpoint docked to that node tracks it
+		// during the drag (intermediate consistency), not just on drop.
+		fromID, _ := parseAnchor(c.From)
+		toID, _ := parseAnchor(c.To)
 		fmt.Fprintf(&sb,
-			`<path data-connector="%d"%s d="%s" fill="none" stroke="%s" stroke-width="%.2f" stroke-linecap="round" stroke-linejoin="round"%s/>`,
-			ci, routeAttr, d.String(), stroke, width, dashAttr,
+			`<path data-connector="%d" data-from="%s" data-to="%s"%s d="%s" fill="none" stroke="%s" stroke-width="%.2f" stroke-linecap="round" stroke-linejoin="round"%s/>`,
+			ci, fromID, toID, routeAttr, d.String(), stroke, width, dashAttr,
 		)
 
 		// Record inflated segment rects (route obstacles for later layers).
