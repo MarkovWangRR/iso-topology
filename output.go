@@ -225,6 +225,7 @@ svg g[data-part-id]:hover{filter:drop-shadow(0 0 5px var(--accent));}
 svg g[data-part-id].dragging{filter:drop-shadow(0 0 9px var(--accent));opacity:.82;}
 svg path[data-connector]:hover{stroke:var(--accent-deep);filter:drop-shadow(0 0 3px var(--accent)) drop-shadow(0 0 7px var(--accent));}
 svg path[data-connector].dragging{stroke:var(--accent);filter:drop-shadow(0 0 5px var(--accent)) drop-shadow(0 0 11px var(--accent));}
+svg path[data-connector].pinned{stroke:var(--accent-deep);filter:drop-shadow(0 0 3px var(--accent)) drop-shadow(0 0 7px var(--accent));}
 </style></head><body>
 <header>
   <div class="brand">
@@ -422,10 +423,17 @@ function paint(range){
   hlEl.scrollTop=srcEl.scrollTop; hlEl.scrollLeft=srcEl.scrollLeft; gutEl.scrollTop=srcEl.scrollTop;
 }
 srcEl.addEventListener('scroll',()=>{hlEl.scrollTop=srcEl.scrollTop;hlEl.scrollLeft=srcEl.scrollLeft;gutEl.scrollTop=srcEl.scrollTop;});
-let pinId=null;
+let pinId=null, pinCi=null;   // pinned node id OR connector index (exclusive)
 function rangeFor(id){
   if(!(id in lineMap)) id=id.replace(/~\d+$/,'');
   return lineMap[id]||null;
+}
+// line range of whatever is currently pinned (node or edge), or null
+function pinnedRange(){return pinId?rangeFor(pinId):(pinCi!=null?connMap[pinCi]:null);}
+function glowEdge(ci){
+  zoomer.querySelectorAll('path[data-connector]').forEach(p=>{
+    p.classList.toggle('pinned', ci!=null && +p.getAttribute('data-connector')===ci);
+  });
 }
 function scrollToLine(ln){
   const lh=srcEl.scrollHeight/srcEl.value.split('\n').length;
@@ -449,20 +457,20 @@ function wireHover(){
     });
     g.addEventListener('mouseleave',()=>{
       if(pinId!==id) g.classList.remove('hi');
-      const pr=pinId?rangeFor(pinId):null;
-      paint(pr);
+      paint(pinnedRange());
     });
     g.addEventListener('click',e=>{
       e.stopPropagation();
-      pinId = (pinId===id)?null:id;
-      glowOnly(pinId);
-      const pr=pinId?rangeFor(pinId):null;
+      pinId = (pinId===id)?null:id; pinCi=null;   // pinning a node clears any edge pin
+      glowOnly(pinId); glowEdge(null);
+      const pr=pinnedRange();
       paint(pr);
       if(pr) scrollToLine(pr[0]);
     });
   });
-  // Edges: hovering a connector highlights + scrolls to its source lines,
-  // same as nodes (the line itself already glows via CSS :hover).
+  // Edges: hover highlights + scrolls to the connector's source lines;
+  // click PINS it (persistent highlight) just like a node. The line itself
+  // glows via CSS (.pinned / :hover).
   zoomer.querySelectorAll('path[data-connector]').forEach(p=>{
     const ci=+p.getAttribute('data-connector');
     p.addEventListener('mouseenter',()=>{
@@ -470,10 +478,19 @@ function wireHover(){
       paint(r); scrollToLine(r[0]);
     });
     p.addEventListener('mouseleave',()=>{
-      paint(pinId?rangeFor(pinId):null);
+      paint(pinnedRange());
+    });
+    p.addEventListener('click',e=>{
+      e.stopPropagation();
+      pinCi = (pinCi===ci)?null:ci; pinId=null;   // pinning an edge clears any node pin
+      glowOnly(null); glowEdge(pinCi);
+      const pr=pinnedRange();
+      paint(pr);
+      if(pr) scrollToLine(pr[0]);
     });
   });
   if(pinId) glowOnly(pinId);
+  if(pinCi!=null) glowEdge(pinCi);
 }
 
 /* ── drag-to-edit: move a node (offset) or shift an edge (bend) ──── */
@@ -587,7 +604,7 @@ async function commitMove(kind,key,dwx,dwy,dropX,dropY,wp){
           edgeAnchor={id:ref.getAttribute('data-part-id'),x:c.x+c.width/2,y:c.y+c.height/2};}
       }
       zoomer.innerHTML=data.svg;
-      buildMap(); paint(pinId?rangeFor(pinId):null);
+      buildMap(); paint(pinnedRange());
       wireHover(); wireDrag(); adaptStage();
       // Re-render recomputes the viewBox (and the flex-centred SVG can
       // resize), which would slide the whole scene and read as a
@@ -712,7 +729,7 @@ function caretSync(){
     const r=lineMap[id];
     if(line>=r[0]&&line<=r[1]){hitId=id;break;}
   }
-  if(!pinId) glowOnly(hitId);
+  if(!pinId && pinCi==null) glowOnly(hitId);
 }
 srcEl.addEventListener('keyup',caretSync);
 srcEl.addEventListener('click',caretSync);
@@ -758,7 +775,7 @@ window.addEventListener('mouseup',()=>{drag=null;viewport.classList.remove('pann
 viewport.addEventListener('dblclick',resetView);
 viewport.addEventListener('click',e=>{
   if(e.target.closest && e.target.closest('g[data-part-id]')) return;
-  if(pinId!==null){pinId=null;glowOnly(null);paint(null);}
+  if(pinId!==null||pinCi!==null){pinId=null;pinCi=null;glowOnly(null);glowEdge(null);paint(null);}
 });
 
 /* ── adaptive stage: tint the backdrop after the scene's canvas ── */
@@ -822,9 +839,9 @@ function pathToLine(path){
 function jumpToIssue(path){
   const ln=pathToLine(path);
   flashLine=ln;
-  paint(pinId?rangeFor(pinId):null);
+  paint(pinnedRange());
   scrollToLine(ln);
-  setTimeout(()=>{flashLine=-1;paint(pinId?rangeFor(pinId):null);},1500);
+  setTimeout(()=>{flashLine=-1;paint(pinnedRange());},1500);
 }
 
 /* ── live re-render against isotopo serve ───────────────────────── */
@@ -857,7 +874,7 @@ async function rerender(){
     showIssues(data.issues||[]);
     if(data.svg){
       zoomer.innerHTML=data.svg;
-      buildMap(); paint(pinId?rangeFor(pinId):null); wireHover(); wireDrag(); adaptStage();
+      buildMap(); paint(pinnedRange()); wireHover(); wireDrag(); adaptStage();
       staleEl.hidden=true;
     }else{
       staleEl.hidden=false;
