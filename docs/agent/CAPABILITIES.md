@@ -1,4 +1,4 @@
-# Capabilities — v0.3.6
+# Capabilities — v0.3.7
 
 Generated from `CapabilityReport()`. Do not edit by hand — run
 `go run ./tools/gen-docs` to regenerate after a code change.
@@ -28,8 +28,8 @@ override per-part via `geom.h`.
 
 | Iso shape | Accepted aliases | Height hint | Notes |
 |---|---|---|---|
-| **boundary** | `boundary` | 1.0 | v3.5 — a group whose substrate is a dashed OUTLINE-ONLY flat region (VPC / subnet / trust zone). Same nesting/layout/autosize as group; style.stroke restyles the dashes. EXPERIMENTAL: large autosized boundaries can show a doubled outline (top face vs silhouette) — under investigation |
-| **circle** | `circle`, `oval` | 0.8 |  |
+| **boundary** | `boundary` | 1.0 | v3.5 — a group whose substrate is a dashed OUTLINE-ONLY flat region (VPC / subnet / trust zone). Same nesting/layout/autosize as group; style.stroke restyles the dashes |
+| **circle** | `circle`, `oval` | 1.0 |  |
 | **cloud** | `cloud` | 0.8 | free-form rounded outline; no per-face palette overrides |
 | **composite** | `composite` | 1.0 | container — holds parts: [] of CompositePart entries |
 | **cylinder** | `cylinder`, `queue`, `stored-data`, `stored_data` | 1.0 |  |
@@ -40,7 +40,7 @@ override per-part via `geom.h`.
 | **octprism** | `octprism` | 1.0 | v3.2 — 8-gon prism: firewall (stop-sign) semantics |
 | **person** | `c4-person`, `c4_person`, `person` | 1.2 |  |
 | **prism** | `prism` | 1.0 | v3.2 — regular n-gon base x vertical extrude; geom.sides picks the base (default 6). Side walls shade left/right palette by facing. Prisms take gradients/patterns/strokes via style.faces (v3.3) and backglow (v3.3.1); Full effects parity with the box family as of v3.4 (dropShadow, grain, backglow). Connectors anchor on the true polygon edge. |
-| **rectangle** | `callout`, `class`, `code`, `document`, `hierarchy`, `image`, `package`, `page`, `parallelogram`, `rectangle`, `sequence-diagram`, `sequence_diagram`, `sql-table`, `sql_table`, `square`, `step` | 1.0 |  |
+| **rectangle** | `callout`, `class`, `code`, `document`, `hierarchy`, `image`, `package`, `page`, `parallelogram`, `rectangle`, `sequence-diagram`, `sequence_diagram`, `sql-table`, `sql_table`, `square`, `step` | 0.3 |  |
 | **triprism** | `triprism` | 1.0 | v3.2 — 3-gon prism: alert / one-way fan-out semantics |
 
 ## Composition primitives
