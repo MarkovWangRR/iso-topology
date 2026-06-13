@@ -70,7 +70,7 @@ type StyleKeyGroup struct {
 // Pure function — no IO, no globals.
 func CapabilityReport() Capabilities {
 	return Capabilities{
-		Version: "0.4.4",
+		Version: "0.4.5",
 		Inputs: []InputFormat{
 			{".yaml", "hand-authored iso composite with precise placement", "manual"},
 			{".json", "same shape as .yaml but JSON-encoded", "manual"},
