@@ -246,19 +246,31 @@ svg path[data-connector].pinned{stroke:var(--accent-deep);filter:drop-shadow(0 0
 .detail-x:hover{background:#F1F5F9;color:#334155;}
 .detail-fields{padding:14px 18px;overflow:auto;display:flex;flex-direction:column;gap:11px;}
 .df-row{display:flex;flex-direction:column;gap:3px;}
-.df-k{font:600 11px Inter,sans-serif;color:#334155;letter-spacing:.02em;}
+.df-grouph{font:700 10px Inter,sans-serif;letter-spacing:.09em;text-transform:uppercase;color:#94A3B8;margin:5px 0 -2px;}
+.df-labelline{display:flex;align-items:baseline;gap:8px;justify-content:space-between;}
+.df-k{font:600 11.5px Inter,sans-serif;color:#334155;letter-spacing:.02em;}
+.df-path{font:10px ui-monospace,Menlo,monospace;color:#B8C0CE;white-space:nowrap;}
 .df-desc{font:11px Inter,sans-serif;color:#94A3B8;margin-bottom:2px;}
-.df-color{display:flex;gap:7px;align-items:center;}
+.df-inline{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;}
+.df-cell{display:flex;flex-direction:column;gap:4px;min-width:0;}
+.df-ck{font:600 11px Inter,sans-serif;color:#475569;}
+.df-color{display:flex;gap:7px;align-items:center;min-width:0;}
 .df-color input[type=color]{width:34px;height:32px;padding:0;border:1px solid var(--border);border-radius:7px;background:none;cursor:pointer;flex:none;}
-.df-color input[type=text]{flex:1;}
+.df-color input[type=text]{flex:1;min-width:0;}
 .df-icon{display:flex;gap:7px;align-items:center;}
 .df-icon input[type=text]{flex:1;min-width:0;}
-.df-browse{font:600 11px Inter,sans-serif;border:1px solid var(--border);background:white;color:#475569;border-radius:7px;padding:7px 11px;cursor:pointer;white-space:nowrap;flex:none;}
-.df-browse:hover{background:var(--accent-soft);color:var(--accent-deep);border-color:var(--accent);}
-.df-row input,.df-row select{font:13px ui-monospace,Menlo,monospace;color:#0F172A;background:var(--code-bg);
-  border:1px solid var(--border);border-radius:7px;padding:7px 10px;outline:none;}
-.df-row input:focus,.df-row select:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);}
-.df-row input:disabled{color:#94A3B8;background:#F8FAFC;}
+.df-browse,.df-clear{font:600 11px Inter,sans-serif;border:1px solid var(--border);background:white;color:#475569;border-radius:7px;padding:7px 11px;cursor:pointer;white-space:nowrap;flex:none;}
+.df-browse:hover,.df-clear:hover{background:var(--accent-soft);color:var(--accent-deep);border-color:var(--accent);}
+.df-chip{font:12px ui-monospace,Menlo,monospace;color:var(--accent-deep);background:var(--accent-soft);border-radius:7px;padding:7px 10px;flex:1;}
+.df-choice{display:flex;flex-wrap:wrap;gap:6px;}
+.df-tile{display:flex;flex-direction:column;align-items:center;gap:3px;border:1px solid var(--border);border-radius:9px;
+  padding:7px 6px 5px;min-width:52px;background:white;cursor:pointer;color:#64748B;font:10.5px Inter,sans-serif;}
+.df-tile svg{width:20px;height:20px;}
+.df-tile:hover{border-color:#CBD5E1;}
+.df-tile.on{border-color:var(--accent);background:var(--accent-soft);color:var(--accent-deep);box-shadow:inset 0 0 0 1px var(--accent);}
+#detailFields input[type=text],#detailFields input[type=number]{font:13px ui-monospace,Menlo,monospace;color:#0F172A;background:var(--code-bg);
+  border:1px solid var(--border);border-radius:7px;padding:7px 10px;outline:none;width:100%;box-sizing:border-box;}
+#detailFields input[type=text]:focus,#detailFields input[type=number]:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);}
 .detail-foot{display:flex;justify-content:flex-end;gap:8px;padding:13px 18px;border-top:1px solid var(--border);}
 .detail-foot button{font:600 12px Inter,sans-serif;border-radius:7px;padding:8px 16px;cursor:pointer;border:1px solid transparent;}
 .detail-foot .btn-ghost{background:white;border-color:var(--border);color:#475569;}
@@ -695,6 +707,120 @@ function qpFor(t){
   if(t.kind==='edge') return 'kind=edge&ci='+t.key;
   return 'kind=canvas';
 }
+/* ── detail form rendering: grouped sections, illustrated choice tiles,
+   compact inline rows, and the raw YAML key shown alongside each label so
+   the friendly form stays anchored to the source. ─────────────────────── */
+function renderFields(fields){
+  let html='', curGroup=undefined, inlineBuf=[];
+  const flush=()=>{ if(inlineBuf.length){ html+='<div class="df-inline">'+inlineBuf.join('')+'</div>'; inlineBuf=[]; } };
+  fields.forEach((f,i)=>{
+    if(f.group!==curGroup){ flush(); curGroup=f.group; if(curGroup) html+='<div class="df-grouph">'+esc(curGroup)+'</div>'; }
+    const id='df_'+i;
+    if(f.inline){ inlineBuf.push(cellHTML(f,id)); }
+    else { flush(); html+=rowHTML(f,id); }
+  });
+  flush();
+  return html;
+}
+function rowHTML(f,id){
+  return '<div class="df-row">'+
+    '<div class="df-labelline"><label class="df-k" for="'+id+'">'+esc(f.label)+'</label><code class="df-path">'+esc(f.key)+'</code></div>'+
+    (f.desc?'<div class="df-desc">'+esc(f.desc)+'</div>':'')+
+    fieldInput(f,id)+'</div>';
+}
+function cellHTML(f,id){
+  return '<div class="df-cell"><label class="df-ck" for="'+id+'" title="'+escAttr(f.key)+'">'+esc(f.label)+'</label>'+fieldInput(f,id)+'</div>';
+}
+function fieldInput(f,id){
+  const key=escAttr(f.key), orig=escAttr(f.value);
+  if(f.type==='choice') return choiceHTML(f,key,orig);
+  if(f.type==='color')  return colorHTML(f,id,key,orig);
+  if(f.type==='icon')   return iconHTML(f,id,key,orig);
+  const t=f.type==='number'?'number':'text';
+  return '<input type="'+t+'" id="'+id+'" data-key="'+key+'" data-orig="'+orig+'" value="'+escAttr(f.value)+'">';
+}
+function choiceHTML(f,key,orig){
+  const opts=(f.options||[]).slice(), cur=f.value||'';
+  // case-insensitive match; keep an out-of-list / odd-case value as its own tile
+  if(cur && !opts.some(o=>o.toLowerCase()===cur.toLowerCase())) opts.unshift(cur);
+  const tiles=opts.map(o=>{
+    const on=(cur && o.toLowerCase()===cur.toLowerCase())?' on':'';
+    return '<button type="button" class="df-tile'+on+'" data-val="'+escAttr(o)+'">'+optGlyph(f.key,o)+'<span>'+esc(o)+'</span></button>';
+  }).join('');
+  return '<div class="df-choice" data-key="'+key+'" data-orig="'+orig+'" data-val="'+escAttr(cur)+'">'+tiles+'</div>';
+}
+function colorHTML(f,id,key,orig){
+  const hex=/^#[0-9a-fA-F]{6}$/.test(f.value)?f.value:'#cccccc';
+  return '<span class="df-color"><input type="color" data-sync="'+id+'" value="'+hex+'">'+
+    '<input type="text" id="'+id+'" data-key="'+key+'" data-orig="'+orig+'" value="'+escAttr(f.value)+'" placeholder="unset"></span>';
+}
+function iconHTML(f,id,key,orig){
+  const FILE=' accept="image/svg+xml,image/png,image/jpeg,image/gif,image/webp,.svg,.png,.jpg,.jpeg,.gif,.webp"';
+  if(/^data:/.test(f.value)){
+    return '<span class="df-icon"><span class="df-chip">Embedded image</span>'+
+      '<input type="hidden" id="'+id+'" data-key="'+key+'" data-orig="'+orig+'" value="'+escAttr(f.value)+'">'+
+      '<button type="button" class="df-browse" data-pick="'+id+'">Replace…</button>'+
+      '<button type="button" class="df-clear" data-clear="'+id+'">Clear</button>'+
+      '<input type="file" class="df-file" data-pick="'+id+'"'+FILE+' hidden></span>';
+  }
+  return '<span class="df-icon"><input type="text" id="'+id+'" data-key="'+key+'" data-orig="'+orig+'" value="'+escAttr(f.value)+'" placeholder="iso://… or pick a file">'+
+    '<button type="button" class="df-browse" data-pick="'+id+'">Browse…</button>'+
+    '<input type="file" class="df-file" data-pick="'+id+'"'+FILE+' hidden></span>';
+}
+// optGlyph returns a small inline SVG illustrating an enum value, so the
+// choice tiles read at a glance instead of being bare words.
+function optGlyph(key,val){
+  const G={
+    'grid:none':'<rect x="3" y="3" width="14" height="14" rx="2"/>',
+    'grid:iso':'<path d="M10 3 17 10 10 17 3 10Z"/><path d="M10 7 13 10 10 13 7 10Z"/>',
+    'grid:dots':'<circle cx="6" cy="6" r="1.4"/><circle cx="14" cy="6" r="1.4"/><circle cx="10" cy="10" r="1.4"/><circle cx="6" cy="14" r="1.4"/><circle cx="14" cy="14" r="1.4"/>',
+    'grid:hatch':'<path d="M3 13 13 3M7 17 17 7"/>',
+    'grid:solid':'<rect x="3" y="3" width="14" height="14" rx="2" fill="currentColor" stroke="none"/>',
+    'arrow:none':'<path d="M3 10 17 10"/>',
+    'arrow:triangle':'<path d="M3 10 12 10"/><path d="M11 6 17 10 11 14Z" fill="currentColor" stroke="none"/>',
+    'routing:orthogonal':'<path d="M3 5 10 5 10 15 17 15"/>',
+    'routing:straight':'<path d="M3 16 17 4"/>',
+    'routing:bezier':'<path d="M3 16 C9 16 11 4 17 4"/>',
+    'shape:rectangle':'<path d="M3 8 10 4 17 8 10 12Z"/><path d="M3 8 3 12 10 16 10 12"/><path d="M17 8 17 12 10 16"/>',
+    'shape:box':'<path d="M3 8 10 4 17 8 10 12Z"/><path d="M3 8 3 12 10 16 10 12"/><path d="M17 8 17 12 10 16"/>',
+    'shape:cylinder':'<ellipse cx="10" cy="6" rx="6" ry="2.4"/><path d="M4 6 4 14 A6 2.4 0 0 0 16 14 L16 6"/>',
+    'shape:sphere':'<circle cx="10" cy="10" r="6"/>',
+    'shape:cloud':'<path d="M6.5 15 A3 3 0 0 1 7 9 A4 4 0 0 1 14.5 10 A2.6 2.6 0 0 1 14 15Z"/>',
+    'shape:person':'<circle cx="10" cy="6.5" r="2.6"/><path d="M5 16 A5 5 0 0 1 15 16"/>',
+    'shape:prism':'<path d="M10 3 17 16 3 16Z"/>',
+    'shape:hexprism':'<path d="M6 4 14 4 17 10 14 16 6 16 3 10Z"/>',
+    'shape:polygon':'<path d="M10 3 17 8 14.5 16 5.5 16 3 8Z"/>',
+    'shape:group':'<rect x="3" y="3" width="14" height="14" rx="2" stroke-dasharray="3 2"/>',
+    'shape:text':'<path d="M5 5 15 5M10 5 10 15"/>'
+  };
+  const inner=G[key+':'+val]||'<circle cx="10" cy="10" r="3"/>';
+  return '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">'+inner+'</svg>';
+}
+function wireDetailInputs(){
+  detailFields.querySelectorAll('input[type="color"][data-sync]').forEach(cp=>{
+    cp.addEventListener('input',()=>{const t=document.getElementById(cp.getAttribute('data-sync')); if(t)t.value=cp.value;});
+  });
+  detailFields.querySelectorAll('.df-choice').forEach(ch=>{
+    ch.querySelectorAll('.df-tile').forEach(t=>{
+      t.addEventListener('click',()=>{
+        ch.querySelectorAll('.df-tile').forEach(x=>x.classList.remove('on'));
+        t.classList.add('on'); ch.setAttribute('data-val',t.getAttribute('data-val'));
+      });
+    });
+  });
+  detailFields.querySelectorAll('.df-browse[data-pick]').forEach(btn=>{
+    const pid=btn.getAttribute('data-pick');
+    const file=detailFields.querySelector('.df-file[data-pick="'+pid+'"]');
+    const text=document.getElementById(pid);
+    btn.addEventListener('click',()=>file.click());
+    file.addEventListener('change',()=>{const f=file.files&&file.files[0]; if(!f)return; const rd=new FileReader(); rd.onload=()=>{text.value=rd.result;}; rd.readAsDataURL(f);});
+  });
+  detailFields.querySelectorAll('.df-clear[data-clear]').forEach(b=>{
+    b.addEventListener('click',()=>{const t=document.getElementById(b.getAttribute('data-clear')); if(t)t.value='';});
+  });
+}
+// a choice tile-group exposes its value via data-val; everything else via .value
+function fieldVal(el){ return el.classList&&el.classList.contains('df-choice') ? el.getAttribute('data-val') : el.value; }
 async function openDetail(t){
   hideCtx();
   if(!serverOK) return;
@@ -714,48 +840,10 @@ async function openDetail(t){
       detailTitle.textContent='Edit edge — '+(fv('from')||'?')+' → '+(fv('to')||'?');
     }
     if(!fields.length){
-      detailFields.innerHTML='<div class="df-k" style="padding:8px 0">No editable fields.</div>';
+      detailFields.innerHTML='<div class="df-desc" style="padding:8px 0">No editable fields.</div>';
     }else{
-      detailFields.innerHTML=fields.map((f,i)=>{
-        const id='df_'+i, key=escAttr(f.key), orig=escAttr(f.value);
-        let inp;
-        if(f.type==='select'){
-          const opts=['<option value="">(unset)</option>'].concat((f.options||[]).map(o=>
-            '<option'+(o===f.value?' selected':'')+'>'+esc(o)+'</option>')).join('');
-          inp='<select id="'+id+'" data-key="'+key+'" data-orig="'+orig+'">'+opts+'</select>';
-        }else if(f.type==='color'){
-          const hex=/^#[0-9a-fA-F]{6}$/.test(f.value)?f.value:'#cccccc';
-          inp='<span class="df-color"><input type="color" data-sync="'+id+'" value="'+hex+'">'+
-            '<input type="text" id="'+id+'" data-key="'+key+'" data-orig="'+orig+'" value="'+escAttr(f.value)+'" placeholder="CSS color"></span>';
-        }else if(f.type==='icon'){
-          inp='<span class="df-icon"><input type="text" id="'+id+'" data-key="'+key+'" data-orig="'+orig+'" value="'+escAttr(f.value)+'" placeholder="iso://… or pick a file">'+
-            '<button type="button" class="df-browse" data-pick="'+id+'">Browse…</button>'+
-            '<input type="file" class="df-file" data-pick="'+id+'" accept="image/svg+xml,image/png,image/jpeg,image/gif,image/webp,.svg,.png,.jpg,.jpeg,.gif,.webp" hidden></span>';
-        }else{
-          const t2=f.type==='number'?'number':'text';
-          inp='<input type="'+t2+'" id="'+id+'" data-key="'+key+'" data-orig="'+orig+'" value="'+escAttr(f.value)+'">';
-        }
-        return '<div class="df-row"><label class="df-k" for="'+id+'">'+esc(f.label)+'</label>'+
-          '<div class="df-desc">'+esc(f.desc||'')+'</div>'+inp+'</div>';
-      }).join('');
-      // keep the color picker and its text input in sync (text is the source of truth)
-      detailFields.querySelectorAll('input[type="color"][data-sync]').forEach(cp=>{
-        cp.addEventListener('input',()=>{const t=document.getElementById(cp.getAttribute('data-sync')); if(t){t.value=cp.value;}});
-      });
-      // Icon "Browse…": open the OS file picker. The browser can't expose the
-      // real path, so we read the chosen file and embed it as a data URI —
-      // self-contained, renders on the canvas and exports standalone.
-      detailFields.querySelectorAll('.df-browse[data-pick]').forEach(btn=>{
-        const file=detailFields.querySelector('.df-file[data-pick="'+btn.getAttribute('data-pick')+'"]');
-        const text=document.getElementById(btn.getAttribute('data-pick'));
-        btn.addEventListener('click',()=>file.click());
-        file.addEventListener('change',()=>{
-          const f=file.files&&file.files[0]; if(!f) return;
-          const rd=new FileReader();
-          rd.onload=()=>{ text.value=rd.result; };
-          rd.readAsDataURL(f);
-        });
-      });
+      detailFields.innerHTML=renderFields(fields);
+      wireDetailInputs();
     }
     detailModal.hidden=false;
   }catch(_){}
@@ -767,7 +855,8 @@ async function applyDetail(){
   const t=detailTarget, changes={};
   detailFields.querySelectorAll('[data-key]').forEach(el=>{
     if(el.disabled) return;
-    if(el.value!==el.getAttribute('data-orig')) changes[el.getAttribute('data-key')]=el.value;
+    const v=fieldVal(el);
+    if(v!==el.getAttribute('data-orig')) changes[el.getAttribute('data-key')]=v;
   });
   if(!Object.keys(changes).length){ closeDetail(); return; }
   const qp = qpFor(t);
