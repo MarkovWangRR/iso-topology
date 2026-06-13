@@ -168,6 +168,28 @@ docs/agent/SAMPLES.md that best matches the task. Use
 
 ## 画廊
 
+### 零信任边界（暗色 · 棱柱族 + 逐面渐变）
+
+![零信任架构等距图——八棱柱防火墙、菱形策略决策、投影纹理服务甲板](docs/assets/edge-security.png)
+
+双八棱柱防火墙的每一面墙色都是一条 `style.faces`：琥珀菱形做放行/拒绝决策，拒绝沉入三棱柱 SIEM，放行落到投影 hatch 纹理的服务甲板。
+[源码](samples/topology/edge-security/input.yaml)。
+
+### LLM 推理板（工程风 · 投影丝印层）
+
+![PCB 风格 LLM 推理板等距图——过孔点阵丝印层与渐变 GPU 芯片](docs/assets/inference-board.png)
+
+板面顶层是 `projected: true` 的过孔点阵——纹理贴在等距平面上而非屏幕空间；上面是六棱柱调度器和渐变顶面的 GPU 芯片网格。
+[源码](samples/topology/inference-board/input.yaml)。
+
+### 支付通道（印刷风 · 菱形路由）
+
+![瑞士印刷风支付流程等距图——菱形路由与六棱柱网关，唯一翡翠渐变强调](docs/assets/payment-rails.png)
+
+白底、墨色阶梯、全图唯一一处三色标翡翠渐变；流程语义由形状本身承载：六棱柱网关、菱形路由。
+[源码](samples/topology/payment-rails/input.yaml)。
+
+
 ### LLM 推理平台（暗色）
 
 ![暗色等距图：客户端请求经过服务网关，到达 GPU 集群](docs/assets/llm-serving.png)

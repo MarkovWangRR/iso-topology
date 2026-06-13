@@ -197,6 +197,33 @@ crawlers.
 
 ## Gallery
 
+### Zero-trust edge (dark · prism family + per-face gradients)
+
+![Dark isometric zero-trust diagram — octprism firewalls, diamond policy decision, projected-hatch service deck](docs/assets/edge-security.png)
+
+Dual octprism firewalls with per-side gradient ladders guard the
+deny/allow split: an amber diamond decides, denials sink into a
+triprism SIEM, allows land on a projected-hatch deck of service chips.
+Every wall color is one `style.faces` entry.
+[Source](samples/topology/edge-security/input.yaml).
+
+### LLM inference board (engineering · projected silk layer)
+
+![Isometric PCB-style LLM inference board with via-dot silk layer and gradient GPU chips](docs/assets/inference-board.png)
+
+A board whose top face carries a `projected: true` via-dot pattern —
+the tile follows the iso plane, not the screen — under a hexprism
+scheduler and a grid of gradient-top GPU dies.
+[Source](samples/topology/inference-board/input.yaml).
+
+### Payment rails (print · diamond routing)
+
+![Swiss-print isometric payment flow with diamond routing and hexprism gateway, one emerald gradient accent](docs/assets/payment-rails.png)
+
+White canvas, ink tonal ladder, exactly one emerald 3-stop gradient —
+and the flow semantics carried by shapes: hexprism gateway, diamond
+router. [Source](samples/topology/payment-rails/input.yaml).
+
 ### LLM serving platform (dark · layered flow)
 
 ![Dark isometric LLM inference platform diagram — clients through a serving gateway to a GPU pool](docs/assets/llm-serving.png)
