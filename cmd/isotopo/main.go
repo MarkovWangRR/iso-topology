@@ -637,6 +637,10 @@ func serveFile(in string) error {
 		}
 		svg, _, _ := render(sourceLang, data)
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		// Never let the browser serve a stale Studio page — the template
+		// changes between builds and a cached copy would run old JS (the
+		// source of the "still teleports after I fixed it" reports).
+		w.Header().Set("Cache-Control", "no-store, must-revalidate")
 		w.Write([]byte(isotopo.TopologyHTML(svg, string(data), sourceLang, absIn)))
 	})
 
