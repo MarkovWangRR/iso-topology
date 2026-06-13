@@ -1,10 +1,9 @@
-# rag-pipeline — a RAG system on two planes. The back substrate
-# ingests & indexes (docs → ETL → embeddings); the front substrate
-# serves (app → retriever → LLM); the shared vector database stands
-# between them as a replica stack. Every cube has a white top with a
-# glyph AND an iso caption; emerald pipes carry the synchronous
-# paths, a dashed white grid-aligned line carries the vector query.
-# Near-black canvas, one emerald accent. Zero coordinates.
+# rag-pipeline — a RAG system, now under connector-driven auto-layout.
+# The index path (docs → ETL → embeddings → vector DB) and the serve
+# path (app → retriever → LLM) plus the dashed vector query drive the
+# whole arrangement. Zero coordinates, zero place. Every cube has a
+# white top with a glyph AND an iso caption; emerald pipes carry the
+# synchronous paths, a dashed white line carries the vector query.
 
 canvas:
   background: "#0B0D0C"
@@ -25,6 +24,7 @@ theme:
 nodes:
   scene:
     shape: composite
+    layout: { mode: auto }
     parts:
       # ── Ingest & index plane (back substrate) ────────────────────
       - id: ingest_plane
@@ -68,7 +68,6 @@ nodes:
       # ── The shared vector DB, standing between the planes ────────
       - id: vector_db
         shape: cylinder
-        place: { rightOf: ingest_plane, gap: 1.5, align: end }
         geom: { w: 96, d: 96, h: 30 }
         label: "Vector DB"
         style:
@@ -80,7 +79,6 @@ nodes:
       # ── Serve plane (front substrate) ────────────────────────────
       - id: serve_plane
         shape: group
-        place: { inFrontOf: ingest_plane, gap: 2, align: start }
         geom: { h: 14 }
         label: "Serve"
         layout: { mode: row, gap: 1.4 }

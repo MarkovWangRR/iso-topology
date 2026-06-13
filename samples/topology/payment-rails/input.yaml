@@ -1,12 +1,8 @@
 # payment-rails — fintech print register: a payment authorization flow
-# set on bare white like a financial-press illustration. An ink tonal
-# ladder (paper → silver → slate → ink) carries every object except ONE
-# emerald accent: the hexprism gateway hero, whose top face is a 3-stop
-# v3.3 faces gradient retraced with layered strokes. A v3.2 diamond
-# prism does the risk routing, a projected hatch + radial gradient
-# (v3.3 faces) texture the card-rails tile, and editorial annotations
-# caption the story. The main rail rides SCREEN-HORIZONTAL via the
-# rightOf+behind editorial pattern — zero hand-computed coordinates.
+# Converted to connector-driven auto-layout (layout: {mode: auto}, v4.2).
+# Every place:/offset: removed; the engine derives coordinates from the
+# connector graph. All per-part styling, prism shapes, faces gradients,
+# effects, icons, labels, and all connectors are preserved.
 
 canvas:
   background: "#FFFFFF"
@@ -39,6 +35,7 @@ theme:
 nodes:
   scene:
     shape: composite
+    layout: { mode: auto }
     parts:
       # 1 — checkout client, silver step of the ladder
       - id: checkout
@@ -54,7 +51,6 @@ nodes:
       # thin mint highlight). Prism walls shade via palette by facing.
       - id: gateway
         shape: hexprism
-        place: { rightOf: checkout, behind: checkout, gapX: 1.5, gapY: 1.5 }
         geom: { w: 176, d: 176, h: 64 }
         label: "Payments Gateway"
         icon: "iso://glyph/lock/light"
@@ -79,7 +75,6 @@ nodes:
       # layered strokes so the silhouette stays crisp on white.
       - id: risk
         shape: diamond
-        place: { rightOf: gateway, behind: gateway, gapX: 1.5, gapY: 1.5 }
         geom: { w: 150, d: 150, h: 38 }
         label: "Risk Decision"
         icon: "iso://glyph/shield/light"
@@ -103,7 +98,6 @@ nodes:
       # No cornerRadius here — rounded geometry bypasses face overrides.
       - id: rails
         shape: rectangle
-        place: { rightOf: risk, behind: risk, gapX: 1.5, gapY: 1.5 }
         geom: { w: 120, d: 120, h: 34 }
         label: "Card Rails"
         icon: "iso://glyph/globe/light"
@@ -129,7 +123,6 @@ nodes:
       # 5 — ledger of record, back to silver to close the ladder
       - id: ledger
         shape: cylinder
-        place: { rightOf: rails, behind: rails, gapX: 1.5, gapY: 1.5 }
         geom: { w: 110, d: 110, h: 48 }
         label: "Ledger"
         icon: "iso://glyph/database"
@@ -138,7 +131,6 @@ nodes:
       # 6 — step-up branch off the diamond: paper-white dashed tile
       - id: review
         shape: rectangle
-        place: { inFrontOf: risk, gap: 2.6 }
         geom: { w: 96, d: 96, h: 20 }
         label: "Manual Review"
         icon: "iso://glyph/user"
