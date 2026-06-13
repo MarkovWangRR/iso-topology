@@ -453,6 +453,15 @@ async function commitMove(kind,key,dwx,dwy,dropX,dropY){
     if(typeof data.yaml==='string'){ srcEl.value=data.yaml; setDirty(srcEl.value!==ORIGINAL);
       try{localStorage.setItem(DRAFTKEY,srcEl.value);}catch(_){} }
     if(data.svg){
+      // For an edge bend no node should move; record a stable node's screen
+      // position now so we can hold the whole scene still after re-render
+      // (the bend can extend bounds and reframe the viewBox).
+      let edgeAnchor=null;
+      if(kind==='edge'){
+        const ref=zoomer.querySelector('g[data-part-id]');
+        if(ref){const c=ref.getBoundingClientRect();
+          edgeAnchor={id:ref.getAttribute('data-part-id'),x:c.x+c.width/2,y:c.y+c.height/2};}
+      }
       zoomer.innerHTML=data.svg;
       buildMap(); paint(pinId?rangeFor(pinId):null);
       wireHover(); wireDrag(); adaptStage();
@@ -464,6 +473,14 @@ async function commitMove(kind,key,dwx,dwy,dropX,dropY){
         const g=zoomer.querySelector('g[data-part-id="'+(window.CSS&&CSS.escape?CSS.escape(key):key)+'"]');
         if(g){const c=g.getBoundingClientRect();
           panX+=dropX-(c.x+c.width/2); panY+=dropY-(c.y+c.height/2); apply();}
+      }else if(kind==='edge' && edgeAnchor){
+        // Hold the scene still: pan so the reference node returns to where
+        // it sat before the re-render. The bend already places the line at
+        // the drop point relative to the (unmoving) nodes, so the line
+        // lands under the cursor and nothing else jumps.
+        const ref=zoomer.querySelector('g[data-part-id="'+(window.CSS&&CSS.escape?CSS.escape(edgeAnchor.id):edgeAnchor.id)+'"]');
+        if(ref){const c=ref.getBoundingClientRect();
+          panX+=edgeAnchor.x-(c.x+c.width/2); panY+=edgeAnchor.y-(c.y+c.height/2); apply();}
       }
     }
     showIssues(data.issues||[]);
