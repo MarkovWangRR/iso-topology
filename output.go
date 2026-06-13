@@ -107,22 +107,6 @@ header{display:flex;align-items:center;gap:12px;padding:11px 20px;
 .pagedesc{font:11px Inter,sans-serif;color:var(--muted);
   margin-left:4px;padding-left:14px;border-left:1px solid var(--border);}
 header .spacer{flex:1;}
-.menu{position:relative;margin-left:6px;}
-.menubtn{font:11.5px Inter,sans-serif;font-weight:550;border:1px solid var(--border);background:white;
-  color:#334155;padding:5px 11px;border-radius:6px;cursor:pointer;}
-.menubtn:hover{background:#F4F6FA;}
-.menu-panel{position:absolute;top:calc(100% + 6px);left:0;min-width:200px;z-index:30;
-  background:white;border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow);
-  padding:5px;display:flex;flex-direction:column;}
-.menu-panel button{border:0;background:transparent;text-align:left;padding:7px 10px;border-radius:6px;
-  font:12px Inter,sans-serif;color:#334155;}
-.menu-panel button:hover{background:var(--accent-soft);color:var(--accent-deep);}
-.menu-panel button:active{background:var(--accent);color:#fff;}
-.menu-panel button.loading{background:var(--accent-soft);color:var(--accent-deep);opacity:.7;}
-.menu-panel button.loading::after{content:" …";}
-.menu-panel button.failed{background:#FEF2F2;color:#DC2626;}
-.menu-panel button.failed::after{content:" — failed";}
-.menu-panel .hint{font:10px Inter,sans-serif;color:#A6B0C0;padding:3px 10px 5px;}
 #live{display:flex;align-items:center;gap:6px;font:11.5px Inter,sans-serif;font-weight:550;color:var(--muted);}
 #live::before{content:"";width:7px;height:7px;border-radius:50%;background:#CBD5E1;flex:none;}
 #live.on{color:var(--accent-deep);}
@@ -266,10 +250,6 @@ svg path[data-connector]:hover{stroke:var(--accent-deep);}
     </div>
   </div>
   <span class="pagedesc">Preview &middot; Edit &middot; Export</span>
-  <div class="menu">
-    <button class="menubtn" id="exbtn" onclick="toggleExamples()">Examples &#9662;</button>
-    <div class="menu-panel" id="expanel" hidden></div>
-  </div>
   <span class="spacer"></span>
   <span id="live">checking renderer…</span>
 </header>
@@ -726,7 +706,7 @@ window.addEventListener('keydown',e=>{
   if((e.metaKey||e.ctrlKey)&&e.key==='0'){e.preventDefault();fitView();return;}
   if((e.metaKey||e.ctrlKey)&&(e.key==='='||e.key==='+')){e.preventDefault();zoomBy(1.25);return;}
   if((e.metaKey||e.ctrlKey)&&e.key==='-'){e.preventDefault();zoomBy(0.8);return;}
-  if(e.key==='Escape'){document.getElementById('help').hidden=true;document.getElementById('expanel').hidden=true;return;}
+  if(e.key==='Escape'){document.getElementById('help').hidden=true;return;}
   if(e.key==='?'&&document.activeElement!==srcEl){toggleHelp();}
 });
 function toggleHelp(){
@@ -885,60 +865,6 @@ function downloadCopy(){
   a.download=FILENAME.replace(/(\.[a-z0-9]+)$/i,'.edited$1');
   a.click();
 }
-/* ── examples menu (served locally from this build) ─────────────── */
-let exLoaded=false;
-async function toggleExamples(){
-  const p=document.getElementById('expanel');
-  if(!p.hidden){p.hidden=true;return;}
-  p.hidden=false;
-  if(exLoaded) return;
-  p.innerHTML='<div class="hint">loading…</div>';
-  try{
-    const r=await fetch('/api/examples');
-    const list=(await r.json()).examples||[];
-    p.innerHTML='<div class="hint">loads into the editor — your file is untouched</div>'+
-      list.map(n=>'<button data-ex="'+n+'">'+n+'</button>').join('');
-    p.querySelectorAll('[data-ex]').forEach(b=>{
-      b.addEventListener('click',()=>loadExample(b.getAttribute('data-ex')));
-    });
-    exLoaded=true;
-  }catch(_){
-    p.innerHTML='<div class="hint">examples need a running server (isotopo serve)</div>';
-  }
-}
-document.addEventListener('click',e=>{
-  if(!e.target.closest('.menu')) document.getElementById('expanel').hidden=true;
-});
-let lastExampleText=null;
-async function loadExample(name){
-  // Guard the user's work: replacing the editor with an example is
-  // destructive. Prompt when the editor holds unsaved edits that are
-  // NOT just a previously-loaded example (so chaining examples is
-  // quiet, but real authoring is never silently clobbered). After a
-  // load, "revert" still restores the on-disk file.
-  const cur=srcEl.value;
-  const dirty = cur!==ORIGINAL && cur.trim()!=='' && cur!==lastExampleText;
-  if(dirty && !confirm('Load example "'+name+'"?\n\nYour current edits will be replaced. Use “revert” afterwards to restore your file.')){
-    return;
-  }
-  const panel=document.getElementById('expanel');
-  const item=panel.querySelector('[data-ex="'+(window.CSS&&CSS.escape?CSS.escape(name):name)+'"]');
-  if(item){item.classList.add('loading');}
-  try{
-    const r=await fetch('/api/example?name='+encodeURIComponent(name));
-    if(!r.ok) throw new Error(r.status);
-    const y=(await r.json()).yaml;
-    srcEl.value=y; lastExampleText=y;
-    srcEl.dispatchEvent(new Event('input',{bubbles:true}));
-    panel.hidden=true;
-  }catch(_){
-    if(item){item.classList.remove('loading');item.classList.add('failed');
-      setTimeout(()=>item.classList.remove('failed'),1600);}
-  }finally{
-    if(item) item.classList.remove('loading');
-  }
-}
-
 /* ── share: YAML deflated into the URL hash ─────────────────────── */
 async function pipeThrough(stream,bytes){
   const w=stream.writable.getWriter();

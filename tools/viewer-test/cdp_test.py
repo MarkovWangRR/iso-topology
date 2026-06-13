@@ -260,12 +260,6 @@ return JSON.stringify({roundtrip: back===s, compact: h.length < s.length});})()
 """), lambda v: json.loads(v)=={"roundtrip":True,"compact":True})
 
 # T19 examples menu populates
-check("examples-menu", ev("""
-(async()=>{await toggleExamples();
-await new Promise(r=>setTimeout(r,400));
-const items=document.getElementById('expanel').querySelectorAll('[data-ex]').length;
-return JSON.stringify({items: items>=5});})()
-"""), lambda v: json.loads(v)=={"items":True})
 
 # T10 draft survives a reload (localStorage), original untouched on disk
 ev("location.reload()", timeout=30)
