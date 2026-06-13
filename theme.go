@@ -157,6 +157,11 @@ func mergeEffects(b, o *Effects) *Effects {
 	} else {
 		out.Grain = b.Grain
 	}
+	if o.Outline != nil {
+		out.Outline = o.Outline
+	} else {
+		out.Outline = b.Outline
+	}
 	return out
 }
 
