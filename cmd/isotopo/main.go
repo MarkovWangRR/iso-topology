@@ -240,31 +240,76 @@ func upsertInlineList(src string, startLine int, key string, pts [][2]float64) (
 // path) and changes are written back in place (comment-preserving).
 
 type schemaField struct {
-	Path    string   `json:"key"`             // dotted YAML path; also the form key
-	Label   string   `json:"label"`           // English, human-readable
-	Desc    string   `json:"desc"`            // one-line semantic description
-	Type    string   `json:"type"`            // text | number | color | icon | choice
+	Path    string   `json:"key"`   // dotted YAML path; also the form key
+	Label   string   `json:"label"` // English, human-readable
+	Desc    string   `json:"desc"`  // one-line semantic description
+	Type    string   `json:"type"`  // text | number | color | icon | choice
 	Options []string `json:"options,omitempty"`
-	Group   string   `json:"group,omitempty"` // section header in the modal
+	Group   string   `json:"group,omitempty"`  // section header in the modal
 	Inline  bool     `json:"inline,omitempty"` // compact, laid out side-by-side
-	Value   string   `json:"value"`           // current value, filled per request
+	Value   string   `json:"value"`            // current value, filled per request
 }
 
 // nodeSchema / edgeSchema declare the editable, visually-impactful fields.
-func nodeSchema() []schemaField {
-	return []schemaField{
-		{Group: "Content", Path: "label", Label: "Label", Desc: "Text rendered on the node's top face", Type: "text"},
-		{Group: "Content", Path: "shape", Label: "Shape", Desc: "Geometric form of the node", Type: "choice",
-			Options: []string{"rectangle", "box", "cylinder", "sphere", "cloud", "person", "prism", "hexprism", "polygon", "group", "text"}},
+// shapeOptions are the real, accepted shape tokens (see `isotopo capabilities`).
+var shapeOptions = []string{"rectangle", "cylinder", "circle", "cloud", "person",
+	"hexprism", "prism", "diamond", "triprism", "octprism", "group", "boundary", "text"}
+
+// shapeClass buckets a shape by how it takes colour, so the detail form only
+// offers controls that actually affect that shape:
+//
+//	faces   — top/left/right palette (box family, prisms, cylinder, group)
+//	outline — dashed border only (boundary)
+//	text    — label colour/size (iso_text)
+//	fill    — a single surface colour (circle, cloud, person)
+func shapeClass(s string) string {
+	switch strings.ToLower(strings.TrimSpace(s)) {
+	case "boundary":
+		return "outline"
+	case "text", "iso_text", "title":
+		return "text"
+	case "circle", "oval", "cloud", "person", "c4-person", "c4_person", "sphere":
+		return "fill"
+	default: // rectangle/box/square, prism family, hexprism, cylinder, group, …
+		return "faces"
+	}
+}
+
+// nodeSchema is shape-aware: the colour section depends on what the shape can
+// actually render, so users never tune a knob that does nothing.
+func nodeSchema(shape string) []schemaField {
+	f := []schemaField{
+		{Group: "Content", Path: "label", Label: "Label", Desc: "Text rendered on the node", Type: "text"},
+		{Group: "Content", Path: "shape", Label: "Shape", Desc: "Geometric form of the node", Type: "choice", Options: shapeOptions},
 		{Group: "Content", Path: "icon", Label: "Icon", Desc: "iso://… ref, image URL, or pick a local file", Type: "icon"},
 		{Group: "Content", Path: "preset", Label: "Style preset", Desc: "Named style from theme.presets", Type: "text"},
 		{Group: "Size — world units", Path: "geom.w", Label: "Width", Type: "number", Inline: true},
 		{Group: "Size — world units", Path: "geom.d", Label: "Depth", Type: "number", Inline: true},
 		{Group: "Size — world units", Path: "geom.h", Label: "Height", Type: "number", Inline: true},
-		{Group: "Face colors", Path: "style.palette.top", Label: "Top", Type: "color", Inline: true},
-		{Group: "Face colors", Path: "style.palette.left", Label: "Left", Type: "color", Inline: true},
-		{Group: "Face colors", Path: "style.palette.right", Label: "Right", Type: "color", Inline: true},
 	}
+	switch shapeClass(shape) {
+	case "outline":
+		f = append(f,
+			schemaField{Group: "Outline", Path: "style.stroke.color", Label: "Border color", Desc: "Outline color (CSS color)", Type: "color"},
+			schemaField{Group: "Outline", Path: "style.stroke.width", Label: "Border width", Type: "number"},
+			schemaField{Group: "Outline", Path: "style.stroke.dash", Label: "Border style", Desc: "Solid, dashed, or dotted",
+				Type: "choice", Options: []string{"", "6 4", "1 5"}})
+	case "text":
+		f = append(f,
+			schemaField{Group: "Text", Path: "style.text.color", Label: "Text color", Desc: "Label color (CSS color)", Type: "color"},
+			schemaField{Group: "Text", Path: "style.text.size", Label: "Font size", Type: "number"})
+	case "fill":
+		f = append(f, schemaField{Group: "Color", Path: "style.palette.top", Label: "Fill color", Desc: "Surface fill (CSS color)", Type: "color"})
+	default: // faces
+		f = append(f,
+			schemaField{Group: "Face colors", Path: "style.palette.top", Label: "Top", Type: "color", Inline: true},
+			schemaField{Group: "Face colors", Path: "style.palette.left", Label: "Left", Type: "color", Inline: true},
+			schemaField{Group: "Face colors", Path: "style.palette.right", Label: "Right", Type: "color", Inline: true})
+		if strings.EqualFold(strings.TrimSpace(shape), "group") {
+			f = append(f, schemaField{Group: "Face colors", Path: "style.stroke.color", Label: "Border", Type: "color", Inline: true})
+		}
+	}
+	return f
 }
 
 func canvasSchema() []schemaField {
@@ -457,7 +502,8 @@ func schemaWithValues(src, kind, id string, ci int) ([]schemaField, bool) {
 	switch kind {
 	case "node":
 		subtree = findNodeMap(root, id)
-		fields = nodeSchema()
+		shape, _ := subtree["shape"].(string) // nil subtree → "" → face schema; guarded below
+		fields = nodeSchema(shape)
 	case "edge":
 		conns := findConnectors(root)
 		if ci >= 0 && ci < len(conns) {
