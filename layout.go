@@ -1076,3 +1076,43 @@ func ConnectorBend(doc *Document, ci int) (wx, wy float64) {
 	}
 	return 0, 0
 }
+
+// SceneIsAuto reports whether the document's scene is still under
+// connector-driven auto-layout (layout: {mode: auto}). The Studio drag
+// endpoint uses this to decide whether a manual move must first FREEZE
+// the scene into explicit coordinates (drawio model: once the user
+// takes manual control, the engine stops deciding positions).
+func SceneIsAuto(doc *Document) bool {
+	if doc == nil {
+		return false
+	}
+	s := doc.Scene()
+	return s != nil && s.Layout != nil && s.Layout.Mode == "auto"
+}
+
+// ResolveAllOffsets runs layout on the scene and returns every
+// ROOT-level part's resolved world (wx, wy) keyed by id. Used to bake
+// an auto-layout scene into explicit per-node coordinates on the first
+// manual drag, so subsequent renders never re-flow.
+func ResolveAllOffsets(doc *Document) map[string][2]float64 {
+	out := map[string][2]float64{}
+	if doc == nil {
+		return out
+	}
+	s := doc.Scene()
+	if s == nil {
+		return out
+	}
+	applyLayout(s, doc.Canvas)
+	for _, p := range s.Parts {
+		if p == nil || p.ID == "" {
+			continue
+		}
+		if p.Offset != nil {
+			out[p.ID] = [2]float64{p.Offset.WX, p.Offset.WY}
+		} else {
+			out[p.ID] = [2]float64{0, 0}
+		}
+	}
+	return out
+}
