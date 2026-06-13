@@ -231,6 +231,10 @@ kbd{font:10px ui-monospace,Menlo,monospace;border:1px solid var(--border);border
   font:11px Inter,sans-serif;padding:5px 13px;border-radius:999px;box-shadow:var(--shadow);}
 svg g[data-part-id]{transition:filter .12s;}
 svg g[data-part-id].hi{filter:drop-shadow(0 0 3px rgba(16,174,185,.85));}
+svg g[data-part-id]{transition:filter .12s;}
+svg g[data-part-id]:hover{filter:drop-shadow(0 0 5px var(--accent));}
+svg g[data-part-id].dragging{filter:drop-shadow(0 0 9px var(--accent));opacity:.82;}
+svg path[data-connector]:hover{stroke:var(--accent-deep);}
 </style></head><body>
 <header>
   <div class="brand">
@@ -483,27 +487,43 @@ function wireDrag(){
   zoomer.querySelectorAll('g[data-part-id]').forEach(g=>{
     g.style.cursor='grab';
     g.addEventListener('mousedown',e=>{
-      e.stopPropagation();
-      nodeDrag={id:g.getAttribute('data-part-id').replace(/~\d+$/,''),x:e.clientX,y:e.clientY};
+      e.preventDefault();   // suppress the browser's native SVG image-drag
+      e.stopPropagation();  // don't let the viewport start a pan
+      g.style.cursor='grabbing';
+      g.classList.add('dragging');
+      nodeDrag={el:g,id:g.getAttribute('data-part-id').replace(/~\d+$/,''),x:e.clientX,y:e.clientY};
     });
   });
   zoomer.querySelectorAll('path[data-connector]').forEach(p=>{
-    p.setAttribute('stroke-width', Math.max(parseFloat(p.getAttribute('stroke-width')||'1.4'),1.4));
-    p.style.cursor='move';
+    p.setAttribute('stroke-width', Math.max(parseFloat(p.getAttribute('stroke-width')||'1.4'),3));
+    p.style.cursor='grab';
     p.addEventListener('mousedown',e=>{
+      e.preventDefault();
       e.stopPropagation();
-      edgeDrag={ci:p.getAttribute('data-connector'),x:e.clientX,y:e.clientY};
+      p.style.cursor='grabbing';
+      edgeDrag={el:p,ci:p.getAttribute('data-connector'),x:e.clientX,y:e.clientY};
     });
   });
 }
+// Live follow: translate the grabbed element under the cursor so the
+// drag feels direct; the real position is committed (re-rendered) on
+// drop. Lengths are in SVG user units, hence /scale.
+window.addEventListener('mousemove',e=>{
+  if(nodeDrag){
+    nodeDrag.el.style.transform='translate('+((e.clientX-nodeDrag.x)/scale)+'px,'+((e.clientY-nodeDrag.y)/scale)+'px)';
+  }else if(edgeDrag){
+    edgeDrag.el.style.transform='translate('+((e.clientX-edgeDrag.x)/scale)+'px,'+((e.clientY-edgeDrag.y)/scale)+'px)';
+  }
+});
 window.addEventListener('mouseup',e=>{
   if(nodeDrag){
     const d=nodeDrag; nodeDrag=null;
+    d.el.style.transform=''; d.el.classList.remove('dragging'); d.el.style.cursor='grab';
     const wd=screenToWorldDelta((e.clientX-d.x)/scale,(e.clientY-d.y)/scale);
     if(Math.abs(wd[0])>2||Math.abs(wd[1])>2) commitMove('node',d.id,Math.round(wd[0]),Math.round(wd[1]));
-  }
-  if(edgeDrag){
+  }else if(edgeDrag){
     const d=edgeDrag; edgeDrag=null;
+    d.el.style.transform=''; d.el.style.cursor='grab';
     const wd=screenToWorldDelta((e.clientX-d.x)/scale,(e.clientY-d.y)/scale);
     if(Math.abs(wd[0])>2||Math.abs(wd[1])>2) commitMove('edge',d.ci,Math.round(wd[0]),Math.round(wd[1]));
   }
