@@ -70,7 +70,7 @@ type StyleKeyGroup struct {
 // Pure function — no IO, no globals.
 func CapabilityReport() Capabilities {
 	return Capabilities{
-		Version: "0.4.3",
+		Version: "0.4.4",
 		Inputs: []InputFormat{
 			{".yaml", "hand-authored iso composite with precise placement", "manual"},
 			{".json", "same shape as .yaml but JSON-encoded", "manual"},
@@ -202,6 +202,7 @@ func buildPrimitiveCaps() []PrimitiveCap {
 				"to":            "destination part id (same anchor syntax)",
 				"routing":       "ALWAYS use orthogonal — every segment rides the iso ground axes, flush with the 2.5D grid (collinear endpoints collapse to one on-axis segment). straight/bezier cut across the grid and are reserved for non-iso freeform sketches.",
 				"arrow":         "none = no head; triangle = filled arrowhead at the dst",
+				"bend":          "v4.4 — {wx, wy} world offset on the route's interior so a Studio edge-drag shifts the line while both endpoints stay docked",
 				"elbow":         "v3.1 — orthogonal elbow bias: xFirst | yFirst (default: the axis the source face exits along)",
 				"labelBg":       "pill background (default #FFFFFFEE)",
 				"labelColor":    "v3.1 — pill ink (default #1F2433); dim it for dark scenes",
