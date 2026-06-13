@@ -70,7 +70,7 @@ type StyleKeyGroup struct {
 // Pure function — no IO, no globals.
 func CapabilityReport() Capabilities {
 	return Capabilities{
-		Version: "0.3.7",
+		Version: "0.3.8",
 		Inputs: []InputFormat{
 			{".yaml", "hand-authored iso composite with precise placement", "manual"},
 			{".json", "same shape as .yaml but JSON-encoded", "manual"},
@@ -279,6 +279,7 @@ func buildStyleKeyGroups() []StyleKeyGroup {
 			"opacity", "margin", "cornerRadius",
 			"dropShadow {dx, dy, blur, color}",
 			"backglow {color, radius, opacity}",
+			"blur (v3.7) — gaussian stdDev in px over the whole part; fog / ghost / de-emphasized layers",
 			"pattern {kind: hatch|dots, color, spacing, angle}",
 			"wireframe (bool — line-art: strokes only, no fills; ghost parts are exempt from overlap warnings)",
 			"grain {intensity 0..1, scale} (film-grain noise on the faces)",

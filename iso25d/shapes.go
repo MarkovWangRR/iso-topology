@@ -14,6 +14,7 @@ type ConvertOpts struct {
 	Width, Depth, Height float64
 	Sides                int                     // polygon sides (3+); only used by shape=polygon
 	FaceSurfaces         map[string]*FaceSurface // v3.3 — style.faces overrides
+	Blur                 float64                 // v3.7 — gaussian blur stdDev over the whole part
 
 	TopFill, LeftFill, RightFill string
 	Stroke                       string
@@ -254,6 +255,7 @@ func applyBox(o ConvertOpts, b *IsoBoxOpts) {
 	b.IconOffY = o.IconOffY
 	b.CornerRadius = o.CornerRadius
 	b.FaceSurfaces = o.FaceSurfaces
+	b.Blur = o.Blur
 	b.ShadowDx, b.ShadowDy, b.ShadowBlur, b.ShadowColor = o.ShadowDx, o.ShadowDy, o.ShadowBlur, o.ShadowColor
 	// v1.3
 	b.Wireframe = o.Wireframe

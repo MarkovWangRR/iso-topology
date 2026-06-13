@@ -41,9 +41,11 @@ type IsoBoxOpts struct {
 	IconScale float64
 	// v3.3 — per-face surface overrides (style.faces).
 	FaceSurfaces map[string]*FaceSurface
-	IconAnchor   string  // center | topLeft | topRight | bottomLeft | bottomRight
-	IconOffX     float64 // fraction of W
-	IconOffY     float64 // fraction of D
+	// v3.7 — gaussian blur stdDev applied to the whole part.
+	Blur       float64
+	IconAnchor string  // center | topLeft | topRight | bottomLeft | bottomRight
+	IconOffX   float64 // fraction of W
+	IconOffY   float64 // fraction of D
 
 	// Padding around the projected shape in viewBox units
 	Margin float64
@@ -362,6 +364,7 @@ func RenderIsoBox(o IsoBoxOpts) string {
 
 	var sb strings.Builder
 	sb.WriteString(svgHeader(g.ViewW, g.ViewH))
+	blurOn := emitBlurOpen(&sb, "box-blur", o.Blur)
 
 	topFill, leftFill, rightFill, shadowID, patID, grainID := emitBoxDefs(&sb, &o)
 
@@ -440,6 +443,9 @@ func RenderIsoBox(o IsoBoxOpts) string {
 	}
 
 	closeWrapper(&sb)
+	if blurOn {
+		sb.WriteString(`</g>`)
+	}
 	sb.WriteString(`</svg>`)
 	return sb.String()
 }

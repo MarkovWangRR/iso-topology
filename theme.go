@@ -127,6 +127,7 @@ func mergeEffects(b, o *Effects) *Effects {
 		Opacity:      firstNonNilFloat(o.Opacity, b.Opacity),
 		Margin:       firstNonNilFloat(o.Margin, b.Margin),
 		CornerRadius: firstNonNilFloat(o.CornerRadius, b.CornerRadius),
+		Blur:         firstNonNilFloat(o.Blur, b.Blur),
 	}
 	// v2.1 — DropShadow / Backglow / Pattern follow the same all-or-nothing
 	// override semantics as the rest of Style: a non-nil override wins

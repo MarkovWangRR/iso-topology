@@ -97,6 +97,9 @@ func Flatten(n *Node, theme *Theme) (string, iso25d.ConvertOpts) {
 			if ds := e.DropShadow; ds != nil {
 				o.ShadowDx, o.ShadowDy, o.ShadowBlur, o.ShadowColor = ds.Dx, ds.Dy, ds.Blur, ds.Color
 			}
+			if e.Blur != nil && *e.Blur > 0 {
+				o.Blur = *e.Blur
+			}
 			if bg := e.Backglow; bg != nil {
 				o.BackglowColor, o.BackglowRadius, o.BackglowOpacity = bg.Color, bg.Radius, bg.Opacity
 			}

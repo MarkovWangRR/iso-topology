@@ -286,6 +286,9 @@ type Effects struct {
 	DropShadow *DropShadow `yaml:"dropShadow,omitempty" json:"dropShadow,omitempty"`
 	// v2.1 — diffuse halo behind the part (use for "glowing" focal nodes).
 	Backglow *Backglow `yaml:"backglow,omitempty" json:"backglow,omitempty"`
+	// v3.7 (M4) — gaussian blur over the whole part: fog/ghost nodes,
+	// de-emphasized背景层. Value = stdDeviation in px.
+	Blur *float64 `yaml:"blur,omitempty" json:"blur,omitempty"`
 	// v2.1 — repeating surface texture overlaid on the top face
 	// (hatch lines, dot grid, square grid).
 	Pattern *Pattern `yaml:"pattern,omitempty" json:"pattern,omitempty"`
