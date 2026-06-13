@@ -117,6 +117,11 @@ header .spacer{flex:1;}
 .menu-panel button{border:0;background:transparent;text-align:left;padding:7px 10px;border-radius:6px;
   font:12px Inter,sans-serif;color:#334155;}
 .menu-panel button:hover{background:var(--accent-soft);color:var(--accent-deep);}
+.menu-panel button:active{background:var(--accent);color:#fff;}
+.menu-panel button.loading{background:var(--accent-soft);color:var(--accent-deep);opacity:.7;}
+.menu-panel button.loading::after{content:" …";}
+.menu-panel button.failed{background:#FEF2F2;color:#DC2626;}
+.menu-panel button.failed::after{content:" — failed";}
 .menu-panel .hint{font:10px Inter,sans-serif;color:#A6B0C0;padding:3px 10px 5px;}
 #live{display:flex;align-items:center;gap:6px;font:11.5px Inter,sans-serif;font-weight:550;color:var(--muted);}
 #live::before{content:"";width:7px;height:7px;border-radius:50%;background:#CBD5E1;flex:none;}
@@ -867,17 +872,34 @@ async function toggleExamples(){
 document.addEventListener('click',e=>{
   if(!e.target.closest('.menu')) document.getElementById('expanel').hidden=true;
 });
+let lastExampleText=null;
 async function loadExample(name){
-  document.getElementById('expanel').hidden=true;
-  const b=document.getElementById('exbtn'), keep=b.textContent;
-  b.textContent='loading '+name+'…';
+  // Guard the user's work: replacing the editor with an example is
+  // destructive. Prompt when the editor holds unsaved edits that are
+  // NOT just a previously-loaded example (so chaining examples is
+  // quiet, but real authoring is never silently clobbered). After a
+  // load, "revert" still restores the on-disk file.
+  const cur=srcEl.value;
+  const dirty = cur!==ORIGINAL && cur.trim()!=='' && cur!==lastExampleText;
+  if(dirty && !confirm('Load example "'+name+'"?\n\nYour current edits will be replaced. Use “revert” afterwards to restore your file.')){
+    return;
+  }
+  const panel=document.getElementById('expanel');
+  const item=panel.querySelector('[data-ex="'+(window.CSS&&CSS.escape?CSS.escape(name):name)+'"]');
+  if(item){item.classList.add('loading');}
   try{
     const r=await fetch('/api/example?name='+encodeURIComponent(name));
     if(!r.ok) throw new Error(r.status);
-    srcEl.value=(await r.json()).yaml;
+    const y=(await r.json()).yaml;
+    srcEl.value=y; lastExampleText=y;
     srcEl.dispatchEvent(new Event('input',{bubbles:true}));
-  }catch(_){b.textContent='load failed';setTimeout(()=>{b.textContent=keep;},1400);return;}
-  b.textContent=keep;
+    panel.hidden=true;
+  }catch(_){
+    if(item){item.classList.remove('loading');item.classList.add('failed');
+      setTimeout(()=>item.classList.remove('failed'),1600);}
+  }finally{
+    if(item) item.classList.remove('loading');
+  }
 }
 
 /* ── share: YAML deflated into the URL hash ─────────────────────── */
