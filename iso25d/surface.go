@@ -216,3 +216,14 @@ func emitBackglowHalo(sb, defs *strings.Builder, id, color string, radius, opaci
 	fmt.Fprintf(sb, `<path data-face="backglow" d="%s" fill="%s" stroke="none" filter="url(#%s)"/>`,
 		d.String(), escapeAttr(color), id)
 }
+
+// emitBlurOpen writes a blur filter def + opens a <g filter=…> around
+// the whole part. Returns true when the caller must close the group.
+func emitBlurOpen(sb *strings.Builder, id string, std float64) bool {
+	if std <= 0 {
+		return false
+	}
+	fmt.Fprintf(sb, `<defs><filter id="%s" x="-30%%" y="-30%%" width="160%%" height="160%%"><feGaussianBlur stdDeviation="%.2f"/></filter></defs><g filter="url(#%s)">`,
+		id, std, id)
+	return true
+}

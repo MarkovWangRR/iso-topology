@@ -91,6 +91,7 @@ func RenderIsoBoxRounded(o IsoBoxOpts) string {
 
 	var sb strings.Builder
 	sb.WriteString(svgHeader(viewW, viewH))
+	blurOn := emitBlurOpen(&sb, "rounded-blur", o.Blur)
 
 	// Drop shadow filter def.
 	shadowID := ""
@@ -332,7 +333,11 @@ func RenderIsoBoxRounded(o IsoBoxOpts) string {
 		o.FontFamily, o.FontSize, o.FontWeight, o.FontColor,
 	)
 
-	sb.WriteString(`</g></svg>`)
+	sb.WriteString(`</g>`)
+	if blurOn {
+		sb.WriteString(`</g>`)
+	}
+	sb.WriteString(`</svg>`)
 	return sb.String()
 }
 

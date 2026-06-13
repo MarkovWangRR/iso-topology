@@ -249,6 +249,7 @@ func RenderIsoPrism(o IsoBoxOpts, sides int) string {
 
 	var sb strings.Builder
 	sb.WriteString(svgHeader(g.ViewW, g.ViewH))
+	blurOn := emitBlurOpen(&sb, "prism-blur", o.Blur)
 	// v3.4 (M4) — dropShadow + grain reach the prism family; the box
 	// path has had both since v1.2/v2.6.
 	shadowID, grainID := "", ""
@@ -341,6 +342,9 @@ func RenderIsoPrism(o IsoBoxOpts, sides int) string {
 	)
 
 	closeWrapper(&sb)
+	if blurOn {
+		sb.WriteString(`</g>`)
+	}
 	sb.WriteString(`</svg>`)
 	return sb.String()
 }
