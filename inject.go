@@ -698,6 +698,15 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo,
 					{tWX, tWY, routeZ},
 				}
 			}
+			// v4.4 — bend: shift the route's INTERIOR waypoints by a world
+			// delta so an edge-drag moves the line while the endpoints stay
+			// docked at their anchors. Interior = all but first and last.
+			if c.Bend != nil && (c.Bend.WX != 0 || c.Bend.WY != 0) {
+				for k := 1; k < len(worldPts)-1; k++ {
+					worldPts[k][0] += c.Bend.WX
+					worldPts[k][1] += c.Bend.WY
+				}
+			}
 			// v1.6 — if every waypoint shares the same world x OR the same
 			// world y, the L-shape has degenerated to a single iso-axis line.
 			// Emit just (source, target) so the path doesn't render multiple

@@ -78,6 +78,10 @@ type Connector struct {
 	// v3.1 — elbow bias for the orthogonal router: xFirst | yFirst.
 	// Default picks the axis the source face exits along.
 	Elbow string `yaml:"elbow,omitempty" json:"elbow,omitempty"`
+	// v4.4 — bend: a world (wx, wy) offset applied to the route's
+	// INTERIOR waypoints, so a Studio edge-drag shifts the line while
+	// both endpoints stay docked to their anchors.
+	Bend *WorldPoint `yaml:"bend,omitempty" json:"bend,omitempty"`
 
 	// v1.5 — routing strategy:
 	//   "straight"   — single segment from anchor to anchor (default)

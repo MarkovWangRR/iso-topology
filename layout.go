@@ -95,6 +95,18 @@ func arrangeAuto(parts []*CompositePart, conns []*Connector, lay *Layout, cell f
 		return
 	}
 
+	// v4.4 — pins: a part that already carries an explicit offset (an
+	// author coordinate, or one written by a Studio drag) is honoured
+	// as-is. It still ranks in the graph so neighbours flow around it,
+	// but the auto pass never overwrites its position. This is what
+	// makes "drag a node in auto-layout and it stays put" work.
+	pinned := map[string]bool{}
+	for _, id := range order {
+		if parts[idx[id]].Offset != nil {
+			pinned[id] = true
+		}
+	}
+
 	target := func(ref string) string {
 		if d := strings.IndexByte(ref, '.'); d >= 0 {
 			return ref[:d]
@@ -300,6 +312,9 @@ func arrangeAuto(parts []*CompositePart, conns []*Connector, lay *Layout, cell f
 			}
 		}
 		for _, id := range ranks[r] {
+			if pinned[id] {
+				continue // honour the explicit/dragged offset
+			}
 			p := parts[idx[id]]
 			if p.Offset == nil {
 				p.Offset = &WorldPoint{}
