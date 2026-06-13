@@ -153,7 +153,7 @@ func arrangeAuto(parts []*CompositePart, conns []*Connector, lay *Layout, cell f
 		ranks[rank[id]] = append(ranks[rank[id]], id)
 	}
 
-	gap := 1.4
+	gap := 2.0
 	if lay != nil && lay.Gap != nil && *lay.Gap >= 0 {
 		gap = *lay.Gap
 	}
@@ -161,22 +161,33 @@ func arrangeAuto(parts []*CompositePart, conns []*Connector, lay *Layout, cell f
 
 	fw := map[string]float64{}
 	fd := map[string]float64{}
+	fh := map[string]float64{}
 	for _, id := range order {
 		w, d := partFootprint(parts[idx[id]])
 		fw[id], fd[id] = w, d
+		fh[id] = partHeight(parts[idx[id]])
 	}
 
+	// World +x projects DOWN-right on screen and a part's extrusion
+	// projects UP, so two parts one rank apart visually collide unless
+	// the column advance clears the taller part's height too. Advance =
+	// widest part in the rank + gap + a height-clearance term, so big or
+	// tall nodes (hexprism gateways, stacked decks) never crowd the next
+	// column and connectors keep clear air to run through.
 	rankX := make([]float64, len(ranks))
 	x := 0.0
 	for r := range ranks {
 		rankX[r] = x
-		maxW := 0.0
+		maxW, maxH := 0.0, 0.0
 		for _, id := range ranks[r] {
 			if fw[id] > maxW {
 				maxW = fw[id]
 			}
+			if fh[id] > maxH {
+				maxH = fh[id]
+			}
 		}
-		x += maxW + gapW
+		x += maxW + gapW + maxH*0.6
 	}
 
 	// Undirected neighbour map for crossing reduction + median alignment.
