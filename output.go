@@ -104,13 +104,14 @@ header{display:flex;align-items:center;gap:12px;padding:11px 20px;
 .studio{font:9px Inter,sans-serif;font-weight:700;letter-spacing:.14em;color:var(--accent-deep);
   background:var(--accent-soft);padding:2.5px 6px;border-radius:4px;}
 .brand .sub{font-size:10.5px;color:var(--muted);}
-.pagedesc{font:11px Inter,sans-serif;color:var(--muted);
-  margin-left:4px;padding-left:14px;border-left:1px solid var(--border);}
+header .studio{margin-left:6px;}
 header .spacer{flex:1;}
 #live{display:flex;align-items:center;gap:6px;font:11.5px Inter,sans-serif;font-weight:550;color:var(--muted);}
 #live::before{content:"";width:7px;height:7px;border-radius:50%;background:#CBD5E1;flex:none;}
-#live.on{color:var(--accent-deep);}
-#live.on::before{background:var(--accent);animation:pulse 2.2s ease-in-out infinite;}
+#live.ok{color:var(--accent-deep);}
+#live.ok::before{background:var(--accent);animation:pulse 2.2s ease-in-out infinite;}
+#live.err{color:#DC2626;}
+#live.err::before{background:#DC2626;}
 @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(16,174,185,.35)}50%{box-shadow:0 0 0 5px rgba(16,174,185,0)}}
 .grid{flex:1;min-height:0;display:flex;}
 .stage-wrap{flex:1.6;min-width:0;position:relative;overflow:hidden;
@@ -285,11 +286,11 @@ svg path[data-connector].pinned{stroke:var(--accent-deep);filter:drop-shadow(0 0
       <polygon points="66,36 56,42 56,54 66,48" fill="url(#lgcube)"/>
     </svg>
     <div class="word">
-      <h1>iso-topology <span class="studio">STUDIO</span></h1>
+      <h1>iso-topology</h1>
       <span class="sub">isometric diagrams as code</span>
     </div>
   </div>
-  <span class="pagedesc">Preview &middot; Edit &middot; Export</span>
+  <span class="studio">STUDIO</span>
   <span class="spacer"></span>
   <span id="live">checking renderer…</span>
 </header>
@@ -300,6 +301,7 @@ svg path[data-connector].pinned{stroke:var(--accent-deep);filter:drop-shadow(0 0
     <div class="exportctl">
       <button onclick="exportSVG()" title="download exactly what the canvas shows (last good render if the source is broken)">&#8595; SVG</button>
       <button onclick="exportPNG()" title="download the current render as PNG (2x)">&#8595; PNG</button>
+      <button onclick="downloadCopy()" title="download the current YAML source">&#8595; YAML</button>
     </div>
     <div class="zoomctl">
       <button onclick="zoomBy(1.25)" title="zoom in (⌘+)">+</button>
@@ -315,11 +317,8 @@ svg path[data-connector].pinned{stroke:var(--accent-deep);filter:drop-shadow(0 0
       <button id="render" onclick="rerender()" title="Cmd/Ctrl+Enter">Render</button>
       <label class="auto"><input type="checkbox" id="auto" checked>Auto</label>
       <span class="spacer" style="flex:1"></span>
-      <button id="copybtn" onclick="copySrc()" title="copy the YAML to the clipboard">Copy</button>
-      <button id="dl" onclick="downloadCopy()" disabled title="download the edited YAML as a new file">Download</button>
-      <button id="share" onclick="shareLink()" title="copy a permalink with the YAML embedded in the URL">Share</button>
     </div>
-    <div class="filetab"><span class="dot" id="dirty" title="unsaved edits stay in this page; the file on disk is never written"></span><span class="path" id="fpath"></span><b>{{FILE}}</b><button class="iconbtn" id="cppath" onclick="copyPath()" title="copy full path"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button><span class="spacer" style="flex:1"></span><a id="discard" hidden onclick="discardDraft()">revert</a></div>
+    <div class="filetab"><span class="path" id="fpath"></span><b>{{FILE}}</b><button class="iconbtn" id="cppath" onclick="copyPath()" title="copy full path"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button><span class="spacer" style="flex:1"></span><a id="discard" hidden onclick="discardDraft()">revert</a></div>
     <div class="editor">
       <div class="hl" id="hl"></div>
       <div class="gutter" id="gut"></div>
@@ -371,9 +370,7 @@ const staleEl=document.getElementById('stale');
 let dirty=false;
 function setDirty(d){
   dirty=d;
-  document.getElementById('dirty').classList.toggle('on',d);
   document.getElementById('discard').hidden=!d;
-  document.getElementById('dl').disabled=!d;
 }
 function discardDraft(){
   try{localStorage.removeItem(DRAFTKEY);}catch(_){}
@@ -654,7 +651,7 @@ async function commitMove(kind,key,dwx,dwy,dropX,dropY,wp){
       }
       zoomer.innerHTML=data.svg;
       buildMap(); paint(pinnedRange());
-      wireHover(); wireDrag(); adaptStage();
+      wireHover(); wireDrag(); adaptStage(); markRendered();
       // Re-render recomputes the viewBox (and the flex-centred SVG can
       // resize), which would slide the whole scene and read as a
       // teleport. Re-anchor on the dropped element: pan so it sits
@@ -774,7 +771,7 @@ async function applyDetail(){
     const data=await r.json();
     if(typeof data.yaml==='string'){ srcEl.value=data.yaml; setDirty(srcEl.value!==ORIGINAL);
       try{localStorage.setItem(DRAFTKEY,srcEl.value);}catch(_){} }
-    if(data.svg){ zoomer.innerHTML=data.svg; buildMap(); paint(pinnedRange()); wireHover(); wireDrag(); adaptStage(); }
+    if(data.svg){ zoomer.innerHTML=data.svg; buildMap(); paint(pinnedRange()); wireHover(); wireDrag(); adaptStage(); markRendered(); }
     showIssues(data.issues||[]);
     closeDetail();
   }catch(_){}
@@ -1012,24 +1009,34 @@ document.getElementById('auto').addEventListener('change',e=>{
   if(!e.target.checked) clearTimeout(timer);
 });
 let serverOK=false, timer=null;
+// One consolidated status (top-right). It replaces the old renderer pill AND
+// the file-tab dirty dot: it reports connection + freshness in one place,
+// stamping the time of the last successful render so the user can see how
+// current the canvas is (auto-render is on by default).
+function nowTime(){const d=new Date(),p=n=>String(n).padStart(2,'0');return p(d.getHours())+':'+p(d.getMinutes())+':'+p(d.getSeconds());}
+function setStatus(cls,text,title){liveEl.className=cls;liveEl.textContent=text;liveEl.title=title||'';}
+function markRendered(){setStatus('ok','Rendered '+nowTime(),'canvas is in sync with the code as of this time');}
 async function probe(){
   if(!location.protocol.startsWith('http')){
-    liveEl.textContent='Static file';
-    liveEl.title='run "isotopo serve <input>" for live re-render';
+    setStatus('','Static file','run "isotopo serve <input>" for live re-render');
     renderBtn.disabled=true; return;
   }
+  const was=serverOK;
   try{
     const r=await fetch('/api/ping');
     serverOK=r.ok;
   }catch(_){serverOK=false;}
-  liveEl.textContent=serverOK?'Live':'Offline';
-  liveEl.title=serverOK?'renderer connected':'renderer unreachable — restart isotopo serve';
-  liveEl.classList.toggle('on',serverOK);
   renderBtn.disabled=!serverOK;
+  if(!serverOK){
+    setStatus('err','Offline','renderer unreachable — is "isotopo serve" still running?');
+  }else if(!was){
+    markRendered(); // recovered (or first probe): the shown canvas is current
+  }
 }
 async function rerender(){
   if(!serverOK) return;
   renderBtn.textContent='Rendering…';
+  setStatus('','Rendering…','');
   try{
     const r=await fetch('/api/render?format='+encodeURIComponent(LANG),{method:'POST',body:srcEl.value});
     const data=await r.json();
@@ -1038,8 +1045,10 @@ async function rerender(){
       zoomer.innerHTML=data.svg;
       buildMap(); paint(pinnedRange()); wireHover(); wireDrag(); adaptStage();
       staleEl.hidden=true;
+      markRendered();
     }else{
       staleEl.hidden=false;
+      setStatus('err','Render failed','the source has errors — see the issues panel');
     }
   }catch(e){
     showIssues([{severity:'error',path:'$',message:String(e)}]);
@@ -1221,12 +1230,6 @@ function exportPNG(){
 }
 
 /* ── misc ───────────────────────────────────────────────────────── */
-async function copySrc(){
-  const b=document.getElementById('copybtn');
-  try{await navigator.clipboard.writeText(srcEl.value);b.textContent='Copied';}
-  catch(_){b.textContent='Copy failed';}
-  setTimeout(()=>{b.textContent='Copy';},1200);
-}
 function downloadCopy(){
   const blob=new Blob([srcEl.value],{type:'text/plain'});
   const a=document.createElement('a');
@@ -1234,7 +1237,7 @@ function downloadCopy(){
   a.download=FILENAME.replace(/(\.[a-z0-9]+)$/i,'.edited$1');
   a.click();
 }
-/* ── share: YAML deflated into the URL hash ─────────────────────── */
+/* ── #src= permalink decode (kept so older shared links still load) ─ */
 async function pipeThrough(stream,bytes){
   const w=stream.writable.getWriter();
   w.write(bytes); w.close();
@@ -1246,11 +1249,6 @@ async function pipeThrough(stream,bytes){
   out.forEach(c=>{all.set(c,o);o+=c.length;});
   return all;
 }
-async function deflateText(t){
-  const b=await pipeThrough(new CompressionStream('deflate-raw'),new TextEncoder().encode(t));
-  let s2=''; b.forEach(v=>{s2+=String.fromCharCode(v);});
-  return btoa(s2).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
-}
 async function inflateText(b64){
   const s2=atob(b64.replace(/-/g,'+').replace(/_/g,'/'));
   const bytes=new Uint8Array(s2.length);
@@ -1258,17 +1256,6 @@ async function inflateText(b64){
   const out=await pipeThrough(new DecompressionStream('deflate-raw'),bytes);
   return new TextDecoder().decode(out);
 }
-async function shareLink(){
-  const b=document.getElementById('share');
-  try{
-    const h=await deflateText(srcEl.value);
-    const url=location.origin+location.pathname+'#src='+h;
-    await navigator.clipboard.writeText(url);
-    b.textContent='Link copied';
-  }catch(_){b.textContent='Share failed';}
-  setTimeout(()=>{b.textContent='Share';},1400);
-}
-
 try{
   const d=localStorage.getItem(DRAFTKEY);
   if(d&&d!==ORIGINAL){srcEl.value=d;setDirty(true);}
