@@ -249,6 +249,20 @@ func RenderIsoPrism(o IsoBoxOpts, sides int) string {
 
 	var sb strings.Builder
 	sb.WriteString(svgHeader(g.ViewW, g.ViewH))
+	// v3.4 (M4) — dropShadow + grain reach the prism family; the box
+	// path has had both since v1.2/v2.6.
+	shadowID, grainID := "", ""
+	{
+		var defs strings.Builder
+		if strings.TrimSpace(o.ShadowColor) != "" && (o.ShadowDx != 0 || o.ShadowDy != 0 || o.ShadowBlur > 0) {
+			shadowID = "prism-shadow"
+			emitDropShadowFilter(&defs, shadowID, o.ShadowDx, o.ShadowDy, o.ShadowBlur, o.ShadowColor)
+		}
+		grainID = emitGrainFilter(&defs, "prism-grain", o.GrainIntensity, o.GrainScale)
+		if defs.Len() > 0 {
+			fmt.Fprintf(&sb, `<defs>%s</defs>`, defs.String())
+		}
+	}
 	if strings.TrimSpace(o.BackglowColor) != "" && o.BackglowRadius > 0 {
 		var gdefs, halo strings.Builder
 		sil := prov.Silhouette(o.Width, o.Depth, o.Height, params)
@@ -259,7 +273,10 @@ func RenderIsoPrism(o IsoBoxOpts, sides int) string {
 		emitBackglowHalo(&halo, &gdefs, "prism-backglow", o.BackglowColor, o.BackglowRadius, o.BackglowOpacity, hpts)
 		fmt.Fprintf(&sb, `<defs>%s</defs>%s`, gdefs.String(), halo.String())
 	}
-	openWrapper(&sb, g.ViewW, g.ViewH, o.Background, o.Opacity, o.StrokeDasharray, "")
+	openWrapper(&sb, g.ViewW, g.ViewH, o.Background, o.Opacity, o.StrokeDasharray, shadowID)
+	if grainID != "" {
+		fmt.Fprintf(&sb, `<g filter="url(#%s)">`, grainID)
+	}
 
 	stroke := o.Stroke
 	if stroke == "" {
@@ -311,6 +328,9 @@ func RenderIsoPrism(o IsoBoxOpts, sides int) string {
 		writeFaceStrokeLayers(&sb, sd.name, fs.Strokes, sd.pts...)
 	}
 
+	if grainID != "" {
+		sb.WriteString(`</g>`)
+	}
 	cr := prov.ContentRectFor(o.Width, o.Depth, o.Height, params)
 	ox, oy := project(cr.X, cr.Y, o.Height)
 	writeTopLabelAndIconV12(

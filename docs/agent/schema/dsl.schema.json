@@ -1,7 +1,7 @@
 {
   "$id": "https://github.com/MarkovWangRR/iso-topology/blob/main/docs/agent/schema/dsl.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "description": "YAML/JSON DSL accepted by isotopo render. Generated for capabilities v0.3.4.",
+  "description": "YAML/JSON DSL accepted by isotopo render. Generated for capabilities v0.3.5.",
   "properties": {
     "annotations": {
       "items": {

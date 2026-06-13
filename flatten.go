@@ -41,7 +41,7 @@ func Flatten(n *Node, theme *Theme) (string, iso25d.ConvertOpts) {
 				}
 				out := &iso25d.FaceSurface{}
 				if ff := face.Fill; ff != nil {
-					nf := &iso25d.FaceFill{Kind: ff.Kind, Color: ff.Color, Angle: ff.Angle}
+					nf := &iso25d.FaceFill{Kind: ff.Kind, Color: ff.Color, Angle: ff.Angle, Projected: ff.Projected}
 					for _, st := range ff.Stops {
 						nf.Stops = append(nf.Stops, iso25d.FaceStop{Offset: st.Offset, Color: st.Color})
 					}

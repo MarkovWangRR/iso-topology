@@ -16,13 +16,14 @@ type FaceSurface struct {
 }
 
 type FaceFill struct {
-	Kind    string // solid | linearGradient | radialGradient | pattern
-	Color   string
-	Stops   []FaceStop
-	Angle   float64
-	Cx, Cy  float64 // radial centre 0..1 (defaults 0.5)
-	HasC    bool
-	Pattern *FacePatternSpec
+	Kind      string // solid | linearGradient | radialGradient | pattern
+	Color     string
+	Stops     []FaceStop
+	Angle     float64
+	Projected bool    // v3.4 — gradient axis follows the face iso plane
+	Cx, Cy    float64 // radial centre 0..1 (defaults 0.5)
+	HasC      bool
+	Pattern   *FacePatternSpec
 }
 
 type FaceStop struct {
@@ -111,6 +112,19 @@ func emitFaceFill(defs *strings.Builder, prefix, face string, f *FaceFill) strin
 			defs.WriteString(`</linearGradient>`)
 		} else {
 			defs.WriteString(`</radialGradient>`)
+		}
+		if f.Projected {
+			tf := isoTopMatrix
+			if m := sideMatrix(face); m != "" {
+				tf = m
+			}
+			tag := `<linearGradient id="` + id + `"`
+			if f.Kind == "radialGradient" {
+				tag = `<radialGradient id="` + id + `"`
+			}
+			out := strings.Replace(defs.String(), tag, tag+` gradientTransform="`+tf+`"`, 1)
+			defs.Reset()
+			defs.WriteString(out)
 		}
 		return "url(#" + id + ")"
 	case "pattern":
