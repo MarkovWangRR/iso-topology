@@ -42,10 +42,15 @@ type IsoBoxOpts struct {
 	// v3.3 — per-face surface overrides (style.faces).
 	FaceSurfaces map[string]*FaceSurface
 	// v3.7 — gaussian blur stdDev applied to the whole part.
-	Blur       float64
-	IconAnchor string  // center | topLeft | topRight | bottomLeft | bottomRight
-	IconOffX   float64 // fraction of W
-	IconOffY   float64 // fraction of D
+	Blur float64
+	// v3.8 — silhouette accent ring (effects.outline).
+	OutlineColor   string
+	OutlineWidth   float64
+	OutlineDash    string
+	OutlineOpacity float64
+	IconAnchor     string  // center | topLeft | topRight | bottomLeft | bottomRight
+	IconOffX       float64 // fraction of W
+	IconOffY       float64 // fraction of D
 
 	// Padding around the projected shape in viewBox units
 	Margin float64
@@ -442,6 +447,14 @@ func RenderIsoBox(o IsoBoxOpts) string {
 		)
 	}
 
+	if o.OutlineColor != "" && o.OutlineWidth > 0 {
+		sil := (BoxShapeProvider{}).Silhouette(o.Width, o.Depth, o.Height, nil)
+		for k := range sil {
+			sil[k][0] += o.Margin
+			sil[k][1] += o.Margin
+		}
+		emitOutlineRing(&sb, sil, o.OutlineColor, o.OutlineWidth, o.OutlineDash, o.OutlineOpacity)
+	}
 	closeWrapper(&sb)
 	if blurOn {
 		sb.WriteString(`</g>`)

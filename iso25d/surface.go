@@ -227,3 +227,32 @@ func emitBlurOpen(sb *strings.Builder, id string, std float64) bool {
 		id, std, id)
 	return true
 }
+
+// emitOutlineRing strokes a closed accent ring along the given
+// silhouette (already in standalone-SVG local coords). Painted by each
+// renderer AFTER its faces so the ring inherits the part's authoritative
+// transform — no post-hoc frame matching (the inject-layer version
+// mis-registered against substrate-shifted composites).
+func emitOutlineRing(sb *strings.Builder, sil [][2]float64, color string, width float64, dash string, opacity float64) {
+	if color == "" || width <= 0 || len(sil) < 3 {
+		return
+	}
+	var d strings.Builder
+	for i, q := range sil {
+		if i == 0 {
+			fmt.Fprintf(&d, "M %.2f %.2f", q[0], q[1])
+		} else {
+			fmt.Fprintf(&d, " L %.2f %.2f", q[0], q[1])
+		}
+	}
+	d.WriteString(" Z")
+	extra := ""
+	if dash != "" {
+		extra += fmt.Sprintf(` stroke-dasharray="%s"`, escapeAttr(dash))
+	}
+	if opacity > 0 && opacity < 1 {
+		extra += fmt.Sprintf(` stroke-opacity="%.3f"`, opacity)
+	}
+	fmt.Fprintf(sb, `<path data-face="outline" d="%s" fill="none" stroke="%s" stroke-width="%.2f" stroke-linejoin="round"%s/>`,
+		d.String(), escapeAttr(color), width, extra)
+}

@@ -35,6 +35,13 @@ type IsoCylinderOpts struct {
 	RightGradient *FaceGradient
 	// v3.3 — per-face surface overrides (style.faces): top / left / right.
 	FaceSurfaces map[string]*FaceSurface
+	// v3.7 — gaussian blur stdDev over the whole part.
+	Blur float64
+	// v3.8 — silhouette accent ring (effects.outline).
+	OutlineColor   string
+	OutlineWidth   float64
+	OutlineDash    string
+	OutlineOpacity float64
 
 	Margin float64
 
@@ -131,6 +138,7 @@ func RenderIsoCylinder(o IsoCylinderOpts) string {
 		}
 	}
 	openWrapper(&sb, W, H, o.Background, o.Opacity, o.StrokeDasharray, "")
+	blurOn := emitBlurOpen(&sb, "cyl-blur", o.Blur)
 	if faceDefs.Len() > 0 {
 		fmt.Fprintf(&sb, `<defs>%s</defs>`, faceDefs.String())
 	}
@@ -213,7 +221,28 @@ func RenderIsoCylinder(o IsoCylinderOpts) string {
 		o.FontFamily, o.FontSize, o.FontWeight, o.FontColor,
 	)
 
+	if o.OutlineColor != "" && o.OutlineWidth > 0 {
+		// Reuse the renderer's own capsule coords (the provider silhouette
+		// lives in a different frame). Ring = body outline + top ellipse.
+		extra := ""
+		if o.OutlineDash != "" {
+			extra += fmt.Sprintf(` stroke-dasharray="%s"`, escapeAttr(o.OutlineDash))
+		}
+		if o.OutlineOpacity > 0 && o.OutlineOpacity < 1 {
+			extra += fmt.Sprintf(` stroke-opacity="%.3f"`, o.OutlineOpacity)
+		}
+		fmt.Fprintf(&sb,
+			`<path data-face="outline" d="M %.2f %.2f L %.2f %.2f A %.2f %.2f 0 0 0 %.2f %.2f L %.2f %.2f" fill="none" stroke="%s" stroke-width="%.2f" stroke-linejoin="round" stroke-linecap="round"%s/>`,
+			leftTopX, leftTopY, leftBotX, leftBotY, rx, ry, rightBotX, rightBotY, rightTopX, rightTopY,
+			escapeAttr(o.OutlineColor), o.OutlineWidth, extra)
+		fmt.Fprintf(&sb,
+			`<ellipse data-face="outline" cx="%.2f" cy="%.2f" rx="%.2f" ry="%.2f" fill="none" stroke="%s" stroke-width="%.2f"%s/>`,
+			sx(topCx), sy(topCy), rx, ry, escapeAttr(o.OutlineColor), o.OutlineWidth, extra)
+	}
 	closeWrapper(&sb)
+	if blurOn {
+		sb.WriteString(`</g>`)
+	}
 	sb.WriteString(`</svg>`)
 	return sb.String()
 }
@@ -245,6 +274,9 @@ func applyCylinder(o ConvertOpts, c *IsoCylinderOpts) {
 	c.LeftGradient = o.LeftGradient
 	c.RightGradient = o.RightGradient
 	c.FaceSurfaces = o.FaceSurfaces
+	c.Blur = o.Blur
+	c.OutlineColor, c.OutlineWidth = o.OutlineColor, o.OutlineWidth
+	c.OutlineDash, c.OutlineOpacity = o.OutlineDash, o.OutlineOpacity
 	if o.Stroke != "" {
 		c.Stroke = o.Stroke
 	}
