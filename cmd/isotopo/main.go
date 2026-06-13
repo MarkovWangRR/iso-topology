@@ -24,6 +24,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -226,6 +227,252 @@ func upsertInlineList(src string, startLine int, key string, pts [][2]float64) (
 		lines = out
 	}
 	return strings.Join(lines, "\n"), true
+}
+
+// ── Detail editor: extract a node/edge's scalar fields and write them back,
+// with human-friendly labels, for the Studio right-click "edit details" UI.
+
+type editField struct {
+	Key      string   `json:"key"`
+	Label    string   `json:"label"`
+	Value    string   `json:"value"`
+	Type     string   `json:"type"`              // "text" | "select"
+	Options  []string `json:"options,omitempty"` // for select
+	ReadOnly bool     `json:"readonly,omitempty"`
+}
+
+// fieldLabels maps raw YAML keys to a semantic, human-readable label so the
+// detail modal reads as plain language rather than the bare DSL keys.
+var fieldLabels = map[string]string{
+	"id": "标识 ID", "label": "名称 Label", "icon": "图标 Icon",
+	"shape": "形状 Shape", "preset": "预设 Preset", "from": "起点 From",
+	"to": "终点 To", "arrow": "箭头 Arrow", "routing": "走线方式 Routing",
+	"labelBg": "标签底色 Label BG", "labelColor": "标签文字色 Label Color",
+	"labelFontSize": "标签字号 Label Size", "elbow": "拐弯方向 Elbow",
+	"grid": "网格 Grid", "color": "颜色 Color", "dash": "虚线 Dash",
+	"width": "线宽 Width", "group": "分组 Group", "kind": "类型 Kind",
+}
+
+func fieldLabel(k string) string {
+	if v, ok := fieldLabels[k]; ok {
+		return v
+	}
+	return k
+}
+
+// fieldEnums lists the allowed values for keys rendered as a dropdown.
+var fieldEnums = map[string][]string{
+	"arrow":   {"none", "triangle"},
+	"routing": {"orthogonal", "straight", "bezier"},
+	"elbow":   {"xFirst", "yFirst"},
+}
+
+// readOnlyKeys can be shown but not edited (changing them breaks references).
+var readOnlyKeys = map[string]bool{"id": true}
+
+// splitTopCommas splits a YAML flow-map body on top-level commas, respecting
+// nested {}/[] and double-quoted strings.
+func splitTopCommas(s string) []string {
+	var out []string
+	depth, inStr := 0, false
+	var b strings.Builder
+	for _, r := range s {
+		switch r {
+		case '"':
+			inStr = !inStr
+		case '{', '[':
+			if !inStr {
+				depth++
+			}
+		case '}', ']':
+			if !inStr {
+				depth--
+			}
+		case ',':
+			if !inStr && depth == 0 {
+				out = append(out, b.String())
+				b.Reset()
+				continue
+			}
+		}
+		b.WriteRune(r)
+	}
+	if strings.TrimSpace(b.String()) != "" {
+		out = append(out, b.String())
+	}
+	return out
+}
+
+func unquoteYAML(v string) string {
+	v = strings.TrimSpace(v)
+	if len(v) >= 2 && v[0] == '"' && v[len(v)-1] == '"' {
+		if uq, err := strconv.Unquote(v); err == nil {
+			return uq
+		}
+		return v[1 : len(v)-1]
+	}
+	return v
+}
+
+// scalarKV reports whether a "key: value" pair carries an editable scalar
+// (non-empty, not the start of a nested map/list), returning (key, value).
+func scalarKV(s string) (string, string, bool) {
+	kv := strings.SplitN(s, ":", 2)
+	if len(kv) != 2 {
+		return "", "", false
+	}
+	key := strings.TrimSpace(kv[0])
+	val := strings.TrimSpace(kv[1])
+	if c := strings.Index(val, " #"); c >= 0 { // strip trailing comment
+		val = strings.TrimSpace(val[:c])
+	}
+	if key == "" || val == "" || strings.HasPrefix(val, "{") || strings.HasPrefix(val, "[") {
+		return "", "", false
+	}
+	return key, val, true
+}
+
+func mkField(key, val string) editField {
+	f := editField{Key: key, Label: fieldLabel(key), Value: unquoteYAML(val), Type: "text", ReadOnly: readOnlyKeys[key]}
+	if opts, ok := fieldEnums[key]; ok {
+		f.Type = "select"
+		f.Options = opts
+	}
+	return f
+}
+
+// extractFields returns the scalar key/value pairs actually present in the
+// node/edge block at startLine (flow or block form), in source order — what
+// the detail modal renders. Nested maps/lists are skipped.
+func extractFields(src string, startLine int) []editField {
+	lines := strings.Split(src, "\n")
+	if startLine < 0 || startLine >= len(lines) {
+		return nil
+	}
+	var fields []editField
+	seen := map[string]bool{}
+	add := func(k, v string) {
+		if seen[k] {
+			return
+		}
+		seen[k] = true
+		fields = append(fields, mkField(k, v))
+	}
+	line := lines[startLine]
+	// Flow form: `- { id: c, label: "X", ... }`
+	if i := strings.Index(line, "{"); i >= 0 && strings.Contains(line[i:], "}") {
+		inner := line[i+1:]
+		if j := strings.LastIndex(inner, "}"); j >= 0 {
+			inner = inner[:j]
+		}
+		for _, part := range splitTopCommas(inner) {
+			if k, v, ok := scalarKV(part); ok {
+				add(k, v)
+			}
+		}
+		return fields
+	}
+	// Block form: the start line may itself hold `- key: value`.
+	itemIndent := indentOf(lines[startLine])
+	if k, v, ok := scalarKV(strings.TrimPrefix(strings.TrimSpace(line), "- ")); ok {
+		add(k, v)
+	}
+	childIndent := itemIndent + 2
+	for i := startLine + 1; i < len(lines); i++ {
+		if strings.TrimSpace(lines[i]) == "" {
+			continue
+		}
+		ind := indentOf(lines[i])
+		if ind <= itemIndent {
+			break
+		}
+		if ind != childIndent || strings.HasPrefix(strings.TrimSpace(lines[i]), "#") {
+			continue
+		}
+		if k, v, ok := scalarKV(strings.TrimSpace(lines[i])); ok {
+			add(k, v)
+		}
+	}
+	return fields
+}
+
+// yamlScalar renders a value for write-back, quoting when it contains
+// characters that aren't safe bare (spaces, ':', flow punctuation, …).
+func yamlScalar(v string) string {
+	if v == "" {
+		return `""`
+	}
+	if regexp.MustCompile(`^[A-Za-z0-9_.\-/]+$`).MatchString(v) {
+		return v
+	}
+	return `"` + strings.ReplaceAll(strings.ReplaceAll(v, `\`, `\\`), `"`, `\"`) + `"`
+}
+
+// upsertScalar sets `key: value` inside the node/edge block at startLine
+// (flow or block form), preserving comments/formatting. An empty value
+// removes the key. Mirrors upsertInlineKey's surgery for scalar values.
+func upsertScalar(src string, startLine int, key, value string) (string, bool) {
+	lines := strings.Split(src, "\n")
+	if startLine < 0 || startLine >= len(lines) {
+		return src, false
+	}
+	itemIndent := indentOf(lines[startLine])
+	childIndent := itemIndent + 2
+	remove := value == ""
+
+	if strings.Contains(lines[startLine], "{") && strings.Contains(lines[startLine], "}") {
+		l := lines[startLine]
+		l = regexp.MustCompile(`,?\s*`+regexp.QuoteMeta(key)+`:\s*("(?:[^"\\]|\\.)*"|[^,}]*)`).ReplaceAllString(l, "")
+		if !remove {
+			val := fmt.Sprintf("%s: %s, ", key, yamlScalar(value))
+			if i := strings.Index(l, "{"); i >= 0 {
+				l = l[:i+1] + " " + val + strings.TrimLeft(l[i+1:], " ")
+			}
+		}
+		l = regexp.MustCompile(`\{\s*,`).ReplaceAllString(l, "{ ")
+		l = regexp.MustCompile(`,\s*,`).ReplaceAllString(l, ", ")
+		l = regexp.MustCompile(`,\s*\}`).ReplaceAllString(l, " }")
+		lines[startLine] = l
+		return strings.Join(lines, "\n"), true
+	}
+
+	// Block form. The anchor key on the start line (`- key: value`) is edited
+	// in place; never removed (it holds the item together).
+	if m := regexp.MustCompile(`^(\s*-\s*)` + regexp.QuoteMeta(key) + `:`).FindStringSubmatch(lines[startLine]); m != nil {
+		if !remove {
+			lines[startLine] = m[1] + key + ": " + yamlScalar(value)
+		}
+		return strings.Join(lines, "\n"), true
+	}
+	blockEnd := len(lines)
+	for i := startLine + 1; i < len(lines); i++ {
+		if strings.TrimSpace(lines[i]) == "" {
+			continue
+		}
+		if indentOf(lines[i]) <= itemIndent {
+			blockEnd = i
+			break
+		}
+	}
+	keyRe := regexp.MustCompile(`^\s*` + regexp.QuoteMeta(key) + `:`)
+	newLine := strings.Repeat(" ", childIndent) + key + ": " + yamlScalar(value)
+	for i := startLine + 1; i < blockEnd; i++ {
+		if indentOf(lines[i]) == childIndent && keyRe.MatchString(lines[i]) {
+			out := append([]string{}, lines[:i]...)
+			if !remove {
+				out = append(out, newLine)
+			}
+			out = append(out, lines[i+1:]...)
+			return strings.Join(out, "\n"), true
+		}
+	}
+	if remove {
+		return strings.Join(lines, "\n"), true
+	}
+	out := append([]string{}, lines[:startLine+1]...)
+	out = append(out, newLine)
+	out = append(out, lines[startLine+1:]...)
+	return strings.Join(out, "\n"), true
 }
 
 // findPartIDLine returns the line index of `id: <id>` (with optional
@@ -723,6 +970,76 @@ func serveFile(in string) error {
 		if !ok {
 			http.Error(w, "target not found in source", 422)
 			return
+		}
+		svg, issues, _ := render(lang, []byte(out))
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]any{"yaml": out, "svg": svg, "issues": issues})
+	})
+	// v4.7 — detail editor. /api/fields returns the scalar fields actually
+	// present in a node/edge's YAML, each with a semantic label, for the
+	// right-click "edit details" modal. /api/edit writes the user's changes
+	// back (comment-preserving) and re-renders.
+	targetLine := func(src string, q url.Values) (int, bool) {
+		switch q.Get("kind") {
+		case "node":
+			return findPartIDLine(src, q.Get("id")), true
+		case "edge":
+			ci, _ := strconv.Atoi(q.Get("ci"))
+			return findConnectorLine(src, ci), true
+		}
+		return -1, false
+	}
+	mux.HandleFunc("POST /api/fields", func(w http.ResponseWriter, r *http.Request) {
+		body, err := io.ReadAll(io.LimitReader(r.Body, 4<<20))
+		if err != nil {
+			http.Error(w, err.Error(), 400)
+			return
+		}
+		src := string(body)
+		line, ok := targetLine(src, r.URL.Query())
+		if !ok {
+			http.Error(w, "kind must be node|edge", 400)
+			return
+		}
+		if line < 0 {
+			http.Error(w, "target not found in source", 422)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]any{"fields": extractFields(src, line)})
+	})
+	mux.HandleFunc("POST /api/edit", func(w http.ResponseWriter, r *http.Request) {
+		body, err := io.ReadAll(io.LimitReader(r.Body, 4<<20))
+		if err != nil {
+			http.Error(w, err.Error(), 400)
+			return
+		}
+		q := r.URL.Query()
+		var changes map[string]string
+		if err := json.Unmarshal([]byte(q.Get("f")), &changes); err != nil {
+			http.Error(w, "bad f: "+err.Error(), 400)
+			return
+		}
+		out := string(body)
+		// Re-find the target after each edit: a write can shift line numbers.
+		for key, val := range changes {
+			if readOnlyKeys[key] {
+				continue
+			}
+			line, ok := targetLine(out, q)
+			if !ok {
+				http.Error(w, "kind must be node|edge", 400)
+				return
+			}
+			if line < 0 {
+				http.Error(w, "target not found in source", 422)
+				return
+			}
+			out, _ = upsertScalar(out, line, key, val)
+		}
+		lang := q.Get("format")
+		if lang == "" {
+			lang = sourceLang
 		}
 		svg, issues, _ := render(lang, []byte(out))
 		w.Header().Set("Content-Type", "application/json")

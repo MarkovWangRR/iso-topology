@@ -219,6 +219,31 @@ svg g[data-part-id].dragging{filter:drop-shadow(0 0 9px var(--accent));opacity:.
 svg path[data-connector]:hover{stroke:var(--accent-deep);filter:drop-shadow(0 0 3px var(--accent)) drop-shadow(0 0 7px var(--accent));}
 svg path[data-connector].dragging{stroke:var(--accent);filter:drop-shadow(0 0 5px var(--accent)) drop-shadow(0 0 11px var(--accent));}
 svg path[data-connector].pinned{stroke:var(--accent-deep);filter:drop-shadow(0 0 3px var(--accent)) drop-shadow(0 0 7px var(--accent));}
+#ctxmenu{position:fixed;z-index:50;background:white;border:1px solid var(--border);border-radius:8px;
+  box-shadow:0 8px 28px rgba(15,23,42,.18);padding:4px;min-width:128px;}
+#ctxmenu button{display:block;width:100%;text-align:left;border:0;background:transparent;border-radius:5px;
+  font:12px Inter,sans-serif;color:#334155;padding:7px 11px;cursor:pointer;}
+#ctxmenu button:hover{background:var(--accent-soft);color:var(--accent-deep);}
+#detailModal{position:fixed;inset:0;z-index:60;background:rgba(15,23,42,.30);display:flex;align-items:center;justify-content:center;}
+.detail-card{background:white;border-radius:12px;box-shadow:0 24px 60px rgba(15,23,42,.30);width:min(440px,92vw);
+  max-height:84vh;display:flex;flex-direction:column;overflow:hidden;}
+.detail-head{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border);}
+.detail-head b{font:600 14px Inter,sans-serif;color:#0F172A;}
+.detail-x{cursor:pointer;color:#94A3B8;font-size:15px;line-height:1;padding:2px 4px;border-radius:5px;}
+.detail-x:hover{background:#F1F5F9;color:#334155;}
+.detail-fields{padding:14px 18px;overflow:auto;display:flex;flex-direction:column;gap:11px;}
+.df-row{display:flex;flex-direction:column;gap:4px;}
+.df-k{font:600 11px Inter,sans-serif;color:#64748B;letter-spacing:.02em;}
+.df-row input,.df-row select{font:13px ui-monospace,Menlo,monospace;color:#0F172A;background:var(--code-bg);
+  border:1px solid var(--border);border-radius:7px;padding:7px 10px;outline:none;}
+.df-row input:focus,.df-row select:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);}
+.df-row input:disabled{color:#94A3B8;background:#F8FAFC;}
+.detail-foot{display:flex;justify-content:flex-end;gap:8px;padding:13px 18px;border-top:1px solid var(--border);}
+.detail-foot button{font:600 12px Inter,sans-serif;border-radius:7px;padding:8px 16px;cursor:pointer;border:1px solid transparent;}
+.detail-foot .btn-ghost{background:white;border-color:var(--border);color:#475569;}
+.detail-foot .btn-ghost:hover{background:#F4F6FA;}
+#detailApply{background:var(--accent);color:white;}
+#detailApply:hover{background:var(--accent-deep);}
 </style></head><body>
 <header>
   <div class="brand">
@@ -294,8 +319,19 @@ svg path[data-connector].pinned{stroke:var(--accent-deep);filter:drop-shadow(0 0
     <div class="hrow"><span>Jump to an error</span><span>click it in the issues panel</span></div>
   </div>
 </div>
+<div id="ctxmenu" hidden><button id="ctxedit" type="button">✎ 修改细节</button></div>
+<div id="detailModal" hidden>
+  <div class="detail-card">
+    <div class="detail-head"><b id="detailTitle">修改细节</b><span class="detail-x" onclick="closeDetail()">✕</span></div>
+    <div id="detailFields" class="detail-fields"></div>
+    <div class="detail-foot">
+      <button type="button" class="btn-ghost" onclick="closeDetail()">取消</button>
+      <button type="button" id="detailApply" onclick="applyDetail()">更新</button>
+    </div>
+  </div>
+</div>
 <footer>
-  <span>Hover a node to jump to its source &middot; click to pin</span>
+  <span>Hover a node to jump to its source &middot; click to pin &middot; right-click to edit</span>
   <span>Scroll to zoom · drag to pan · double-click to reset</span>
   <span><kbd>⌘</kbd>+<kbd>↵</kbd> render &middot; <a onclick="toggleHelp()" style="cursor:pointer">all shortcuts</a></span>
   <span class="spacer" style="flex:1"></span>
@@ -618,6 +654,75 @@ async function commitMove(kind,key,dwx,dwy,dropX,dropY,wp){
     showIssues(data.issues||[]);
   }catch(_){}
 }
+/* ── right-click → context menu → "修改细节" detail editor ──────────── */
+const ctxmenu=document.getElementById('ctxmenu');
+const detailModal=document.getElementById('detailModal');
+const detailFields=document.getElementById('detailFields');
+const detailTitle=document.getElementById('detailTitle');
+let ctxTarget=null, detailTarget=null;
+function escAttr(t){return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');}
+function showCtx(x,y,kind,key){
+  ctxTarget={kind,key};
+  ctxmenu.style.left=Math.min(x,innerWidth-150)+'px';
+  ctxmenu.style.top=Math.min(y,innerHeight-60)+'px';
+  ctxmenu.hidden=false;
+}
+function hideCtx(){ctxmenu.hidden=true;}
+document.addEventListener('mousedown',e=>{ if(!ctxmenu.hidden && !ctxmenu.contains(e.target)) hideCtx(); });
+document.addEventListener('scroll',hideCtx,true);
+document.getElementById('ctxedit').addEventListener('click',()=>{ if(ctxTarget) openDetail(ctxTarget); });
+async function openDetail(t){
+  hideCtx();
+  if(!serverOK) return;
+  const qp = t.kind==='node' ? 'kind=node&id='+encodeURIComponent(t.key) : 'kind=edge&ci='+t.key;
+  try{
+    const r=await fetch('/api/fields?'+qp+'&format='+encodeURIComponent(LANG),{method:'POST',body:srcEl.value});
+    if(!r.ok) return;
+    const data=await r.json();
+    detailTarget=t;
+    detailTitle.textContent=(t.kind==='node'?'节点 · ':'连线 · ')+t.key;
+    const fields=data.fields||[];
+    if(!fields.length){
+      detailFields.innerHTML='<div class="df-k" style="padding:8px 0">此元素暂无可编辑的简单字段。</div>';
+    }else{
+      detailFields.innerHTML=fields.map((f,i)=>{
+        const id='df_'+i, dis=f.readonly?' disabled':'';
+        let inp;
+        if(f.type==='select'){
+          inp='<select id="'+id+'" data-key="'+escAttr(f.key)+'" data-orig="'+escAttr(f.value)+'"'+dis+'>'+
+            (f.options||[]).map(o=>'<option'+(o===f.value?' selected':'')+'>'+esc(o)+'</option>').join('')+'</select>';
+        }else{
+          inp='<input id="'+id+'" data-key="'+escAttr(f.key)+'" data-orig="'+escAttr(f.value)+'" value="'+escAttr(f.value)+'"'+dis+'>';
+        }
+        return '<label class="df-row" for="'+id+'"><span class="df-k">'+esc(f.label)+'</span>'+inp+'</label>';
+      }).join('');
+    }
+    detailModal.hidden=false;
+  }catch(_){}
+}
+function closeDetail(){detailModal.hidden=true; detailTarget=null;}
+detailModal.addEventListener('mousedown',e=>{ if(e.target===detailModal) closeDetail(); });
+async function applyDetail(){
+  if(!detailTarget||!serverOK) return;
+  const t=detailTarget, changes={};
+  detailFields.querySelectorAll('[data-key]').forEach(el=>{
+    if(el.disabled) return;
+    if(el.value!==el.getAttribute('data-orig')) changes[el.getAttribute('data-key')]=el.value;
+  });
+  if(!Object.keys(changes).length){ closeDetail(); return; }
+  const qp = t.kind==='node' ? 'kind=node&id='+encodeURIComponent(t.key) : 'kind=edge&ci='+t.key;
+  try{
+    const r=await fetch('/api/edit?'+qp+'&f='+encodeURIComponent(JSON.stringify(changes))+'&format='+encodeURIComponent(LANG),
+      {method:'POST',body:srcEl.value});
+    if(!r.ok) return;
+    const data=await r.json();
+    if(typeof data.yaml==='string'){ srcEl.value=data.yaml; setDirty(srcEl.value!==ORIGINAL);
+      try{localStorage.setItem(DRAFTKEY,srcEl.value);}catch(_){} }
+    if(data.svg){ zoomer.innerHTML=data.svg; buildMap(); paint(pinnedRange()); wireHover(); wireDrag(); adaptStage(); }
+    showIssues(data.issues||[]);
+    closeDetail();
+  }catch(_){}
+}
 function wireDrag(){
   // Attach unconditionally — probe() may not have resolved at first
   // paint; commitMove() guards on serverOK at drop time instead.
@@ -627,6 +732,7 @@ function wireDrag(){
     // movable the instant the pointer is over it.
     g.style.cursor='move';
     g.addEventListener('mousedown',e=>{
+      if(e.button!==0) return;   // left-button drags only; right-click = context menu
       e.preventDefault();   // suppress the browser's native SVG image-drag
       e.stopPropagation();  // don't let the viewport start a pan
       g.style.cursor='grabbing';
@@ -641,11 +747,20 @@ function wireDrag(){
       });
       nodeDrag={el:g,id:did,x:e.clientX,y:e.clientY,base:g.getAttribute('transform')||'',edges};
     });
+    g.addEventListener('contextmenu',e=>{
+      e.preventDefault(); e.stopPropagation();
+      showCtx(e.clientX,e.clientY,'node',g.getAttribute('data-part-id').replace(/~\d+$/,''));
+    });
   });
   zoomer.querySelectorAll('path[data-connector]').forEach(p=>{
     p.setAttribute('stroke-width', Math.max(parseFloat(p.getAttribute('stroke-width')||'1.4'),3));
     p.style.cursor='move';
+    p.addEventListener('contextmenu',e=>{
+      e.preventDefault(); e.stopPropagation();
+      showCtx(e.clientX,e.clientY,'edge',p.getAttribute('data-connector'));
+    });
     p.addEventListener('mousedown',e=>{
+      if(e.button!==0) return;   // left-button drags only; right-click = context menu
       e.preventDefault();
       e.stopPropagation();
       p.style.cursor='grabbing';
@@ -904,7 +1019,7 @@ window.addEventListener('keydown',e=>{
   if((e.metaKey||e.ctrlKey)&&e.key==='0'){e.preventDefault();fitView();return;}
   if((e.metaKey||e.ctrlKey)&&(e.key==='='||e.key==='+')){e.preventDefault();zoomBy(1.25);return;}
   if((e.metaKey||e.ctrlKey)&&e.key==='-'){e.preventDefault();zoomBy(0.8);return;}
-  if(e.key==='Escape'){document.getElementById('help').hidden=true;return;}
+  if(e.key==='Escape'){document.getElementById('help').hidden=true;hideCtx();closeDetail();return;}
   if(e.key==='?'&&document.activeElement!==srcEl){toggleHelp();}
 });
 function toggleHelp(){
