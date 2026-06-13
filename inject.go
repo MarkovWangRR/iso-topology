@@ -657,6 +657,27 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo,
 				xFirst = true
 			case "yFirst":
 				xFirst = false
+			default:
+				// v4.3 — kill the "tent": in iso, screen-y ∝ (x+y) at a
+				// fixed routeZ, so an L whose corner has (x+y) OUTSIDE the
+				// endpoints' range projects to a ∧/∨ detour that climbs
+				// then plunges. The two elbow orders put the corner at
+				// (tStub,sStub) or (sStub,tStub); pick the one whose corner
+				// sum stays between the endpoints (monotonic screen-y), and
+				// on a tie the one closest to the straight-line midpoint.
+				const eps0 = 0.5
+				srcSum, tgtSum := sWX+sWY, tWX+tWY
+				lo, hi := math.Min(srcSum, tgtSum), math.Max(srcSum, tgtSum)
+				cornerXFirst := tStubX + sStubY
+				cornerYFirst := sStubX + tStubY
+				xIn := cornerXFirst >= lo-eps0 && cornerXFirst <= hi+eps0
+				yIn := cornerYFirst >= lo-eps0 && cornerYFirst <= hi+eps0
+				if xIn != yIn {
+					xFirst = xIn
+				} else {
+					mid := (srcSum + tgtSum) / 2
+					xFirst = math.Abs(cornerXFirst-mid) <= math.Abs(cornerYFirst-mid)
+				}
 			}
 			if xFirst {
 				// Source exits along world x → walk x then y.
