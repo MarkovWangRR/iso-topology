@@ -415,15 +415,17 @@ function optGlyph(key,val){
     'routing:straight':'<path d="M3 16 17 4"/>',
     'routing:bezier':'<path d="M3 16 C9 16 11 4 17 4"/>',
     'shape:rectangle':'<path d="M3 8 10 4 17 8 10 12Z"/><path d="M3 8 3 12 10 16 10 12"/><path d="M17 8 17 12 10 16"/>',
-    'shape:box':'<path d="M3 8 10 4 17 8 10 12Z"/><path d="M3 8 3 12 10 16 10 12"/><path d="M17 8 17 12 10 16"/>',
     'shape:cylinder':'<ellipse cx="10" cy="6" rx="6" ry="2.4"/><path d="M4 6 4 14 A6 2.4 0 0 0 16 14 L16 6"/>',
-    'shape:sphere':'<circle cx="10" cy="10" r="6"/>',
+    'shape:circle':'<circle cx="10" cy="10" r="6"/>',
     'shape:cloud':'<path d="M6.5 15 A3 3 0 0 1 7 9 A4 4 0 0 1 14.5 10 A2.6 2.6 0 0 1 14 15Z"/>',
     'shape:person':'<circle cx="10" cy="6.5" r="2.6"/><path d="M5 16 A5 5 0 0 1 15 16"/>',
-    'shape:prism':'<path d="M10 3 17 16 3 16Z"/>',
+    'shape:prism':'<path d="M10 3 17 8 14.5 16 5.5 16 3 8Z"/>',
     'shape:hexprism':'<path d="M6 4 14 4 17 10 14 16 6 16 3 10Z"/>',
-    'shape:polygon':'<path d="M10 3 17 8 14.5 16 5.5 16 3 8Z"/>',
+    'shape:triprism':'<path d="M10 3 17 16 3 16Z"/>',
+    'shape:octprism':'<path d="M7 3 13 3 17 7 17 13 13 17 7 17 3 13 3 7Z"/>',
+    'shape:diamond':'<path d="M10 3 16 10 10 17 4 10Z"/>',
     'shape:group':'<rect x="3" y="3" width="14" height="14" rx="2" stroke-dasharray="3 2"/>',
+    'shape:boundary':'<rect x="3" y="3" width="14" height="14" rx="3" stroke-dasharray="3 2.5"/>',
     'shape:text':'<path d="M5 5 15 5M10 5 10 15"/>'
   };
   const inner=G[key+':'+val]||'<circle cx="10" cy="10" r="3"/>';
