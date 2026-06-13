@@ -10,6 +10,13 @@ tops), `iso://glyph/<name>/light` (white, for dark tops),
 `iso://glyph/<name>/<RRGGBB>` (any color), or
 `iso://brand/<name>` for letter badges.
 
+**Custom icons.** Beyond the built-ins, `icon` accepts an http(s)
+URL, a `data:` URI, or a **local image file path** (svg/png/jpg/
+gif/webp — absolute or relative, `~` and `file://` accepted). Local
+paths are read and inlined as a data URI at render time, so the
+output SVG stays self-contained. In Studio, the Edit-details → Icon
+field has a **Browse…** button that embeds a picked file directly.
+
 ## Glyphs
 
 | | Name | URI | Description |

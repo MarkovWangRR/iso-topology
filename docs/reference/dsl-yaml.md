@@ -111,7 +111,8 @@ One entry inside `nodes.scene.parts`:
     rightOf: gateway   # position = solved from a sibling relation
     gap: 2             # in cells
   label: "API Gateway"
-  icon: "iso://brand/kafka"    # optional icon (brand badge / URL / data-URI)
+  icon: "iso://brand/kafka"    # iso:// ref, http(s) URL, data: URI, or a
+                               # local image path (./logo.svg — inlined at render)
   style:
     palette: {top: "#3B82F6"}
     text:    {color: "#FFFFFF"}
@@ -273,6 +274,24 @@ nodes:
 to exactly ±30°, in register with `canvas.grid: iso`) — prefer it
 for architecture flows. `bezier` draws a single soft quadratic arc —
 reads as async/replication traffic.
+
+**Manual routing** (usually written by the Studio edge-drag, but valid
+to hand-author): an orthogonal connector may carry explicit interior
+corners so the line takes a path you choose while both endpoints stay
+docked to their nodes:
+
+```yaml
+      - from: api
+        to:   db
+        routing: orthogonal
+        waypoints: [{wx: 120, wy: -40}, {wx: 120, wy: 60}]   # world corners, source→target
+```
+
+`waypoints` is a list of interior corner points in world coordinates
+(source → target); the route threads through them and is kept
+iso-axis-aligned. `bend: {wx, wy}` is the older single-corner form
+(a world offset applied to the auto route's interior); `waypoints`
+supersedes it.
 
 Anchor selectors: `"api.right-mid"`, `"api.top-back"`, etc. — pick a
 specific face-center on the source/target part. Default is the part
