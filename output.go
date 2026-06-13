@@ -681,10 +681,15 @@ function hideCtx(){ctxmenu.hidden=true;}
 document.addEventListener('mousedown',e=>{ if(!ctxmenu.hidden && !ctxmenu.contains(e.target)) hideCtx(); });
 document.addEventListener('scroll',hideCtx,true);
 document.getElementById('ctxedit').addEventListener('click',()=>{ if(ctxTarget) openDetail(ctxTarget); });
+function qpFor(t){
+  if(t.kind==='node') return 'kind=node&id='+encodeURIComponent(t.key);
+  if(t.kind==='edge') return 'kind=edge&ci='+t.key;
+  return 'kind=canvas';
+}
 async function openDetail(t){
   hideCtx();
   if(!serverOK) return;
-  const qp = t.kind==='node' ? 'kind=node&id='+encodeURIComponent(t.key) : 'kind=edge&ci='+t.key;
+  const qp = qpFor(t);
   try{
     const r=await fetch('/api/fields?'+qp+'&format='+encodeURIComponent(LANG),{method:'POST',body:srcEl.value});
     if(!r.ok) return;
@@ -693,6 +698,8 @@ async function openDetail(t){
     const fields=data.fields||[];
     if(t.kind==='node'){
       detailTitle.textContent='Edit node — '+t.key;
+    }else if(t.kind==='canvas'){
+      detailTitle.textContent='Edit canvas & background';
     }else{
       const fv=k=>{const f=fields.find(x=>x.key===k);return f?f.value:'';};
       detailTitle.textContent='Edit edge — '+(fv('from')||'?')+' → '+(fv('to')||'?');
@@ -754,7 +761,7 @@ async function applyDetail(){
     if(el.value!==el.getAttribute('data-orig')) changes[el.getAttribute('data-key')]=el.value;
   });
   if(!Object.keys(changes).length){ closeDetail(); return; }
-  const qp = t.kind==='node' ? 'kind=node&id='+encodeURIComponent(t.key) : 'kind=edge&ci='+t.key;
+  const qp = qpFor(t);
   try{
     const r=await fetch('/api/edit?'+qp+'&f='+encodeURIComponent(JSON.stringify(changes))+'&format='+encodeURIComponent(LANG),
       {method:'POST',body:srcEl.value});
@@ -926,6 +933,14 @@ viewport.addEventListener('dblclick',resetView);
 viewport.addEventListener('click',e=>{
   if(e.target.closest && e.target.closest('g[data-part-id]')) return;
   if(pinId!==null||pinCi!==null){pinId=null;pinCi=null;glowOnly(null);glowEdge(null);paint(null);}
+});
+// Right-click the empty canvas → edit the whole-image background/grid. Node
+// and edge contextmenu handlers stopPropagation, so this fires only on bare
+// canvas (or a node/edge face that isn't draggable, which is fine).
+viewport.addEventListener('contextmenu',e=>{
+  if(e.target.closest && (e.target.closest('g[data-part-id]')||e.target.closest('path[data-connector]'))) return;
+  e.preventDefault();
+  showCtx(e.clientX,e.clientY,'canvas','');
 });
 
 /* ── adaptive stage: tint the backdrop after the scene's canvas ── */

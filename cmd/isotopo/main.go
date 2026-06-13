@@ -265,6 +265,17 @@ func nodeSchema() []schemaField {
 	}
 }
 
+func canvasSchema() []schemaField {
+	return []schemaField{
+		{Path: "background", Label: "Background", Desc: "Canvas fill behind the diagram (CSS color)", Type: "color"},
+		{Path: "grid", Label: "Grid pattern", Desc: "Background texture", Type: "select",
+			Options: []string{"none", "iso", "dots", "hatch", "solid"}},
+		{Path: "gridColor", Label: "Grid color", Desc: "Grid/texture line color (CSS color)", Type: "color"},
+		{Path: "gridStep", Label: "Grid step", Desc: "Grid cell size in world units (blank = default)", Type: "number"},
+		{Path: "padding", Label: "Padding", Desc: "Outer breathing margin around the scene, px", Type: "number"},
+	}
+}
+
 func edgeSchema() []schemaField {
 	return []schemaField{
 		{Path: "label", Label: "Label", Desc: "Text rendered mid-route", Type: "text"},
@@ -450,6 +461,14 @@ func schemaWithValues(src, kind, id string, ci int) ([]schemaField, bool) {
 			subtree, _ = conns[ci].(map[string]interface{})
 		}
 		fields = edgeSchema()
+	case "canvas":
+		// canvas may be absent — still show the schema so the user can add a
+		// background/grid from scratch (the editor creates the block on save).
+		subtree, _ = root["canvas"].(map[string]interface{})
+		if subtree == nil {
+			subtree = map[string]interface{}{}
+		}
+		fields = canvasSchema()
 	default:
 		return nil, false
 	}
@@ -710,6 +729,18 @@ func findConnectorLine(src string, ci int) int {
 				return i
 			}
 			n++
+		}
+	}
+	return -1
+}
+
+// findCanvasLine returns the line index of the top-level `canvas:` key
+// (flow `canvas: { … }` or block form), or -1.
+func findCanvasLine(src string) int {
+	re := regexp.MustCompile(`^\s*canvas\s*:`)
+	for i, l := range strings.Split(src, "\n") {
+		if re.MatchString(l) {
+			return i
 		}
 	}
 	return -1
@@ -1178,6 +1209,8 @@ func serveFile(in string) error {
 		case "edge":
 			ci, _ := strconv.Atoi(q.Get("ci"))
 			return findConnectorLine(src, ci), true
+		case "canvas":
+			return findCanvasLine(src), true
 		}
 		return -1, false
 	}
@@ -1211,11 +1244,16 @@ func serveFile(in string) error {
 			return
 		}
 		out := string(body)
+		// Editing the canvas when no `canvas:` block exists yet: create an
+		// empty one at the top so the writes below have somewhere to land.
+		if q.Get("kind") == "canvas" && findCanvasLine(out) < 0 {
+			out = "canvas: {}\n" + out
+		}
 		// Re-find the target after each edit: a write can shift line numbers.
 		for key, val := range changes {
 			line, ok := targetLine(out, q)
 			if !ok {
-				http.Error(w, "kind must be node|edge", 400)
+				http.Error(w, "kind must be node|edge|canvas", 400)
 				return
 			}
 			if line < 0 {
