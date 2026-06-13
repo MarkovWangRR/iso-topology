@@ -179,25 +179,109 @@ func arrangeAuto(parts []*CompositePart, conns []*Connector, lay *Layout, cell f
 		x += maxW + gapW
 	}
 
-	rankExtent := make([]float64, len(ranks))
+	// Undirected neighbour map for crossing reduction + median alignment.
+	nbr := map[string][]string{}
+	for u, vs := range adj {
+		for _, v := range vs {
+			nbr[u] = append(nbr[u], v)
+			nbr[v] = append(nbr[v], u)
+		}
+	}
+
+	// y-CENTRE of each part, packed within its rank in current order.
+	cy := map[string]float64{}
 	maxExtent := 0.0
 	for r := range ranks {
 		ext := 0.0
-		for _, id := range ranks[r] {
+		for i, id := range ranks[r] {
+			if i > 0 {
+				ext += gapW
+			}
 			ext += fd[id]
 		}
-		if n := len(ranks[r]); n > 1 {
-			ext += float64(n-1) * gapW
-		}
-		rankExtent[r] = ext
 		if ext > maxExtent {
 			maxExtent = ext
+		}
+	}
+	packRank := func(r int) {
+		y := (maxExtent - rankSpan(ranks[r], fd, gapW)) / 2
+		for _, id := range ranks[r] {
+			cy[id] = y + fd[id]/2
+			y += fd[id] + gapW
+		}
+	}
+	for r := range ranks {
+		packRank(r)
+	}
+
+	// Crossing reduction: order each rank by the barycentre of its
+	// neighbours' y in the adjacent rank, alternating sweep direction.
+	for sweep := 0; sweep < 4; sweep++ {
+		down := sweep%2 == 0
+		seq := make([]int, len(ranks))
+		for i := range seq {
+			if down {
+				seq[i] = i
+			} else {
+				seq[i] = len(ranks) - 1 - i
+			}
+		}
+		for _, r := range seq {
+			bc := map[string]float64{}
+			for _, id := range ranks[r] {
+				sum, cnt := 0.0, 0
+				for _, m := range nbr[id] {
+					if _, ok := cy[m]; ok {
+						sum += cy[m]
+						cnt++
+					}
+				}
+				if cnt > 0 {
+					bc[id] = sum / float64(cnt)
+				} else {
+					bc[id] = cy[id]
+				}
+			}
+			sortByKeyStable(ranks[r], bc)
+			packRank(r)
+		}
+	}
+
+	// Median alignment: pull each node toward the median y of its
+	// neighbours, then resolve overlaps within the rank in order. A few
+	// down+up passes straighten chains so most edges collapse to a
+	// single on-axis segment (the router merges collinear endpoints).
+	for pass := 0; pass < 6; pass++ {
+		down := pass%2 == 0
+		seq := make([]int, len(ranks))
+		for i := range seq {
+			if down {
+				seq[i] = i
+			} else {
+				seq[i] = len(ranks) - 1 - i
+			}
+		}
+		for _, r := range seq {
+			want := make([]float64, len(ranks[r]))
+			for i, id := range ranks[r] {
+				ys := []float64{}
+				for _, m := range nbr[id] {
+					if y, ok := cy[m]; ok {
+						ys = append(ys, y)
+					}
+				}
+				if len(ys) > 0 {
+					want[i] = medianOf(ys)
+				} else {
+					want[i] = cy[id]
+				}
+			}
+			resolveRank(ranks[r], want, fd, gapW, cy)
 		}
 	}
 
 	snap := func(v float64) float64 { return math.Round(v/cell) * cell }
 	for r := range ranks {
-		y := (maxExtent - rankExtent[r]) / 2
 		maxW := 0.0
 		for _, id := range ranks[r] {
 			if fw[id] > maxW {
@@ -210,8 +294,67 @@ func arrangeAuto(parts []*CompositePart, conns []*Connector, lay *Layout, cell f
 				p.Offset = &WorldPoint{}
 			}
 			p.Offset.WX = snap(rankX[r] + (maxW-fw[id])/2)
-			p.Offset.WY = snap(y)
-			y += fd[id] + gapW
+			p.Offset.WY = snap(cy[id] - fd[id]/2)
+		}
+	}
+}
+
+func rankSpan(ids []string, fd map[string]float64, gapW float64) float64 {
+	ext := 0.0
+	for i, id := range ids {
+		if i > 0 {
+			ext += gapW
+		}
+		ext += fd[id]
+	}
+	return ext
+}
+
+// sortByKeyStable stable-sorts ids ascending by key[id].
+func sortByKeyStable(ids []string, key map[string]float64) {
+	for i := 1; i < len(ids); i++ {
+		for j := i; j > 0 && key[ids[j]] < key[ids[j-1]]-1e-9; j-- {
+			ids[j], ids[j-1] = ids[j-1], ids[j]
+		}
+	}
+}
+
+func medianOf(v []float64) float64 {
+	s := append([]float64(nil), v...)
+	for i := 1; i < len(s); i++ {
+		for j := i; j > 0 && s[j] < s[j-1]; j-- {
+			s[j], s[j-1] = s[j-1], s[j]
+		}
+	}
+	n := len(s)
+	if n == 0 {
+		return 0
+	}
+	if n%2 == 1 {
+		return s[n/2]
+	}
+	return (s[n/2-1] + s[n/2]) / 2
+}
+
+// resolveRank sets each node's centre y to its desired value, then
+// sweeps to enforce the minimum centre-to-centre spacing (half-depths +
+// gap) in BOTH directions so the rank neither overlaps nor drifts.
+func resolveRank(ids []string, want []float64, fd map[string]float64, gapW float64, cy map[string]float64) {
+	for i, id := range ids {
+		cy[id] = want[i]
+	}
+	// forward: push down to clear overlaps
+	for i := 1; i < len(ids); i++ {
+		minGap := fd[ids[i-1]]/2 + fd[ids[i]]/2 + gapW
+		if cy[ids[i]] < cy[ids[i-1]]+minGap {
+			cy[ids[i]] = cy[ids[i-1]] + minGap
+		}
+	}
+	// backward: pull up where the forward pass overshot past desired
+	for i := len(ids) - 2; i >= 0; i-- {
+		minGap := fd[ids[i]]/2 + fd[ids[i+1]]/2 + gapW
+		if cy[ids[i]] > cy[ids[i+1]]-minGap {
+			cy[ids[i]] = cy[ids[i+1]] - minGap
 		}
 	}
 }
