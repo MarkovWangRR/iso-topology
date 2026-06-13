@@ -203,6 +203,7 @@ func buildPrimitiveCaps() []PrimitiveCap {
 				"routing":       "ALWAYS use orthogonal — every segment rides the iso ground axes, flush with the 2.5D grid (collinear endpoints collapse to one on-axis segment). straight/bezier cut across the grid and are reserved for non-iso freeform sketches.",
 				"arrow":         "none = no head; triangle = filled arrowhead at the dst",
 				"bend":          "v4.4 — {wx, wy} world offset on the route's interior so a Studio edge-drag shifts the line while both endpoints stay docked",
+				"waypoints":     "v4.6 — explicit interior corner list [{wx, wy}, …] (world coords, source→target) the route threads through, so a Studio edge-drag can move ONE segment independently. Supersedes bend + the auto route; endpoints stay docked. Auto-kept iso-axis-aligned.",
 				"elbow":         "v3.1 — orthogonal elbow bias: xFirst | yFirst (default: the axis the source face exits along)",
 				"labelBg":       "pill background (default #FFFFFFEE)",
 				"labelColor":    "v3.1 — pill ink (default #1F2433); dim it for dark scenes",
@@ -253,9 +254,9 @@ func buildPrimitiveCaps() []PrimitiveCap {
 			Name:    "icon",
 			Where:   "node.parts[*].icon",
 			Syntax:  "icon: \"iso://glyph/<name>[/light|/RRGGBB]\" | \"iso://si/<slug>[/light|/RRGGBB]\" | \"iso://brand/<name>\"",
-			Purpose: "Put an icon on a part's top face instead of text — the preferred look for showcase scenes. REAL brand logos (iso://si/<slug>, ~150 vendored from Simple Icons, CC0): mysql, postgresql, redis, apachekafka, docker, kubernetes, terraform, openai, anthropic, pytorch, grafana, ...; same /light and /RRGGBB variants as glyphs; full list in docs/agent/ICONS.md. Glyphs (generic, stroke style): cloud, database, bolt, chart, globe, shield, lock, gear, cpu, code, layers, rocket, user, mobile, browser, search, bell, queue; default ink, /light = white (dark tops), /RRGGBB = custom. Brand aliases (iso://brand/<name>, resolve to the real logo in its brand color): spark, hadoop, mysql, postgresql, hive, pulsar, kafka, redis, mongo, kubernetes, docker, github, gcp, vite, rolldown, oxc. Unknown iso:// icons are validation errors with nearest-name suggestions. Any other icon value is treated as a URL / data-URI. Browsable index with previews: docs/agent/ICONS.md.",
+			Purpose: "Put an icon on a part's top face instead of text — the preferred look for showcase scenes. REAL brand logos (iso://si/<slug>, ~150 vendored from Simple Icons, CC0): mysql, postgresql, redis, apachekafka, docker, kubernetes, terraform, openai, anthropic, pytorch, grafana, ...; same /light and /RRGGBB variants as glyphs; full list in docs/agent/ICONS.md. Glyphs (generic, stroke style): cloud, database, bolt, chart, globe, shield, lock, gear, cpu, code, layers, rocket, user, mobile, browser, search, bell, queue; default ink, /light = white (dark tops), /RRGGBB = custom. Brand aliases (iso://brand/<name>, resolve to the real logo in its brand color): spark, hadoop, mysql, postgresql, hive, pulsar, kafka, redis, mongo, kubernetes, docker, github, gcp, vite, rolldown, oxc. Unknown iso:// icons are validation errors with nearest-name suggestions. Any other icon value is treated as an external resource: an http(s) URL, a data: URI, OR a LOCAL IMAGE FILE PATH (svg/png/jpg/gif/webp, absolute or relative, ~ and file:// accepted) — local paths are read and inlined as a data URI at render time so the output stays self-contained. Browsable index with previews: docs/agent/ICONS.md.",
 			Fields: map[string]string{
-				"icon": "iso://glyph/<name>[/variant] | iso://brand/<name> | https://… | data:image/…",
+				"icon": "iso://glyph/<name>[/variant] | iso://brand/<name> | https://… | data:image/… | ./local.svg (inlined at render)",
 			},
 		},
 	}
