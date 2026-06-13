@@ -859,10 +859,17 @@ func deleteLineRange(src string, start, end int) string {
 // bottom-up so earlier indices don't shift.
 func deletePart(src, id string) (string, bool) {
 	conns := findConnectors(mustParse(src))
+	// A connector references the node by bare id ("core") OR an anchor-
+	// qualified endpoint ("core.front"); both must go or the delete leaves a
+	// dangling reference that fails validation.
+	refsID := func(v interface{}) bool {
+		s, _ := v.(string)
+		return s == id || strings.HasPrefix(s, id+".")
+	}
 	var refs []int
 	for i, c := range conns {
 		if m, ok := c.(map[string]interface{}); ok {
-			if m["from"] == id || m["to"] == id {
+			if refsID(m["from"]) || refsID(m["to"]) {
 				refs = append(refs, i)
 			}
 		}
