@@ -27,6 +27,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -34,6 +35,38 @@ import (
 )
 
 func indentOf(s string) int { return len(s) - len(strings.TrimLeft(s, " ")) }
+
+// stripAutoLayout removes the scene's layout:{mode:auto} (inline or a
+// layout: block whose mode is auto) so a frozen scene renders purely
+// from explicit offsets. Other layout modes are left intact.
+func stripAutoLayout(src string) string {
+	lines := strings.Split(src, "\n")
+	inlineRe := regexp.MustCompile(`^\s*layout:\s*\{[^}]*\bmode:\s*auto\b[^}]*\}\s*$`)
+	blockRe := regexp.MustCompile(`^\s*layout:\s*$`)
+	modeAutoRe := regexp.MustCompile(`^\s*mode:\s*auto\b`)
+	out := make([]string, 0, len(lines))
+	for i := 0; i < len(lines); i++ {
+		if inlineRe.MatchString(lines[i]) {
+			continue
+		}
+		if blockRe.MatchString(lines[i]) {
+			ind := indentOf(lines[i])
+			j, isAuto := i+1, false
+			for j < len(lines) && (strings.TrimSpace(lines[j]) == "" || indentOf(lines[j]) > ind) {
+				if modeAutoRe.MatchString(lines[j]) {
+					isAuto = true
+				}
+				j++
+			}
+			if isAuto {
+				i = j - 1
+				continue
+			}
+		}
+		out = append(out, lines[i])
+	}
+	return strings.Join(out, "\n")
+}
 
 // upsertInlineKey replaces or inserts an inline `key: { wx: X, wy: Y }`
 // line inside the YAML block that begins at startLine (an `id:` line or
@@ -67,6 +100,12 @@ func upsertInlineKey(src string, startLine int, key string, wx, wy float64) (str
 		if i := strings.Index(l, "{"); i >= 0 {
 			l = l[:i+1] + " " + val + strings.TrimLeft(l[i+1:], " ")
 		}
+		// Normalize commas the removal/insert can leave behind ("{ ,",
+		// ", ,", ", }") — a stray double comma is invalid YAML and made
+		// re-dragging a frozen flow-form node silently fail to render.
+		l = regexp.MustCompile(`\{\s*,`).ReplaceAllString(l, "{ ")
+		l = regexp.MustCompile(`,\s*,`).ReplaceAllString(l, ", ")
+		l = regexp.MustCompile(`,\s*\}`).ReplaceAllString(l, " }")
 		lines[startLine] = l
 		return strings.Join(lines, "\n"), true
 	}
@@ -533,12 +572,35 @@ func serveFile(in string) error {
 		var ok bool
 		switch q.Get("kind") {
 		case "node":
-			cx, cy, found := isotopo.ResolvePartOffset(doc, q.Get("id"))
-			if !found {
-				http.Error(w, "part not found", 422)
-				return
+			// drawio model: the FIRST manual move freezes the whole scene
+			// into explicit coordinates and drops auto-layout, so the
+			// engine never re-decides positions again — no unexpected
+			// jumps. Every later move just nudges that one node.
+			if isotopo.SceneIsAuto(doc) {
+				offs := isotopo.ResolveAllOffsets(doc)
+				out = stripAutoLayout(src)
+				ids := make([]string, 0, len(offs))
+				for id := range offs {
+					ids = append(ids, id)
+				}
+				sort.Strings(ids)
+				for _, id := range ids {
+					o := offs[id]
+					wx, wy := o[0], o[1]
+					if id == q.Get("id") {
+						wx += dwx
+						wy += dwy
+					}
+					out, ok = upsertInlineKey(out, findPartIDLine(out, id), "offset", wx, wy)
+				}
+			} else {
+				cx, cy, found := isotopo.ResolvePartOffset(doc, q.Get("id"))
+				if !found {
+					http.Error(w, "part not found", 422)
+					return
+				}
+				out, ok = upsertInlineKey(src, findPartIDLine(src, q.Get("id")), "offset", cx+dwx, cy+dwy)
 			}
-			out, ok = upsertInlineKey(src, findPartIDLine(src, q.Get("id")), "offset", cx+dwx, cy+dwy)
 		case "edge":
 			ci, _ := strconv.Atoi(q.Get("ci"))
 			bx, by := isotopo.ConnectorBend(doc, ci)
