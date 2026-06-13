@@ -326,7 +326,14 @@ func scalarKV(s string) (string, string, bool) {
 	if c := strings.Index(val, " #"); c >= 0 { // strip trailing comment
 		val = strings.TrimSpace(val[:c])
 	}
-	if key == "" || val == "" || strings.HasPrefix(val, "{") || strings.HasPrefix(val, "[") {
+	if key == "" || val == "" {
+		return "", "", false
+	}
+	// Skip non-scalar values: flow map/list, YAML anchor (&x) / alias (*x) /
+	// tag (!x), and block scalars (| >). These head nested structures the
+	// detail editor must not flatten into a single input.
+	switch val[0] {
+	case '{', '[', '&', '*', '!', '|', '>':
 		return "", "", false
 	}
 	return key, val, true
@@ -387,6 +394,19 @@ func extractFields(src string, startLine int) []editField {
 			break
 		}
 		if ind != childIndent || strings.HasPrefix(strings.TrimSpace(lines[i]), "#") {
+			continue
+		}
+		// A key whose NEXT non-blank line is deeper heads a nested block — skip
+		// it (its inline value, if any, is an anchor/tag, not editable content).
+		nested := false
+		for j := i + 1; j < len(lines); j++ {
+			if strings.TrimSpace(lines[j]) == "" {
+				continue
+			}
+			nested = indentOf(lines[j]) > childIndent
+			break
+		}
+		if nested {
 			continue
 		}
 		if k, v, ok := scalarKV(strings.TrimSpace(lines[i])); ok {
