@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<title>isotopo Studio · {{FILE}}</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 68 56'%3E%3Cpolygon points='4,34 22,24 40,34 22,44' fill='%232FA9B8' opacity='.35'/%3E%3Cpolygon points='4,30 22,20 40,30 22,40' fill='%2336BCC6' opacity='.65'/%3E%3Cpolygon points='4,26 22,16 40,26 22,36' fill='%234ED2D9'/%3E%3Cpath d='M38 30 C46 34 44 40 50 42' fill='none' stroke='%233CC4CC' stroke-width='5' stroke-linecap='round'/%3E%3Cpolygon points='46,36 56,30 66,36 56,42' fill='%238FE9EC'/%3E%3Cpolygon points='46,36 56,42 56,54 46,48' fill='%232596A6'/%3E%3Cpolygon points='66,36 56,42 56,54 66,48' fill='%2349CDD6'/%3E%3C/svg%3E">
+<style>{{CSS}}</style></head><body>
+<header>
+  <div class="brand">
+    <svg width="34" height="30" viewBox="0 0 68 56" aria-label="iso-topology">
+      <defs>
+        <linearGradient id="lgcube" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#52D7DE"/><stop offset="1" stop-color="#2FA9B8"/>
+        </linearGradient>
+      </defs>
+      <!-- stacked plates -->
+      <polygon points="4,26 22,16 40,26 22,36" fill="#2FA9B8" opacity=".35" transform="translate(0,8)"/>
+      <polygon points="4,26 22,16 40,26 22,36" fill="#36BCC6" opacity=".65" transform="translate(0,4)"/>
+      <polygon points="4,26 22,16 40,26 22,36" fill="#4ED2D9"/>
+      <!-- flow into the cube -->
+      <path d="M38 30 C46 34 44 40 50 42" fill="none" stroke="#3CC4CC" stroke-width="5" stroke-linecap="round"/>
+      <!-- cube -->
+      <polygon points="46,36 56,30 66,36 56,42" fill="#8FE9EC"/>
+      <polygon points="46,36 56,42 56,54 46,48" fill="#2596A6"/>
+      <polygon points="66,36 56,42 56,54 66,48" fill="url(#lgcube)"/>
+    </svg>
+    <div class="word">
+      <h1>iso-topology</h1>
+      <span class="sub">isometric diagrams as code</span>
+    </div>
+  </div>
+  <span class="studio">STUDIO</span>
+  <span class="spacer"></span>
+  <span id="live">checking renderer…</span>
+</header>
+<div class="grid">
+  <div class="stage-wrap" id="stage">
+    <div id="viewport"><div id="zoomer">{{SVG}}</div></div>
+    <div id="stale" class="stale" hidden>showing last good render</div>
+    <div class="exportctl">
+      <button onclick="exportSVG()" title="download exactly what the canvas shows (last good render if the source is broken)">&#8595; SVG</button>
+      <button onclick="exportPNG()" title="download the current render as PNG (2x)">&#8595; PNG</button>
+      <button onclick="downloadCopy()" title="download the current YAML source">&#8595; YAML</button>
+    </div>
+    <div class="zoomctl">
+      <button onclick="zoomBy(1.25)" title="zoom in (⌘+)">+</button>
+      <button onclick="zoomBy(0.8)" title="zoom out (⌘−)">−</button>
+      <button id="zfit" onclick="fitView()" title="fit to window (⌘0)">⤢</button>
+      <button id="zpct" onclick="resetView()" title="reset to 100%">100%</button>
+    </div>
+  </div>
+  <div class="splitter" id="split" title="drag to resize the editor"></div>
+  <div class="side">
+    <div class="toolbar">
+      <button id="render" onclick="rerender()" title="Cmd/Ctrl+Enter">Render</button>
+      <label class="auto"><input type="checkbox" id="auto" checked>Auto</label>
+      <span class="spacer" style="flex:1"></span>
+    </div>
+    <div class="filetab"><span class="path" id="fpath"></span><b>{{FILE}}</b><button class="iconbtn" id="cppath" onclick="copyPath()" title="copy full path"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button><span class="spacer" style="flex:1"></span><a id="discard" hidden onclick="discardDraft()">revert</a></div>
+    <div class="editor">
+      <div class="hl" id="hl"></div>
+      <div class="gutter" id="gut"></div>
+      <textarea id="src" spellcheck="false">{{SRC}}</textarea>
+    </div>
+    <div id="issues"></div>
+  </div>
+</div>
+<div id="help" hidden>
+  <div class="help-card">
+    <h2>Keyboard shortcuts</h2>
+    <div class="hrow"><span>Re-render</span><span><kbd>⌘</kbd>+<kbd>↵</kbd></span></div>
+    <div class="hrow"><span>Fit to window</span><span><kbd>⌘</kbd>+<kbd>0</kbd></span></div>
+    <div class="hrow"><span>Zoom in / out</span><span><kbd>⌘</kbd>+<kbd>+</kbd> / <kbd>⌘</kbd>+<kbd>−</kbd></span></div>
+    <div class="hrow"><span>Indent</span><span><kbd>Tab</kbd></span></div>
+    <div class="hrow"><span>This panel</span><span><kbd>?</kbd></span></div>
+    <div class="hrow"><span>Pin a node</span><span>click it on the canvas</span></div>
+    <div class="hrow"><span>Jump to an error</span><span>click it in the issues panel</span></div>
+  </div>
+</div>
+<div id="ctxmenu" hidden><button id="ctxedit" type="button">✎ Edit details</button></div>
+<div id="detailModal" hidden>
+  <div class="detail-card">
+    <div class="detail-head"><b id="detailTitle">Edit details</b><span class="detail-x" onclick="closeDetail()">✕</span></div>
+    <div id="detailFields" class="detail-fields"></div>
+    <div class="detail-foot">
+      <button type="button" class="btn-ghost" onclick="closeDetail()">Cancel</button>
+      <button type="button" id="detailApply" onclick="applyDetail()">Update</button>
+    </div>
+  </div>
+</div>
+<footer>
+  <span>Hover a node to jump to its source &middot; click to pin &middot; right-click to edit</span>
+  <span>Scroll to zoom · drag to pan · double-click to reset</span>
+  <span><kbd>⌘</kbd>+<kbd>↵</kbd> render &middot; <a onclick="toggleHelp()" style="cursor:pointer">all shortcuts</a></span>
+  <span class="spacer" style="flex:1"></span>
+  <a href="./topology.svg" target="_blank">Original SVG</a>
+  <a href="./nodes/_index.html">Browse nodes</a>
+  <a href="https://github.com/MarkovWangRR/iso-topology/blob/main/docs/guides/studio.md" target="_blank">About Studio</a>
+</footer>
+<script>{{JS}}</script>
+</body></html>
