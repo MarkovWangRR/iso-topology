@@ -337,10 +337,10 @@ function discardDraft(){
 const zoomer=document.getElementById('zoomer'), viewport=document.getElementById('viewport');
 
 /* ── editor backdrop + SVG↔source hover map ────────────────────── */
-let lineMap={};
+let lineMap={}, connMap=[];
 function esc(t){return t.replace(/&/g,'&amp;').replace(/</g,'&lt;');}
 function buildMap(){
-  const lines=srcEl.value.split('\n'); lineMap={};
+  const lines=srcEl.value.split('\n'); lineMap={}; connMap=[];
   const idRe=/(?:^|[\s{])id:\s*"?([A-Za-z0-9_~-]+)/;
   for(let i=0;i<lines.length;i++){
     const m=lines[i].match(idRe); if(!m) continue;
@@ -359,6 +359,25 @@ function buildMap(){
       if(ki<ind || (ki===ind && /^\s*-\s/.test(t)) || ki===0){end=k-1;break;}
     }
     if(!(m[1] in lineMap)) lineMap[m[1]]=[start,end];
+  }
+  // connMap[ci] = [startLine,endLine] of the ci-th connector, mirroring the
+  // server's findConnectorLine (the FIRST connectors: block, in order), so
+  // data-connector ci maps straight to its source lines.
+  let c0=-1,cInd=0;
+  for(let i=0;i<lines.length;i++){
+    const m=lines[i].match(/^(\s*)connectors:\s*(#.*)?$/);
+    if(m){c0=i;cInd=m[1].length;break;}
+  }
+  if(c0>=0){
+    const starts=[]; let itemInd=-1, blockEnd=lines.length-1;
+    for(let i=c0+1;i<lines.length;i++){
+      const t=lines[i]; if(!t.trim()) continue;
+      const ind=t.search(/\S/);
+      if(ind<=cInd){blockEnd=i-1;break;}
+      if(/^\s*-/.test(t)){ if(itemInd<0) itemInd=ind; if(ind===itemInd) starts.push(i); }
+    }
+    for(let k=0;k<starts.length;k++)
+      connMap.push([starts[k], k+1<starts.length?starts[k+1]-1:blockEnd]);
   }
 }
 /* one-line YAML tokenizer: comments, keys, strings (iso:// URIs get
@@ -440,6 +459,18 @@ function wireHover(){
       const pr=pinId?rangeFor(pinId):null;
       paint(pr);
       if(pr) scrollToLine(pr[0]);
+    });
+  });
+  // Edges: hovering a connector highlights + scrolls to its source lines,
+  // same as nodes (the line itself already glows via CSS :hover).
+  zoomer.querySelectorAll('path[data-connector]').forEach(p=>{
+    const ci=+p.getAttribute('data-connector');
+    p.addEventListener('mouseenter',()=>{
+      const r=connMap[ci]; if(!r) return;
+      paint(r); scrollToLine(r[0]);
+    });
+    p.addEventListener('mouseleave',()=>{
+      paint(pinId?rangeFor(pinId):null);
     });
   });
   if(pinId) glowOnly(pinId);
