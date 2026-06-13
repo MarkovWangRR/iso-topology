@@ -297,6 +297,19 @@ type Effects struct {
 	Wireframe *bool `yaml:"wireframe,omitempty" json:"wireframe,omitempty"`
 	// v2.6 — film-grain noise overlay on the faces.
 	Grain *Grain `yaml:"grain,omitempty" json:"grain,omitempty"`
+	// v3.8 (M4) — accent stroke traced along the part's full silhouette,
+	// distinct from per-face style.stroke: a selection / emphasis ring
+	// that hugs the outer outline. Painted on top of every face.
+	Outline *Outline `yaml:"outline,omitempty" json:"outline,omitempty"`
+}
+
+// Outline is a silhouette-following accent stroke (emphasis / selection
+// ring). Unlike per-face strokes it traces the whole projected outline.
+type Outline struct {
+	Color   string  `yaml:"color,omitempty" json:"color,omitempty"`
+	Width   float64 `yaml:"width,omitempty" json:"width,omitempty"`
+	Dash    string  `yaml:"dash,omitempty" json:"dash,omitempty"`
+	Opacity float64 `yaml:"opacity,omitempty" json:"opacity,omitempty"`
 }
 
 // Grain overlays monochrome film-grain noise on the part's faces —

@@ -144,6 +144,12 @@ func renderComposite(n *Node, theme *Theme, canvas *Canvas, anns []*Annotation) 
 			// the glow gradient never terminates at the canvas edge.
 			glowPad = 36
 		}
+		var olColor, olDash string
+		var olWidth, olOpacity float64
+		if mergedForLabel != nil && mergedForLabel.Effects != nil && mergedForLabel.Effects.Outline != nil {
+			ol := mergedForLabel.Effects.Outline
+			olColor, olWidth, olDash, olOpacity = ol.Color, ol.Width, ol.Dash, ol.Opacity
+		}
 		isoLabel := p.Label
 		var screenLabel, labelBg, labelBorder, labelColor string
 		var labelFamily, labelWeight string
@@ -207,9 +213,13 @@ func renderComposite(n *Node, theme *Theme, canvas *Canvas, anns []*Annotation) 
 			w: w, d: d, h: h, offWX: ox, offWY: oy, offWZ: oz,
 			screenLabel: screenLabel, labelBg: labelBg, labelBorder: labelBorder,
 			labelColor: labelColor, labelFamily: labelFamily, labelWeight: labelWeight,
-			labelFontSize: labelSize,
-			sides:         sidesOf(p),
-			isSubstrate:   p.isSubstrate,
+			labelFontSize:  labelSize,
+			sides:          sidesOf(p),
+			isSubstrate:    p.isSubstrate,
+			outlineColor:   olColor,
+			outlineWidth:   olWidth,
+			outlineDash:    olDash,
+			outlineOpacity: olOpacity,
 		}
 	}
 
@@ -226,6 +236,7 @@ func renderComposite(n *Node, theme *Theme, canvas *Canvas, anns []*Annotation) 
 	if len(n.Connectors) > 0 {
 		svg, connRects = injectCompositeConnectors(svg, n.Connectors, infos, nSubstrates)
 	}
+	svg = injectOutlines(svg, infos)
 	if canvas != nil {
 		svg = injectCanvasBackground(svg, canvas)
 	}
