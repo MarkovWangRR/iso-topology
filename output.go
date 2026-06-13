@@ -451,7 +451,7 @@ function screenToWorldDelta(dsx,dsy){
   // invert the iso ground-plane projection (sx=(wx-wy)c30, sy=(wx+wy)s30)
   return [dsx/(2*C30)+dsy/(2*S30), -dsx/(2*C30)+dsy/(2*S30)];
 }
-async function commitMove(kind,key,dwx,dwy){
+async function commitMove(kind,key,dwx,dwy,dropX,dropY){
   if(!serverOK) return;
   const qp = kind==='node' ? 'kind=node&id='+encodeURIComponent(key) : 'kind=edge&ci='+key;
   try{
@@ -461,8 +461,20 @@ async function commitMove(kind,key,dwx,dwy){
     const data=await r.json();
     if(typeof data.yaml==='string'){ srcEl.value=data.yaml; setDirty(srcEl.value!==ORIGINAL);
       try{localStorage.setItem(DRAFTKEY,srcEl.value);}catch(_){} }
-    if(data.svg){ zoomer.innerHTML=data.svg; buildMap(); paint(pinId?rangeFor(pinId):null);
-      wireHover(); wireDrag(); adaptStage(); }
+    if(data.svg){
+      zoomer.innerHTML=data.svg;
+      buildMap(); paint(pinId?rangeFor(pinId):null);
+      wireHover(); wireDrag(); adaptStage();
+      // Re-render recomputes the viewBox (and the flex-centred SVG can
+      // resize), which would slide the whole scene and read as a
+      // teleport. Re-anchor on the dropped element: pan so it sits
+      // exactly under the cursor, so the move feels direct.
+      if(kind==='node' && dropX!=null){
+        const g=zoomer.querySelector('g[data-part-id="'+(window.CSS&&CSS.escape?CSS.escape(key):key)+'"]');
+        if(g){const c=g.getBoundingClientRect();
+          panX+=dropX-(c.x+c.width/2); panY+=dropY-(c.y+c.height/2); apply();}
+      }
+    }
     showIssues(data.issues||[]);
   }catch(_){}
 }
@@ -518,7 +530,7 @@ window.addEventListener('mouseup',e=>{
   d.el.classList.remove('dragging'); d.el.style.cursor='grab';
   const wd=screenToWorldDelta((e.clientX-d.x)/scale,(e.clientY-d.y)/scale);
   if(Math.abs(wd[0])>2||Math.abs(wd[1])>2){
-    commitMove(kind, kind==='node'?d.id:d.ci, Math.round(wd[0]), Math.round(wd[1]));
+    commitMove(kind, kind==='node'?d.id:d.ci, Math.round(wd[0]), Math.round(wd[1]), e.clientX, e.clientY);
   }
 });
 

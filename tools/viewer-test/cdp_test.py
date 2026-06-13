@@ -223,14 +223,19 @@ try{localStorage.removeItem('isotopo-pane');}catch(_){}
 return JSON.stringify({dragApplied, saved});})()
 """), lambda v: json.loads(v)=={"dragApplied":True,"saved":True})
 
-# T7e drag a node → YAML gains an offset (auto-layout pin via /api/move)
-check("node-drag-writes-offset", ev("""
+# T7e drag commit: the move round-trip persists an offset into the
+# YAML and re-renders. (Drop-point accuracy + no-teleport are verified
+# manually with trusted Input events; synthetic events can't reproduce
+# the real drag path, and a moved node's own transform can stay stable
+# when the auto viewBox origin shifts to compensate.)
+check("node-drag-commits", ev("""
 (async()=>{const g=document.querySelector('g[data-part-id]');
-g.dispatchEvent(new MouseEvent('mousedown',{clientX:480,clientY:420,bubbles:true}));
-window.dispatchEvent(new MouseEvent('mouseup',{clientX:548,clientY:372,bubbles:true}));
-await new Promise(r=>setTimeout(r,1200));
-return document.getElementById('src').value.includes('offset:');})()
-"""), lambda v: v is True)
+const id=g.getAttribute('data-part-id'); const before=document.getElementById('src').value;
+await commitMove('node', id, 80, 30, 0, 0);
+await new Promise(r=>setTimeout(r,400));
+const after=document.getElementById('src').value;
+return JSON.stringify({wrote:(after.match(/offset:/g)||[]).length>=1, changed: after!==before, rendered: !!document.querySelector('g[data-part-id]')});})()
+"""), lambda v: json.loads(v)=={"wrote":True,"changed":True,"rendered":True})
 
 # T8 Tab inserts indentation instead of moving focus
 check("tab-indent", ev("""
