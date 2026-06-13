@@ -29,7 +29,8 @@ description matches your task, imitate its structure, then check
 | Fixture | Demonstrates |
 |---|---|
 | [`ai-platform`](../../samples/topology/ai-platform/input.yaml) | ai-platform v2 — flagship hero, reimagined with the v3.3 surface pipeline. |
-| [`data-fabric`](../../samples/topology/data-fabric/input.yaml) | data-fabric — three pastel domain groups (commerce / logistics / telemetry) feed a radial-gradient hero catalog at the centre of the fabric. |
+| [`auto-flow`](../../samples/topology/auto-flow/input.yaml) | (no header comment) |
+| [`data-fabric`](../../samples/topology/data-fabric/input.yaml) | data-fabric — a clean left-to-right data-mesh flow: three domain lanes (commerce / logistics / telemetry), each a service tile + a gradient data-product … |
 | [`devtool-pipeline`](../../samples/topology/devtool-pipeline/input.yaml) | devtool-pipeline — CI/CD neon. |
 | [`edge-security`](../../samples/topology/edge-security/input.yaml) | edge-security — zero-trust edge, official gallery scene (v0.3.3). |
 | [`gateway-mesh`](../../samples/topology/gateway-mesh/input.yaml) | (no header comment) |

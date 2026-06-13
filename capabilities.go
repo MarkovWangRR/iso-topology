@@ -70,7 +70,7 @@ type StyleKeyGroup struct {
 // Pure function — no IO, no globals.
 func CapabilityReport() Capabilities {
 	return Capabilities{
-		Version: "0.4.1",
+		Version: "0.4.2",
 		Inputs: []InputFormat{
 			{".yaml", "hand-authored iso composite with precise placement", "manual"},
 			{".json", "same shape as .yaml but JSON-encoded", "manual"},
@@ -214,7 +214,7 @@ func buildPrimitiveCaps() []PrimitiveCap {
 			Syntax:  "layout: {mode: row|column|grid|ring, cols: N, gap: 1, padding: 1, align: start|center|end}",
 			Purpose: "Auto-arrange a container's parts along the iso ground axes — the preferred way to position parts. No hand-computed coordinates: row marches along world +x, column along +y, grid wraps row-major after cols, ring puts the FIRST child at the centre and distributes the rest on a circle around it (hub-and-spoke in one rule). A layout group's geom.w/d may be omitted; the substrate auto-sizes around the arranged content.",
 			Fields: map[string]string{
-				"mode":    "row | column | grid | ring (first child = hub, rest clockwise from the back)",
+				"mode":    "row | column | grid | ring | auto. auto (v4.2) is connector-driven: declare parts + connectors with NO place/coords and the engine layers the graph into a balanced iso flow — per-part style (faces/prisms/effects) is untouched. The other modes arrange a chosen structure.",
 				"cols":    "grid only; default ceil(sqrt(n))",
 				"gap":     "space between children (ring: hub-to-satellite clearance), in CELLS (1 cell = gridStep, default 40 world units); default 1",
 				"padding": "content inset from the container edge, in cells; defaults to gap",

@@ -1,0 +1,22 @@
+canvas: { background: "#F6F7FB", grid: iso, gridColor: "#E6E9F2", padding: 50 }
+nodes:
+  scene:
+    shape: composite
+    layout: { mode: auto, gap: 1.4 }
+    parts:
+      - { id: client, shape: rectangle, geom: {w: 90, d: 90, h: 30}, icon: "iso://glyph/chat", label: "Client", style: { palette: { top: "#FFFFFF", left: "#3B5C9E", right: "#5B7BB4" } } }
+      - id: gw
+        shape: hexprism
+        geom: { w: 120, d: 120, h: 40 }
+        icon: "iso://glyph/cloud"
+        label: "Gateway"
+        style: { palette: { top: "#EDE9FE", left: "#6D28D9", right: "#8B5CF6" }, effects: { backglow: { color: "#A78BFA", radius: 30, opacity: 0.5 } } }
+      - { id: svc_a, shape: rectangle, geom: {w: 90, d: 90, h: 34}, label: "Orders", style: { palette: { top: "#FFFFFF", left: "#B45309", right: "#F59E0B" } } }
+      - { id: svc_b, shape: rectangle, geom: {w: 90, d: 90, h: 34}, label: "Billing", style: { palette: { top: "#FFFFFF", left: "#047857", right: "#10B981" } } }
+      - { id: db, shape: cylinder, geom: {w: 84, d: 84, h: 50}, label: "DB", style: { palette: { top: "#EFFAF7", leftGradient: {from: "#79C9BA", to: "#479E8E"}, rightGradient: {from: "#9BDACE", to: "#5FB3A3"} } } }
+    connectors:
+      - { from: client, to: gw, arrow: triangle, routing: orthogonal }
+      - { from: gw, to: svc_a, arrow: triangle, routing: orthogonal }
+      - { from: gw, to: svc_b, arrow: triangle, routing: orthogonal }
+      - { from: svc_a, to: db, arrow: triangle, routing: orthogonal }
+      - { from: svc_b, to: db, arrow: triangle, routing: orthogonal }
