@@ -26,10 +26,118 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
+	"strconv"
 	"strings"
 
 	isotopo "github.com/MarkovWangRR/iso-topology"
 )
+
+func indentOf(s string) int { return len(s) - len(strings.TrimLeft(s, " ")) }
+
+// upsertInlineKey replaces or inserts an inline `key: { wx: X, wy: Y }`
+// line inside the YAML block that begins at startLine (an `id:` line or
+// a connector `- ` item). Block ends at the next line whose indent is
+// ≤ the start line's indent. Preserves all other formatting/comments —
+// the Studio drag must not reflow the user's YAML. Returns (newSrc, ok).
+func upsertInlineKey(src string, startLine int, key string, wx, wy float64) (string, bool) {
+	lines := strings.Split(src, "\n")
+	if startLine < 0 || startLine >= len(lines) {
+		return src, false
+	}
+	itemIndent := indentOf(lines[startLine])
+	childIndent := itemIndent + 2
+	blockEnd := len(lines)
+	for i := startLine + 1; i < len(lines); i++ {
+		if strings.TrimSpace(lines[i]) == "" {
+			continue
+		}
+		if indentOf(lines[i]) <= itemIndent {
+			blockEnd = i
+			break
+		}
+	}
+	// Flow-map form on the start line itself (e.g. `- { id: c, … }`):
+	// upsert the key INSIDE the braces, since the part is one line.
+	if strings.Contains(lines[startLine], "{") && strings.Contains(lines[startLine], "}") {
+		l := lines[startLine]
+		// drop an existing top-level offset/bend (value has no nested braces)
+		l = regexp.MustCompile(`,?\s*`+regexp.QuoteMeta(key)+`:\s*\{[^}]*\}`).ReplaceAllString(l, "")
+		val := fmt.Sprintf("%s: { wx: %.0f, wy: %.0f }, ", key, wx, wy)
+		if i := strings.Index(l, "{"); i >= 0 {
+			l = l[:i+1] + " " + val + strings.TrimLeft(l[i+1:], " ")
+		}
+		lines[startLine] = l
+		return strings.Join(lines, "\n"), true
+	}
+	newLine := fmt.Sprintf("%s%s: { wx: %.0f, wy: %.0f }", strings.Repeat(" ", childIndent), key, wx, wy)
+	keyRe := regexp.MustCompile(`^\s*` + regexp.QuoteMeta(key) + `:`)
+	for i := startLine + 1; i < blockEnd; i++ {
+		if keyRe.MatchString(lines[i]) {
+			// drop a block-form value's deeper-indented sub-lines too
+			j := i + 1
+			for j < blockEnd && strings.TrimSpace(lines[j]) != "" && indentOf(lines[j]) > indentOf(lines[i]) {
+				j++
+			}
+			out := append([]string{}, lines[:i]...)
+			out = append(out, newLine)
+			out = append(out, lines[j:]...)
+			return strings.Join(out, "\n"), true
+		}
+	}
+	out := append([]string{}, lines[:startLine+1]...)
+	out = append(out, newLine)
+	out = append(out, lines[startLine+1:]...)
+	return strings.Join(out, "\n"), true
+}
+
+// findPartIDLine returns the line index of `id: <id>` (with optional
+// `- ` prefix and quotes), or -1.
+func findPartIDLine(src, id string) int {
+	// Match `id: <id>` in both block form (`- id: c` / `id: c`) and flow
+	// form (`- { id: c, … }`). The id is bounded by a comma, brace,
+	// whitespace, or line end so "c" never matches "client".
+	re := regexp.MustCompile(`(?:^|[-{,]\s*)id:\s*"?` + regexp.QuoteMeta(id) + `"?\s*(?:,|}|$)`)
+	for i, l := range strings.Split(src, "\n") {
+		if re.MatchString(l) {
+			return i
+		}
+	}
+	return -1
+}
+
+// findConnectorLine returns the line index of the ci-th `- ` item under
+// the first `connectors:` key, or -1.
+func findConnectorLine(src string, ci int) int {
+	lines := strings.Split(src, "\n")
+	connLine, connIndent := -1, 0
+	for i, l := range lines {
+		if regexp.MustCompile(`^\s*connectors:\s*$`).MatchString(l) {
+			connLine, connIndent = i, indentOf(l)
+			break
+		}
+	}
+	if connLine < 0 {
+		return -1
+	}
+	itemRe := regexp.MustCompile(`^\s*-\s`)
+	n := 0
+	for i := connLine + 1; i < len(lines); i++ {
+		if strings.TrimSpace(lines[i]) == "" {
+			continue
+		}
+		if indentOf(lines[i]) <= connIndent {
+			break // left the connectors block
+		}
+		if itemRe.MatchString(lines[i]) && indentOf(lines[i]) > connIndent {
+			if n == ci {
+				return i
+			}
+			n++
+		}
+	}
+	return -1
+}
 
 // CLI flag state — set by parseFlags. Layout is consulted only for .d2
 // inputs (YAML/JSON have no layout step).
@@ -393,6 +501,45 @@ func serveFile(in string) error {
 		}
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]any{"svg": svg, "issues": issues})
+	})
+	// v4.4 — drag-to-edit: the editor copy + a move op come in, the
+	// server text-edits the YAML (preserving comments/formatting), then
+	// renders. kind=node writes an absolute offset on the part; kind=edge
+	// writes a bend delta on the ci-th connector. Returns {yaml, svg,
+	// issues} so Studio updates editor AND canvas in one round-trip.
+	mux.HandleFunc("POST /api/move", func(w http.ResponseWriter, r *http.Request) {
+		body, err := io.ReadAll(io.LimitReader(r.Body, 4<<20))
+		if err != nil {
+			http.Error(w, err.Error(), 400)
+			return
+		}
+		q := r.URL.Query()
+		atof := func(s string) float64 { v, _ := strconv.ParseFloat(s, 64); return v }
+		wx, wy := atof(q.Get("wx")), atof(q.Get("wy"))
+		src := string(body)
+		var out string
+		var ok bool
+		switch q.Get("kind") {
+		case "node":
+			out, ok = upsertInlineKey(src, findPartIDLine(src, q.Get("id")), "offset", wx, wy)
+		case "edge":
+			ci, _ := strconv.Atoi(q.Get("ci"))
+			out, ok = upsertInlineKey(src, findConnectorLine(src, ci), "bend", wx, wy)
+		default:
+			http.Error(w, "kind must be node|edge", 400)
+			return
+		}
+		if !ok {
+			http.Error(w, "target not found in source", 422)
+			return
+		}
+		lang := q.Get("format")
+		if lang == "" {
+			lang = sourceLang
+		}
+		svg, issues, _ := render(lang, []byte(out))
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]any{"yaml": out, "svg": svg, "issues": issues})
 	})
 	// The per-part gallery the footer links to. The render command writes
 	// these as files; serve answers them on the fly from the CURRENT file
