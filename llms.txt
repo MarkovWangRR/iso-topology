@@ -1,6 +1,6 @@
 # iso-topology
 
-> iso-topology is an open-source Go CLI and library that renders a small text DSL into design-grade 2.5D isometric SVG architecture diagrams. It is a diagram-as-code tool built agent-first: an LLM can discover the DSL (`isotopo capabilities`), validate documents before render (JSONPath-located issues with fix suggestions; exit codes 0 clean / 2 warnings / 3 errors), and produce deterministic, git-diffable SVG. Capabilities v0.4.3: 14 iso shapes, 9 composition primitives, declarative layout/place positioning (no hand-computed coordinates), 203 built-in icons including real brand logos.
+> iso-topology is an open-source Go CLI and library that renders a small text DSL into design-grade 2.5D isometric SVG architecture diagrams. It is a diagram-as-code tool built agent-first: an LLM can discover the DSL (`isotopo capabilities`), validate documents before render (JSONPath-located issues with fix suggestions; exit codes 0 clean / 2 warnings / 3 errors), and produce deterministic, git-diffable SVG. Capabilities v0.4.4: 14 iso shapes, 9 composition primitives, declarative layout/place positioning (no hand-computed coordinates), 203 built-in icons including real brand logos.
 
 Install: `go install github.com/MarkovWangRR/iso-topology/cmd/isotopo@latest` — single static binary, no runtime deps. Inputs: `.yaml` (declarative composition), `.d2` (auto-layout), `.json`. An MCP server (`isotopo-mcp`) exposes capabilities/validate/render as tools.
 

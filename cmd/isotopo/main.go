@@ -515,16 +515,34 @@ func serveFile(in string) error {
 		}
 		q := r.URL.Query()
 		atof := func(s string) float64 { v, _ := strconv.ParseFloat(s, 64); return v }
-		wx, wy := atof(q.Get("wx")), atof(q.Get("wy"))
+		// dwx, dwy are a WORLD-space drag DELTA; the server resolves the
+		// target's current position and adds the delta to get an absolute
+		// value, so dragging a pure-auto node (no coords yet) works.
+		dwx, dwy := atof(q.Get("dwx")), atof(q.Get("dwy"))
 		src := string(body)
+		lang := q.Get("format")
+		if lang == "" {
+			lang = sourceLang
+		}
+		doc, derr := loadDocument(lang, body)
+		if derr != nil {
+			http.Error(w, derr.Error(), 422)
+			return
+		}
 		var out string
 		var ok bool
 		switch q.Get("kind") {
 		case "node":
-			out, ok = upsertInlineKey(src, findPartIDLine(src, q.Get("id")), "offset", wx, wy)
+			cx, cy, found := isotopo.ResolvePartOffset(doc, q.Get("id"))
+			if !found {
+				http.Error(w, "part not found", 422)
+				return
+			}
+			out, ok = upsertInlineKey(src, findPartIDLine(src, q.Get("id")), "offset", cx+dwx, cy+dwy)
 		case "edge":
 			ci, _ := strconv.Atoi(q.Get("ci"))
-			out, ok = upsertInlineKey(src, findConnectorLine(src, ci), "bend", wx, wy)
+			bx, by := isotopo.ConnectorBend(doc, ci)
+			out, ok = upsertInlineKey(src, findConnectorLine(src, ci), "bend", bx+dwx, by+dwy)
 		default:
 			http.Error(w, "kind must be node|edge", 400)
 			return
@@ -532,10 +550,6 @@ func serveFile(in string) error {
 		if !ok {
 			http.Error(w, "target not found in source", 422)
 			return
-		}
-		lang := q.Get("format")
-		if lang == "" {
-			lang = sourceLang
 		}
 		svg, issues, _ := render(lang, []byte(out))
 		w.Header().Set("Content-Type", "application/json")

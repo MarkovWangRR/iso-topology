@@ -1021,3 +1021,58 @@ func cloneParts(parts []*CompositePart) []*CompositePart {
 	}
 	return out
 }
+
+// ResolvePartOffset runs layout on the document's scene and returns the
+// world (wx, wy) the part with id resolves to — its auto/place-solved
+// position, or its explicit pin. The Studio drag endpoint adds the
+// drag delta to this to get a new absolute offset, so dragging a node
+// that has no coordinates yet (pure auto-layout) still works. Operates
+// on a clone so the caller's document is not mutated.
+func ResolvePartOffset(doc *Document, id string) (wx, wy float64, ok bool) {
+	if doc == nil {
+		return 0, 0, false
+	}
+	scene := doc.Scene()
+	if scene == nil {
+		return 0, 0, false
+	}
+	applyLayout(scene, doc.Canvas)
+	var found *CompositePart
+	var walk func(ps []*CompositePart)
+	walk = func(ps []*CompositePart) {
+		for _, p := range ps {
+			if p == nil || found != nil {
+				continue
+			}
+			if p.ID == id {
+				found = p
+				return
+			}
+			walk(p.Parts)
+		}
+	}
+	walk(scene.Parts)
+	if found == nil {
+		return 0, 0, false
+	}
+	if found.Offset == nil {
+		return 0, 0, true
+	}
+	return found.Offset.WX, found.Offset.WY, true
+}
+
+// ConnectorBend returns the current bend of the ci-th connector on the
+// document's scene (0,0 if unset). Used to accumulate edge drags.
+func ConnectorBend(doc *Document, ci int) (wx, wy float64) {
+	if doc == nil {
+		return 0, 0
+	}
+	scene := doc.Scene()
+	if scene == nil || ci < 0 || ci >= len(scene.Connectors) {
+		return 0, 0
+	}
+	if b := scene.Connectors[ci].Bend; b != nil {
+		return b.WX, b.WY
+	}
+	return 0, 0
+}

@@ -223,6 +223,15 @@ try{localStorage.removeItem('isotopo-pane');}catch(_){}
 return JSON.stringify({dragApplied, saved});})()
 """), lambda v: json.loads(v)=={"dragApplied":True,"saved":True})
 
+# T7e drag a node → YAML gains an offset (auto-layout pin via /api/move)
+check("node-drag-writes-offset", ev("""
+(async()=>{const g=document.querySelector('g[data-part-id]');
+g.dispatchEvent(new MouseEvent('mousedown',{clientX:480,clientY:420,bubbles:true}));
+window.dispatchEvent(new MouseEvent('mouseup',{clientX:548,clientY:372,bubbles:true}));
+await new Promise(r=>setTimeout(r,1200));
+return document.getElementById('src').value.includes('offset:');})()
+"""), lambda v: v is True)
+
 # T8 Tab inserts indentation instead of moving focus
 check("tab-indent", ev("""
 (()=>{const src=document.getElementById('src');

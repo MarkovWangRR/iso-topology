@@ -1,4 +1,4 @@
-# Capabilities — v0.4.3
+# Capabilities — v0.4.4
 
 Generated from `CapabilityReport()`. Do not edit by hand — run
 `go run ./tools/gen-docs` to regenerate after a code change.
@@ -40,7 +40,7 @@ override per-part via `geom.h`.
 | **octprism** | `octprism` | 1.0 | v3.2 — 8-gon prism: firewall (stop-sign) semantics |
 | **person** | `c4-person`, `c4_person`, `person` | 1.2 |  |
 | **prism** | `prism` | 1.0 | v3.2 — regular n-gon base x vertical extrude; geom.sides picks the base (default 6). Side walls shade left/right palette by facing. Prisms take gradients/patterns/strokes via style.faces (v3.3) and backglow (v3.3.1); Full effects parity with the box family as of v3.4 (dropShadow, grain, backglow). Connectors anchor on the true polygon edge. |
-| **rectangle** | `callout`, `class`, `code`, `document`, `hierarchy`, `image`, `package`, `page`, `parallelogram`, `rectangle`, `sequence-diagram`, `sequence_diagram`, `sql-table`, `sql_table`, `square`, `step` | 1.0 |  |
+| **rectangle** | `callout`, `class`, `code`, `document`, `hierarchy`, `image`, `package`, `page`, `parallelogram`, `rectangle`, `sequence-diagram`, `sequence_diagram`, `sql-table`, `sql_table`, `square`, `step` | 1.4 |  |
 | **triprism** | `triprism` | 1.0 | v3.2 — 3-gon prism: alert / one-way fan-out semantics |
 
 ## Composition primitives
@@ -117,6 +117,7 @@ Directed line between two parts, optionally labeled and orthogonal-routed.
 | Field | Meaning |
 |---|---|
 | `arrow` | none = no head; triangle = filled arrowhead at the dst |
+| `bend` | v4.4 — {wx, wy} world offset on the route's interior so a Studio edge-drag shifts the line while both endpoints stay docked |
 | `elbow` | v3.1 — orthogonal elbow bias: xFirst | yFirst (default: the axis the source face exits along) |
 | `from` | source part id; "id.anchor" picks a specific face-centre (e.g. central.right-mid). Bare ids auto-pick the face FACING the other endpoint. |
 | `labelBg` | pill background (default #FFFFFFEE) |

@@ -863,8 +863,8 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo,
 			}
 		}
 		fmt.Fprintf(&sb,
-			`<path data-connector="" d="%s" fill="none" stroke="%s" stroke-width="%.2f" stroke-linecap="round" stroke-linejoin="round"%s/>`,
-			d.String(), stroke, width, dashAttr,
+			`<path data-connector="%d" d="%s" fill="none" stroke="%s" stroke-width="%.2f" stroke-linecap="round" stroke-linejoin="round"%s/>`,
+			ci, d.String(), stroke, width, dashAttr,
 		)
 
 		// Record inflated segment rects (route obstacles for later layers).

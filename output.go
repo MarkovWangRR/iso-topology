@@ -454,6 +454,61 @@ function wireHover(){
   });
   if(pinId) glowOnly(pinId);
 }
+
+/* ── drag-to-edit: move a node (offset) or shift an edge (bend) ──── */
+const C30=0.8660254037844387, S30=0.5;
+let nodeDrag=null, edgeDrag=null;
+function screenToWorldDelta(dsx,dsy){
+  // invert the iso ground-plane projection (sx=(wx-wy)c30, sy=(wx+wy)s30)
+  return [dsx/(2*C30)+dsy/(2*S30), -dsx/(2*C30)+dsy/(2*S30)];
+}
+async function commitMove(kind,key,dwx,dwy){
+  if(!serverOK) return;
+  const qp = kind==='node' ? 'kind=node&id='+encodeURIComponent(key) : 'kind=edge&ci='+key;
+  try{
+    const r=await fetch('/api/move?'+qp+'&dwx='+dwx+'&dwy='+dwy+'&format='+encodeURIComponent(LANG),
+      {method:'POST',body:srcEl.value});
+    if(!r.ok) return;
+    const data=await r.json();
+    if(typeof data.yaml==='string'){ srcEl.value=data.yaml; setDirty(srcEl.value!==ORIGINAL);
+      try{localStorage.setItem(DRAFTKEY,srcEl.value);}catch(_){} }
+    if(data.svg){ zoomer.innerHTML=data.svg; buildMap(); paint(pinId?rangeFor(pinId):null);
+      wireHover(); wireDrag(); adaptStage(); }
+    showIssues(data.issues||[]);
+  }catch(_){}
+}
+function wireDrag(){
+  // Attach unconditionally — probe() may not have resolved at first
+  // paint; commitMove() guards on serverOK at drop time instead.
+  zoomer.querySelectorAll('g[data-part-id]').forEach(g=>{
+    g.style.cursor='grab';
+    g.addEventListener('mousedown',e=>{
+      e.stopPropagation();
+      nodeDrag={id:g.getAttribute('data-part-id').replace(/~\d+$/,''),x:e.clientX,y:e.clientY};
+    });
+  });
+  zoomer.querySelectorAll('path[data-connector]').forEach(p=>{
+    p.setAttribute('stroke-width', Math.max(parseFloat(p.getAttribute('stroke-width')||'1.4'),1.4));
+    p.style.cursor='move';
+    p.addEventListener('mousedown',e=>{
+      e.stopPropagation();
+      edgeDrag={ci:p.getAttribute('data-connector'),x:e.clientX,y:e.clientY};
+    });
+  });
+}
+window.addEventListener('mouseup',e=>{
+  if(nodeDrag){
+    const d=nodeDrag; nodeDrag=null;
+    const wd=screenToWorldDelta((e.clientX-d.x)/scale,(e.clientY-d.y)/scale);
+    if(Math.abs(wd[0])>2||Math.abs(wd[1])>2) commitMove('node',d.id,Math.round(wd[0]),Math.round(wd[1]));
+  }
+  if(edgeDrag){
+    const d=edgeDrag; edgeDrag=null;
+    const wd=screenToWorldDelta((e.clientX-d.x)/scale,(e.clientY-d.y)/scale);
+    if(Math.abs(wd[0])>2||Math.abs(wd[1])>2) commitMove('edge',d.ci,Math.round(wd[0]),Math.round(wd[1]));
+  }
+});
+
 /* reverse mapping: caret inside a part's block lights the node up */
 function caretSync(){
   const line=srcEl.value.slice(0,srcEl.selectionStart).split('\n').length-1;
@@ -607,7 +662,7 @@ async function rerender(){
     showIssues(data.issues||[]);
     if(data.svg){
       zoomer.innerHTML=data.svg;
-      buildMap(); paint(pinId?rangeFor(pinId):null); wireHover(); adaptStage();
+      buildMap(); paint(pinId?rangeFor(pinId):null); wireHover(); wireDrag(); adaptStage();
       staleEl.hidden=true;
     }else{
       staleEl.hidden=false;
@@ -883,7 +938,7 @@ if(location.hash.indexOf('#src=')===0){
     if(serverOK) rerender();
   }).catch(()=>{});
 }
-buildMap(); paint(null); wireHover(); renderPath(); adaptStage();
+buildMap(); paint(null); wireHover(); wireDrag(); renderPath(); adaptStage();
 probe().then(()=>{if(serverOK&&dirty)rerender();});
 if(location.protocol.startsWith('http')) setInterval(probe,5000);
 </script>
