@@ -22,11 +22,6 @@ type partInfo struct {
 	labelFontSize float64
 	sides         int // prism family: geom.sides
 	isSubstrate   bool
-	// v3.8 — silhouette accent ring (effects.outline).
-	outlineColor   string
-	outlineWidth   float64
-	outlineDash    string
-	outlineOpacity float64
 }
 
 // renderComposite walks parts and delegates to iso25d.RenderComposite,

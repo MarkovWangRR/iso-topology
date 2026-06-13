@@ -100,6 +100,10 @@ func Flatten(n *Node, theme *Theme) (string, iso25d.ConvertOpts) {
 			if e.Blur != nil && *e.Blur > 0 {
 				o.Blur = *e.Blur
 			}
+			if ol := e.Outline; ol != nil {
+				o.OutlineColor, o.OutlineWidth = ol.Color, ol.Width
+				o.OutlineDash, o.OutlineOpacity = ol.Dash, ol.Opacity
+			}
 			if bg := e.Backglow; bg != nil {
 				o.BackglowColor, o.BackglowRadius, o.BackglowOpacity = bg.Color, bg.Radius, bg.Opacity
 			}

@@ -341,6 +341,14 @@ func RenderIsoPrism(o IsoBoxOpts, sides int) string {
 		o.FontFamily, o.FontSize, o.FontWeight, o.FontColor,
 	)
 
+	if o.OutlineColor != "" && o.OutlineWidth > 0 {
+		sil := prov.Silhouette(o.Width, o.Depth, o.Height, params)
+		for k := range sil {
+			sil[k][0] += m
+			sil[k][1] += m
+		}
+		emitOutlineRing(&sb, sil, o.OutlineColor, o.OutlineWidth, o.OutlineDash, o.OutlineOpacity)
+	}
 	closeWrapper(&sb)
 	if blurOn {
 		sb.WriteString(`</g>`)
