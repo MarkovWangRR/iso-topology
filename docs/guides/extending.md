@@ -32,7 +32,19 @@ shape ends up rendered by `iso25d.Convert2DTo25D` after going through
    shapes list in `capabilities.go::buildShapeCaps`), Validate will
    accept the new shape in YAML/D2 inputs.
 
-5. **Add a golden test** — create `samples/node/<name>/input.yaml`
+5. **Make it editable in Studio** *(easy to forget — keeps the GUI in
+   sync with the renderer)*. The shape token also lives in three
+   non-renderer places; all must agree or the Studio "Edit details"
+   shape picker offers a token that silently falls back to rectangle:
+    - `cmd/isotopo/main.go` → `shapeOptions` (the tile list) and
+      `shapeClass` (which colour controls the shape gets: faces /
+      outline / text / fill).
+    - `studio/studio.js` → `optGlyph` (a small inline-SVG glyph keyed
+      `'shape:<name>'`, so the tile is illustrated).
+   Use only tokens the dispatcher actually accepts (`isotopo
+   capabilities` → shapes → `accepted_as`).
+
+6. **Add a golden test** — create `samples/node/<name>/input.yaml`
    (single-primitive) or `samples/topology/<name>-demo/input.yaml`
    (multi-element scene), then `go test -update -run TestGolden/.*<name>`
    to snapshot the expected SVG.
@@ -70,6 +82,27 @@ shape — they affect how parts get assembled.
    Use the existing `nearest()` / `nearestID()` for "did you mean".
 
 6. **Add a golden test** — same as for shapes.
+
+## How to expose a field in the Studio "Edit details" editor
+
+The right-click detail modal is **schema-driven**. To let users edit a
+DSL field through the GUI (and have it write back, comment-preserving):
+
+1. Add a `schemaField` to the relevant builder in `cmd/isotopo/main.go`:
+   `nodeSchema(shape)`, `edgeSchema()`, or `canvasSchema()`. Give it the
+   dotted YAML `Path` (e.g. `style.palette.top`), an English `Label` +
+   `Desc`, a `Type` (`text` | `number` | `color` | `choice` | `icon`),
+   a `Group`, and `Inline`/`Options` as needed.
+2. Reads and writes are automatic: `/api/fields` reads the current value
+   by dotted path; `/api/edit` writes it via the recursive
+   `setField`/`setInInlineMap` surgery (creates missing intermediate
+   maps). No per-field code.
+3. For a `choice` field, add a glyph in `studio/studio.js::optGlyph`
+   (keyed `'<lastPathSegment-or-key>:<value>'`) and, if the stored value
+   differs from the label, a `optLabel` entry.
+4. Keep it shape-appropriate: `nodeSchema` only offers colour controls a
+   shape can actually render (see `shapeClass`) — don't show a knob that
+   does nothing.
 
 ## How to add a new layout engine
 
@@ -110,10 +143,21 @@ render.go           public API: Render / RenderDocument / RenderParts
 lower.go            group + stack expansion
 inject.go           canvas-bg / screen-label / connector / annotation
 svgutil.go          SVG string parse/edit
-output.go           per-part fragment YAML + IDs
+output.go           //go:embed studio/* → Studio page; per-part fragments
 capabilities.go     introspection — what does this build support?
 validate.go         structural validation with suggestions
 compile.go          d2 → laid-out diagram
+
+studio/             the Studio front-end (compiled into the binary)
+├── studio.html     page shell ({{CSS}}/{{JS}} + data placeholders)
+├── studio.css      all styles
+└── studio.js       all behaviour — zoom/pan, code mapping, drag-to-edit,
+                    detail editor, context menu, undo/redo
+cmd/isotopo/main.go serve handlers: /api/render, /api/move (drag),
+                    /api/fields + /api/edit (detail editor),
+                    /api/op (delete/duplicate) — all comment-preserving
+                    text surgery on the POSTed source; disk never written
+tools/viewer-test/cdp_test.py   headless-Chrome regression suite for Studio
 
 iso25d/             low-level iso geometry, one shape per file
 ├── composite.go    iso z-order painter
@@ -130,6 +174,48 @@ iso25d/             low-level iso geometry, one shape per file
 cmd/isotopo/        the CLI
 ├── main.go         subcommand routing + flag parsing
 ```
+
+## Agent self-evolution: contracts vs. manual sync points
+
+What makes this repo safe for an agent (including a future you) to evolve:
+
+- **Machine-readable contract.** `isotopo capabilities` emits the full
+  supported surface as JSON; `tools/gen-docs` regenerates
+  `CAPABILITIES.md`, `dsl.schema.json`, `ICONS.md`, `llms.txt`,
+  `SAMPLES.md` and patches `PROMPT_TEMPLATE.md` from code. **Run
+  `go run ./tools/gen-docs` after any capability change** so the docs
+  can't drift.
+- **Deterministic regression.** Golden SVGs (`go test`) catch any render
+  drift byte-for-byte; the Studio has a CDP suite (`cdp_test.py`).
+- **Validation teaches.** `validate.go` returns did-you-mean suggestions
+  and CI exit codes (0/2/3).
+
+The real hazard is **parallel lists that must stay in sync** — an agent
+that edits one and forgets the others ships a silent desync (this is how
+`box`/`sphere`/`polygon` once leaked into the shape picker):
+
+| Concept | Source of truth | Also hand-maintained in |
+|---|---|---|
+| Shape tokens | `iso25d/shapes.go` (dispatch + `accepted_as`) | `capabilities.go`, `cmd/isotopo/main.go` (`shapeOptions`/`shapeClass`), `studio/studio.js` (`optGlyph`) |
+| Detail-editor fields | DSL structs in `dsl.go` | `cmd/isotopo/main.go` schema builders, `studio/studio.js` glyphs |
+| Icon value forms | `iso25d/brand_icons.go` + `flatten.go` | `capabilities.go` note, gen-docs |
+
+When you add a DSL capability, walk the whole row. The long-term fix is
+to **derive** the detail schema and shape options from the capability
+report / struct tags instead of hand-listing them — until then, this
+table is the blast-radius checklist.
+
+### Deferred roadmap (known, intentionally not yet built)
+
+- Studio: multi-select + marquee drag; snap-to-grid (needs to coexist
+  with drop-point anchoring); a wider edge hit-area / grab-anywhere for
+  edges occluded by their nodes; gradient editing in the detail modal.
+- Deleting a node that others `place:` against can break layout — delete
+  cleans up *connectors* but not `place:` references yet.
+- `output.go` still has two inline-literal templates (`NodeHTML`,
+  `NodesIndexHTML`); move them to `studio/` too.
+- Split `studio.js` into feature modules; add JS lint/format in CI.
+- Freeze bakes only `wx,wy` — z-exploded boards (`place: above`) flatten.
 
 ## Don'ts
 
