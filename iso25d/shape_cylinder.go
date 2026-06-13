@@ -33,6 +33,8 @@ type IsoCylinderOpts struct {
 	// v3.1 — vertical side gradients (were silently dropped before).
 	LeftGradient  *FaceGradient
 	RightGradient *FaceGradient
+	// v3.3 — per-face surface overrides (style.faces): top / left / right.
+	FaceSurfaces map[string]*FaceSurface
 
 	Margin float64
 
@@ -92,6 +94,23 @@ func RenderIsoCylinder(o IsoCylinderOpts) string {
 	sb.WriteString(svgHeader(W, H))
 	grainID := ""
 	leftFill, rightFill := o.LeftFill, o.RightFill
+	topFill := o.TopFill
+	var faceDefs strings.Builder
+	if fs := surfaceFor(o.FaceSurfaces, "top"); fs != nil && fs.Fill != nil {
+		if ref := emitFaceFill(&faceDefs, "", "top", fs.Fill); ref != "" {
+			topFill = ref
+		}
+	}
+	if fs := surfaceFor(o.FaceSurfaces, "left"); fs != nil && fs.Fill != nil {
+		if ref := emitFaceFill(&faceDefs, "", "left", fs.Fill); ref != "" {
+			leftFill = ref
+		}
+	}
+	if fs := surfaceFor(o.FaceSurfaces, "right"); fs != nil && fs.Fill != nil {
+		if ref := emitFaceFill(&faceDefs, "", "right", fs.Fill); ref != "" {
+			rightFill = ref
+		}
+	}
 	{
 		var defs strings.Builder
 		if id := emitGrainFilter(&defs, "cyl-grain", o.GrainIntensity, o.GrainScale); id != "" {
@@ -112,6 +131,9 @@ func RenderIsoCylinder(o IsoCylinderOpts) string {
 		}
 	}
 	openWrapper(&sb, W, H, o.Background, o.Opacity, o.StrokeDasharray, "")
+	if faceDefs.Len() > 0 {
+		fmt.Fprintf(&sb, `<defs>%s</defs>`, faceDefs.String())
+	}
 	if grainID != "" {
 		fmt.Fprintf(&sb, `<g filter="url(#%s)">`, grainID)
 	}
@@ -164,7 +186,7 @@ func RenderIsoCylinder(o IsoCylinderOpts) string {
 	// Top ellipse.
 	fmt.Fprintf(&sb,
 		`<ellipse data-face="top" cx="%.2f" cy="%.2f" rx="%.2f" ry="%.2f" fill="%s" stroke="%s" stroke-width="%.2f"/>`,
-		sx(topCx), sy(topCy), rx, ry, o.TopFill, o.Stroke, o.StrokeWidth,
+		sx(topCx), sy(topCy), rx, ry, topFill, o.Stroke, o.StrokeWidth,
 	)
 	// v2.4 — texture overlay on the top ellipse.
 	{
@@ -222,6 +244,7 @@ func applyCylinder(o ConvertOpts, c *IsoCylinderOpts) {
 	}
 	c.LeftGradient = o.LeftGradient
 	c.RightGradient = o.RightGradient
+	c.FaceSurfaces = o.FaceSurfaces
 	if o.Stroke != "" {
 		c.Stroke = o.Stroke
 	}

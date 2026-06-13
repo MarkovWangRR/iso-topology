@@ -1,4 +1,4 @@
-# Capabilities — v0.3.9
+# Capabilities — v0.4.0
 
 Generated from `CapabilityReport()`. Do not edit by hand — run
 `go run ./tools/gen-docs` to regenerate after a code change.
@@ -29,7 +29,7 @@ override per-part via `geom.h`.
 | Iso shape | Accepted aliases | Height hint | Notes |
 |---|---|---|---|
 | **boundary** | `boundary` | 1.0 | v3.5 — a group whose substrate is a dashed OUTLINE-ONLY flat region (VPC / subnet / trust zone). Same nesting/layout/autosize as group; style.stroke restyles the dashes |
-| **circle** | `circle`, `oval` | 1.0 |  |
+| **circle** | `circle`, `oval` | 0.8 |  |
 | **cloud** | `cloud` | 0.8 | free-form rounded outline; no per-face palette overrides |
 | **composite** | `composite` | 1.0 | container — holds parts: [] of CompositePart entries |
 | **cylinder** | `cylinder`, `queue`, `stored-data`, `stored_data` | 1.0 |  |
@@ -40,7 +40,7 @@ override per-part via `geom.h`.
 | **octprism** | `octprism` | 1.0 | v3.2 — 8-gon prism: firewall (stop-sign) semantics |
 | **person** | `c4-person`, `c4_person`, `person` | 1.2 |  |
 | **prism** | `prism` | 1.0 | v3.2 — regular n-gon base x vertical extrude; geom.sides picks the base (default 6). Side walls shade left/right palette by facing. Prisms take gradients/patterns/strokes via style.faces (v3.3) and backglow (v3.3.1); Full effects parity with the box family as of v3.4 (dropShadow, grain, backglow). Connectors anchor on the true polygon edge. |
-| **rectangle** | `callout`, `class`, `code`, `document`, `hierarchy`, `image`, `package`, `page`, `parallelogram`, `rectangle`, `sequence-diagram`, `sequence_diagram`, `sql-table`, `sql_table`, `square`, `step` | 0.6 |  |
+| **rectangle** | `callout`, `class`, `code`, `document`, `hierarchy`, `image`, `package`, `page`, `parallelogram`, `rectangle`, `sequence-diagram`, `sequence_diagram`, `sql-table`, `sql_table`, `square`, `step` | 1.0 |  |
 | **triprism** | `triprism` | 1.0 | v3.2 — 3-gon prism: alert / one-way fan-out semantics |
 
 ## Composition primitives
@@ -194,7 +194,7 @@ Every field under each `style.*` sub-block.
 |---|---|
 | `palette` | `top`, `left`, `right`, `topGradient {from, to, dir}`, `leftGradient {from, to, dir}`, `rightGradient {from, to, dir}` |
 | `stroke` | `color`, `width`, `dash` |
-| `faces (v3.3)` | `map of face name → {fill, strokes}; names: top|left|right (box family), top|side0..sideN-1 (prisms), "*" wildcard; outranks palette`, `fill {kind: solid|linearGradient|radialGradient|pattern, color, stops: [{offset 0..1, color}], angle (linear, degrees), cx/cy (radial 0..1), pattern {kind: hatch|dots, color, spacing, angle, projected}}`, `projected: true pins the pattern tile to the face's iso plane instead of screen space`, `strokes: [{color, width, dash, opacity}] — multiple re-traces per face, list order = paint order (put thin highlight lines after wide outlines)`, `note: a pattern fill REPLACES the base fill (transparent tile background); supported on the box family + prisms — cylinder/cloud/person/sphere keep palette only for now` |
+| `faces (v3.3)` | `map of face name → {fill, strokes}; names: top|left|right (box family), top|side0..sideN-1 (prisms), "*" wildcard; outranks palette`, `fill {kind: solid|linearGradient|radialGradient|pattern, color, stops: [{offset 0..1, color}], angle (linear, degrees), cx/cy (radial 0..1), pattern {kind: hatch|dots, color, spacing, angle, projected}}`, `projected: true pins the pattern tile to the face's iso plane instead of screen space`, `strokes: [{color, width, dash, opacity}] — multiple re-traces per face, list order = paint order (put thin highlight lines after wide outlines)`, `note: a pattern fill REPLACES the base fill (transparent tile background); supported on the box family, prisms, and cylinders (top/left/right) — cloud/person/sphere keep palette only for now` |
 | `text` | `family`, `size (a MAXIMUM — top-face labels auto-wrap at word boundaries and auto-shrink so they never overflow the face; icons are clamped to the face too)`, `weight`, `color`, `orient`, `boxBg`, `boxBorder` |
 | `effects` | `opacity`, `margin`, `cornerRadius`, `dropShadow {dx, dy, blur, color}`, `backglow {color, radius, opacity}`, `blur (v3.7) — gaussian stdDev in px over the whole part; fog / ghost / de-emphasized layers`, `outline {color, width, dash, opacity} (v3.8) — accent ring along the part's full silhouette (selection / emphasis), distinct from per-face stroke; hugs the true outline of every shape`, `pattern {kind: hatch|dots, color, spacing, angle}`, `wireframe (bool — line-art: strokes only, no fills; ghost parts are exempt from overlap warnings)`, `grain {intensity 0..1, scale} (film-grain noise on the faces)` |
 
