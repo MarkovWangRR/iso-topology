@@ -232,6 +232,11 @@ svg path[data-connector].pinned{stroke:var(--accent-deep);filter:drop-shadow(0 0
   font:12px Inter,sans-serif;color:#334155;padding:7px 11px;cursor:pointer;}
 #ctxmenu button:hover{background:var(--accent-soft);color:var(--accent-deep);}
 #detailModal{position:fixed;inset:0;z-index:60;background:rgba(15,23,42,.30);display:flex;align-items:center;justify-content:center;}
+/* id+attr specificity beats the id-only display rules above, so the HTML
+   hidden attribute actually hides these. A bare [hidden] display:none UA rule
+   would lose to the id-only display rule and leave them painted. */
+#detailModal[hidden]{display:none;}
+#ctxmenu[hidden]{display:none;}
 .detail-card{background:white;border-radius:12px;box-shadow:0 24px 60px rgba(15,23,42,.30);width:min(440px,92vw);
   max-height:84vh;display:flex;flex-direction:column;overflow:hidden;}
 .detail-head{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border);}
