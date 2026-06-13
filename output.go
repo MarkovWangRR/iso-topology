@@ -269,7 +269,7 @@ svg g[data-part-id].hi{filter:drop-shadow(0 0 3px rgba(16,174,185,.85));}
     <div id="viewport"><div id="zoomer">{{SVG}}</div></div>
     <div id="stale" class="stale" hidden>showing last good render</div>
     <div class="exportctl">
-      <button onclick="exportSVG()" title="download the current render as SVG">&#8595; SVG</button>
+      <button onclick="exportSVG()" title="download exactly what the canvas shows (last good render if the source is broken)">&#8595; SVG</button>
       <button onclick="exportPNG()" title="download the current render as PNG (2x)">&#8595; PNG</button>
     </div>
     <div class="zoomctl">
