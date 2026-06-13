@@ -163,6 +163,71 @@ func upsertInlineKey(src string, startLine int, key string, wx, wy float64) (str
 	return strings.Join(out, "\n"), true
 }
 
+// upsertInlineList replaces or inserts an inline `key: [ { wx, wy }, … ]`
+// on the connector block at startLine, and removes any existing `bend`
+// (waypoints supersede a single-corner bend). An empty pts list removes the
+// key entirely (reverts to the auto route). Values are always written inline
+// (one line), so replacement just swaps single child lines — mirroring
+// upsertInlineKey's comment-preserving, flow/block-aware surgery.
+func upsertInlineList(src string, startLine int, key string, pts [][2]float64) (string, bool) {
+	lines := strings.Split(src, "\n")
+	if startLine < 0 || startLine >= len(lines) {
+		return src, false
+	}
+	var vb strings.Builder
+	vb.WriteString("[")
+	for i, p := range pts {
+		if i > 0 {
+			vb.WriteString(", ")
+		}
+		fmt.Fprintf(&vb, "{ wx: %.0f, wy: %.0f }", p[0], p[1])
+	}
+	vb.WriteString("]")
+	listVal := vb.String()
+
+	itemIndent := indentOf(lines[startLine])
+	childIndent := itemIndent + 2
+
+	// Flow-map form on the start line itself (e.g. `- { from: a, to: b, … }`):
+	// edit inside the braces.
+	if strings.Contains(lines[startLine], "{") && strings.Contains(lines[startLine], "}") {
+		l := lines[startLine]
+		l = regexp.MustCompile(`,?\s*bend:\s*\{[^}]*\}`).ReplaceAllString(l, "")
+		l = regexp.MustCompile(`,?\s*`+regexp.QuoteMeta(key)+`:\s*\[[^\]]*\]`).ReplaceAllString(l, "")
+		if len(pts) > 0 {
+			val := fmt.Sprintf("%s: %s, ", key, listVal)
+			if i := strings.Index(l, "{"); i >= 0 {
+				l = l[:i+1] + " " + val + strings.TrimLeft(l[i+1:], " ")
+			}
+		}
+		l = regexp.MustCompile(`\{\s*,`).ReplaceAllString(l, "{ ")
+		l = regexp.MustCompile(`,\s*,`).ReplaceAllString(l, ", ")
+		l = regexp.MustCompile(`,\s*\}`).ReplaceAllString(l, " }")
+		lines[startLine] = l
+		return strings.Join(lines, "\n"), true
+	}
+
+	// Block form: drop existing single-line `bend:`/`waypoints:` children,
+	// then insert the new inline list (if any) as the first child line.
+	dropRe := regexp.MustCompile(`^\s*(?:bend|` + regexp.QuoteMeta(key) + `):`)
+	kept := make([]string, 0, len(lines))
+	for i, l := range lines {
+		if i > startLine && indentOf(l) > itemIndent && dropRe.MatchString(l) {
+			continue
+		}
+		kept = append(kept, l)
+	}
+	lines = kept
+	if len(pts) > 0 {
+		newLine := strings.Repeat(" ", childIndent) + key + ": " + listVal
+		out := append([]string{}, lines[:startLine+1]...)
+		out = append(out, newLine)
+		out = append(out, lines[startLine+1:]...)
+		lines = out
+	}
+	return strings.Join(lines, "\n"), true
+}
+
 // findPartIDLine returns the line index of `id: <id>` (with optional
 // `- ` prefix and quotes), or -1.
 func findPartIDLine(src, id string) int {
@@ -636,8 +701,21 @@ func serveFile(in string) error {
 			}
 		case "edge":
 			ci, _ := strconv.Atoi(q.Get("ci"))
-			bx, by := isotopo.ConnectorBend(doc, ci)
-			out, ok = upsertInlineKey(src, findConnectorLine(src, ci), "bend", bx+dwx, by+dwy)
+			// v4.6 — Studio computes the new interior waypoint list in world
+			// coords (drawio-style per-segment edit) and posts it as wp; the
+			// server just serialises it. Falls back to the legacy single-corner
+			// bend when wp is absent (non-orthogonal routes / older clients).
+			if wp := q.Get("wp"); wp != "" {
+				var raw [][2]float64
+				if err := json.Unmarshal([]byte(wp), &raw); err != nil {
+					http.Error(w, "bad wp: "+err.Error(), 400)
+					return
+				}
+				out, ok = upsertInlineList(src, findConnectorLine(src, ci), "waypoints", raw)
+			} else {
+				bx, by := isotopo.ConnectorBend(doc, ci)
+				out, ok = upsertInlineKey(src, findConnectorLine(src, ci), "bend", bx+dwx, by+dwy)
+			}
 		default:
 			http.Error(w, "kind must be node|edge", 400)
 			return

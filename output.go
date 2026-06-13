@@ -452,9 +452,76 @@ function screenToWorldDelta(dsx,dsy){
   // invert the iso ground-plane projection (sx=(wx-wy)c30, sy=(wx+wy)s30)
   return [dsx/(2*C30)+dsy/(2*S30), -dsx/(2*C30)+dsy/(2*S30)];
 }
-async function commitMove(kind,key,dwx,dwy,dropX,dropY){
+/* ── per-segment edge editing (drawio-style orthogonal waypoints) ────
+   The renderer tags each connector with data-route="sx,sy,wx,wy ..." —
+   every corner in pre-clip SVG-user AND world coords, source→target. We
+   hit-test which segment the pointer grabbed, move ONLY that segment along
+   its perpendicular world axis (inserting a corner at a docked endpoint so
+   the endpoints never move), and post the resulting interior waypoint list.
+   All structural math is in world coords; screen is only for hit-test and
+   live preview, so it round-trips exactly with what the server re-renders. */
+function parseRoute(p){
+  const a=p.getAttribute('data-route'); if(!a) return null;
+  const r=a.trim().split(/\s+/).map(t=>{const n=t.split(',').map(Number);
+    return {sx:n[0],sy:n[1],wx:n[2],wy:n[3]};});
+  return r.length>=2 ? r : null;
+}
+function distToSeg(px,py,ax,ay,bx,by){
+  const vx=bx-ax,vy=by-ay,wx=px-ax,wy=py-ay;
+  const L=vx*vx+vy*vy; let t=L>0?(wx*vx+wy*vy)/L:0; t=Math.max(0,Math.min(1,t));
+  const dx=px-(ax+t*vx),dy=py-(ay+t*vy); return Math.hypot(dx,dy);
+}
+function nearestSegment(p,route,cx,cy){
+  // cursor → SVG-user coords (the space data-route's sx,sy live in)
+  const m=p.getScreenCTM(); if(!m) return {j:0,axisIsX:Math.abs(route[1].wx-route[0].wx)>=Math.abs(route[1].wy-route[0].wy)};
+  const pt=p.ownerSVGElement.createSVGPoint(); pt.x=cx; pt.y=cy;
+  const u=pt.matrixTransform(m.inverse());
+  let best=0,bd=Infinity;
+  for(let i=0;i<route.length-1;i++){
+    const d=distToSeg(u.x,u.y,route[i].sx,route[i].sy,route[i+1].sx,route[i+1].sy);
+    if(d<bd){bd=d;best=i;}
+  }
+  const a=route[best],b=route[best+1];
+  return {j:best, axisIsX: Math.abs(b.wx-a.wx)>=Math.abs(b.wy-a.wy)};
+}
+// Move segment j perpendicular by delta (world units), keeping the two
+// docked endpoints (index 0 and last) fixed by inserting corners. Returns a
+// fresh world-corner list. axisIsX: segment runs along world-x, moves in wy.
+function editSegment(route,j,axisIsX,delta){
+  const W=route.map(r=>({wx:r.wx,wy:r.wy})); const N=W.length, k=axisIsX?'wy':'wx';
+  const isStart=j===0, isEnd=j+1===N-1;
+  if(!isStart && !isEnd){ W[j][k]+=delta; W[j+1][k]+=delta; return W; }
+  if(isStart && isEnd){
+    const A={wx:W[0].wx,wy:W[0].wy}, B={wx:W[1].wx,wy:W[1].wy}; A[k]+=delta; B[k]+=delta;
+    return [W[0],A,B,W[1]];
+  }
+  if(isStart){
+    const ins={wx:W[0].wx,wy:W[0].wy}; ins[k]+=delta; W[1][k]+=delta;
+    return [W[0],ins,...W.slice(1)];
+  }
+  const ins={wx:W[N-1].wx,wy:W[N-1].wy}; ins[k]+=delta; W[N-2][k]+=delta;
+  return [...W.slice(0,N-1),ins,W[N-1]];
+}
+function normalizeW(W){
+  const eps=0.5; let out=[W[0]];
+  for(let i=1;i<W.length;i++){const a=out[out.length-1];
+    if(Math.abs(W[i].wx-a.wx)<eps && Math.abs(W[i].wy-a.wy)<eps) continue; out.push(W[i]);}
+  for(let ch=true;ch && out.length>2;){ch=false;
+    for(let i=1;i<out.length-1;i++){const a=out[i-1],b=out[i],c=out[i+1];
+      if((Math.abs(a.wx-b.wx)<eps&&Math.abs(b.wx-c.wx)<eps)||(Math.abs(a.wy-b.wy)<eps&&Math.abs(b.wy-c.wy)<eps)){
+        out.splice(i,1); ch=true; break;}}}
+  return out;
+}
+// world corner → SVG-user coords, anchored on route[0]'s exact pairing.
+function worldToUser(w,ref){const dx=w.wx-ref.wx,dy=w.wy-ref.wy;
+  return [ref.sx+(dx-dy)*C30, ref.sy+(dx+dy)*S30];}
+function routeToPathD(W,ref){
+  return W.map((w,i)=>{const u=worldToUser(w,ref);return (i?'L ':'M ')+u[0].toFixed(2)+','+u[1].toFixed(2);}).join(' ');
+}
+async function commitMove(kind,key,dwx,dwy,dropX,dropY,wp){
   if(!serverOK) return;
-  const qp = kind==='node' ? 'kind=node&id='+encodeURIComponent(key) : 'kind=edge&ci='+key;
+  let qp = kind==='node' ? 'kind=node&id='+encodeURIComponent(key) : 'kind=edge&ci='+key;
+  if(wp) qp += '&wp='+encodeURIComponent(JSON.stringify(wp));
   try{
     const r=await fetch('/api/move?'+qp+'&dwx='+dwx+'&dwy='+dwy+'&format='+encodeURIComponent(LANG),
       {method:'POST',body:srcEl.value});
@@ -522,7 +589,10 @@ function wireDrag(){
       p.style.cursor='grabbing';
       document.body.style.cursor='grabbing';
       p.classList.add('dragging');
-      edgeDrag={el:p,ci:p.getAttribute('data-connector'),x:e.clientX,y:e.clientY,base:p.getAttribute('transform')||''};
+      const route=parseRoute(p);
+      const seg=route?nearestSegment(p,route,e.clientX,e.clientY):null;
+      edgeDrag={el:p,ci:p.getAttribute('data-connector'),x:e.clientX,y:e.clientY,
+        base:p.getAttribute('transform')||'',baseD:p.getAttribute('d'),route,seg,wp:null};
     });
   });
 }
@@ -543,6 +613,16 @@ function liveTranslate(el, base, dx, dy){
 }
 window.addEventListener('mousemove',e=>{
   const d=nodeDrag||edgeDrag; if(!d) return;
+  if(edgeDrag && d.route && d.seg){
+    // Per-segment preview: move ONLY the grabbed segment, rebuilt from world
+    // corners so the docked endpoints stay put and the line stays iso-clean.
+    const wd=screenToWorldDelta((e.clientX-d.x)/scale,(e.clientY-d.y)/scale);
+    const delta=d.seg.axisIsX?wd[1]:wd[0];
+    const edited=normalizeW(editSegment(d.route,d.seg.j,d.seg.axisIsX,delta));
+    d.el.setAttribute('d', routeToPathD(edited,d.route[0]));
+    d.wp=edited;
+    return;
+  }
   liveTranslate(d.el, d.base, (e.clientX-d.x)/scale, (e.clientY-d.y)/scale);
 });
 window.addEventListener('mouseup',e=>{
@@ -551,9 +631,15 @@ window.addEventListener('mouseup',e=>{
   nodeDrag=null; edgeDrag=null;
   // restore the pre-drag transform; commit re-renders the SVG fresh
   d.el.setAttribute('transform', d.base);
+  if(d.baseD!=null) d.el.setAttribute('d', d.baseD);
   d.el.classList.remove('dragging'); d.el.style.cursor='move'; document.body.style.cursor='';
   const wd=screenToWorldDelta((e.clientX-d.x)/scale,(e.clientY-d.y)/scale);
-  if(Math.abs(wd[0])>2||Math.abs(wd[1])>2){
+  if(Math.abs(wd[0])<=2 && Math.abs(wd[1])<=2) return;   // below drag threshold
+  if(kind==='edge' && d.wp){
+    // interior corners (drop the docked endpoints) become the waypoint list
+    const interior=d.wp.slice(1,d.wp.length-1).map(w=>[Math.round(w.wx),Math.round(w.wy)]);
+    commitMove('edge', d.ci, 0, 0, e.clientX, e.clientY, interior);
+  }else{
     commitMove(kind, kind==='node'?d.id:d.ci, Math.round(wd[0]), Math.round(wd[1]), e.clientX, e.clientY);
   }
 });
