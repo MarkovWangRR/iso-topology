@@ -421,7 +421,7 @@ function glowOnly(id){
 function wireHover(){
   zoomer.querySelectorAll('g[data-part-id]').forEach(g=>{
     const id=g.getAttribute('data-part-id');
-    g.style.cursor='pointer';
+    g.style.cursor='move';
     g.addEventListener('mouseenter',()=>{
       g.classList.add('hi');
       const r=rangeFor(id); if(!r) return;
@@ -499,22 +499,27 @@ function wireDrag(){
   // Attach unconditionally — probe() may not have resolved at first
   // paint; commitMove() guards on serverOK at drop time instead.
   zoomer.querySelectorAll('g[data-part-id]').forEach(g=>{
-    g.style.cursor='grab';
+    // Hover affordance: 4-way 'move' arrows — clearly distinct from the
+    // canvas pan cursor (open-hand 'grab'), so a movable object reads as
+    // movable the instant the pointer is over it.
+    g.style.cursor='move';
     g.addEventListener('mousedown',e=>{
       e.preventDefault();   // suppress the browser's native SVG image-drag
       e.stopPropagation();  // don't let the viewport start a pan
       g.style.cursor='grabbing';
+      document.body.style.cursor='grabbing';  // hold feedback if pointer outruns the element
       g.classList.add('dragging');
       nodeDrag={el:g,id:g.getAttribute('data-part-id').replace(/~\d+$/,''),x:e.clientX,y:e.clientY,base:g.getAttribute('transform')||''};
     });
   });
   zoomer.querySelectorAll('path[data-connector]').forEach(p=>{
     p.setAttribute('stroke-width', Math.max(parseFloat(p.getAttribute('stroke-width')||'1.4'),3));
-    p.style.cursor='grab';
+    p.style.cursor='move';
     p.addEventListener('mousedown',e=>{
       e.preventDefault();
       e.stopPropagation();
       p.style.cursor='grabbing';
+      document.body.style.cursor='grabbing';
       edgeDrag={el:p,ci:p.getAttribute('data-connector'),x:e.clientX,y:e.clientY,base:p.getAttribute('transform')||''};
     });
   });
@@ -544,7 +549,7 @@ window.addEventListener('mouseup',e=>{
   nodeDrag=null; edgeDrag=null;
   // restore the pre-drag transform; commit re-renders the SVG fresh
   d.el.setAttribute('transform', d.base);
-  d.el.classList.remove('dragging'); d.el.style.cursor='grab';
+  d.el.classList.remove('dragging'); d.el.style.cursor='move'; document.body.style.cursor='';
   const wd=screenToWorldDelta((e.clientX-d.x)/scale,(e.clientY-d.y)/scale);
   if(Math.abs(wd[0])>2||Math.abs(wd[1])>2){
     commitMove(kind, kind==='node'?d.id:d.ci, Math.round(wd[0]), Math.round(wd[1]), e.clientX, e.clientY);
