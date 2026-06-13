@@ -223,7 +223,8 @@ svg g[data-part-id].hi{filter:drop-shadow(0 0 3px rgba(16,174,185,.85));}
 svg g[data-part-id]{transition:filter .12s;}
 svg g[data-part-id]:hover{filter:drop-shadow(0 0 5px var(--accent));}
 svg g[data-part-id].dragging{filter:drop-shadow(0 0 9px var(--accent));opacity:.82;}
-svg path[data-connector]:hover{stroke:var(--accent-deep);}
+svg path[data-connector]:hover{stroke:var(--accent-deep);filter:drop-shadow(0 0 3px var(--accent)) drop-shadow(0 0 7px var(--accent));}
+svg path[data-connector].dragging{stroke:var(--accent);filter:drop-shadow(0 0 5px var(--accent)) drop-shadow(0 0 11px var(--accent));}
 </style></head><body>
 <header>
   <div class="brand">
@@ -520,6 +521,7 @@ function wireDrag(){
       e.stopPropagation();
       p.style.cursor='grabbing';
       document.body.style.cursor='grabbing';
+      p.classList.add('dragging');
       edgeDrag={el:p,ci:p.getAttribute('data-connector'),x:e.clientX,y:e.clientY,base:p.getAttribute('transform')||''};
     });
   });
