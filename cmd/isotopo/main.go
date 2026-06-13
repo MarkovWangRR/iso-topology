@@ -484,6 +484,30 @@ func serveFile(in string) error {
 	mux.HandleFunc("GET /api/ping", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("ok"))
 	})
+	// v4.5 — local, offline gallery for the Studio Examples menu (was a
+	// hardcoded list fetched from GitHub main). Backed by the embedded
+	// samples so it always matches this build.
+	mux.HandleFunc("GET /api/examples", func(w http.ResponseWriter, r *http.Request) {
+		// Only offer scenes that parse in THIS session's language, so a
+		// .d2 sample never loads into a yaml editor (and vice versa).
+		var names []string
+		for _, n := range isotopo.SampleNames() {
+			if _, lang, ok := isotopo.Sample(n); ok && lang == sourceLang {
+				names = append(names, n)
+			}
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]any{"examples": names})
+	})
+	mux.HandleFunc("GET /api/example", func(w http.ResponseWriter, r *http.Request) {
+		content, lang, ok := isotopo.Sample(r.URL.Query().Get("name"))
+		if !ok {
+			http.NotFound(w, r)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]any{"yaml": string(content), "lang": lang})
+	})
 	mux.HandleFunc("POST /api/render", func(w http.ResponseWriter, r *http.Request) {
 		body, err := io.ReadAll(io.LimitReader(r.Body, 4<<20))
 		if err != nil {
