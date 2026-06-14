@@ -116,3 +116,66 @@ func TestRenderSource(t *testing.T) {
 		t.Fatal("RenderSource returned no SVG")
 	}
 }
+
+func TestFields_NodeSchemaValuesAndHints(t *testing.T) {
+	fs, err := Fields("yaml", []byte(editFixture), "node", "a", 0)
+	if err != nil {
+		t.Fatalf("Fields: %v", err)
+	}
+	get := func(path string) (Field, bool) {
+		for _, f := range fs {
+			if f.Path == path {
+				return f, true
+			}
+		}
+		return Field{}, false
+	}
+	if f, ok := get("label"); !ok || f.Value != "A" {
+		t.Fatalf("label field: got %+v ok=%v (want Value A)", f, ok)
+	}
+	// node "a" inherits palette.top from preset "tile" (#FFFFFF) — surfaced as Eff.
+	if f, ok := get("style.palette.top"); !ok || f.Value != "" || f.Eff == "" {
+		t.Fatalf("palette.top: want empty Value + non-empty Eff (inherited), got %+v ok=%v", f, ok)
+	}
+	if _, ok := get("@iconColor"); !ok {
+		t.Fatal("node schema must include the synthetic @iconColor field")
+	}
+	// genuinely-unset positional field gets an Empty placeholder, not a blank.
+	if f, ok := get("offset.wx"); !ok || f.Empty == "" {
+		t.Fatalf("offset.wx should carry an Empty placeholder, got %+v ok=%v", f, ok)
+	}
+}
+
+func TestFields_Errors(t *testing.T) {
+	if _, err := Fields("yaml", []byte(editFixture), "node", "nope", 0); err == nil {
+		t.Fatal("expected error for a missing node id")
+	}
+	if _, err := Fields("yaml", []byte(editFixture), "bogus", "", 0); err == nil {
+		t.Fatal("expected error for an unknown kind")
+	}
+}
+
+const iconFixture = `# icon fixture
+nodes:
+  scene:
+    shape: composite
+    parts:
+      - {id: cpu, shape: rectangle, geom: {w: 100, d: 100, h: 20}, icon: "iso://glyph/cpu", label: CPU}
+`
+
+func TestApplyOp_IconColorTint(t *testing.T) {
+	// set-field with the synthetic @iconColor must splice the tint into the icon
+	// ref suffix, headless — and preserve comments.
+	outB, err := ApplyOpText("yaml", []byte(iconFixture), EditOp{Kind: "set-field", Target: "node", ID: "cpu",
+		Fields: map[string]string{"@iconColor": "#33C1FF"}})
+	if err != nil {
+		t.Fatalf("ApplyOpText: %v", err)
+	}
+	out := string(outB)
+	if !strings.Contains(out, "iso://glyph/cpu/33C1FF") {
+		t.Fatalf("@iconColor not spliced into the icon ref:\n%s", out)
+	}
+	if !strings.Contains(out, "# icon fixture") {
+		t.Fatalf("comment not preserved:\n%s", out)
+	}
+}

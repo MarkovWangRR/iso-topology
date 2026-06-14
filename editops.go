@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/MarkovWangRR/iso-topology/yamledit"
+	"gopkg.in/yaml.v3"
 )
 
 // This file lifts Studio's "direct-manipulation → DSL rewrite" loop out of the
@@ -176,14 +177,49 @@ func applyMove(format string, src []byte, op EditOp) ([]byte, error) {
 	return src, fmt.Errorf("move: target must be node|edge")
 }
 
+// foldIconColor returns op.Fields with the synthetic "@iconColor" key resolved
+// into a concrete `icon` write: the tint lives in the icon-ref suffix
+// (iso://glyph|si/<name>/RRGGBB), not a YAML key. The base ref is the icon set
+// in this same op if present, else the node's current icon. Non-node targets and
+// non-glyph icons can't be tinted → the key is just dropped. The caller's map is
+// never mutated.
+func foldIconColor(src []byte, op EditOp) map[string]string {
+	hex, ok := op.Fields["@iconColor"]
+	if !ok {
+		return op.Fields
+	}
+	out := make(map[string]string, len(op.Fields))
+	for k, v := range op.Fields {
+		if k != "@iconColor" {
+			out[k] = v
+		}
+	}
+	if op.Target == "node" {
+		base := op.Fields["icon"]
+		if base == "" {
+			var root map[string]interface{}
+			if yaml.Unmarshal(src, &root) == nil {
+				if nm := yamledit.FindNodeMap(root, op.ID); nm != nil {
+					base, _ = nm["icon"].(string)
+				}
+			}
+		}
+		if spliced := spliceIconColor(base, hex); spliced != "" {
+			out["icon"] = spliced
+		}
+	}
+	return out
+}
+
 func applySetField(src []byte, op EditOp) ([]byte, error) {
 	out := string(src)
+	fields := foldIconColor(src, op)
 	// Editing the canvas when no `canvas:` block exists yet: create an empty
 	// one at the top so the writes below have somewhere to land.
 	if op.Target == "canvas" && yamledit.FindCanvasLine(out) < 0 {
 		out = "canvas: {}\n" + out
 	}
-	for key, val := range op.Fields {
+	for key, val := range fields {
 		line, ok := targetLine(out, op)
 		if !ok {
 			return src, fmt.Errorf("set-field: target must be node|edge|canvas")

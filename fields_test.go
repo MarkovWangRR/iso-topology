@@ -1,10 +1,9 @@
-package main
+package isotopo
 
 import (
 	"strings"
 	"testing"
 
-	isotopo "github.com/MarkovWangRR/iso-topology"
 	"github.com/MarkovWangRR/iso-topology/yamledit"
 )
 
@@ -47,7 +46,7 @@ annotations:
 // the renderer understands — the single source of truth in capabilities.
 func acceptedShapeTokens() map[string]bool {
 	set := map[string]bool{}
-	for _, s := range isotopo.CapabilityReport().Shapes {
+	for _, s := range CapabilityReport().Shapes {
 		set[s.IsoName] = true
 		for _, a := range s.AcceptedAs {
 			set[a] = true
@@ -75,7 +74,7 @@ func TestShapeOptionsAreReal(t *testing.T) {
 // knobs, cornerRadius is offered to box-family (faces) but not to fill shapes
 // (a circle has no edges to round), and text/outline shapes get no effects.
 func TestEffectsSchemaGating(t *testing.T) {
-	hasPath := func(fields []schemaField, path string) bool {
+	hasPath := func(fields []Field, path string) bool {
 		for _, f := range fields {
 			if f.Path == path {
 				return true
