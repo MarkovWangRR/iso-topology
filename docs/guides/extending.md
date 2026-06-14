@@ -207,15 +207,17 @@ table is the blast-radius checklist.
 
 ### Deferred roadmap (known, intentionally not yet built)
 
-- Studio: multi-select + marquee drag; snap-to-grid (needs to coexist
-  with drop-point anchoring); a wider edge hit-area / grab-anywhere for
-  edges occluded by their nodes; gradient editing in the detail modal.
-- Deleting a node that others `place:` against can break layout — delete
-  cleans up *connectors* but not `place:` references yet.
-- `output.go` still has two inline-literal templates (`NodeHTML`,
-  `NodesIndexHTML`); move them to `studio/` too.
-- Split `studio.js` into feature modules; add JS lint/format in CI.
-- Freeze bakes only `wx,wy` — z-exploded boards (`place: above`) flatten.
+- Studio: **multi-select + marquee drag** (group move); **gradient editing**
+  in the detail modal (palette `*Gradient` blocks are hand-edited today);
+  a wider edge hit-area / grab-anywhere for edges fully occluded by their
+  nodes (inherent geometry — partial mitigation only).
+- Split `studio.js` (~45 KB, one file) into feature modules concatenated via
+  embed; add JS lint/format in CI. Pure internal restructuring — deferred for
+  its global-order risk vs. zero user-facing value.
+
+*Done since this list was first written:* snap-to-grid, place-aware delete,
+add-node, freeze bakes `wz`, NodeHTML/index extracted to `studio/`, and a
+capability-coupled guard test for the shape picker.
 
 ## Don'ts
 
