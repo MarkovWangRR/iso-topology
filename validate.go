@@ -135,6 +135,21 @@ func Validate(doc *Document) []Issue {
 			// Validate it so the agent gets a "did you mean .left" instead.
 			checkAnchor(c.From, cPath+".from", allIDs, &issues)
 			checkAnchor(c.To, cPath+".to", allIDs, &issues)
+			// arrow/routing typos likewise fall back silently to the default.
+			if c.Arrow != "" && !contains(arrowNames, c.Arrow) {
+				issues = append(issues, Issue{
+					Severity: SeverityError, Path: cPath + ".arrow",
+					Message: fmt.Sprintf("unknown arrow %q", c.Arrow),
+					Suggest: nearest(c.Arrow, arrowNames),
+				})
+			}
+			if c.Routing != "" && !contains(routingNames, c.Routing) {
+				issues = append(issues, Issue{
+					Severity: SeverityError, Path: cPath + ".routing",
+					Message: fmt.Sprintf("unknown routing %q", c.Routing),
+					Suggest: nearest(c.Routing, routingNames),
+				})
+			}
 		}
 	}
 

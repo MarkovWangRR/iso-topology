@@ -65,6 +65,25 @@ func TestValidateConnectorAnchorValid(t *testing.T) {
 	}
 }
 
+// A2 — arrow/routing typos flagged with suggestions.
+func TestValidateConnectorEnumTypos(t *testing.T) {
+	issues := validateSrc(t, sceneWith("a", "b", "triangel", "orthagonal"))
+	if iss := findIssue(issues, ".arrow", "unknown arrow"); iss == nil || iss.Suggest != "triangle" {
+		t.Errorf("expected arrow error suggesting triangle, got %+v", iss)
+	}
+	if iss := findIssue(issues, ".routing", "unknown routing"); iss == nil || iss.Suggest != "orthogonal" {
+		t.Errorf("expected routing error suggesting orthogonal, got %+v", iss)
+	}
+	// valid values produce no enum errors.
+	clean := validateSrc(t, sceneWith("a", "b", "triangle", "bezier"))
+	if iss := findIssue(clean, ".arrow", "unknown"); iss != nil {
+		t.Errorf("valid arrow flagged: %s", iss.Message)
+	}
+	if iss := findIssue(clean, ".routing", "unknown"); iss != nil {
+		t.Errorf("valid routing flagged: %s", iss.Message)
+	}
+}
+
 // A bad part id should NOT also produce a second anchor error (no double-fault).
 func TestValidateConnectorBadIdNoDoubleAnchorError(t *testing.T) {
 	issues := validateSrc(t, sceneWith("ghost.lft", "b", "triangle", "orthogonal"))

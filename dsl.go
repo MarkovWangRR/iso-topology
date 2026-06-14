@@ -97,6 +97,15 @@ type Connector struct {
 	Routing string `yaml:"routing,omitempty" json:"routing,omitempty"`
 }
 
+// arrowNames / routingNames are the connector enums the renderer accepts — the
+// single source for both validation (reject typos) and the capability contract
+// (let the agent discover them). Empty is allowed for both (no arrow; default
+// straight route).
+var (
+	arrowNames   = []string{"none", "triangle"}
+	routingNames = []string{"straight", "orthogonal", "bezier"}
+)
+
 // CompositePart is one sub-element of a composite node.
 type CompositePart struct {
 	ID      string      `yaml:"id,omitempty" json:"id,omitempty"` // v1.4 — referenced by Connectors
