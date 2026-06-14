@@ -7,6 +7,18 @@ import (
 	"github.com/MarkovWangRR/iso-topology/iso25d"
 )
 
+// anchorNames is the connector/annotation anchor vocabulary the resolver
+// understands (see (*anchorResolver).world / .parse). Every side has a bare
+// and a "-mid" spelling; "center" is an alias for the top-face centre. This is
+// the single source for both validation (reject typos) and the capability
+// contract (let the agent discover the set instead of guessing).
+var anchorNames = []string{
+	"top", "top-mid", "center",
+	"bottom", "bottom-mid",
+	"left", "left-mid", "right", "right-mid",
+	"back", "back-mid", "front", "front-mid",
+}
+
 // anchorResolver resolves a connector endpoint reference ("partID" or
 // "partID.anchor") to world / screen coordinates, exit normals and fan-out
 // keys. It was lifted verbatim out of injectCompositeConnectors — a family of
