@@ -23,17 +23,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"math"
 	"net/http"
-	"net/url"
 	"os"
 	"path/filepath"
-	"sort"
 	"strconv"
 	"strings"
 
 	isotopo "github.com/MarkovWangRR/iso-topology"
-	"github.com/MarkovWangRR/iso-topology/internal/yamledit"
+	"github.com/MarkovWangRR/iso-topology/yamledit"
 	"gopkg.in/yaml.v3"
 )
 
@@ -1063,106 +1060,38 @@ func serveFile(in string) error {
 		}
 		q := r.URL.Query()
 		atof := func(s string) float64 { v, _ := strconv.ParseFloat(s, 64); return v }
-		// dwx, dwy are a WORLD-space drag DELTA; the server resolves the
-		// target's current position and adds the delta to get an absolute
-		// value, so dragging a pure-auto node (no coords yet) works.
-		dwx, dwy := atof(q.Get("dwx")), atof(q.Get("dwy"))
-		// snap>0 rounds the dragged node's final offset to a grid step.
-		snapStep := atof(q.Get("snap"))
-		snap := func(v float64) float64 {
-			if snapStep > 0 {
-				return math.Round(v/snapStep) * snapStep
-			}
-			return v
-		}
-		src := string(body)
 		lang := q.Get("format")
 		if lang == "" {
 			lang = sourceLang
 		}
-		doc, derr := loadDocument(lang, body)
-		if derr != nil {
-			http.Error(w, derr.Error(), 422)
-			return
+		ci, _ := strconv.Atoi(q.Get("ci"))
+		// dwx, dwy are a WORLD-space drag DELTA; ApplyOpText resolves the
+		// target's current position and adds the delta. snap>0 rounds to grid.
+		op := isotopo.EditOp{
+			Kind: "move", Target: q.Get("kind"), ID: q.Get("id"), CI: ci,
+			DWX: atof(q.Get("dwx")), DWY: atof(q.Get("dwy")), Snap: atof(q.Get("snap")),
 		}
-		var out string
-		var ok bool
-		switch q.Get("kind") {
-		case "node":
-			// drawio model: the FIRST manual move freezes the whole scene
-			// into explicit coordinates and drops auto-layout, so the
-			// engine never re-decides positions again — no unexpected
-			// jumps. Every later move just nudges that one node.
-			if isotopo.SceneNeedsFreeze(doc) {
-				offs := isotopo.ResolveAllOffsets(doc)
-				out = yamledit.FreezeLayoutText(src)
-				ids := make([]string, 0, len(offs))
-				for id := range offs {
-					ids = append(ids, id)
-				}
-				sort.Strings(ids)
-				for _, id := range ids {
-					o := offs[id]
-					wx, wy, wz := o[0], o[1], o[2]
-					if id == q.Get("id") {
-						wx = snap(wx + dwx)
-						wy = snap(wy + dwy)
-					}
-					out, ok = yamledit.UpsertInlineKey(out, yamledit.FindPartIDLine(out, id), "offset", wx, wy, wz)
-				}
-			} else {
-				cx, cy, cz, found := isotopo.ResolvePartOffset(doc, q.Get("id"))
-				if !found {
-					http.Error(w, "part not found", 422)
-					return
-				}
-				out, ok = yamledit.UpsertInlineKey(src, yamledit.FindPartIDLine(src, q.Get("id")), "offset", snap(cx+dwx), snap(cy+dwy), cz)
+		// v4.6 — Studio posts an explicit interior waypoint list (drawio-style
+		// per-segment edit) as wp; absent → ApplyOpText falls back to a bend.
+		if wp := q.Get("wp"); wp != "" {
+			if err := json.Unmarshal([]byte(wp), &op.Waypoints); err != nil {
+				http.Error(w, "bad wp: "+err.Error(), 400)
+				return
 			}
-		case "edge":
-			ci, _ := strconv.Atoi(q.Get("ci"))
-			// v4.6 — Studio computes the new interior waypoint list in world
-			// coords (drawio-style per-segment edit) and posts it as wp; the
-			// server just serialises it. Falls back to the legacy single-corner
-			// bend when wp is absent (non-orthogonal routes / older clients).
-			if wp := q.Get("wp"); wp != "" {
-				var raw [][2]float64
-				if err := json.Unmarshal([]byte(wp), &raw); err != nil {
-					http.Error(w, "bad wp: "+err.Error(), 400)
-					return
-				}
-				out, ok = yamledit.UpsertInlineList(src, yamledit.FindConnectorLine(src, ci), "waypoints", raw)
-			} else {
-				bx, by := isotopo.ConnectorBend(doc, ci)
-				out, ok = yamledit.UpsertInlineKey(src, yamledit.FindConnectorLine(src, ci), "bend", bx+dwx, by+dwy, 0)
-			}
-		default:
-			http.Error(w, "kind must be node|edge", 400)
+		}
+		out, oerr := isotopo.ApplyOpText(lang, body, op)
+		if oerr != nil {
+			http.Error(w, oerr.Error(), 422)
 			return
 		}
-		if !ok {
-			http.Error(w, "target not found in source", 422)
-			return
-		}
-		svg, issues, _ := render(lang, []byte(out))
+		svg, issues, _ := render(lang, out)
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]any{"yaml": out, "svg": svg, "issues": issues})
+		json.NewEncoder(w).Encode(map[string]any{"yaml": string(out), "svg": svg, "issues": issues})
 	})
 	// v4.7 — detail editor. /api/fields returns the scalar fields actually
 	// present in a node/edge's YAML, each with a semantic label, for the
 	// right-click "edit details" modal. /api/edit writes the user's changes
 	// back (comment-preserving) and re-renders.
-	targetLine := func(src string, q url.Values) (int, bool) {
-		switch q.Get("kind") {
-		case "node":
-			return yamledit.FindPartIDLine(src, q.Get("id")), true
-		case "edge":
-			ci, _ := strconv.Atoi(q.Get("ci"))
-			return yamledit.FindConnectorLine(src, ci), true
-		case "canvas":
-			return yamledit.FindCanvasLine(src), true
-		}
-		return -1, false
-	}
 	mux.HandleFunc("POST /api/fields", func(w http.ResponseWriter, r *http.Request) {
 		body, err := io.ReadAll(io.LimitReader(r.Body, 4<<20))
 		if err != nil {
@@ -1192,22 +1121,22 @@ func serveFile(in string) error {
 			http.Error(w, "bad f: "+err.Error(), 400)
 			return
 		}
-		out := string(body)
-		// Editing the canvas when no `canvas:` block exists yet: create an
-		// empty one at the top so the writes below have somewhere to land.
-		if q.Get("kind") == "canvas" && yamledit.FindCanvasLine(out) < 0 {
-			out = "canvas: {}\n" + out
+		lang := q.Get("format")
+		if lang == "" {
+			lang = sourceLang
 		}
-		// "@iconColor" is a synthetic field: the icon tint lives in the icon
-		// ref suffix, not a style key. Fold it into an `icon` write, based on
-		// the icon edited in this same submit if present, else the node's
-		// current ref. Non-glyph icons can't be tinted → drop it silently.
+		ci, _ := strconv.Atoi(q.Get("ci"))
+		// "@iconColor" is a Studio-only synthetic field: the icon tint lives in
+		// the icon ref suffix, not a style key. Fold it into an `icon` write
+		// (based on the icon edited in this same submit if present, else the
+		// node's current ref) BEFORE handing the changes to ApplyOpText.
+		// Non-glyph icons can't be tinted → drop it silently.
 		if q.Get("kind") == "node" {
 			if hex, ok := changes["@iconColor"]; ok {
 				base := changes["icon"]
 				if base == "" {
 					var root map[string]interface{}
-					if yaml.Unmarshal([]byte(out), &root) == nil {
+					if yaml.Unmarshal(body, &root) == nil {
 						if nm := yamledit.FindNodeMap(root, q.Get("id")); nm != nil {
 							base, _ = nm["icon"].(string)
 						}
@@ -1219,24 +1148,14 @@ func serveFile(in string) error {
 				delete(changes, "@iconColor")
 			}
 		}
-		// Re-find the target after each edit: a write can shift line numbers.
-		for key, val := range changes {
-			line, ok := targetLine(out, q)
-			if !ok {
-				http.Error(w, "kind must be node|edge|canvas", 400)
-				return
-			}
-			if line < 0 {
-				http.Error(w, "target not found in source", 422)
-				return
-			}
-			out, _ = yamledit.SetField(out, line, strings.Split(key, "."), val)
+		op := isotopo.EditOp{Kind: "set-field", Target: q.Get("kind"), ID: q.Get("id"), CI: ci, Fields: changes}
+		outB, oerr := isotopo.ApplyOpText(lang, body, op)
+		if oerr != nil {
+			http.Error(w, oerr.Error(), 422)
+			return
 		}
-		lang := q.Get("format")
-		if lang == "" {
-			lang = sourceLang
-		}
-		svg, issues, _ := render(lang, []byte(out))
+		out := string(outB)
+		svg, issues, _ := render(lang, outB)
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]any{"yaml": out, "svg": svg, "issues": issues})
 	})
@@ -1249,40 +1168,26 @@ func serveFile(in string) error {
 			return
 		}
 		q := r.URL.Query()
-		src := string(body)
 		lang := q.Get("format")
 		if lang == "" {
 			lang = sourceLang
 		}
-		var out string
-		ok := false
-		switch q.Get("op") + ":" + q.Get("kind") {
-		case "add:node":
-			out, ok = yamledit.AddPart(src)
-		case "delete:node":
-			out, ok = yamledit.DeletePart(src, q.Get("id"))
-		case "delete:edge":
-			ci, _ := strconv.Atoi(q.Get("ci"))
-			if s, e, found := yamledit.ConnectorItemRange(src, ci); found {
-				out, ok = yamledit.DeleteLineRange(src, s, e), true
-			}
-		case "duplicate:node":
-			ox, oy := 40.0, 40.0
-			if doc, derr := loadDocument(lang, body); derr == nil {
-				if cx, cy, _, found := isotopo.ResolvePartOffset(doc, q.Get("id")); found {
-					ox, oy = cx+40, cy+40
-				}
-			}
-			out, ok = yamledit.DuplicatePart(src, q.Get("id"), ox, oy)
+		ci, _ := strconv.Atoi(q.Get("ci"))
+		// op ∈ add|delete|duplicate, kind ∈ node|edge → one EditOp kind.
+		op := isotopo.EditOp{Kind: q.Get("op"), Target: q.Get("kind"), ID: q.Get("id"), CI: ci}
+		switch q.Get("op") {
+		case "add", "delete", "duplicate":
 		default:
 			http.Error(w, "op must be add|delete|duplicate", 400)
 			return
 		}
-		if !ok {
-			http.Error(w, "target not found in source", 422)
+		outB, oerr := isotopo.ApplyOpText(lang, body, op)
+		if oerr != nil {
+			http.Error(w, oerr.Error(), 422)
 			return
 		}
-		svg, issues, _ := render(lang, []byte(out))
+		out := string(outB)
+		svg, issues, _ := render(lang, outB)
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]any{"yaml": out, "svg": svg, "issues": issues})
 	})
