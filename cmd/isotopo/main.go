@@ -262,9 +262,25 @@ type schemaField struct {
 }
 
 // nodeSchema / edgeSchema declare the editable, visually-impactful fields.
-// shapeOptions are the real, accepted shape tokens (see `isotopo capabilities`).
-var shapeOptions = []string{"rectangle", "cylinder", "circle", "cloud", "person",
-	"hexprism", "prism", "diamond", "triprism", "octprism", "group", "boundary", "text"}
+// shapeOptions is DERIVED from the capability report (the single source of
+// truth for what the renderer accepts), so adding a shape to the engine makes
+// it appear in the Studio picker automatically — no hand-maintained list to
+// drift. Only `composite` (the scene container, never a node choice) is
+// dropped, and iso_text is shown under its friendlier `text` alias.
+func shapeOptions() []string {
+	var out []string
+	for _, s := range isotopo.CapabilityReport().Shapes {
+		switch s.IsoName {
+		case "composite":
+			// scene container only — not a per-node shape
+		case "iso_text":
+			out = append(out, "text")
+		default:
+			out = append(out, s.IsoName)
+		}
+	}
+	return out
+}
 
 // shapeClass buckets a shape by how it takes colour, so the detail form only
 // offers controls that actually affect that shape:
@@ -291,7 +307,7 @@ func shapeClass(s string) string {
 func nodeSchema(shape string) []schemaField {
 	f := []schemaField{
 		{Group: "Content", Path: "label", Label: "Label", Desc: "Text rendered on the node", Type: "text"},
-		{Group: "Content", Path: "shape", Label: "Shape", Desc: "Geometric form of the node", Type: "choice", Options: shapeOptions},
+		{Group: "Content", Path: "shape", Label: "Shape", Desc: "Geometric form of the node", Type: "choice", Options: shapeOptions()},
 		{Group: "Content", Path: "icon", Label: "Icon", Desc: "iso://… ref, image URL, or pick a local file", Type: "icon"},
 		{Group: "Content", Path: "preset", Label: "Style preset", Desc: "Named style from theme.presets", Type: "text"},
 		{Group: "Size — world units", Path: "geom.w", Label: "Width", Type: "number", Inline: true},
