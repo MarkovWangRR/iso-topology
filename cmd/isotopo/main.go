@@ -108,7 +108,17 @@ func itoa(n int) string { return strconv.Itoa(n) }
 // a connector `- ` item). Block ends at the next line whose indent is
 // ≤ the start line's indent. Preserves all other formatting/comments —
 // the Studio drag must not reflow the user's YAML. Returns (newSrc, ok).
-func upsertInlineKey(src string, startLine int, key string, wx, wy float64) (string, bool) {
+//
+// wz is written only when non-zero (so 2D scenes stay byte-identical and a
+// node already carrying a wz keeps it through a 2D drag).
+func offsetVal(key string, wx, wy, wz float64) string {
+	if wz != 0 {
+		return fmt.Sprintf("%s: { wx: %.0f, wy: %.0f, wz: %.0f }", key, wx, wy, wz)
+	}
+	return fmt.Sprintf("%s: { wx: %.0f, wy: %.0f }", key, wx, wy)
+}
+
+func upsertInlineKey(src string, startLine int, key string, wx, wy, wz float64) (string, bool) {
 	lines := strings.Split(src, "\n")
 	if startLine < 0 || startLine >= len(lines) {
 		return src, false
@@ -131,7 +141,7 @@ func upsertInlineKey(src string, startLine int, key string, wx, wy float64) (str
 		l := lines[startLine]
 		// drop an existing top-level offset/bend (value has no nested braces)
 		l = regexp.MustCompile(`,?\s*`+regexp.QuoteMeta(key)+`:\s*\{[^}]*\}`).ReplaceAllString(l, "")
-		val := fmt.Sprintf("%s: { wx: %.0f, wy: %.0f }, ", key, wx, wy)
+		val := offsetVal(key, wx, wy, wz) + ", "
 		if i := strings.Index(l, "{"); i >= 0 {
 			l = l[:i+1] + " " + val + strings.TrimLeft(l[i+1:], " ")
 		}
@@ -144,7 +154,7 @@ func upsertInlineKey(src string, startLine int, key string, wx, wy float64) (str
 		lines[startLine] = l
 		return strings.Join(lines, "\n"), true
 	}
-	newLine := fmt.Sprintf("%s%s: { wx: %.0f, wy: %.0f }", strings.Repeat(" ", childIndent), key, wx, wy)
+	newLine := strings.Repeat(" ", childIndent) + offsetVal(key, wx, wy, wz)
 	keyRe := regexp.MustCompile(`^\s*` + regexp.QuoteMeta(key) + `:`)
 	for i := startLine + 1; i < blockEnd; i++ {
 		if keyRe.MatchString(lines[i]) {
@@ -1009,7 +1019,7 @@ func duplicatePart(src, id string, ox, oy float64) (string, bool) {
 	cloneStr = regexp.MustCompile(`id:\s*"?`+regexp.QuoteMeta(id)+`"?`).
 		ReplaceAllString(cloneStr, "id: "+newID)
 	out := strings.Join(append(append(append([]string{}, lines[:e]...), strings.Split(cloneStr, "\n")...), lines[e:]...), "\n")
-	out, _ = upsertInlineKey(out, findPartIDLine(out, newID), "offset", ox, oy)
+	out, _ = upsertInlineKey(out, findPartIDLine(out, newID), "offset", ox, oy, 0)
 	return out, true
 }
 
@@ -1437,20 +1447,20 @@ func serveFile(in string) error {
 				sort.Strings(ids)
 				for _, id := range ids {
 					o := offs[id]
-					wx, wy := o[0], o[1]
+					wx, wy, wz := o[0], o[1], o[2]
 					if id == q.Get("id") {
 						wx += dwx
 						wy += dwy
 					}
-					out, ok = upsertInlineKey(out, findPartIDLine(out, id), "offset", wx, wy)
+					out, ok = upsertInlineKey(out, findPartIDLine(out, id), "offset", wx, wy, wz)
 				}
 			} else {
-				cx, cy, found := isotopo.ResolvePartOffset(doc, q.Get("id"))
+				cx, cy, cz, found := isotopo.ResolvePartOffset(doc, q.Get("id"))
 				if !found {
 					http.Error(w, "part not found", 422)
 					return
 				}
-				out, ok = upsertInlineKey(src, findPartIDLine(src, q.Get("id")), "offset", cx+dwx, cy+dwy)
+				out, ok = upsertInlineKey(src, findPartIDLine(src, q.Get("id")), "offset", cx+dwx, cy+dwy, cz)
 			}
 		case "edge":
 			ci, _ := strconv.Atoi(q.Get("ci"))
@@ -1467,7 +1477,7 @@ func serveFile(in string) error {
 				out, ok = upsertInlineList(src, findConnectorLine(src, ci), "waypoints", raw)
 			} else {
 				bx, by := isotopo.ConnectorBend(doc, ci)
-				out, ok = upsertInlineKey(src, findConnectorLine(src, ci), "bend", bx+dwx, by+dwy)
+				out, ok = upsertInlineKey(src, findConnectorLine(src, ci), "bend", bx+dwx, by+dwy, 0)
 			}
 		default:
 			http.Error(w, "kind must be node|edge", 400)
@@ -1582,7 +1592,7 @@ func serveFile(in string) error {
 		case "duplicate:node":
 			ox, oy := 40.0, 40.0
 			if doc, derr := loadDocument(lang, body); derr == nil {
-				if cx, cy, found := isotopo.ResolvePartOffset(doc, q.Get("id")); found {
+				if cx, cy, _, found := isotopo.ResolvePartOffset(doc, q.Get("id")); found {
 					ox, oy = cx+40, cy+40
 				}
 			}
