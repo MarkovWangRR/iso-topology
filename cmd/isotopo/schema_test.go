@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	isotopo "github.com/MarkovWangRR/iso-topology"
-	"github.com/MarkovWangRR/iso-topology/internal/yamledit"
+	"github.com/MarkovWangRR/iso-topology/yamledit"
 )
 
 // TestDeleteContainerCleansRefs locks the E2E-found bugs: deleting a container
