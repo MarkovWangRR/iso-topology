@@ -108,6 +108,47 @@ func TestValidateGeometrySanity(t *testing.T) {
 	}
 }
 
+// C — a place block whose relation key the decoder dropped (e.g. `below:`,
+// which is not a relation) leaves the part unplaced; warn instead of silence.
+func TestValidatePlaceNoRelation(t *testing.T) {
+	src := `nodes:
+  scene:
+    shape: composite
+    parts:
+      - { id: a, shape: rectangle, geom: { w: 80, d: 80, h: 30 } }
+      - { id: b, shape: rectangle, geom: { w: 80, d: 80, h: 30 }, place: { below: a } }
+`
+	if iss := findIssue(validateSrc(t, src), ".place", "no recognized relation"); iss == nil {
+		t.Error("expected a no-relation warning for place: { below: a }")
+	}
+	// a valid relation produces no such warning.
+	ok := `nodes:
+  scene:
+    shape: composite
+    parts:
+      - { id: a, shape: rectangle, geom: { w: 80, d: 80, h: 30 } }
+      - { id: b, shape: rectangle, geom: { w: 80, d: 80, h: 30 }, place: { rightOf: a } }
+`
+	if iss := findIssue(validateSrc(t, ok), ".place", "no recognized relation"); iss != nil {
+		t.Errorf("valid place wrongly flagged: %s", iss.Message)
+	}
+}
+
+// C — the enum contract must stay wired to the validators' single sources.
+func TestCapabilityEnumsMatchValidators(t *testing.T) {
+	enums := CapabilityReport().Enums
+	for _, key := range []string{"connector_anchor", "connector_arrow", "connector_routing",
+		"layout_mode", "place_relation", "annotation_side"} {
+		if len(enums[key]) == 0 {
+			t.Errorf("capability enums missing %q — agents can't discover it", key)
+		}
+	}
+	// the exposed routing set must be exactly what Validate accepts.
+	if strings.Join(enums["connector_routing"], ",") != strings.Join(routingNames, ",") {
+		t.Error("connector_routing enum drifted from routingNames (validation source)")
+	}
+}
+
 // A bad part id should NOT also produce a second anchor error (no double-fault).
 func TestValidateConnectorBadIdNoDoubleAnchorError(t *testing.T) {
 	issues := validateSrc(t, sceneWith("ghost.lft", "b", "triangle", "orthogonal"))
