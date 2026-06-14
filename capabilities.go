@@ -146,7 +146,7 @@ func buildPrimitiveCaps() []PrimitiveCap {
 		{
 			Name:    "group",
 			Where:   "node.parts[*]",
-			Syntax:  "{shape: group, layout: {mode: row|column|grid}, parts: [...], label: \"…\", geom: {h}}",
+			Syntax:  "{shape: group, layout: {mode: row|column|grid|ring}, parts: [...], label: \"…\", geom: {h}}",
 			Purpose: "Wrap N parts in a translucent labeled iso substrate. Position children with layout (or per-child place) — the substrate then auto-sizes around them, so geom.w/d may be omitted. Child offsets are fine-tune deltas relative to the group.",
 			Fields: map[string]string{
 				"parts":  "list of CompositePart (other groups OK — supports unlimited nesting)",

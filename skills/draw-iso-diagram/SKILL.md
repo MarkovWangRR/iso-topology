@@ -38,9 +38,9 @@ bar and are all coordinate-free.
 
 - NEVER hand-compute coordinates. Pick ONE anchor part (no `place`),
   chain everything else off it with
-  `place: {rightOf|leftOf|inFrontOf|behind: <sibling-id>, gap: N}`;
+  `place: {rightOf|leftOf|above|below|inFrontOf|behind: <sibling-id>, gap: N}`;
   arrange container children with
-  `layout: {mode: row|column|grid, gap: N}`. Gaps are in CELLS
+  `layout: {mode: row|column|grid|ring, gap: N}`. Gaps are in CELLS
   (1 cell = canvas `gridStep`, default 40 world units).
 - A stair = each tile `{rightOf: prev, inFrontOf: prev}`. A board =
   one `group` with `layout: {mode: grid}` — omit its `geom.w/d`, the

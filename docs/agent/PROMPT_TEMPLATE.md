@@ -20,7 +20,7 @@ CAPABILITIES v0.4.5 (the only DSL you may emit):
 - Shapes: boundary, circle, cloud, composite, cylinder, diamond, group, hexprism, iso_text, octprism, person, prism, rectangle, triprism.
   (d2 aliases like queue/stored_data/hexagon also accepted — see CAPABILITIES.md.)
 - Composition primitives (YAML):
-    group:      {shape: group, layout: {mode: row|column|grid}, parts: [...], label: "…", geom: {h}}
+    group:      {shape: group, layout: {mode: row|column|grid|ring}, parts: [...], label: "…", geom: {h}}
     stack:      stack: {count: N, gap: g}
     canvas-grid: canvas: {background: "#FAFBFC", grid: iso, gridColor: "#E2E6EE", gridStep: 36}
     annotation: {anchor: <part-id>, text: "…", side: top|right|bottom|left, distance: 60}

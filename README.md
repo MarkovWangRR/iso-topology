@@ -315,15 +315,17 @@ Both converge on the same document model and output structure. See
 
 ## Capabilities
 
-- **23 d2 shapes** mapped to iso primitives (rectangle, cylinder,
-  cloud, person, hexagon, queue, oval, …)
-- **Declarative positioning**: `layout: {mode: row|column|grid}`
-  containers and `place: {rightOf|inFrontOf: sibling}` relations —
-  the solver computes coordinates, validates references, warns on
-  overlaps
-- **8 composition primitives**: `group`, `stack`, `layout`, `place`,
+- **23 d2 input shapes** → **14 iso primitives** (rectangle, cylinder,
+  cloud, person, hexprism, diamond, prism, …) — the iso set is what
+  `capabilities.shapes` enumerates; the 23 are the d2 source names
+  that map onto it
+- **Declarative positioning**: `layout: {mode: row|column|grid|ring}`
+  containers and `place: {rightOf|leftOf|above|below|inFrontOf|behind:
+  sibling}` relations — the solver computes coordinates, validates
+  references, warns on overlaps
+- **9 composition primitives**: `group`, `stack`, `layout`, `place`,
   `canvas.grid`, `annotation`, `connector` (orthogonal / bezier),
-  icons
+  `preset`, icons
 - **200+ built-in icons**: ~150 real brand logos vendored from
   Simple Icons, CC0 (`iso://si/postgresql`, `iso://si/openai`, …),
   35 hand-drawn concept glyphs (`iso://glyph/gpu`, `model`,
