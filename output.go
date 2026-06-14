@@ -107,100 +107,34 @@ func TopologyHTML(svg, sourceText, sourceLang, sourceFilename string) string {
 // NodeHTML wraps a single per-part SVG with its embed snippet and DSL
 // fragment. The fragment is editable in the same way as the topology
 // page — drop it into a YAML doc and render it standalone.
+//
+//go:embed studio/node.html
+var nodeShell string
+
 func NodeHTML(id, svg, yamlFragment string) string {
-	bg := "#FAFAFB"
-	var sb strings.Builder
-	fmt.Fprintf(&sb, `<!doctype html>
-<html lang="en"><head><meta charset="utf-8">
-<title>isotopo · %s</title>
-<style>
-:root{--bg:%s;--fg:#1F2937;--muted:#6B7280;--border:rgba(127,127,127,0.22);--code:#F4F5F7;}
-*{box-sizing:border-box;}
-body{margin:0;padding:32px;background:var(--bg);color:var(--fg);font-family:Inter,"Helvetica Neue",Arial,sans-serif;}
-h1{margin:0 0 4px;font-size:18px;font-family:ui-monospace,Menlo,monospace;}
-h2{margin:24px 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);}
-.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px;}
-.panel{border:1px solid var(--border);border-radius:10px;background:rgba(255,255,255,0.6);}
-.stage{display:flex;align-items:center;justify-content:center;padding:16px;min-height:260px;}
-.stage svg{max-width:100%%;height:auto;}
-pre,textarea{font:12.5px/1.55 ui-monospace,Menlo,Consolas,monospace;background:var(--code);border:0;border-radius:8px;padding:12px;width:100%%;}
-textarea{min-height:240px;resize:vertical;color:var(--fg);}
-.row{display:flex;gap:8px;align-items:center;margin:6px 0;}
-button{font:12px ui-monospace,Menlo,monospace;border:1px solid var(--border);background:white;padding:6px 10px;border-radius:6px;cursor:pointer;}
-button:hover{background:#F1F3F8;}
-small{color:var(--muted);}
-nav{margin:-12px 0 16px;}
-nav a{color:var(--muted);text-decoration:none;border-bottom:1px dotted var(--muted);}
-</style></head><body>
-<nav><a href="./_index.html">← all nodes</a> · <a href="../topology.html">topology</a></nav>
-<h1>%s</h1>
-<small>standalone iso element · part of the topology</small>
-
-<div class="grid" style="margin-top:18px;">
-  <div class="panel stage">%s</div>
-  <div>
-    <h2>embed</h2>
-    <pre id="embed">&lt;img src="./%s.svg" alt="%s"/&gt;</pre>
-    <div class="row"><button onclick="copy('embed')">copy &lt;img&gt;</button></div>
-
-    <h2>fragment · yaml</h2>
-    <textarea id="frag" spellcheck="false">%s</textarea>
-    <div class="row">
-      <button onclick="copy('frag')">copy</button>
-      <small>standalone DSL — render with <code>isotopo render %s.yaml out/</code>.</small>
-    </div>
-  </div>
-</div>
-<script>
-function copy(id){
-  const el=document.getElementById(id);
-  const text=el.value!==undefined?el.value:el.innerText;
-  navigator.clipboard.writeText(text);
-}
-</script>
-</body></html>`,
-		html.EscapeString(id),
-		bg,
-		html.EscapeString(id),
-		svg,
-		html.EscapeString(id),
-		html.EscapeString(id),
-		html.EscapeString(yamlFragment),
-		html.EscapeString(id),
-	)
-	return sb.String()
+	return strings.NewReplacer(
+		"{{BG}}", "#FAFAFB",
+		"{{SVG}}", svg,
+		"{{FRAG}}", html.EscapeString(yamlFragment),
+		"{{ID}}", html.EscapeString(id),
+	).Replace(nodeShell)
 }
 
 // NodesIndexHTML is a tiny gallery linking to every per-part page so
 // users can browse the parts of a topology like a sticker sheet.
+//
+//go:embed studio/nodes-index.html
+var nodesIndexShell string
+
 func NodesIndexHTML(ids []string) string {
-	var sb strings.Builder
-	fmt.Fprintf(&sb, `<!doctype html>
-<html><head><meta charset="utf-8"><title>isotopo · nodes</title>
-<style>
-body{margin:0;padding:32px;background:#FAFAFB;font-family:Inter,Arial,sans-serif;color:#1F2937;}
-h1{margin:0 0 4px;font-size:18px;}
-small{color:#6B7280;}
-nav{margin:8px 0 18px;}
-nav a{color:#6B7280;text-decoration:none;border-bottom:1px dotted #6B7280;}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;}
-.card{display:block;background:white;border:1px solid rgba(127,127,127,0.22);border-radius:10px;padding:12px;text-decoration:none;color:inherit;}
-.card:hover{border-color:#3B82F6;}
-.card h3{margin:0 0 6px;font:11px ui-monospace,Menlo,monospace;opacity:0.72;}
-.stage{display:flex;align-items:center;justify-content:center;min-height:170px;}
-.stage img{max-width:100%%;max-height:180px;}
-</style></head><body>
-<nav><a href="../topology.html">← topology</a></nav>
-<h1>nodes</h1>
-<small>%d standalone iso elements · click a card to copy embed code</small>
-<div class="grid" style="margin-top:14px;">
-`, len(ids))
+	var cards strings.Builder
 	for _, id := range ids {
-		fmt.Fprintf(&sb,
+		fmt.Fprintf(&cards,
 			`<a class="card" href="./%s.html"><h3>%s</h3><div class="stage"><img src="./%s.svg" alt="%s"/></div></a>`+"\n",
-			id, html.EscapeString(id), id, html.EscapeString(id),
-		)
+			id, html.EscapeString(id), id, html.EscapeString(id))
 	}
-	sb.WriteString(`</div></body></html>`)
-	return sb.String()
+	return strings.NewReplacer(
+		"{{COUNT}}", fmt.Sprintf("%d", len(ids)),
+		"{{CARDS}}", cards.String(),
+	).Replace(nodesIndexShell)
 }
