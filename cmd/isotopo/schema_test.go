@@ -1,10 +1,46 @@
 package main
 
 import (
+	"strings"
 	"testing"
 
 	isotopo "github.com/MarkovWangRR/iso-topology"
 )
+
+// TestDeleteContainerCleansRefs locks the E2E-found bugs: deleting a container
+// node must also drop everything that referenced its (now-gone) nested parts —
+// connectors AND annotations — or the scene fails validation with a dangling
+// reference.
+func TestDeleteContainerCleansRefs(t *testing.T) {
+	src := `nodes:
+  scene:
+    shape: composite
+    parts:
+      - id: grp
+        shape: group
+        parts:
+          - { id: a, shape: rectangle, label: "A" }
+          - { id: b, shape: cylinder, label: "B" }
+      - { id: c, shape: rectangle, label: "C" }
+    connectors:
+      - { from: c, to: a }
+      - { from: a, to: b }
+annotations:
+  - { anchor: b, text: "note" }
+`
+	out, ok := deletePart(src, "grp")
+	if !ok {
+		t.Fatal("deletePart(grp) returned not-ok")
+	}
+	for _, bad := range []string{"id: a", "id: b", "to: a", "from: a", "anchor: b"} {
+		if strings.Contains(out, bad) {
+			t.Errorf("after deleting container grp, leftover %q (dangling ref):\n%s", bad, out)
+		}
+	}
+	if !strings.Contains(out, "id: c") {
+		t.Error("sibling c should survive deleting grp")
+	}
+}
 
 // acceptedShapeTokens is the union of every iso shape name and accepted alias
 // the renderer understands — the single source of truth in capabilities.
