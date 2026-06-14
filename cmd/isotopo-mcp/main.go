@@ -188,11 +188,14 @@ func callTool(name string, args json.RawMessage) (text string, isError bool) {
 		return string(enc), false
 
 	case "iso_validate":
-		doc, _, errText := loadFromArgs(args)
+		doc, a, errText := loadFromArgs(args)
 		if errText != "" {
 			return errText, true
 		}
 		issues := isotopo.Validate(doc)
+		if a != nil && a.Format != "d2" {
+			issues = append(issues, isotopo.UnknownKeyIssues([]byte(a.DSL))...)
+		}
 		enc, _ := json.MarshalIndent(map[string]any{"issues": issues}, "", "  ")
 		return string(enc), hasErrorIssue(issues)
 
