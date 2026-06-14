@@ -19,7 +19,16 @@ import (
 func TestConnectorDocksAcrossGroup(t *testing.T) {
 	// Mirror the rag-pipeline shape that exposed the bug: two auto-sized
 	// group "planes" (each with a label → a zero-dim sub-part) and a
-	// standalone target between them.
+	// standalone target between them. The bug is in the SHARED projection
+	// origin, so it's shape-agnostic — verify a spread of polygon-faced
+	// shapes (the ones whose silhouette we can parse as points here) so a
+	// regression is caught regardless of the target's geometry.
+	for _, shape := range []string{"rectangle", "hexprism", "diamond", "octprism", "prism", "triprism"} {
+		t.Run(shape, func(t *testing.T) { assertDocks(t, shape) })
+	}
+}
+
+func assertDocks(t *testing.T, shape string) {
 	src := `
 nodes:
   scene:
@@ -34,7 +43,7 @@ nodes:
           - { id: c1, shape: rectangle, geom: { w: 96, d: 96, h: 22 }, label: "C1" }
           - { id: c2, shape: rectangle, geom: { w: 96, d: 96, h: 22 }, label: "C2" }
           - { id: c3, shape: rectangle, geom: { w: 96, d: 96, h: 22 }, label: "C3" }
-      - { id: tgt, shape: rectangle, geom: { w: 96, d: 96, h: 30 }, label: "TGT" }
+      - { id: tgt, shape: ` + shape + `, geom: { w: 96, d: 96, h: 30 }, label: "TGT" }
       - id: front
         shape: group
         label: "Front Plane"
