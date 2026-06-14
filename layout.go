@@ -496,7 +496,7 @@ func arrangeContainer(parts []*CompositePart, lay *Layout, owner *CompositePart,
 			Severity: SeverityError,
 			Path:     path + ".layout.mode",
 			Message:  fmt.Sprintf("unknown layout mode %q", lay.Mode),
-			Suggest:  nearest(lay.Mode, []string{"row", "column", "grid", "ring", "auto"}),
+			Suggest:  nearest(lay.Mode, layoutModes),
 		})
 		cols = len(kids)
 	}

@@ -419,6 +419,20 @@ func writeCapabilitiesMarkdown() error {
 		fmt.Fprintf(&b, "| `%s` | %s |\n", g.Block, "`"+strings.Join(g.Fields, "`, `")+"`")
 	}
 
+	b.WriteString("\n## Enums\n\n")
+	b.WriteString("Closed vocabularies the engine accepts verbatim — a value outside the set " +
+		"silently falls back, so emit these exactly. `isotopo validate` rejects deviations " +
+		"with a nearest-match suggestion.\n\n")
+	b.WriteString("| Key | Values |\n|---|---|\n")
+	enumKeys := make([]string, 0, len(cap.Enums))
+	for k := range cap.Enums {
+		enumKeys = append(enumKeys, k)
+	}
+	sort.Strings(enumKeys)
+	for _, k := range enumKeys {
+		fmt.Fprintf(&b, "| `%s` | %s |\n", k, "`"+strings.Join(cap.Enums[k], "`, `")+"`")
+	}
+
 	b.WriteString("\n## See also\n\n")
 	b.WriteString("- [`RECIPES.md`](RECIPES.md) — task → DSL primitive lookup\n")
 	b.WriteString("- [`schema/dsl.schema.json`](schema/dsl.schema.json) — JSON Schema for local lint\n")

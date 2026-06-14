@@ -320,7 +320,7 @@ Both converge on the same document model and output structure. See
   `capabilities.shapes` enumerates; the 23 are the d2 source names
   that map onto it
 - **Declarative positioning**: `layout: {mode: row|column|grid|ring}`
-  containers and `place: {rightOf|leftOf|above|below|inFrontOf|behind:
+  containers and `place: {rightOf|leftOf|above|inFrontOf|behind:
   sibling}` relations — the solver computes coordinates, validates
   references, warns on overlaps
 - **9 composition primitives**: `group`, `stack`, `layout`, `place`,

@@ -341,12 +341,12 @@ func Validate(doc *Document) []Issue {
 				Suggest:  nearestID(a.Anchor, allIDs),
 			})
 		}
-		if a.Side != "" && !contains([]string{"top", "right", "bottom", "left"}, a.Side) {
+		if a.Side != "" && !contains(annotationSides, a.Side) {
 			issues = append(issues, Issue{
 				Severity: SeverityError,
 				Path:     aPath + ".side",
 				Message:  fmt.Sprintf("unknown side %q", a.Side),
-				Suggest:  nearest(a.Side, []string{"top", "right", "bottom", "left"}),
+				Suggest:  nearest(a.Side, annotationSides),
 			})
 		}
 	}
@@ -403,6 +403,17 @@ func validatePart(p *CompositePart, path string, validShapes []string, issues *[
 		}
 	}
 	if p.Place != nil {
+		// A place block with no recognized relation means the agent used a key
+		// the decoder dropped (e.g. `below:` — not a relation; use `above` /
+		// `inFrontOf`). The part then silently falls back to auto-layout.
+		if p.Place.RightOf == "" && p.Place.LeftOf == "" && p.Place.InFrontOf == "" &&
+			p.Place.Behind == "" && p.Place.Above == "" {
+			*issues = append(*issues, Issue{
+				Severity: SeverityWarning,
+				Path:     path + ".place",
+				Message:  "place has no recognized relation (one of " + strings.Join(placeRelations, "/") + "); the part falls back to auto-layout",
+			})
+		}
 		for _, g := range []struct {
 			name string
 			v    *float64

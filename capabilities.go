@@ -19,6 +19,11 @@ type Capabilities struct {
 	Shapes     []ShapeCap      `json:"shapes"`
 	Primitives []PrimitiveCap  `json:"primitives"`
 	StyleKeys  []StyleKeyGroup `json:"style_keys"`
+	// Enums are the closed vocabularies the engine accepts verbatim — the
+	// values an agent must get EXACTLY right (a typo silently falls back).
+	// Surfaced so discovery and validation share one source: every value here
+	// is also what Validate() rejects deviations from.
+	Enums map[string][]string `json:"enums"`
 }
 
 // InputFormat describes one file extension the CLI accepts.
@@ -83,6 +88,14 @@ func CapabilityReport() Capabilities {
 		Shapes:     buildShapeCaps(),
 		Primitives: buildPrimitiveCaps(),
 		StyleKeys:  buildStyleKeyGroups(),
+		Enums: map[string][]string{
+			"connector_anchor":  anchorNames,
+			"connector_arrow":   arrowNames,
+			"connector_routing": routingNames,
+			"layout_mode":       layoutModes,
+			"place_relation":    placeRelations,
+			"annotation_side":   annotationSides,
+		},
 	}
 }
 
