@@ -1,14 +1,12 @@
-package main
+package yamledit
 
 import (
 	"strings"
 	"testing"
 )
 
-// The Studio write-back is deliberate line/regex surgery (NOT a yaml.Node
-// round-trip, which would reflow the whole document — violating the "never
-// reflow the user's YAML" principle). These tests lock that surgery's two
-// invariants so the ~dozen helpers can't silently regress:
+// These tests lock the two invariants of the comment-preserving surgery so the
+// ~dozen helpers can't silently regress:
 //   1. an edit touches ONLY the lines it must — every other line, and every
 //      comment, is preserved byte-for-byte.
 //   2. the edit produces the intended value in both flow and block forms.
@@ -58,11 +56,11 @@ func lineContaining(src, needle string) int {
 
 func TestEditScalarTouchesOneLine(t *testing.T) {
 	// change block part b's label — only b's label line may change.
-	out, ok := setField(editDoc, findPartIDLine(editDoc, "b"), []string{"label"}, "Bee")
+	out, ok := SetField(editDoc, FindPartIDLine(editDoc, "b"), []string{"label"}, "Bee")
 	if !ok {
-		t.Fatal("setField not ok")
+		t.Fatal("SetField not ok")
 	}
-	// setField writes the scalar bare (no quotes) — locking the real contract.
+	// SetField writes the scalar bare (no quotes) — locking the real contract.
 	if !strings.Contains(out, "label: Bee") {
 		t.Fatalf("label not written:\n%s", out)
 	}
@@ -81,7 +79,7 @@ func TestEditScalarTouchesOneLine(t *testing.T) {
 
 func TestEditNestedFlowAndBlock(t *testing.T) {
 	// flow form: set a deep nested value on part a inside its braces.
-	out, _ := setField(editDoc, findPartIDLine(editDoc, "a"), []string{"style", "palette", "top"}, "#101010")
+	out, _ := SetField(editDoc, FindPartIDLine(editDoc, "a"), []string{"style", "palette", "top"}, "#101010")
 	if !strings.Contains(out, `style: { palette: { top: "#101010" } }`) {
 		t.Errorf("flow nested create wrong:\n%s", firstPartLine(out, "a"))
 	}
@@ -89,16 +87,16 @@ func TestEditNestedFlowAndBlock(t *testing.T) {
 		t.Errorf("flow nested edit should touch one line, touched %v", d)
 	}
 	// block form: set geom.w on part b's inline geom child line.
-	out2, _ := setField(editDoc, findPartIDLine(editDoc, "b"), []string{"geom", "w"}, "120")
+	out2, _ := SetField(editDoc, FindPartIDLine(editDoc, "b"), []string{"geom", "w"}, "120")
 	if !strings.Contains(out2, "geom: { w: 120, d: 84, h: 50 }") {
 		t.Errorf("block nested edit wrong:\n%s", out2)
 	}
 }
 
 func TestDeletePreservesNeighbours(t *testing.T) {
-	out, ok := deletePart(editDoc, "a")
+	out, ok := DeletePart(editDoc, "a")
 	if !ok {
-		t.Fatal("deletePart not ok")
+		t.Fatal("DeletePart not ok")
 	}
 	// a and the a→b connector are gone; b and all comments remain.
 	if strings.Contains(out, "id: a") {
@@ -115,7 +113,7 @@ func TestDeletePreservesNeighbours(t *testing.T) {
 }
 
 func firstPartLine(src, id string) string {
-	i := findPartIDLine(src, id)
+	i := FindPartIDLine(src, id)
 	if i < 0 {
 		return ""
 	}

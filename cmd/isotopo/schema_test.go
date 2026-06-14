@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	isotopo "github.com/MarkovWangRR/iso-topology"
+	"github.com/MarkovWangRR/iso-topology/internal/yamledit"
 )
 
 // TestDeleteContainerCleansRefs locks the E2E-found bugs: deleting a container
@@ -28,9 +29,9 @@ func TestDeleteContainerCleansRefs(t *testing.T) {
 annotations:
   - { anchor: b, text: "note" }
 `
-	out, ok := deletePart(src, "grp")
+	out, ok := yamledit.DeletePart(src, "grp")
 	if !ok {
-		t.Fatal("deletePart(grp) returned not-ok")
+		t.Fatal("DeletePart(grp) returned not-ok")
 	}
 	for _, bad := range []string{"id: a", "id: b", "to: a", "from: a", "anchor: b"} {
 		if strings.Contains(out, bad) {
