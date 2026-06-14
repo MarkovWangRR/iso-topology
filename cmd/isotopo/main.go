@@ -312,6 +312,9 @@ func validateFile(in string) (int, error) {
 		return 3, nil
 	}
 	issues := isotopo.Validate(doc)
+	if sourceLang != "d2" {
+		issues = append(issues, isotopo.UnknownKeyIssues(data)...)
+	}
 	enc := json.NewEncoder(os.Stdout)
 	enc.SetIndent("", "  ")
 	_ = enc.Encode(map[string]any{"issues": issues})
@@ -542,6 +545,9 @@ func serveFile(in string) error {
 			return "", []isotopo.Issue{{Severity: isotopo.SeverityError, Path: "$", Message: err.Error()}}, nil
 		}
 		issues := isotopo.Validate(doc)
+		if lang != "d2" {
+			issues = append(issues, isotopo.UnknownKeyIssues(data)...)
+		}
 		for _, i := range issues {
 			if i.Severity == isotopo.SeverityError {
 				return "", issues, nil
