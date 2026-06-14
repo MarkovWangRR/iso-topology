@@ -857,6 +857,40 @@ func connectorItemRange(src string, ci int) (int, int, bool) {
 	return start, itemEnd(strings.Split(src, "\n"), start), true
 }
 
+// findListItemLine returns the line of the idx-th `- ` item under the first
+// top-level `<blockKey>:` block, or -1.
+func findListItemLine(src, blockKey string, idx int) int {
+	lines := strings.Split(src, "\n")
+	bl, bind := -1, 0
+	keyRe := regexp.MustCompile(`^(\s*)` + regexp.QuoteMeta(blockKey) + `:\s*$`)
+	for i, l := range lines {
+		if m := keyRe.FindStringSubmatch(l); m != nil {
+			bl, bind = i, len(m[1])
+			break
+		}
+	}
+	if bl < 0 {
+		return -1
+	}
+	itemRe := regexp.MustCompile(`^\s*-\s`)
+	n := 0
+	for i := bl + 1; i < len(lines); i++ {
+		if strings.TrimSpace(lines[i]) == "" {
+			continue
+		}
+		if indentOf(lines[i]) <= bind {
+			break
+		}
+		if itemRe.MatchString(lines[i]) && indentOf(lines[i]) > bind {
+			if n == idx {
+				return i
+			}
+			n++
+		}
+	}
+	return -1
+}
+
 func deleteLineRange(src string, start, end int) string {
 	lines := strings.Split(src, "\n")
 	if start < 0 || start >= len(lines) || end < start {
@@ -869,33 +903,68 @@ func deleteLineRange(src string, start, end int) string {
 // scene stays valid — no dangling from/to). Connectors are removed
 // bottom-up so earlier indices don't shift.
 func deletePart(src, id string) (string, bool) {
-	conns := findConnectors(mustParse(src))
-	// A connector references the node by bare id ("core") OR an anchor-
-	// qualified endpoint ("core.front"); both must go or the delete leaves a
-	// dangling reference that fails validation.
-	refsID := func(v interface{}) bool {
-		s, _ := v.(string)
-		return s == id || strings.HasPrefix(s, id+".")
+	s, e, ok := findPartItemRange(src, id)
+	if !ok {
+		return src, false
 	}
+	// Deleting a container (group/boundary/composite) also removes its nested
+	// parts — collect EVERY id inside the removed subtree so we clean up the
+	// connectors and place: refs that point at any of them, not just the root.
+	removed := map[string]bool{id: true}
+	idRe := regexp.MustCompile(`id:\s*"?([A-Za-z0-9_-]+)`)
+	for _, l := range strings.Split(src, "\n")[s:e] {
+		if m := idRe.FindStringSubmatch(l); m != nil {
+			removed[m[1]] = true
+		}
+	}
+	// A connector references a removed id by bare id ("core") or an anchor-
+	// qualified endpoint ("core.front"); both must go.
+	refsRemoved := func(v interface{}) bool {
+		s, _ := v.(string)
+		if removed[s] {
+			return true
+		}
+		if i := strings.IndexByte(s, '.'); i > 0 {
+			return removed[s[:i]]
+		}
+		return false
+	}
+	conns := findConnectors(mustParse(src))
 	var refs []int
 	for i, c := range conns {
 		if m, ok := c.(map[string]interface{}); ok {
-			if refsID(m["from"]) || refsID(m["to"]) {
+			if refsRemoved(m["from"]) || refsRemoved(m["to"]) {
 				refs = append(refs, i)
 			}
 		}
 	}
 	out := src
 	for i := len(refs) - 1; i >= 0; i-- {
-		if s, e, ok := connectorItemRange(out, refs[i]); ok {
-			out = deleteLineRange(out, s, e)
+		if cs, ce, ok := connectorItemRange(out, refs[i]); ok {
+			out = deleteLineRange(out, cs, ce)
 		}
 	}
-	// Other parts may be positioned relative to this one (place: { rightOf: id,
-	// … }); drop that place: block so they fall back to the layout instead of
-	// dangling on a missing anchor.
-	out = stripPlaceReferencing(out, id)
-	s, e, ok := findPartItemRange(out, id)
+	// Annotations anchored to any removed part would dangle too.
+	if anns, ok := mustParse(src)["annotations"].([]interface{}); ok {
+		var aref []int
+		for i, a := range anns {
+			if m, ok := a.(map[string]interface{}); ok {
+				if s, _ := m["anchor"].(string); removed[s] {
+					aref = append(aref, i)
+				}
+			}
+		}
+		for i := len(aref) - 1; i >= 0; i-- {
+			if as := findListItemLine(out, "annotations", aref[i]); as >= 0 {
+				out = deleteLineRange(out, as, itemEnd(strings.Split(out, "\n"), as))
+			}
+		}
+	}
+	// Other parts positioned relative to any removed part fall back to layout.
+	for rid := range removed {
+		out = stripPlaceReferencing(out, rid)
+	}
+	s, e, ok = findPartItemRange(out, id)
 	if !ok {
 		return src, false
 	}
