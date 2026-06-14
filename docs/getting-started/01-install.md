@@ -83,7 +83,7 @@ func renderScene(yamlBytes []byte) (string, error) {
 }
 ```
 
-See [USAGE.md](../reference/cli.md) for the full library API surface.
+See the [API reference](../reference/api.md) for the full library API surface.
 
 ## Dependency note: d2
 

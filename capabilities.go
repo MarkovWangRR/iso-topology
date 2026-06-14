@@ -124,6 +124,26 @@ func buildShapeCaps() []ShapeCap {
 			by[iso] = &bucket{isoName: iso, hMul: 1.0, acceptedAs: map[string]struct{}{iso: {}}}
 		}
 	}
+	// Deterministic height hint: the value above was taken from whichever alias
+	// won the d2ShapeCatalog map-iteration race, so it differed per build and
+	// leaked nondeterminism into the published contract. Re-pick it from the
+	// alias that equals the iso name (the canonical one) when present, else the
+	// lexicographically-first alias — a stable choice independent of map order.
+	for _, b := range by {
+		best := ""
+		for a := range b.acceptedAs {
+			if a == b.isoName {
+				best = a
+				break
+			}
+			if best == "" || a < best {
+				best = a
+			}
+		}
+		if prof, ok := d2ShapeCatalog[best]; ok {
+			b.hMul = prof.heightMul
+		}
+	}
 	notes := map[string]string{
 		"composite": "container — holds parts: [] of CompositePart entries",
 		"group":     "v2 primitive — translucent labeled substrate wrapping nested parts",

@@ -380,11 +380,19 @@ Drop `topology.svg` into any markdown / Notion / slide deck. Each
 ```go
 import isotopo "github.com/MarkovWangRR/iso-topology"
 
-doc, _ := isotopo.Parse(yamlBytes)
-svg := isotopo.RenderWithCanvas(doc.Scene(), doc.Theme, doc.Canvas, doc.Annotations)
+// Render any DSL text (yaml | json | d2) to one SVG:
+svg, issues, _ := isotopo.RenderSource("yaml", yamlBytes)
+
+// Apply a canvas edit (drag / set-field / add / delete / duplicate) and get
+// the rewritten DSL back — comments preserved, no server state. Powers cloud
+// services and client-side WASM editors:
+op := isotopo.EditOp{Kind: "move", Target: "node", ID: "api", DWX: 50}
+newSrc, svg, issues, _ := isotopo.ApplyOp("yaml", yamlBytes, op)
 ```
 
-Full library API surface: [docs/reference/cli.md](docs/reference/cli.md).
+Full library API, the stateless edit contract, sub-packages and every other
+surface: the single **[API reference](docs/reference/api.md)** (canonical godoc
+on [pkg.go.dev](https://pkg.go.dev/github.com/MarkovWangRR/iso-topology)).
 
 ## FAQ
 
@@ -426,7 +434,7 @@ trademarked logos.
 Organized by purpose — full index at [docs/README.md](docs/README.md).
 
 - **Start here:** [Tutorial](docs/getting-started/01-install.md) · [Recipes](docs/agent/RECIPES.md) · [Scene design](docs/guides/scene-design.md) · [Troubleshooting](docs/guides/troubleshooting.md)
-- **Reference:** [CLI + library](docs/reference/cli.md) · [YAML DSL](docs/reference/dsl-yaml.md) · [d2 DSL](docs/reference/dsl-d2.md) · [Style/Theme](docs/reference/dsl-theme.md) · [Output layout](docs/reference/output-layout.md)
+- **Reference:** [**API reference**](docs/reference/api.md) (one entry point for the Go library, HTTP, DSL, CLI & MCP contracts) · [CLI](docs/reference/cli.md) · [YAML DSL](docs/reference/dsl-yaml.md) · [d2 DSL](docs/reference/dsl-d2.md) · [Style/Theme](docs/reference/dsl-theme.md) · [Output layout](docs/reference/output-layout.md)
 - **Agent integration:** [CAPABILITIES.md](docs/agent/CAPABILITIES.md) · [PROMPT_TEMPLATE.md](docs/agent/PROMPT_TEMPLATE.md) · [SAMPLES.md](docs/agent/SAMPLES.md) · [dsl.schema.json](docs/agent/schema/dsl.schema.json) · [MCP server](docs/agent/MCP.md) · [skills/](skills/README.md)
 - **Design:** [Why isometric](docs/concepts/why-isometric.md) · [Extending](docs/guides/extending.md)
 

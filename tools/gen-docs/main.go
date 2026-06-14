@@ -79,10 +79,11 @@ func writeLLMsTxt() error {
 	b.WriteString("- [Studio guide](" + base + "docs/guides/studio.md): `isotopo serve <file>` opens a browser workbench (drag to lay out, right-click to restyle) — agents can't drive it, but should suggest it for human visual tweaks after rendering\n")
 
 	b.WriteString("\n## Reference\n\n")
+	b.WriteString("- [API reference](" + base + "docs/reference/api.md): single entry point for every programmable surface — Go library + stateless edit contract (ApplyOp/EditOp/RenderSource), HTTP, DSL, CLI, MCP\n")
 	b.WriteString("- [YAML DSL](" + base + "docs/reference/dsl-yaml.md): layout/place composition, every field\n")
 	b.WriteString("- [d2 DSL](" + base + "docs/reference/dsl-d2.md): auto-layout input path\n")
 	b.WriteString("- [Style and theme](" + base + "docs/reference/dsl-theme.md): palette, gradients, effects cascade\n")
-	b.WriteString("- [CLI and Go library](" + base + "docs/reference/cli.md)\n")
+	b.WriteString("- [CLI](" + base + "docs/reference/cli.md)\n")
 
 	b.WriteString("\n## Optional\n\n")
 	b.WriteString("- [README](" + base + "README.md): pitch, gallery, FAQ, comparison vs Mermaid/D2\n")

@@ -180,7 +180,10 @@ point `isotopo serve` at the source. Exports still work.
 | `GET /api/ping` | health |
 
 All write endpoints do comment-preserving text surgery on the YAML you
-POST — they never touch the file on disk.
+POST — they never touch the file on disk. They are a thin HTTP layer over
+the stateless Go edit contract (`ApplyOp` / `EditOp` / `RenderSource`):
+an embedder building a non-HTTP UI (desktop, WASM) can call those
+directly instead of re-serializing JSON — see the **[API reference](../reference/api.md#direct-manipulation-editing-for-embedders)**.
 
 ## How it's built
 
