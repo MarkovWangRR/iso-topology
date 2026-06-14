@@ -1061,6 +1061,44 @@ func ResolvePartOffset(doc *Document, id string) (wx, wy, wz float64, ok bool) {
 	return found.Offset.WX, found.Offset.WY, found.Offset.WZ, true
 }
 
+// ResolvePartGeom returns the part's resolved width/depth/height AFTER layout.
+// For an auto-sized container (a group with no authored geom.w/d) this is the
+// size the solver computed to wrap its children — what the canvas actually
+// draws — so Studio can show "auto 380" instead of a bare blank that reads as
+// "missing". Returns ok=false if the part isn't found.
+func ResolvePartGeom(doc *Document, id string) (w, d, h float64, ok bool) {
+	if doc == nil {
+		return 0, 0, 0, false
+	}
+	scene := doc.Scene()
+	if scene == nil {
+		return 0, 0, 0, false
+	}
+	applyLayout(scene, doc.Canvas)
+	var found *CompositePart
+	var walk func(ps []*CompositePart)
+	walk = func(ps []*CompositePart) {
+		for _, p := range ps {
+			if p == nil || found != nil {
+				continue
+			}
+			if p.ID == id {
+				found = p
+				return
+			}
+			walk(p.Parts)
+		}
+	}
+	walk(scene.Parts)
+	if found == nil {
+		return 0, 0, 0, false
+	}
+	if found.Geom == nil {
+		return 0, 0, 0, true
+	}
+	return found.Geom.W, found.Geom.D, found.Geom.H, true
+}
+
 // ConnectorBend returns the current bend of the ci-th connector on the
 // document's scene (0,0 if unset). Used to accumulate edge drags.
 func ConnectorBend(doc *Document, ci int) (wx, wy float64) {

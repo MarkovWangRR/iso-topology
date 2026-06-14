@@ -372,13 +372,31 @@ function qpFor(t){
    compact inline rows, and the raw YAML key shown alongside each label so
    the friendly form stays anchored to the source. ─────────────────────── */
 function renderFields(fields){
-  let html='', curGroup=undefined, inlineBuf=[];
+  // Master-detail layout: groups become TABS in a left rail; the selected
+  // tab's fields show in the right pane. ALL panes are rendered up front
+  // (inactive ones merely hidden), so switching tabs never discards unsaved
+  // edits in the others — applyDetail still reads every [data-key] in the DOM.
+  fields.forEach((f,i)=>f._id='df_'+i);
+  const order=[], by={};
+  fields.forEach(f=>{
+    const g=f.group||'General';
+    if(!(g in by)){ by[g]={name:g, items:[]}; order.push(g); }
+    by[g].items.push(f);
+  });
+  const tabs=order.map((g,i)=>
+    '<button type="button" class="df-tab'+(i===0?' on':'')+'" data-tab="t'+i+'">'+esc(g)+'</button>'
+  ).join('');
+  const panes=order.map((g,i)=>
+    '<div class="df-pane" data-pane="t'+i+'"'+(i===0?'':' hidden')+'>'+groupBody(by[g].items)+'</div>'
+  ).join('');
+  return '<div class="df-tabs"><div class="df-rail">'+tabs+'</div><div class="df-panes">'+panes+'</div></div>';
+}
+function groupBody(items){
+  let html='', inlineBuf=[];
   const flush=()=>{ if(inlineBuf.length){ html+='<div class="df-inline">'+inlineBuf.join('')+'</div>'; inlineBuf=[]; } };
-  fields.forEach((f,i)=>{
-    if(f.group!==curGroup){ flush(); curGroup=f.group; if(curGroup) html+='<div class="df-grouph">'+esc(curGroup)+'</div>'; }
-    const id='df_'+i;
-    if(f.inline){ inlineBuf.push(cellHTML(f,id)); }
-    else { flush(); html+=rowHTML(f,id); }
+  items.forEach(f=>{
+    if(f.inline){ inlineBuf.push(cellHTML(f,f._id)); }
+    else { flush(); html+=rowHTML(f,f._id); }
   });
   flush();
   return html;
@@ -398,7 +416,11 @@ function fieldInput(f,id){
   if(f.type==='color')  return colorHTML(f,id,key,orig);
   if(f.type==='icon')   return iconHTML(f,id,key,orig);
   const t=f.type==='number'?'number':'text';
-  return '<input type="'+t+'" id="'+id+'" data-key="'+key+'" data-orig="'+orig+'" value="'+escAttr(f.value)+'">';
+  // Empty field → muted placeholder of what blank means: the resolved value
+  // (effWord+eff) when there is one, else the field's default/off state (empty).
+  // Editable value stays empty so an untouched field keeps deferring.
+  const ph=f.value?'':(f.eff?effWord(f.key)+' '+f.eff:(f.empty||''));
+  return '<input type="'+t+'" id="'+id+'" data-key="'+key+'" data-orig="'+orig+'" value="'+escAttr(f.value)+'" placeholder="'+escAttr(ph)+'">';
 }
 function choiceHTML(f,key,orig){
   const opts=(f.options||[]).slice(), cur=f.value||'';
@@ -408,12 +430,30 @@ function choiceHTML(f,key,orig){
     const on=(o.toLowerCase()===cur.toLowerCase())?' on':'';   // '' (solid) matches cur='' too
     return '<button type="button" class="df-tile'+on+'" data-val="'+escAttr(o)+'">'+optGlyph(f.key,o)+'<span>'+esc(optLabel(f.key,o))+'</span></button>';
   }).join('');
-  return '<div class="df-choice" data-key="'+key+'" data-orig="'+orig+'" data-val="'+escAttr(cur)+'">'+tiles+'</div>';
+  // inherited (no own value) → note the resolved choice so the blank tile isn't misread as "off"
+  const hint=(!f.value&&f.eff)?'<div class="df-inherit">'+effWord(f.key)+' '+esc(f.eff)+'</div>':'';
+  return '<div class="df-choice" data-key="'+key+'" data-orig="'+orig+'" data-val="'+escAttr(cur)+'">'+tiles+'</div>'+hint;
+}
+// hint verb for an empty field's resolved value: geometry is solver-computed
+// ("auto"), style cascades from shape/preset/theme ("inherits"), and the rest
+// (edge routing/stroke) fall back to a fixed render default ("default").
+function effWord(key){
+  if(key.indexOf('geom.')===0) return 'auto';
+  // built-in render defaults (no cascade source) read as "default"
+  if(key==='style.text.orient'||key==='style.effects.opacity') return 'default';
+  if(key.indexOf('style.')===0) return 'inherits';
+  return 'default';
 }
 function colorHTML(f,id,key,orig){
-  const hex=/^#[0-9a-fA-F]{6}$/.test(f.value)?f.value:'#cccccc';
+  // When the field has no own value, the colour is inherited (preset/theme) or
+  // a gradient — paint the swatch with the EFFECTIVE colour the server resolved
+  // (f.eff) so the picker matches the canvas, and keep the editable value empty
+  // so an untouched field keeps inheriting.
+  const eff=/^#[0-9a-fA-F]{6}$/.test(f.eff||'')?f.eff:'';
+  const hex=/^#[0-9a-fA-F]{6}$/.test(f.value)?f.value:(eff||'#cccccc');
+  const ph=f.eff?(effWord(f.key)+' '+f.eff):(f.empty||'unset');
   return '<span class="df-color"><input type="color" data-sync="'+id+'" value="'+hex+'">'+
-    '<input type="text" id="'+id+'" data-key="'+key+'" data-orig="'+orig+'" value="'+escAttr(f.value)+'" placeholder="unset"></span>';
+    '<input type="text" id="'+id+'" data-key="'+key+'" data-orig="'+orig+'" value="'+escAttr(f.value)+'" placeholder="'+escAttr(ph)+'"></span>';
 }
 function iconHTML(f,id,key,orig){
   const FILE=' accept="image/svg+xml,image/png,image/jpeg,image/gif,image/webp,.svg,.png,.jpg,.jpeg,.gif,.webp"';
@@ -432,6 +472,7 @@ function iconHTML(f,id,key,orig){
 // choice tiles read at a glance instead of being bare words.
 function optLabel(key,val){
   const L={'stroke.dash:':'Solid','stroke.dash:6 4':'Dashed','stroke.dash:1 5':'Dotted'};
+  if(key.endsWith('.dir')&&val==='') return 'default';
   return L[key+':'+val] || (val||'(none)');
 }
 function optGlyph(key,val){
@@ -463,10 +504,34 @@ function optGlyph(key,val){
     'shape:boundary':'<rect x="3" y="3" width="14" height="14" rx="3" stroke-dasharray="3 2.5"/>',
     'shape:text':'<path d="M5 5 15 5M10 5 10 15"/>'
   };
-  const inner=G[key+':'+val]||'<circle cx="10" cy="10" r="3"/>';
+  // Gradient direction → an actual arrow (matched by VALUE, since the key
+  // varies per face: top/left/rightGradient.dir).
+  const DIR={
+    '':'<path d="M4 10 16 10"/>',
+    'down':'<path d="M10 3 10 16M6 12 10 16 14 12"/>',
+    'up':'<path d="M10 17 10 4M6 8 10 4 14 8"/>',
+    'left':'<path d="M17 10 4 10M8 6 4 10 8 14"/>',
+    'right':'<path d="M3 10 16 10M12 6 16 10 12 14"/>',
+    'diag':'<path d="M5 5 15 15M15 9 15 15 9 15"/>'
+  };
+  let inner=G[key+':'+val];
+  if(inner===undefined && key.endsWith('.dir')) inner=DIR[val];
+  // No meaningful glyph (weight / align / mode / orient / pattern …) → render
+  // a label-only tile rather than a row of identical, meaningless circles.
+  if(inner===undefined) return '';
   return '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">'+inner+'</svg>';
 }
 function wireDetailInputs(){
+  // Tab rail → swap the visible pane (panes stay in the DOM, so edits persist).
+  const rail=detailFields.querySelector('.df-rail');
+  if(rail) rail.querySelectorAll('.df-tab').forEach(tab=>{
+    tab.addEventListener('click',()=>{
+      rail.querySelectorAll('.df-tab').forEach(x=>x.classList.remove('on'));
+      tab.classList.add('on');
+      const id=tab.getAttribute('data-tab');
+      detailFields.querySelectorAll('.df-pane').forEach(p=>{ p.hidden=(p.getAttribute('data-pane')!==id); });
+    });
+  });
   detailFields.querySelectorAll('input[type="color"][data-sync]').forEach(cp=>{
     cp.addEventListener('input',()=>{const t=document.getElementById(cp.getAttribute('data-sync')); if(t)t.value=cp.value;});
   });
@@ -571,6 +636,12 @@ function wireDrag(){
       e.preventDefault(); e.stopPropagation();
       showCtx(e.clientX,e.clientY,'node',g.getAttribute('data-part-id').replace(/~\d+$/,''));
     });
+    // Double-click = edit details, same as right-click → Edit (a no-move
+    // release is below the 2px drag threshold, so it never commits a move).
+    g.addEventListener('dblclick',e=>{
+      e.preventDefault(); e.stopPropagation();
+      openDetail({kind:'node',key:g.getAttribute('data-part-id').replace(/~\d+$/,'')});
+    });
   });
   zoomer.querySelectorAll('path[data-connector]').forEach(p=>{
     p.setAttribute('stroke-width', Math.max(parseFloat(p.getAttribute('stroke-width')||'1.4'),3));
@@ -578,6 +649,10 @@ function wireDrag(){
     p.addEventListener('contextmenu',e=>{
       e.preventDefault(); e.stopPropagation();
       showCtx(e.clientX,e.clientY,'edge',p.getAttribute('data-connector'));
+    });
+    p.addEventListener('dblclick',e=>{
+      e.preventDefault(); e.stopPropagation();
+      openDetail({kind:'edge',key:p.getAttribute('data-connector')});
     });
     p.addEventListener('mousedown',e=>{
       if(e.button!==0) return;   // left-button drags only; right-click = context menu

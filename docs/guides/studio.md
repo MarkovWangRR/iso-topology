@@ -15,7 +15,7 @@ ISOTOPO_PORT=9000 isotopo serve …    # pick a port
 ![isotopo Studio — the rendered isometric scene on the left, its YAML source on the right, SVG/PNG/YAML export and a live render badge in the toolbar; the footer spells out the hover / right-click / zoom gestures](../assets/studio.png)
 
 The canvas is on the left, the YAML editor on the right. Hover a node
-to highlight its source; right-click to edit it; drag to move it.
+to highlight its source; double-click (or right-click) to edit it; drag to move it.
 Everything below is that surface in detail.
 
 ## Why it exists
@@ -93,7 +93,8 @@ Right-click an element for a context menu:
 
 ## Edit details
 
-**Edit details** opens a modal of the element's visually-relevant
+**Edit details** — double-click an element (or right-click → Edit
+details) — opens a modal of its visually-relevant
 properties. Change them, hit **Update**, and both the canvas and the
 YAML update for that element only.
 
@@ -102,9 +103,32 @@ with an English label, a one-line description, an input type, and the
 raw dotted key (shown in muted monospace beside the label, so the
 friendly field stays anchored to the source). Highlights:
 
-- **Grouped sections** — e.g. a node shows *Content* (label, shape,
-  icon, preset), *Size* (width/depth/height as a compact row), and
-  *Face colors* (top/left/right).
+- **Tabbed, master-detail layout** — fields are grouped and split into
+  tabs down the left rail; the selected tab's fields show on the right,
+  so you see one small group at a time instead of one long scroll. A
+  node's tabs read *Content* → *Size* → *Position* → *Layout*
+  (containers only) → *Fill* → *Gradients* → *Border* → *Label* →
+  *Effects*. Switching tabs **keeps unsaved edits** in the others —
+  **Update** writes every change across all tabs at once.
+- **Shape-aware sections** — the colour groups depend on what the shape
+  can render: the box family gets *Fill — faces* (top/left/right) plus
+  per-face *Gradients*; a flat *text* node gets only its label; a
+  *boundary* gets its dashed border; containers (group/composite) gain a
+  *Layout — children* group (mode / gap / columns).
+- **Empty fields show their effective value, not a bare blank** — an
+  unset field is hinted with what the canvas actually uses, so it never
+  reads as "missing". The verb tells you where the value comes from:
+  `inherits …` (a colour/size/weight from a preset or the theme),
+  `auto …` (a width/depth the layout solver computed for a container),
+  or `default …` (a connector's built-in routing/stroke). The editable
+  value stays empty, so an untouched field keeps deferring; type a value
+  to override. Fields that are genuinely *off* (no glow, no pattern,
+  opacity 1) stay blank with no hint — empty there means empty.
+- **Icon color** — a tint picker for `iso://` glyph and logo icons
+  (the color lives in the ref suffix, e.g. `iso://glyph/cpu/7C3AED`;
+  the picker writes it for you, blank reverts to default ink). It is
+  a no-op for image-URL / local-file icons, which carry their own
+  colors.
 - **Illustrated choices** — enums render as tiles with a glyph, not bare
   words: node **shape** (cube / cylinder / sphere / cloud / person /
   prism / hexprism / …), canvas **grid** (iso / dots / hatch / solid),

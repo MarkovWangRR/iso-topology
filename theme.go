@@ -25,6 +25,48 @@ func ResolveStyle(theme *Theme, shape, preset string, nodeStyle *Style) *Style {
 	return merged
 }
 
+// ResolvePartStyle returns the fully-resolved style (theme → shape default →
+// preset → node overrides) for the part with the given id — i.e. exactly what
+// the renderer paints — or nil if no such part exists. Studio uses it to show
+// the EFFECTIVE colour of a face whose colour is inherited from a preset/theme
+// or expressed as a gradient, where the raw node YAML carries nothing.
+func ResolvePartStyle(doc *Document, id string) *Style {
+	if doc == nil {
+		return nil
+	}
+	var found *CompositePart
+	var walk func(ps []*CompositePart)
+	walk = func(ps []*CompositePart) {
+		for _, p := range ps {
+			if p == nil || found != nil {
+				continue
+			}
+			if p.ID == id {
+				found = p
+				return
+			}
+			walk(p.Parts)
+		}
+	}
+	for _, n := range doc.Nodes {
+		if n == nil {
+			continue
+		}
+		walk(n.Parts)
+		if found != nil {
+			break
+		}
+	}
+	if found != nil {
+		return ResolveStyle(doc.Theme, found.Shape, found.Preset, found.Style)
+	}
+	// id may name a top-level (non-composite) node, keyed in the map.
+	if n, ok := doc.Nodes[id]; ok && n != nil {
+		return ResolveStyle(doc.Theme, n.Shape, n.Preset, n.Style)
+	}
+	return nil
+}
+
 // MergeStyle returns a new Style whose fields come from `over` when present,
 // otherwise from `base`.
 func MergeStyle(base, over *Style) *Style {
