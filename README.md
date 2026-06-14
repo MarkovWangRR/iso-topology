@@ -120,8 +120,8 @@ go install github.com/MarkovWangRR/iso-topology/cmd/isotopo@latest
 curl -sLO https://raw.githubusercontent.com/MarkovWangRR/iso-topology/main/samples/topology/ai-platform/input.yaml
 isotopo render input.yaml ./out
 open ./out/topology.html        # interactive viewer (zoom/pan + hover-to-source)
-isotopo serve input.yaml        # …or open the Studio: live edit, drag to lay
-                                # out, right-click to restyle → docs/guides/studio.md
+isotopo serve input.yaml        # …or open the Studio (see below): live edit,
+                                # drag to lay out, right-click to restyle
 ```
 
 Or start from a three-line graph and let auto-layout do everything:
@@ -130,6 +130,20 @@ Or start from a three-line graph and let auto-layout do everything:
 echo 'user -> api -> db' > scene.d2
 isotopo render scene.d2 ./out
 ```
+
+## Studio — point, drag, restyle
+
+```bash
+isotopo serve input.yaml        # → http://localhost:8731
+```
+
+The interactive workbench: the rendered scene on the left, its YAML on
+the right, sub-second feedback between them. Hover a node to highlight
+its source, **drag to lay out**, **right-click to restyle**, undo/redo,
+and export SVG/PNG/YAML. Every edit is an in-browser copy — the file on
+disk is never written. Full tour: [docs/guides/studio.md](docs/guides/studio.md).
+
+![isotopo Studio — rendered isometric scene on the left, editable YAML on the right, with drag-to-layout and right-click-to-edit](docs/assets/studio.png)
 
 ## Make your agent draw
 

@@ -12,6 +12,12 @@ isotopo serve path/to/input.yaml     # → http://localhost:8731
 ISOTOPO_PORT=9000 isotopo serve …    # pick a port
 ```
 
+![isotopo Studio — the rendered isometric scene on the left, its YAML source on the right, SVG/PNG/YAML export and a live render badge in the toolbar; the footer spells out the hover / right-click / zoom gestures](../assets/studio.png)
+
+The canvas is on the left, the YAML editor on the right. Hover a node
+to highlight its source; right-click to edit it; drag to move it.
+Everything below is that surface in detail.
+
 ## Why it exists
 
 iso-topology is agent-first: most diagrams here are *written by a

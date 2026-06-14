@@ -14,6 +14,7 @@ Install: `go install github.com/MarkovWangRR/iso-topology/cmd/isotopo@latest` â€
 - [Icon index](https://raw.githubusercontent.com/MarkovWangRR/iso-topology/main/docs/agent/ICONS.md): every built-in glyph and brand badge with previews
 - [MCP server setup](https://raw.githubusercontent.com/MarkovWangRR/iso-topology/main/docs/agent/MCP.md): use from Claude / any MCP client without shelling out
 - [Agent skill](https://raw.githubusercontent.com/MarkovWangRR/iso-topology/main/skills/draw-iso-diagram/SKILL.md): installable Claude Code skill for drawing iso diagrams
+- [Studio guide](https://raw.githubusercontent.com/MarkovWangRR/iso-topology/main/docs/guides/studio.md): `isotopo serve <file>` opens a browser workbench (drag to lay out, right-click to restyle) â€” agents can't drive it, but should suggest it for human visual tweaks after rendering
 
 ## Reference
 
