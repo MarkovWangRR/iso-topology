@@ -71,10 +71,23 @@ a route independently — they compose, they don't all slide together.
 | 4-way (`move`) + glow | over a movable node or edge |
 | closed hand (`grabbing`) | a drag is in progress |
 
-## Edit details (right-click)
+Toggle **Snap** in the toolbar to round dragged nodes to the grid (one
+cell). Every structural edit — drag, detail edit, add/duplicate/delete —
+is undoable with **⌘Z** / **⌘⇧Z** (when focus isn't in the editor).
 
-Right-click a **node**, an **edge**, or the **empty canvas** → a context
-menu with **Edit details** → a modal of that element's visually-relevant
+## Right-click menu
+
+Right-click an element for a context menu:
+
+- **node** → Edit details · Duplicate (clone with a fresh id) · Delete
+  (also removes its connectors and frees any sibling `place:`d against it)
+- **edge** → Edit details · Delete
+- **empty canvas** → ＋ Add node (a default rectangle) · Edit details
+  (the canvas background/grid)
+
+## Edit details
+
+**Edit details** opens a modal of the element's visually-relevant
 properties. Change them, hit **Update**, and both the canvas and the
 YAML update for that element only.
 
@@ -133,6 +146,7 @@ point `isotopo serve` at the source. Exports still work.
 | `POST /api/move?kind=node\|edge&…` | text-edit a node offset / edge waypoints in the posted source; returns `{"yaml","svg","issues"}` |
 | `POST /api/fields?kind=node\|edge\|canvas&…` | the detail-editor schema for an element, with current values |
 | `POST /api/edit?kind=…&f=<json>` | apply detail-editor changes to the posted source; returns `{"yaml","svg","issues"}` |
+| `POST /api/op?op=add\|delete\|duplicate&kind=node\|edge&…` | structural ops (add a node, delete a node+its connectors, duplicate a node); returns `{"yaml","svg","issues"}` |
 | `GET /api/ping` | health |
 
 All write endpoints do comment-preserving text surgery on the YAML you
