@@ -130,6 +130,11 @@ func Validate(doc *Document) []Issue {
 					Suggest:  nearestID(c.To, allIDs),
 				})
 			}
+			// A bad anchor suffix ("db.lft") resolves the part fine then
+			// silently falls back to top-mid — a wrong render with no signal.
+			// Validate it so the agent gets a "did you mean .left" instead.
+			checkAnchor(c.From, cPath+".from", allIDs, &issues)
+			checkAnchor(c.To, cPath+".to", allIDs, &issues)
 		}
 	}
 
@@ -371,6 +376,29 @@ func connectorTarget(ref string) string {
 		return ref[:dot]
 	}
 	return ref
+}
+
+// checkAnchor flags a bad ".anchor" suffix on a connector endpoint. Only runs
+// when the part id itself resolves (otherwise the id error already covers it),
+// so the agent never gets two errors for one bad ref.
+func checkAnchor(ref, path string, allIDs map[string]struct{}, issues *[]Issue) {
+	dot := strings.Index(ref, ".")
+	if dot < 0 {
+		return
+	}
+	if _, ok := allIDs[ref[:dot]]; !ok {
+		return
+	}
+	suffix := ref[dot+1:]
+	if contains(anchorNames, suffix) {
+		return
+	}
+	*issues = append(*issues, Issue{
+		Severity: SeverityError,
+		Path:     path,
+		Message:  fmt.Sprintf("unknown anchor %q on %q — renders at top-mid; valid anchors: top/bottom/left/right/front/back (+ -mid)", suffix, ref[:dot]),
+		Suggest:  nearest(suffix, anchorNames),
+	})
 }
 
 func validShapeList() []string {
