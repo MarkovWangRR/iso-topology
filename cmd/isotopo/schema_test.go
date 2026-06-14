@@ -71,6 +71,37 @@ func TestShapeOptionsAreReal(t *testing.T) {
 	}
 }
 
+// TestEffectsSchemaGating locks D: solid shapes expose the Effects polish
+// knobs, cornerRadius is offered to box-family (faces) but not to fill shapes
+// (a circle has no edges to round), and text/outline shapes get no effects.
+func TestEffectsSchemaGating(t *testing.T) {
+	hasPath := func(fields []schemaField, path string) bool {
+		for _, f := range fields {
+			if f.Path == path {
+				return true
+			}
+		}
+		return false
+	}
+	// faces (rectangle): full effects incl cornerRadius.
+	rect := nodeSchema("rectangle")
+	if !hasPath(rect, "style.effects.backglow.color") || !hasPath(rect, "style.effects.cornerRadius") {
+		t.Error("faces shape should expose backglow + cornerRadius")
+	}
+	// fill (circle): effects yes, cornerRadius no.
+	circ := nodeSchema("circle")
+	if !hasPath(circ, "style.effects.backglow.color") {
+		t.Error("fill shape should expose backglow")
+	}
+	if hasPath(circ, "style.effects.cornerRadius") {
+		t.Error("circle has no edges — cornerRadius must not be offered")
+	}
+	// text: no effects at all.
+	if hasPath(nodeSchema("text"), "style.effects.backglow.color") {
+		t.Error("text shape should not expose volumetric effects")
+	}
+}
+
 // TestShapeClassesKnown ensures every offered shape resolves to a real colour
 // class (not the catch-all), so the detail editor offers the right controls.
 func TestShapeClassesKnown(t *testing.T) {
