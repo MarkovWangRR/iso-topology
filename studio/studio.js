@@ -266,47 +266,46 @@ function shiftEnds(d,moveFrom,moveTo,dx,dy){
   for(const ed of edits){const t=nums[ed[0]]; s=s.slice(0,t.i)+(t.v+ed[1]).toFixed(2)+s.slice(t.i+t.len);}
   return s;
 }
+const SNAP_STEP=40;   // one grid cell (world units)
 async function commitMove(kind,key,dwx,dwy,dropX,dropY,wp){
   if(!serverOK) return;
   pushUndo();
+  const snapEl=document.getElementById('snap');
+  const snap=(kind==='node' && snapEl && snapEl.checked) ? SNAP_STEP : 0;
   let qp = kind==='node' ? 'kind=node&id='+encodeURIComponent(key) : 'kind=edge&ci='+key;
   if(wp) qp += '&wp='+encodeURIComponent(JSON.stringify(wp));
   try{
-    const r=await fetch('/api/move?'+qp+'&dwx='+dwx+'&dwy='+dwy+'&format='+encodeURIComponent(LANG),
+    const r=await fetch('/api/move?'+qp+'&dwx='+dwx+'&dwy='+dwy+'&snap='+snap+'&format='+encodeURIComponent(LANG),
       {method:'POST',body:srcEl.value});
     if(!r.ok) return;
     const data=await r.json();
     if(typeof data.yaml==='string'){ srcEl.value=data.yaml; setDirty(srcEl.value!==ORIGINAL);
       try{localStorage.setItem(DRAFTKEY,srcEl.value);}catch(_){} }
     if(data.svg){
-      // For an edge bend no node should move; record a stable node's screen
-      // position now so we can hold the whole scene still after re-render
-      // (the bend can extend bounds and reframe the viewBox).
-      let edgeAnchor=null;
-      if(kind==='edge'){
-        const ref=zoomer.querySelector('g[data-part-id]');
+      // A snapped node lands on the grid, NOT under the cursor — so (like an
+      // edge bend) hold the scene still on a stable OTHER node instead of
+      // drop-anchoring to the release point. Record it before the re-render.
+      const holdScene = kind==='edge' || snap>0;
+      let anchor=null;
+      if(holdScene){
+        const ref=[...zoomer.querySelectorAll('g[data-part-id]')].find(g=>g.getAttribute('data-part-id')!==key)
+                  || zoomer.querySelector('g[data-part-id]');
         if(ref){const c=ref.getBoundingClientRect();
-          edgeAnchor={id:ref.getAttribute('data-part-id'),x:c.x+c.width/2,y:c.y+c.height/2};}
+          anchor={id:ref.getAttribute('data-part-id'),x:c.x+c.width/2,y:c.y+c.height/2};}
       }
       zoomer.innerHTML=data.svg;
       buildMap(); paint(pinnedRange());
       wireHover(); wireDrag(); adaptStage(); markRendered();
-      // Re-render recomputes the viewBox (and the flex-centred SVG can
-      // resize), which would slide the whole scene and read as a
-      // teleport. Re-anchor on the dropped element: pan so it sits
-      // exactly under the cursor, so the move feels direct.
-      if(kind==='node' && dropX!=null){
+      if(!holdScene && kind==='node' && dropX!=null){
+        // free drag: pan so the moved node sits exactly under the cursor.
         const g=zoomer.querySelector('g[data-part-id="'+(window.CSS&&CSS.escape?CSS.escape(key):key)+'"]');
         if(g){const c=g.getBoundingClientRect();
           panX+=dropX-(c.x+c.width/2); panY+=dropY-(c.y+c.height/2); apply();}
-      }else if(kind==='edge' && edgeAnchor){
-        // Hold the scene still: pan so the reference node returns to where
-        // it sat before the re-render. The bend already places the line at
-        // the drop point relative to the (unmoving) nodes, so the line
-        // lands under the cursor and nothing else jumps.
-        const ref=zoomer.querySelector('g[data-part-id="'+(window.CSS&&CSS.escape?CSS.escape(edgeAnchor.id):edgeAnchor.id)+'"]');
+      }else if(anchor){
+        // hold the scene still: return the reference node to where it sat.
+        const ref=zoomer.querySelector('g[data-part-id="'+(window.CSS&&CSS.escape?CSS.escape(anchor.id):anchor.id)+'"]');
         if(ref){const c=ref.getBoundingClientRect();
-          panX+=edgeAnchor.x-(c.x+c.width/2); panY+=edgeAnchor.y-(c.y+c.height/2); apply();}
+          panX+=anchor.x-(c.x+c.width/2); panY+=anchor.y-(c.y+c.height/2); apply();}
       }
     }
     showIssues(data.issues||[]);

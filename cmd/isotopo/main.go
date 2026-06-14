@@ -23,6 +23,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
 	"net/url"
 	"os"
@@ -1419,6 +1420,14 @@ func serveFile(in string) error {
 		// target's current position and adds the delta to get an absolute
 		// value, so dragging a pure-auto node (no coords yet) works.
 		dwx, dwy := atof(q.Get("dwx")), atof(q.Get("dwy"))
+		// snap>0 rounds the dragged node's final offset to a grid step.
+		snapStep := atof(q.Get("snap"))
+		snap := func(v float64) float64 {
+			if snapStep > 0 {
+				return math.Round(v/snapStep) * snapStep
+			}
+			return v
+		}
 		src := string(body)
 		lang := q.Get("format")
 		if lang == "" {
@@ -1449,8 +1458,8 @@ func serveFile(in string) error {
 					o := offs[id]
 					wx, wy, wz := o[0], o[1], o[2]
 					if id == q.Get("id") {
-						wx += dwx
-						wy += dwy
+						wx = snap(wx + dwx)
+						wy = snap(wy + dwy)
 					}
 					out, ok = upsertInlineKey(out, findPartIDLine(out, id), "offset", wx, wy, wz)
 				}
@@ -1460,7 +1469,7 @@ func serveFile(in string) error {
 					http.Error(w, "part not found", 422)
 					return
 				}
-				out, ok = upsertInlineKey(src, findPartIDLine(src, q.Get("id")), "offset", cx+dwx, cy+dwy, cz)
+				out, ok = upsertInlineKey(src, findPartIDLine(src, q.Get("id")), "offset", snap(cx+dwx), snap(cy+dwy), cz)
 			}
 		case "edge":
 			ci, _ := strconv.Atoi(q.Get("ci"))
