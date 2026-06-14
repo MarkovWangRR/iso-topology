@@ -1028,13 +1028,13 @@ func cloneParts(parts []*CompositePart) []*CompositePart {
 // drag delta to this to get a new absolute offset, so dragging a node
 // that has no coordinates yet (pure auto-layout) still works. Operates
 // on a clone so the caller's document is not mutated.
-func ResolvePartOffset(doc *Document, id string) (wx, wy float64, ok bool) {
+func ResolvePartOffset(doc *Document, id string) (wx, wy, wz float64, ok bool) {
 	if doc == nil {
-		return 0, 0, false
+		return 0, 0, 0, false
 	}
 	scene := doc.Scene()
 	if scene == nil {
-		return 0, 0, false
+		return 0, 0, 0, false
 	}
 	applyLayout(scene, doc.Canvas)
 	var found *CompositePart
@@ -1053,12 +1053,12 @@ func ResolvePartOffset(doc *Document, id string) (wx, wy float64, ok bool) {
 	}
 	walk(scene.Parts)
 	if found == nil {
-		return 0, 0, false
+		return 0, 0, 0, false
 	}
 	if found.Offset == nil {
-		return 0, 0, true
+		return 0, 0, 0, true
 	}
-	return found.Offset.WX, found.Offset.WY, true
+	return found.Offset.WX, found.Offset.WY, found.Offset.WZ, true
 }
 
 // ConnectorBend returns the current bend of the ci-th connector on the
@@ -1119,8 +1119,8 @@ func SceneNeedsFreeze(doc *Document) bool {
 // ROOT-level part's resolved world (wx, wy) keyed by id. Used to bake
 // an auto-layout scene into explicit per-node coordinates on the first
 // manual drag, so subsequent renders never re-flow.
-func ResolveAllOffsets(doc *Document) map[string][2]float64 {
-	out := map[string][2]float64{}
+func ResolveAllOffsets(doc *Document) map[string][3]float64 {
+	out := map[string][3]float64{}
 	if doc == nil {
 		return out
 	}
@@ -1134,9 +1134,9 @@ func ResolveAllOffsets(doc *Document) map[string][2]float64 {
 			continue
 		}
 		if p.Offset != nil {
-			out[p.ID] = [2]float64{p.Offset.WX, p.Offset.WY}
+			out[p.ID] = [3]float64{p.Offset.WX, p.Offset.WY, p.Offset.WZ}
 		} else {
-			out[p.ID] = [2]float64{0, 0}
+			out[p.ID] = [3]float64{0, 0, 0}
 		}
 	}
 	return out
