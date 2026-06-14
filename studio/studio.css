@@ -146,15 +146,25 @@ svg path[data-connector].pinned{stroke:var(--accent-deep);filter:drop-shadow(0 0
    would lose to the id-only display rule and leave them painted. */
 #detailModal[hidden]{display:none;}
 #ctxmenu[hidden]{display:none;}
-.detail-card{background:white;border-radius:12px;box-shadow:0 24px 60px rgba(15,23,42,.30);width:min(560px,94vw);
+.detail-card{background:white;border-radius:12px;box-shadow:0 24px 60px rgba(15,23,42,.30);width:min(680px,95vw);
   max-height:84vh;display:flex;flex-direction:column;overflow:hidden;}
 .detail-head{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border);}
 .detail-head b{font:600 14px Inter,sans-serif;color:#0F172A;}
 .detail-x{cursor:pointer;color:#94A3B8;font-size:15px;line-height:1;padding:2px 4px;border-radius:5px;}
 .detail-x:hover{background:#F1F5F9;color:#334155;}
-.detail-fields{padding:14px 18px;overflow:auto;display:flex;flex-direction:column;gap:11px;}
+.detail-fields{padding:0;overflow:hidden;}
+.df-tabs{display:flex;align-items:stretch;height:min(58vh,480px);}
+.df-rail{flex:none;width:148px;border-right:1px solid var(--border);background:#FAFBFC;
+  padding:10px 8px;overflow-y:auto;display:flex;flex-direction:column;gap:2px;}
+.df-tab{font:600 12px Inter,sans-serif;text-align:left;border:none;background:none;color:#475569;
+  border-radius:7px;padding:8px 11px;cursor:pointer;white-space:nowrap;}
+.df-tab:hover{background:var(--accent-soft);color:var(--accent-deep);}
+.df-tab.on{background:var(--accent);color:#fff;}
+.df-panes{flex:1;min-width:0;overflow-y:auto;padding:15px 18px;}
+.df-pane{display:flex;flex-direction:column;gap:12px;}
+.df-pane[hidden]{display:none;}
 .df-row{display:flex;flex-direction:column;gap:3px;}
-.df-grouph{font:700 10px Inter,sans-serif;letter-spacing:.09em;text-transform:uppercase;color:#94A3B8;margin:5px 0 -2px;}
+.df-inherit{font:11px Inter,sans-serif;color:#94A3B8;margin-top:3px;}
 .df-labelline{display:flex;align-items:baseline;gap:8px;justify-content:space-between;}
 .df-k{font:600 11.5px Inter,sans-serif;color:#334155;letter-spacing:.02em;}
 .df-path{font:10px ui-monospace,Menlo,monospace;color:#B8C0CE;white-space:nowrap;}
