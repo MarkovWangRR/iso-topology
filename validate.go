@@ -351,6 +351,10 @@ func Validate(doc *Document) []Issue {
 		}
 	}
 
+	// v: render-time geometry lint — cross-container part collisions a
+	// structural pass can't see (see lint.go).
+	issues = append(issues, VisualLint(doc)...)
+
 	return issues
 }
 
