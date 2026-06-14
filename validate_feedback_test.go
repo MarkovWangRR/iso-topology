@@ -84,6 +84,30 @@ func TestValidateConnectorEnumTypos(t *testing.T) {
 	}
 }
 
+// A3 — negative dimensions / gaps warn (zero stays the legitimate auto case).
+func TestValidateGeometrySanity(t *testing.T) {
+	src := `nodes:
+  scene:
+    shape: composite
+    parts:
+      - { id: a, shape: rectangle, geom: { w: 80, d: 80, h: 30 } }
+      - { id: b, shape: rectangle, geom: { w: -5, d: 80, h: 30 }, place: { rightOf: a, gap: -2 } }
+`
+	issues := validateSrc(t, src)
+	if iss := findIssue(issues, ".geom.w", "negative dimension"); iss == nil {
+		t.Error("expected a negative-dimension warning on b.geom.w")
+	}
+	if iss := findIssue(issues, ".place.gap", "negative gap"); iss == nil {
+		t.Error("expected a negative-gap warning on b.place.gap")
+	}
+	// the all-positive part a must produce no geometry warnings.
+	for _, iss := range issues {
+		if strings.Contains(iss.Path, "parts[0]") && strings.Contains(iss.Message, "negative") {
+			t.Errorf("clean part wrongly flagged: %s", iss.Message)
+		}
+	}
+}
+
 // A bad part id should NOT also produce a second anchor error (no double-fault).
 func TestValidateConnectorBadIdNoDoubleAnchorError(t *testing.T) {
 	issues := validateSrc(t, sceneWith("ghost.lft", "b", "triangle", "orthogonal"))

@@ -381,6 +381,44 @@ func validatePart(p *CompositePart, path string, validShapes []string, issues *[
 			Message:  "stack.count must be > 0; ignored",
 		})
 	}
+	// Negative numbers are always a mistake (zero is the legitimate "auto"
+	// case, so only < 0 is flagged). A negative dimension renders degenerate;
+	// a negative gap pulls a part back over its own anchor.
+	if p.Geom != nil {
+		for _, d := range []struct {
+			name string
+			v    float64
+		}{{"w", p.Geom.W}, {"d", p.Geom.D}, {"h", p.Geom.H}} {
+			if d.v < 0 {
+				*issues = append(*issues, Issue{
+					Severity: SeverityWarning,
+					Path:     fmt.Sprintf("%s.geom.%s", path, d.name),
+					Message:  fmt.Sprintf("negative dimension %s=%g renders degenerate", d.name, d.v),
+				})
+			}
+		}
+	}
+	if p.Place != nil {
+		for _, g := range []struct {
+			name string
+			v    *float64
+		}{{"gap", p.Place.Gap}, {"gapX", p.Place.GapX}, {"gapY", p.Place.GapY}} {
+			if g.v != nil && *g.v < 0 {
+				*issues = append(*issues, Issue{
+					Severity: SeverityWarning,
+					Path:     fmt.Sprintf("%s.place.%s", path, g.name),
+					Message:  fmt.Sprintf("negative %s pulls the part back over its anchor", g.name),
+				})
+			}
+		}
+	}
+	if p.Layout != nil && p.Layout.Gap != nil && *p.Layout.Gap < 0 {
+		*issues = append(*issues, Issue{
+			Severity: SeverityWarning,
+			Path:     path + ".layout.gap",
+			Message:  "negative layout gap overlaps children",
+		})
+	}
 	for i, child := range p.Parts {
 		validatePart(child, fmt.Sprintf("%s.parts[%d]", path, i), validShapes, issues)
 	}
