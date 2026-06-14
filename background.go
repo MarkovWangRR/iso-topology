@@ -3,6 +3,8 @@ package isotopo
 import (
 	"fmt"
 	"strings"
+
+	"github.com/MarkovWangRR/iso-topology/iso25d"
 )
 
 // EmitBackgroundDefs is the exported version of emitBackgroundDefs.
@@ -123,7 +125,9 @@ func escXML(s string) string {
 	return s
 }
 
+// Single source: the projection constants live in iso25d; this package
+// references them so the two can never drift (see iso25d.Cos30).
 const (
-	cos30 = 0.8660254037844387
-	sin30 = 0.5
+	cos30 = iso25d.Cos30
+	sin30 = iso25d.Sin30
 )

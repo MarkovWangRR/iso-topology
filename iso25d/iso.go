@@ -98,9 +98,14 @@ func DefaultIsoBox() IsoBoxOpts {
 	}
 }
 
+// Cos30 / Sin30 are the iso ground-plane projection constants — the single
+// source of truth for the whole pipeline (the isotopo package references these
+// rather than redefining its own, so they can never drift).
 const (
-	cos30 = 0.8660254037844387
-	sin30 = 0.5
+	Cos30 = 0.8660254037844387
+	Sin30 = 0.5
+	cos30 = Cos30 // internal lowercase alias (used throughout iso25d)
+	sin30 = Sin30
 )
 
 func project(x, y, z float64) (float64, float64) {
