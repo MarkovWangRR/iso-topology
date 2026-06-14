@@ -76,6 +76,7 @@ func writeLLMsTxt() error {
 	b.WriteString("- [Icon index](" + base + "docs/agent/ICONS.md): every built-in glyph and brand badge with previews\n")
 	b.WriteString("- [MCP server setup](" + base + "docs/agent/MCP.md): use from Claude / any MCP client without shelling out\n")
 	b.WriteString("- [Agent skill](" + base + "skills/draw-iso-diagram/SKILL.md): installable Claude Code skill for drawing iso diagrams\n")
+	b.WriteString("- [Studio guide](" + base + "docs/guides/studio.md): `isotopo serve <file>` opens a browser workbench (drag to lay out, right-click to restyle) — agents can't drive it, but should suggest it for human visual tweaks after rendering\n")
 
 	b.WriteString("\n## Reference\n\n")
 	b.WriteString("- [YAML DSL](" + base + "docs/reference/dsl-yaml.md): layout/place composition, every field\n")

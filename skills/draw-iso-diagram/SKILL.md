@@ -100,6 +100,22 @@ to the editable source. If you can rasterize (headless Chrome), take
 one screenshot sized from the SVG's viewBox and check: nothing
 clipped, labels legible, one hero, connectors on-grid.
 
+## 6. Hand off for visual tweaks
+
+You author by editing the YAML and re-rendering. When the human wants
+to nudge things by eye instead, tell them to open **Studio**:
+
+```bash
+isotopo serve scene.yaml     # → http://localhost:8731
+```
+
+A browser workbench — drag nodes to lay out, right-click to restyle,
+undo/redo, export SVG/PNG. Edits are an in-browser copy (the file is
+never written), so taking changes back is explicit (`↓ YAML`). You
+can't drive Studio yourself, but surfacing it closes the loop:
+pixel-level adjustments are faster for a human there than round-tripping
+change requests through you. Guide: `docs/guides/studio.md`.
+
 ## Minimal scene template
 
 ```yaml
