@@ -18,31 +18,16 @@ import (
 	"strings"
 )
 
-// partsScreenOrigin projects every part's 8 world-bbox corners and
-// returns the (tx, ty) translation that maps world-projected coords
-// into the composite's screen space — the same math
-// iso25d.RenderComposite applies internally, shared by every injector
-// so they can't drift from each other.
+// partsScreenOrigin returns the (tx, ty) translation that maps world-projected
+// coords into the composite's screen space. It derives from the SAME
+// iso25d.ProjectedBounds that RenderComposite uses, so the overlay layers
+// (connectors, screen labels, annotations) can never drift from the parts.
 func partsScreenOrigin(infos []partInfo) (tx, ty float64) {
-	minX, minY := math.Inf(1), math.Inf(1)
-	for _, p := range infos {
-		corners := [8][3]float64{
-			{p.offWX, p.offWY, p.offWZ},
-			{p.offWX + p.w, p.offWY, p.offWZ},
-			{p.offWX + p.w, p.offWY + p.d, p.offWZ},
-			{p.offWX, p.offWY + p.d, p.offWZ},
-			{p.offWX, p.offWY, p.offWZ + p.h},
-			{p.offWX + p.w, p.offWY, p.offWZ + p.h},
-			{p.offWX + p.w, p.offWY + p.d, p.offWZ + p.h},
-			{p.offWX, p.offWY + p.d, p.offWZ + p.h},
-		}
-		for _, c := range corners {
-			sx := c[0]*cos30 - c[1]*cos30
-			sy := c[0]*sin30 + c[1]*sin30 - c[2]
-			minX = math.Min(minX, sx)
-			minY = math.Min(minY, sy)
-		}
+	boxes := make([][6]float64, len(infos))
+	for i, p := range infos {
+		boxes[i] = [6]float64{p.offWX, p.offWY, p.offWZ, p.w, p.d, p.h}
 	}
+	minX, minY, _, _ := iso25d.ProjectedBounds(boxes)
 	const pad = 12.0
 	return -minX + pad, -minY + pad
 }

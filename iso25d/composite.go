@@ -27,6 +27,32 @@ type CompositePart struct {
 // each part's standalone SVG is OFFSET so its internal centering is
 // undone, making the part's world (offWX, offWY, offWZ) corner land at
 // the standalone's (0, 0). Together these guarantee that any external
+// ProjectedBounds is the SINGLE SOURCE OF TRUTH for a composite's projected
+// extent. Each box is {offWX, offWY, offWZ, w, d, h}; it projects all 8 world
+// corners with the iso transform and returns the screen min/max. RenderComposite
+// AND every overlay layer (connectors, screen labels, annotations via
+// partsScreenOrigin) MUST derive their (tx,ty) from this one function, so their
+// origins can never drift — the cause of the v… edge-detachment bug, where two
+// hand-copied bbox loops sourced their dimensions differently.
+func ProjectedBounds(boxes [][6]float64) (minX, minY, maxX, maxY float64) {
+	minX, minY = math.Inf(1), math.Inf(1)
+	maxX, maxY = math.Inf(-1), math.Inf(-1)
+	for _, b := range boxes {
+		ox, oy, oz, w, d, h := b[0], b[1], b[2], b[3], b[4], b[5]
+		corners := [8][3]float64{
+			{ox, oy, oz}, {ox + w, oy, oz}, {ox + w, oy + d, oz}, {ox, oy + d, oz},
+			{ox, oy, oz + h}, {ox + w, oy, oz + h}, {ox + w, oy + d, oz + h}, {ox, oy + d, oz + h},
+		}
+		for _, c := range corners {
+			sx := c[0]*cos30 - c[1]*cos30
+			sy := c[0]*sin30 + c[1]*sin30 - c[2]
+			minX, maxX = math.Min(minX, sx), math.Max(maxX, sx)
+			minY, maxY = math.Min(minY, sy), math.Max(maxY, sy)
+		}
+	}
+	return
+}
+
 // layer (connectors, screen labels) using world-projected coords
 // renders pixel-aligned with the part's visible silhouette.
 func RenderComposite(parts []CompositePart) string {
@@ -54,40 +80,13 @@ func RenderComposite(parts []CompositePart) string {
 		})
 	}
 
-	// Composite bbox = union of every part's projected 3D world bbox
-	// corners. Mirrors injectCompositeConnectors / injectScreenLabels so
-	// downstream layers share the same (tx, ty) origin.
-	minX, minY := math.Inf(1), math.Inf(1)
-	maxX, maxY := math.Inf(-1), math.Inf(-1)
-	for _, p := range parts {
-		w, d, h := p.Opts.Width, p.Opts.Depth, p.Opts.Height
-		corners := [8][3]float64{
-			{p.OffWX, p.OffWY, p.OffWZ},
-			{p.OffWX + w, p.OffWY, p.OffWZ},
-			{p.OffWX + w, p.OffWY + d, p.OffWZ},
-			{p.OffWX, p.OffWY + d, p.OffWZ},
-			{p.OffWX, p.OffWY, p.OffWZ + h},
-			{p.OffWX + w, p.OffWY, p.OffWZ + h},
-			{p.OffWX + w, p.OffWY + d, p.OffWZ + h},
-			{p.OffWX, p.OffWY + d, p.OffWZ + h},
-		}
-		for _, c := range corners {
-			sx := c[0]*cos30 - c[1]*cos30
-			sy := c[0]*sin30 + c[1]*sin30 - c[2]
-			if sx < minX {
-				minX = sx
-			}
-			if sx > maxX {
-				maxX = sx
-			}
-			if sy < minY {
-				minY = sy
-			}
-			if sy > maxY {
-				maxY = sy
-			}
-		}
+	// Composite bbox = union of every part's projected 3D world bbox via the
+	// shared ProjectedBounds, so the overlay layers' (tx,ty) can't drift.
+	boxes := make([][6]float64, len(parts))
+	for i, p := range parts {
+		boxes[i] = [6]float64{p.OffWX, p.OffWY, p.OffWZ, p.Opts.Width, p.Opts.Depth, p.Opts.Height}
 	}
+	minX, minY, maxX, maxY := ProjectedBounds(boxes)
 	pad := 12.0
 	tx, ty := -minX+pad, -minY+pad
 
