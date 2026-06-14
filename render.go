@@ -190,18 +190,17 @@ func renderComposite(n *Node, theme *Theme, canvas *Canvas, anns []*Annotation) 
 		cp := iso25d.CompositePart{ID: p.ID, Shape: shape, Opts: opts, OffWX: ox, OffWY: oy, OffWZ: oz}
 		parts = append(parts, cp)
 
-		w, d, h := 140.0, 140.0, 80.0
-		if p.Geom != nil {
-			if p.Geom.W > 0 {
-				w = p.Geom.W
-			}
-			if p.Geom.D > 0 {
-				d = p.Geom.D
-			}
-			if p.Geom.H > 0 {
-				h = p.Geom.H
-			}
-		}
+		// partInfo dims MUST match what RenderComposite draws (p.Opts.*),
+		// NOT the raw geom: an auto-sized group/boundary substrate has no
+		// geom W/D, so geom would fall back to the 140 default while the
+		// renderer uses the true derived footprint. That mismatch makes
+		// partsScreenOrigin() compute a different projection origin (tx,ty)
+		// than RenderComposite, shifting the ENTIRE connector/label layer
+		// off the parts — the cause of edges detaching from their nodes.
+		// Use opts.* verbatim (incl. zero for label-only sub-parts) so this
+		// matches RenderComposite's bbox EXACTLY — a 140 fallback here would
+		// invent a phantom-wide part and skew the projection origin.
+		w, d, h := opts.Width, opts.Depth, opts.Height
 		infos[i] = partInfo{
 			id: p.ID, shape: p.Shape,
 			w: w, d: d, h: h, offWX: ox, offWY: oy, offWZ: oz,
