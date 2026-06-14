@@ -37,7 +37,9 @@ order — each step builds on the last.
 
 **You know what you want — look up the exact field name.**
 
-- [`cli.md`](reference/cli.md) — CLI subcommands + Go library API
+- [`api.md`](reference/api.md) — **the single API entry point**: every
+  programmable surface (Go library + edit contract, HTTP, DSL, CLI, MCP)
+- [`cli.md`](reference/cli.md) — CLI subcommands
 - [`dsl-yaml.md`](reference/dsl-yaml.md) — YAML composite spec
 - [`dsl-d2.md`](reference/dsl-d2.md) — `.d2` input spec (shape
   mapping, nested containers)
@@ -88,6 +90,7 @@ order — each step builds on the last.
 | "Is there a full example like my task?" | [agent/SAMPLES.md](agent/SAMPLES.md) |
 | "Why isn't my callout showing?" | [guides/troubleshooting.md](guides/troubleshooting.md) |
 | "What does palette.left do?" | [reference/dsl-theme.md](reference/dsl-theme.md) |
+| "How do I embed/call it from Go, or apply edits?" | [reference/api.md](reference/api.md) |
 | "What's the difference between .d2 and .yaml?" | [concepts/why-isometric.md](concepts/why-isometric.md) |
 | "How do I add a new iso shape?" | [guides/extending.md](guides/extending.md) |
 | "How do I plug this into my agent?" | [agent/PROMPT_TEMPLATE.md](agent/PROMPT_TEMPLATE.md) |

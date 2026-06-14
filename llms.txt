@@ -18,10 +18,11 @@ Install: `go install github.com/MarkovWangRR/iso-topology/cmd/isotopo@latest` â€
 
 ## Reference
 
+- [API reference](https://raw.githubusercontent.com/MarkovWangRR/iso-topology/main/docs/reference/api.md): single entry point for every programmable surface â€” Go library + stateless edit contract (ApplyOp/EditOp/RenderSource), HTTP, DSL, CLI, MCP
 - [YAML DSL](https://raw.githubusercontent.com/MarkovWangRR/iso-topology/main/docs/reference/dsl-yaml.md): layout/place composition, every field
 - [d2 DSL](https://raw.githubusercontent.com/MarkovWangRR/iso-topology/main/docs/reference/dsl-d2.md): auto-layout input path
 - [Style and theme](https://raw.githubusercontent.com/MarkovWangRR/iso-topology/main/docs/reference/dsl-theme.md): palette, gradients, effects cascade
-- [CLI and Go library](https://raw.githubusercontent.com/MarkovWangRR/iso-topology/main/docs/reference/cli.md)
+- [CLI](https://raw.githubusercontent.com/MarkovWangRR/iso-topology/main/docs/reference/cli.md)
 
 ## Optional
 
