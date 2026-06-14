@@ -52,6 +52,7 @@
     <div class="toolbar">
       <button id="render" onclick="rerender()" title="Cmd/Ctrl+Enter">Render</button>
       <label class="auto"><input type="checkbox" id="auto" checked>Auto</label>
+      <label class="auto" title="snap dragged nodes to the grid"><input type="checkbox" id="snap">Snap</label>
       <span class="spacer" style="flex:1"></span>
     </div>
     <div class="filetab"><span class="path" id="fpath"></span><b>{{FILE}}</b><button class="iconbtn" id="cppath" onclick="copyPath()" title="copy full path"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button><span class="spacer" style="flex:1"></span><a id="discard" hidden onclick="discardDraft()">revert</a></div>
