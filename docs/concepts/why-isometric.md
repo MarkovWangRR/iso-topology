@@ -117,8 +117,9 @@ A few honest tradeoffs:
 - **No 3D perspective.** This is true isometric, not 3-point
   projection. No vanishing point, no foreshortening. That's the
   point — iso reads as iso, not as a poor camera angle.
-- **Limited shape vocabulary.** Six native iso shapes + 23 d2 shapes
-  mapped through. Polygons / custom paths require code changes (see
+- **Limited shape vocabulary.** 14 iso primitives (`capabilities.shapes`),
+  with 23 d2 source shapes mapped onto them. Polygons / custom paths
+  require code changes (see
   [`../guides/extending.md`](../guides/extending.md)).
 - **No animations or interactivity.** SVG output is static. If you
   want hover states, post-process with CSS — every layer has a

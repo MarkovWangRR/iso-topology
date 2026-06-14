@@ -259,9 +259,9 @@ api  -> db:  write
 
 ## 能力一览
 
-- **23 种 d2 形状**自动映射到等距图形（rectangle、cylinder、cloud、person、hexagon、queue、oval……）
-- **声明式定位**：`layout: {mode: row|column|grid|ring}` 排容器，`place: {rightOf|inFrontOf|above: 某节点}` 摆单件；坐标由求解器计算，引用错了会报错，撞了会警告
-- **8 个组合原语**：`group`、`stack`、`layout`、`place`、`canvas.grid`、`annotation`、`connector`、图标
+- **23 种 d2 输入形状** → **14 种 iso 图形**（rectangle、cylinder、cloud、person、hexprism、diamond、prism……）：iso 图形就是 `capabilities.shapes` 列出的那 14 个，23 是映射到它们的 d2 源名
+- **声明式定位**：`layout: {mode: row|column|grid|ring}` 排容器，`place: {rightOf|leftOf|above|below|inFrontOf|behind: 某节点}` 摆单件；坐标由求解器计算，引用错了会报错，撞了会警告
+- **9 个组合原语**：`group`、`stack`、`layout`、`place`、`canvas.grid`、`annotation`、`connector`、`preset`、图标
 - **200+ 内置图标**：约 150 个真品牌 logo（来自 Simple Icons，CC0 协议，`iso://si/postgresql`、`iso://si/openai`……），35 个手绘概念图形（`iso://glyph/gpu`、`model`、`agent`……），全部可改色，带预览的索引见 [ICONS.md](docs/agent/ICONS.md)
 - **逐面样式**：渐变、投影、辉光、斜纹/点阵纹理、圆角、线框模式、胶片颗粒
 - **风格预设**：`theme.presets` 里定义一次，节点上写 `preset: 名字` 即可复用（比 YAML 锚点强：JSON 也能用，写错名字会提示）

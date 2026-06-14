@@ -40,7 +40,7 @@ override per-part via `geom.h`.
 | **octprism** | `octprism` | 1.0 | v3.2 — 8-gon prism: firewall (stop-sign) semantics |
 | **person** | `c4-person`, `c4_person`, `person` | 1.2 |  |
 | **prism** | `prism` | 1.0 | v3.2 — regular n-gon base x vertical extrude; geom.sides picks the base (default 6). Side walls shade left/right palette by facing. Prisms take gradients/patterns/strokes via style.faces (v3.3) and backglow (v3.3.1); Full effects parity with the box family as of v3.4 (dropShadow, grain, backglow). Connectors anchor on the true polygon edge. |
-| **rectangle** | `callout`, `class`, `code`, `document`, `hierarchy`, `image`, `package`, `page`, `parallelogram`, `rectangle`, `sequence-diagram`, `sequence_diagram`, `sql-table`, `sql_table`, `square`, `step` | 0.3 |  |
+| **rectangle** | `callout`, `class`, `code`, `document`, `hierarchy`, `image`, `package`, `page`, `parallelogram`, `rectangle`, `sequence-diagram`, `sequence_diagram`, `sql-table`, `sql_table`, `square`, `step` | 1.0 |  |
 | **triprism** | `triprism` | 1.0 | v3.2 — 3-gon prism: alert / one-way fan-out semantics |
 
 ## Composition primitives
@@ -49,7 +49,7 @@ override per-part via `geom.h`.
 
 **Where:** `node.parts[*]`
 
-**Syntax:** `{shape: group, layout: {mode: row|column|grid}, parts: [...], label: "…", geom: {h}}`
+**Syntax:** `{shape: group, layout: {mode: row|column|grid|ring}, parts: [...], label: "…", geom: {h}}`
 
 Wrap N parts in a translucent labeled iso substrate. Position children with layout (or per-child place) — the substrate then auto-sizes around them, so geom.w/d may be omitted. Child offsets are fine-tune deltas relative to the group.
 
