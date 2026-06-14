@@ -262,202 +262,7 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo,
 		}
 	}
 
-	// parseAnchor splits "partID.anchor" into (id, anchor). Bare "partID"
-	// defaults to "top-mid".
-	parseAnchor := func(ref string) (id, anchor string) {
-		dot := strings.Index(ref, ".")
-		if dot < 0 {
-			return ref, "top-mid"
-		}
-		return ref[:dot], ref[dot+1:]
-	}
-
-	// anchorWorld returns the iso-world anchor coords for ref = "partID" or
-	// "partID.anchor". Anchors default to the top-face centre.
-	anchorWorld := func(ref string) (wx, wy, wz float64, ok bool) {
-		id, anchor := parseAnchor(ref)
-		p, found := byID[id]
-		if !found {
-			return 0, 0, 0, false
-		}
-		wx, wy, wz = p.offWX+p.w/2, p.offWY+p.d/2, p.offWZ+p.h
-		switch anchor {
-		case "left-mid", "left":
-			wx, wy = p.offWX, p.offWY+p.d/2
-		case "right-mid", "right":
-			wx, wy = p.offWX+p.w, p.offWY+p.d/2
-		case "back-mid", "back":
-			wx, wy = p.offWX+p.w/2, p.offWY
-		case "front-mid", "front":
-			wx, wy = p.offWX+p.w/2, p.offWY+p.d
-		case "top-mid", "top", "center":
-			// keep defaults
-		case "bottom-mid", "bottom":
-			wz = p.offWZ
-		}
-		return wx, wy, wz, true
-	}
-
-	// anchorExit returns the unit outward-normal of an anchor in the iso
-	// world's (x, y) ground plane. top/bottom/center have no horizontal
-	// normal — caller falls back to the x-axis.
-	anchorExit := func(ref string) (dx, dy float64) {
-		_, anchor := parseAnchor(ref)
-		switch anchor {
-		case "left-mid", "left":
-			return -1, 0
-		case "right-mid", "right":
-			return 1, 0
-		case "back-mid", "back":
-			return 0, -1
-		case "front-mid", "front":
-			return 0, 1
-		}
-		return 1, 0
-	}
-
-	// anchorFaceMidZ returns the vertical middle (in world z) of the
-	// referenced part's side face. Used by the orthogonal router to pick
-	// a routing height that lies inside BOTH endpoints' side faces, so
-	// every segment of the path lies on a single horizontal world plane
-	// and projects to pure ±tan30° iso-axis slopes — i.e. it aligns with
-	// the TopoDSL grid lattice with zero off-axis tilt.
-	anchorFaceMidZ := func(ref string) float64 {
-		id, _ := parseAnchor(ref)
-		p, found := byID[id]
-		if !found {
-			return 0
-		}
-		return p.offWZ + p.h/2
-	}
-
-	// anchorRefineSilhouette adjusts a bbox-based side anchor (wx, wy)
-	// onto the actual visible silhouette of non-prismatic shapes:
-	//
-	//   circle / sphere: the silhouette at a given z is a disc of radius
-	//       sqrt(r² − (z − cz)²) centred at the sphere centroid. Anchors
-	//       slide inward when z is off the equator.
-	//   cloud:           the rendered outline insets from the bbox by
-	//       leftX=0.04·w / rightX=0.96·w (matches sampleCloudOutline);
-	//       back/front sit on the trunk's top/bottom edges.
-	//
-	// Other shapes are pass-through (bbox already matches silhouette).
-	anchorRefineSilhouette := func(ref string, wx, wy, z float64) (float64, float64) {
-		id, anchor := parseAnchor(ref)
-		p, found := byID[id]
-		if !found {
-			return wx, wy
-		}
-		// v3.2.1 — prism family: bbox face-midpoints sit OUTSIDE the
-		// inscribed polygon (hexagon's left-mid is in empty canvas) or on
-		// a vertex, piling arrowheads and detaching exits. Re-anchor on
-		// the base polygon along the bbox-anchor direction.
-		if sides := prismSidesFor(p.shape, p.sides); sides >= 3 {
-			dx, dy := wx-(p.offWX+p.w/2), wy-(p.offWY+p.d/2)
-			ax, ay := iso25d.PrismGroundAnchor(p.w, p.d, sides, dx, dy)
-			return p.offWX + ax, p.offWY + ay
-		}
-		switch p.shape {
-		case "circle":
-			cx := p.offWX + p.w/2
-			cy := p.offWY + p.d/2
-			cz := p.offWZ + p.h/2
-			r := math.Min(math.Min(p.w, p.d), p.h) / 2
-			dz := z - cz
-			if math.Abs(dz) >= r {
-				return wx, wy
-			}
-			rXY := math.Sqrt(r*r - dz*dz)
-			switch anchor {
-			case "left", "left-mid":
-				return cx - rXY, cy
-			case "right", "right-mid":
-				return cx + rXY, cy
-			case "back", "back-mid":
-				return cx, cy - rXY
-			case "front", "front-mid":
-				return cx, cy + rXY
-			}
-		case "cloud":
-			leftX := 0.04 * p.w
-			rightX := 0.96 * p.w
-			horizonY := 0.10 * p.d // top of bumps row
-			bottomY := 0.85 * p.d  // bottom of trunk
-			switch anchor {
-			case "left", "left-mid":
-				return p.offWX + leftX, p.offWY + p.d/2
-			case "right", "right-mid":
-				return p.offWX + rightX, p.offWY + p.d/2
-			case "back", "back-mid":
-				return p.offWX + p.w/2, p.offWY + horizonY
-			case "front", "front-mid":
-				return p.offWX + p.w/2, p.offWY + bottomY
-			}
-		}
-		return wx, wy
-	}
-	anchorScreen := func(ref string) (float64, float64, bool) {
-		wx, wy, wz, ok := anchorWorld(ref)
-		if !ok {
-			return 0, 0, false
-		}
-		x, y := project(wx, wy, wz)
-		return x + tx, y + ty, true
-	}
-
-	// anchorSideKey normalises "id.left-mid" and "id.left" to one key so
-	// multiple connectors touching the same side cluster together in the
-	// fan-out accounting below.
-	anchorSideKey := func(ref string) string {
-		id, anchor := parseAnchor(ref)
-		switch anchor {
-		case "left", "left-mid":
-			anchor = "left"
-		case "right", "right-mid":
-			anchor = "right"
-		case "back", "back-mid":
-			anchor = "back"
-		case "front", "front-mid":
-			anchor = "front"
-		case "top", "top-mid", "center":
-			anchor = "top"
-		case "bottom", "bottom-mid":
-			anchor = "bottom"
-		}
-		return id + "/" + anchor
-	}
-
-	// v3.0 — bare refs (no ".anchor") used to pin to top-mid with a
-	// hard-coded +x exit normal: a target sitting to the LEFT still made
-	// the route walk +x for the 24-unit stub and double back, and every
-	// spoke into a hub converged on one point. Resolve bare refs to the
-	// side face FACING the other endpoint before anything else runs.
-	autoAnchor := func(ref, otherRef string) string {
-		if strings.Contains(ref, ".") {
-			return ref
-		}
-		p, ok := byID[ref]
-		if !ok {
-			return ref
-		}
-		oid, _ := parseAnchor(otherRef)
-		o, ok2 := byID[oid]
-		if !ok2 {
-			return ref
-		}
-		dx := (o.offWX + o.w/2) - (p.offWX + p.w/2)
-		dy := (o.offWY + o.d/2) - (p.offWY + p.d/2)
-		if math.Abs(dx) >= math.Abs(dy) {
-			if dx >= 0 {
-				return ref + ".right"
-			}
-			return ref + ".left"
-		}
-		if dy >= 0 {
-			return ref + ".front"
-		}
-		return ref + ".back"
-	}
+	ar := &anchorResolver{byID: byID, tx: tx, ty: ty}
 
 	// v1.6.2 fan-out: count how many orthogonal connectors share each
 	// (partID, side) so the per-connector pass can stagger their stubs
@@ -478,21 +283,21 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo,
 	effFrom := make([]string, len(conns))
 	effTo := make([]string, len(conns))
 	for i, c := range conns {
-		effFrom[i] = autoAnchor(c.From, c.To)
-		effTo[i] = autoAnchor(c.To, c.From)
+		effFrom[i] = ar.auto(c.From, c.To)
+		effTo[i] = ar.auto(c.To, c.From)
 		if c.Routing != "orthogonal" {
 			continue
 		}
-		sWX, sWY, _, ok1 := anchorWorld(effFrom[i])
-		tWX, tWY, _, ok2 := anchorWorld(effTo[i])
+		sWX, sWY, _, ok1 := ar.world(effFrom[i])
+		tWX, tWY, _, ok2 := ar.world(effTo[i])
 		if !ok1 || !ok2 {
 			continue
 		}
-		sdx, sdy := anchorExit(effFrom[i])
-		tdx, tdy := anchorExit(effTo[i])
-		routeZ := math.Min(anchorFaceMidZ(effFrom[i]), anchorFaceMidZ(effTo[i]))
-		sWX, sWY = anchorRefineSilhouette(effFrom[i], sWX, sWY, routeZ)
-		tWX, tWY = anchorRefineSilhouette(effTo[i], tWX, tWY, routeZ)
+		sdx, sdy := ar.exit(effFrom[i])
+		tdx, tdy := ar.exit(effTo[i])
+		routeZ := math.Min(ar.faceMidZ(effFrom[i]), ar.faceMidZ(effTo[i]))
+		sWX, sWY = ar.refineSilhouette(effFrom[i], sWX, sWY, routeZ)
+		tWX, tWY = ar.refineSilhouette(effTo[i], tWX, tWY, routeZ)
 
 		// Collinear iff face normals oppose AND perpendicular distance
 		// is zero (within a small tolerance — refinement and fan-out
@@ -512,8 +317,8 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo,
 		}
 		isCollinearConn[i] = collinear
 		if !collinear {
-			srcSideCount[anchorSideKey(effFrom[i])]++
-			tgtSideCount[anchorSideKey(effTo[i])]++
+			srcSideCount[ar.sideKey(effFrom[i])]++
+			tgtSideCount[ar.sideKey(effTo[i])]++
 		}
 	}
 	srcSideIdx := map[string]int{}
@@ -592,22 +397,22 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo,
 			// lie inside both endpoints' side faces (any face-mid z ≤ h),
 			// so the endpoints attach inside the visible silhouette and
 			// no vertical "drop" segment is ever needed.
-			sWX, sWY, _, ok1 := anchorWorld(effFrom[ci])
-			tWX, tWY, _, ok2 := anchorWorld(effTo[ci])
+			sWX, sWY, _, ok1 := ar.world(effFrom[ci])
+			tWX, tWY, _, ok2 := ar.world(effTo[ci])
 			if !ok1 || !ok2 {
 				continue
 			}
-			sdx, sdy := anchorExit(effFrom[ci])
-			tdx, tdy := anchorExit(effTo[ci])
-			routeZ := math.Min(anchorFaceMidZ(effFrom[ci]), anchorFaceMidZ(effTo[ci]))
+			sdx, sdy := ar.exit(effFrom[ci])
+			tdx, tdy := ar.exit(effTo[ci])
+			routeZ := math.Min(ar.faceMidZ(effFrom[ci]), ar.faceMidZ(effTo[ci]))
 
 			// v1.6.3 shape-aware anchor refinement: sphere/cloud
 			// silhouettes don't reach their bbox edges, so the bbox
 			// anchor would render the line ending in empty space. Slide
 			// the (wx, wy) along the face normal onto the real silhouette
 			// at the chosen routing z.
-			sWX, sWY = anchorRefineSilhouette(effFrom[ci], sWX, sWY, routeZ)
-			tWX, tWY = anchorRefineSilhouette(effTo[ci], tWX, tWY, routeZ)
+			sWX, sWY = ar.refineSilhouette(effFrom[ci], sWX, sWY, routeZ)
+			tWX, tWY = ar.refineSilhouette(effTo[ci], tWX, tWY, routeZ)
 
 			// v1.6.2 fan-out: when N>1 connectors share a side, slide
 			// each endpoint along the face's tangent (perpendicular to
@@ -621,8 +426,8 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo,
 			// Collinear edges keep stagger 0 — shifting them would
 			// break the single-segment route the user laid out for.
 			if !isCollinearConn[ci] {
-				srcKey := anchorSideKey(effFrom[ci])
-				tgtKey := anchorSideKey(effTo[ci])
+				srcKey := ar.sideKey(effFrom[ci])
+				tgtKey := ar.sideKey(effTo[ci])
 				sN, sIdx := srcSideCount[srcKey], srcSideIdx[srcKey]
 				tN, tIdx := tgtSideCount[tgtKey], tgtSideIdx[tgtKey]
 				srcSideIdx[srcKey]++
@@ -643,10 +448,10 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo,
 			// Re-refine so the stagger becomes an angular spread along
 			// the part's real outline.
 			if sStagger != 0 {
-				sWX, sWY = anchorRefineSilhouette(effFrom[ci], sWX, sWY, routeZ)
+				sWX, sWY = ar.refineSilhouette(effFrom[ci], sWX, sWY, routeZ)
 			}
 			if tStagger != 0 {
-				tWX, tWY = anchorRefineSilhouette(effTo[ci], tWX, tWY, routeZ)
+				tWX, tWY = ar.refineSilhouette(effTo[ci], tWX, tWY, routeZ)
 			}
 
 			// v3.1 — the v1.6.6 arrow-gap pullback is gone: arrowheads now
@@ -811,8 +616,8 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo,
 			// point sits on the perpendicular bisector ¼ of the chord's
 			// length away. Produces a natural S-free arc that reads as
 			// "data flow" instead of the rigid L-corner of orthogonal.
-			x1, y1, ok1 := anchorScreen(c.From)
-			x2, y2, ok2 := anchorScreen(c.To)
+			x1, y1, ok1 := ar.screen(c.From)
+			x2, y2, ok2 := ar.screen(c.To)
 			if !ok1 || !ok2 {
 				continue
 			}
@@ -827,8 +632,8 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo,
 				pts = [][2]float64{{x1, y1}, {x2, y2}}
 			}
 		default: // "straight" or empty
-			x1, y1, ok1 := anchorScreen(c.From)
-			x2, y2, ok2 := anchorScreen(c.To)
+			x1, y1, ok1 := ar.screen(c.From)
+			x2, y2, ok2 := ar.screen(c.To)
 			if !ok1 || !ok2 {
 				continue
 			}
@@ -868,7 +673,7 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo,
 		// disconnected on the top face. Trim both ends at the silhouette
 		// boundary so line + arrow terminate visibly on the entry edge.
 		if len(pts) >= 2 {
-			if tp, ok := byID[func() string { id, _ := parseAnchor(effTo[ci]); return id }()]; ok && !tp.isSubstrate {
+			if tp, ok := byID[func() string { id, _ := ar.parse(effTo[ci]); return id }()]; ok && !tp.isSubstrate {
 				sil := partSilhouette(tp, tx, ty)
 				if os.Getenv("ISOTOPO_DEBUG_CLIP") != "" {
 					last := pts[len(pts)-1]
@@ -881,7 +686,7 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo,
 					fmt.Fprintf(os.Stderr, "  after=(%.1f,%.1f)\n", last[0], last[1])
 				}
 			}
-			if sp, ok := byID[func() string { id, _ := parseAnchor(effFrom[ci]); return id }()]; ok && !sp.isSubstrate {
+			if sp, ok := byID[func() string { id, _ := ar.parse(effFrom[ci]); return id }()]; ok && !sp.isSubstrate {
 				pts = clipRouteStart(pts, partSilhouette(sp, tx, ty), 1)
 			}
 		}
@@ -928,8 +733,8 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo,
 		// data-from / data-to = the connected part ids, so Studio can live-
 		// follow a dragged node: the endpoint docked to that node tracks it
 		// during the drag (intermediate consistency), not just on drop.
-		fromID, _ := parseAnchor(c.From)
-		toID, _ := parseAnchor(c.To)
+		fromID, _ := ar.parse(c.From)
+		toID, _ := ar.parse(c.To)
 		fmt.Fprintf(&sb,
 			`<path data-connector="%d" data-from="%s" data-to="%s"%s d="%s" fill="none" stroke="%s" stroke-width="%.2f" stroke-linecap="round" stroke-linejoin="round"%s/>`,
 			ci, fromID, toID, routeAttr, d.String(), stroke, width, dashAttr,
