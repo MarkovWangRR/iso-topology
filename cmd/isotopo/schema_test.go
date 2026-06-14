@@ -55,14 +55,14 @@ func acceptedShapeTokens() map[string]bool {
 	return set
 }
 
-// TestShapeOptionsAreReal guards the Studio shape picker against the
-// box/sphere/polygon desync class: every option the picker offers must be a
-// token the renderer actually accepts, or it would silently fall back to
-// rectangle. This couples the hand-maintained shapeOptions list to the
-// capability report so a bad token fails CI instead of shipping.
+// TestShapeOptionsAreReal pins the invariant the box/sphere/polygon bug
+// violated: every option the Studio shape picker offers must be a token the
+// renderer accepts. shapeOptions() is now DERIVED from the capability report
+// so this holds by construction — the test guards against anyone re-hardcoding
+// the list or the alias mapping (iso_text→text) breaking.
 func TestShapeOptionsAreReal(t *testing.T) {
 	ok := acceptedShapeTokens()
-	for _, s := range shapeOptions {
+	for _, s := range shapeOptions() {
 		if !ok[s] {
 			t.Errorf("shapeOptions has %q which is not an accepted shape token "+
 				"(see `isotopo capabilities` → shapes); it would silently render as rectangle", s)
@@ -74,7 +74,7 @@ func TestShapeOptionsAreReal(t *testing.T) {
 // class (not the catch-all), so the detail editor offers the right controls.
 func TestShapeClassesKnown(t *testing.T) {
 	want := map[string]bool{"faces": true, "outline": true, "text": true, "fill": true}
-	for _, s := range shapeOptions {
+	for _, s := range shapeOptions() {
 		if !want[shapeClass(s)] {
 			t.Errorf("shapeClass(%q) = %q, not a known class", s, shapeClass(s))
 		}
