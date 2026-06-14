@@ -132,6 +132,23 @@ func nodeSchema(shape string) []schemaField {
 			f = append(f, schemaField{Group: "Face colors", Path: "style.stroke.color", Label: "Border", Type: "color", Inline: true})
 		}
 	}
+	// Effects — visual polish previously only reachable by hand-editing YAML.
+	// Applies to the solid shapes (faces + fill); text/outline shapes have no
+	// volume to glow or shadow. cornerRadius rounds box edges only.
+	switch shapeClass(shape) {
+	case "faces", "fill":
+		f = append(f,
+			schemaField{Group: "Effects", Path: "style.effects.opacity", Label: "Opacity", Desc: "0–1, whole-part transparency", Type: "number", Inline: true},
+			schemaField{Group: "Effects", Path: "style.effects.blur", Label: "Blur", Desc: "Gaussian blur in px — fog/ghost nodes", Type: "number", Inline: true},
+			schemaField{Group: "Effects", Path: "style.effects.backglow.color", Label: "Glow color", Desc: "Soft halo behind the part", Type: "color", Inline: true},
+			schemaField{Group: "Effects", Path: "style.effects.backglow.radius", Label: "Glow radius", Type: "number", Inline: true},
+			schemaField{Group: "Effects", Path: "style.effects.dropShadow.color", Label: "Shadow color", Desc: "Soft drop shadow under the silhouette", Type: "color", Inline: true},
+			schemaField{Group: "Effects", Path: "style.effects.dropShadow.blur", Label: "Shadow blur", Type: "number", Inline: true},
+		)
+		if shapeClass(shape) == "faces" {
+			f = append(f, schemaField{Group: "Effects", Path: "style.effects.cornerRadius", Label: "Corner radius", Desc: "Rounds the box's vertical edges", Type: "number", Inline: true})
+		}
+	}
 	return f
 }
 
