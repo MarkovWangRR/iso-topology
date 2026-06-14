@@ -321,7 +321,9 @@ let ctxTarget=null, detailTarget=null;
 function escAttr(t){return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');}
 function showCtx(x,y,kind,key){
   ctxTarget={kind,key};
-  // Duplicate applies to nodes only; Delete to nodes/edges; canvas is edit-only.
+  // Add node only from the empty canvas; Duplicate nodes only; Delete
+  // nodes/edges; canvas itself is edit + add only.
+  document.getElementById('ctxadd').hidden = kind!=='canvas';
   document.getElementById('ctxdup').hidden = kind!=='node';
   document.getElementById('ctxdel').hidden = kind==='canvas';
   ctxmenu.style.left=Math.min(x,innerWidth-160)+'px';
@@ -331,6 +333,7 @@ function showCtx(x,y,kind,key){
 function hideCtx(){ctxmenu.hidden=true;}
 document.addEventListener('mousedown',e=>{ if(!ctxmenu.hidden && !ctxmenu.contains(e.target)) hideCtx(); });
 document.addEventListener('scroll',hideCtx,true);
+document.getElementById('ctxadd').addEventListener('click',()=>{ opCommit('add',{kind:'node',key:''}); });
 document.getElementById('ctxedit').addEventListener('click',()=>{ if(ctxTarget) openDetail(ctxTarget); });
 document.getElementById('ctxdup').addEventListener('click',()=>{ if(ctxTarget) opCommit('duplicate',ctxTarget); });
 document.getElementById('ctxdel').addEventListener('click',()=>{ if(ctxTarget) opCommit('delete',ctxTarget); });

@@ -880,11 +880,119 @@ func deletePart(src, id string) (string, bool) {
 			out = deleteLineRange(out, s, e)
 		}
 	}
+	// Other parts may be positioned relative to this one (place: { rightOf: id,
+	// … }); drop that place: block so they fall back to the layout instead of
+	// dangling on a missing anchor.
+	out = stripPlaceReferencing(out, id)
 	s, e, ok := findPartItemRange(out, id)
 	if !ok {
 		return src, false
 	}
 	return deleteLineRange(out, s, e), true
+}
+
+// stripPlaceReferencing removes the place: block from any part whose place
+// constraint points at `id` (rightOf/leftOf/inFrontOf/behind/above).
+func stripPlaceReferencing(src, id string) string {
+	refs := map[string]bool{}
+	var walk func(v interface{})
+	walk = func(v interface{}) {
+		switch t := v.(type) {
+		case map[string]interface{}:
+			if pl, ok := t["place"].(map[string]interface{}); ok {
+				for _, k := range []string{"rightOf", "leftOf", "inFrontOf", "behind", "above"} {
+					if s, _ := pl[k].(string); s == id {
+						if pid, _ := t["id"].(string); pid != "" {
+							refs[pid] = true
+						}
+					}
+				}
+			}
+			for _, vv := range t {
+				walk(vv)
+			}
+		case []interface{}:
+			for _, vv := range t {
+				walk(vv)
+			}
+		}
+	}
+	walk(mustParse(src))
+	out := src
+	for pid := range refs {
+		if s, e, ok := findPartItemRange(out, pid); ok {
+			out = removeKeyInRange(out, s, e, "place")
+		}
+	}
+	return out
+}
+
+// removeKeyInRange deletes `key:` (inline flow value or block child) from the
+// list item spanning [start,end).
+func removeKeyInRange(src string, start, end int, key string) string {
+	lines := strings.Split(src, "\n")
+	if start < 0 || start >= len(lines) {
+		return src
+	}
+	if strings.Contains(lines[start], "{") && strings.Contains(lines[start], "}") {
+		l := regexp.MustCompile(`,?\s*`+regexp.QuoteMeta(key)+`:\s*\{[^}]*\}`).ReplaceAllString(lines[start], "")
+		l = regexp.MustCompile(`\{\s*,`).ReplaceAllString(l, "{ ")
+		l = regexp.MustCompile(`,\s*,`).ReplaceAllString(l, ", ")
+		l = regexp.MustCompile(`,\s*\}`).ReplaceAllString(l, " }")
+		lines[start] = l
+		return strings.Join(lines, "\n")
+	}
+	re := regexp.MustCompile(`^\s*` + regexp.QuoteMeta(key) + `:`)
+	for i := start + 1; i < end && i < len(lines); i++ {
+		if re.MatchString(lines[i]) {
+			ind := indentOf(lines[i])
+			j := i + 1
+			for j < len(lines) && (strings.TrimSpace(lines[j]) == "" || indentOf(lines[j]) > ind) {
+				j++
+			}
+			return strings.Join(append(append([]string{}, lines[:i]...), lines[j:]...), "\n")
+		}
+	}
+	return src
+}
+
+// addPart appends a default rectangle node to the scene's (shallowest)
+// parts: list. In an auto-layout scene it joins the layout; otherwise it
+// lands near the origin and the user drags it.
+func addPart(src string) (string, bool) {
+	lines := strings.Split(src, "\n")
+	partsLine, partsIndent := -1, 0
+	re := regexp.MustCompile(`^( *)parts:\s*$`)
+	for i, l := range lines {
+		if m := re.FindStringSubmatch(l); m != nil {
+			if partsLine < 0 || len(m[1]) < partsIndent {
+				partsLine, partsIndent = i, len(m[1])
+			}
+		}
+	}
+	if partsLine < 0 {
+		return src, false
+	}
+	itemIndent := partsIndent + 2
+	end := len(lines)
+	for i := partsLine + 1; i < len(lines); i++ {
+		if strings.TrimSpace(lines[i]) == "" {
+			continue
+		}
+		if indentOf(lines[i]) <= partsIndent {
+			end = i
+			break
+		}
+		if strings.HasPrefix(strings.TrimSpace(lines[i]), "- ") {
+			itemIndent = indentOf(lines[i])
+		}
+		end = i + 1
+	}
+	newID := uniquePartID(src, "node")
+	nl := strings.Repeat(" ", itemIndent) +
+		fmt.Sprintf(`- { id: %s, shape: rectangle, geom: { w: 80, d: 80, h: 30 }, label: "New" }`, newID)
+	out := append(append(append([]string{}, lines[:end]...), nl), lines[end:]...)
+	return strings.Join(out, "\n"), true
 }
 
 // duplicatePart clones a node's block under a fresh id, placed at (ox,oy).
@@ -1462,6 +1570,8 @@ func serveFile(in string) error {
 		var out string
 		ok := false
 		switch q.Get("op") + ":" + q.Get("kind") {
+		case "add:node":
+			out, ok = addPart(src)
 		case "delete:node":
 			out, ok = deletePart(src, q.Get("id"))
 		case "delete:edge":
@@ -1478,7 +1588,7 @@ func serveFile(in string) error {
 			}
 			out, ok = duplicatePart(src, q.Get("id"), ox, oy)
 		default:
-			http.Error(w, "op must be delete|duplicate, kind node|edge", 400)
+			http.Error(w, "op must be add|delete|duplicate", 400)
 			return
 		}
 		if !ok {
