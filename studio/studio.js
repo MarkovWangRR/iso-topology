@@ -977,8 +977,34 @@ function renderPath(){
 }
 window.addEventListener('resize',renderPath);
 
-/* ── editor pane drag-resize ────────────────────────────────────── */
+/* ── editor panel toggle (collapse/expand) ──────────────────────── */
+const gridEl=document.getElementById('grid');
 const sideEl=document.querySelector('.side'), splitEl=document.getElementById('split');
+const toggleBtn=document.getElementById('paneltoggle');
+let panelOpen=false;
+function updateToggleIcon(){
+  toggleBtn.textContent=panelOpen?'◀':'▶';
+  toggleBtn.title=panelOpen?'hide editor (⌘E)':'show editor (⌘E)';
+}
+function setPanel(open,save){
+  panelOpen=open;
+  sideEl.classList.toggle('collapsed',!open);
+  splitEl.style.display=open?'':'none';
+  gridEl.classList.toggle('collapsed',!open);
+  updateToggleIcon();
+  if(save){try{localStorage.setItem('isotopo-panel',open?'1':'0');}catch(_){}}
+}
+function togglePanel(){setPanel(!panelOpen,true);}
+window.addEventListener('keydown',e=>{
+  if((e.metaKey||e.ctrlKey)&&e.key==='e'){e.preventDefault();togglePanel();}
+});
+(function(){
+  let v='0';
+  try{v=localStorage.getItem('isotopo-panel')??'0';}catch(_){}
+  setPanel(v==='1',false);
+})();
+
+/* ── editor pane drag-resize ────────────────────────────────────── */
 function setPaneWidth(w){
   w=Math.min(Math.max(w,320),Math.max(360,window.innerWidth*0.7));
   sideEl.style.flex='0 0 '+w+'px';
