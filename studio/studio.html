@@ -31,7 +31,7 @@
   <span class="spacer"></span>
   <span id="live">checking renderer…</span>
 </header>
-<div class="grid">
+<div class="grid" id="grid">
   <div class="stage-wrap" id="stage">
     <div id="viewport"><div id="zoomer">{{SVG}}</div></div>
     <div id="stale" class="stale" hidden>showing last good render</div>
@@ -46,6 +46,7 @@
       <button id="zfit" onclick="fitView()" title="fit to window (⌘0)">⤢</button>
       <button id="zpct" onclick="resetView()" title="reset to 100%">100%</button>
     </div>
+    <button id="paneltoggle" onclick="togglePanel()" title="show / hide editor (⌘E)"></button>
   </div>
   <div class="splitter" id="split" title="drag to resize the editor"></div>
   <div class="side">
@@ -71,6 +72,7 @@
     <div class="hrow"><span>Fit to window</span><span><kbd>⌘</kbd>+<kbd>0</kbd></span></div>
     <div class="hrow"><span>Zoom in / out</span><span><kbd>⌘</kbd>+<kbd>+</kbd> / <kbd>⌘</kbd>+<kbd>−</kbd></span></div>
     <div class="hrow"><span>Indent</span><span><kbd>Tab</kbd></span></div>
+    <div class="hrow"><span>Show / hide editor</span><span><kbd>⌘</kbd>+<kbd>E</kbd></span></div>
     <div class="hrow"><span>This panel</span><span><kbd>?</kbd></span></div>
     <div class="hrow"><span>Pin a node</span><span>click it on the canvas</span></div>
     <div class="hrow"><span>Jump to an error</span><span>click it in the issues panel</span></div>
