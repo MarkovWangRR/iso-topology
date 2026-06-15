@@ -147,7 +147,14 @@ header .spacer{flex:1;}
 .splitter::after{content:"";position:absolute;left:3px;top:0;bottom:0;width:1px;background:transparent;transition:background .15s;}
 .splitter:hover::after,.splitter.active::after{background:var(--accent);}
 .side{flex:1;min-width:320px;max-width:560px;display:flex;flex-direction:column;min-height:0;
-  background:var(--panel);border-left:1px solid var(--border);}
+  background:var(--panel);border-left:1px solid var(--border);
+  transition:flex-basis .2s,min-width .2s,opacity .15s;}
+.side.collapsed{flex:0 0 0!important;min-width:0!important;max-width:0!important;opacity:0;overflow:hidden;border-left:0;}
+.grid.collapsed .splitter{display:none;}
+#paneltoggle{position:absolute;right:16px;bottom:56px;z-index:7;width:28px;height:28px;padding:0;
+  border-radius:6px;display:flex;align-items:center;justify-content:center;
+  background:white;border:1px solid var(--border);box-shadow:var(--shadow);color:#475569;font-size:13px;}
+#paneltoggle:hover{background:var(--accent-soft);color:var(--accent-deep);border-color:var(--accent);}
 .toolbar{display:flex;gap:8px;align-items:center;padding:10px 14px;border-bottom:1px solid var(--border);flex-wrap:wrap;}
 button{font:12px Inter,sans-serif;font-weight:550;border:1px solid var(--border);background:white;
   color:#334155;padding:7px 13px;border-radius:6px;cursor:pointer;
@@ -257,7 +264,7 @@ svg g[data-part-id].hi{filter:drop-shadow(0 0 3px rgba(16,174,185,.85));}
   <span class="spacer"></span>
   <span id="live">checking renderer…</span>
 </header>
-<div class="grid">
+<div class="grid" id="grid">
   <div class="stage-wrap" id="stage">
     <div id="viewport"><div id="zoomer">{{SVG}}</div></div>
     <div id="stale" class="stale" hidden>showing last good render</div>
@@ -271,6 +278,7 @@ svg g[data-part-id].hi{filter:drop-shadow(0 0 3px rgba(16,174,185,.85));}
       <button id="zfit" onclick="fitView()" title="fit to window (⌘0)">⤢</button>
       <button id="zpct" onclick="resetView()" title="reset to 100%">100%</button>
     </div>
+    <button id="paneltoggle" onclick="togglePanel()" title="show / hide editor (⌘E)"></button>
   </div>
   <div class="splitter" id="split" title="drag to resize the editor"></div>
   <div class="side">
@@ -298,6 +306,7 @@ svg g[data-part-id].hi{filter:drop-shadow(0 0 3px rgba(16,174,185,.85));}
     <div class="hrow"><span>Fit to window</span><span><kbd>⌘</kbd>+<kbd>0</kbd></span></div>
     <div class="hrow"><span>Zoom in / out</span><span><kbd>⌘</kbd>+<kbd>+</kbd> / <kbd>⌘</kbd>+<kbd>−</kbd></span></div>
     <div class="hrow"><span>Indent</span><span><kbd>Tab</kbd></span></div>
+    <div class="hrow"><span>Show / hide editor</span><span><kbd>⌘</kbd>+<kbd>E</kbd></span></div>
     <div class="hrow"><span>This panel</span><span><kbd>?</kbd></span></div>
     <div class="hrow"><span>Pin a node</span><span>click it on the canvas</span></div>
     <div class="hrow"><span>Jump to an error</span><span>click it in the issues panel</span></div>
@@ -669,8 +678,36 @@ function renderPath(){
 }
 window.addEventListener('resize',renderPath);
 
-/* ── editor pane drag-resize ────────────────────────────────────── */
+/* ── editor panel toggle (collapse/expand) ──────────────────────── */
+const gridEl=document.getElementById('grid');
 const sideEl=document.querySelector('.side'), splitEl=document.getElementById('split');
+const toggleBtn=document.getElementById('paneltoggle');
+let panelOpen=false;
+function updateToggleIcon(){
+  // ◀ when open (click to collapse), ▶ when closed (click to expand)
+  toggleBtn.textContent=panelOpen?'◀':'▶';
+  toggleBtn.title=panelOpen?'hide editor (⌘E)':'show editor (⌘E)';
+}
+function setPanel(open,save){
+  panelOpen=open;
+  sideEl.classList.toggle('collapsed',!open);
+  splitEl.style.display=open?'':'none';
+  gridEl.classList.toggle('collapsed',!open);
+  updateToggleIcon();
+  if(save){try{localStorage.setItem('isotopo-panel',open?'1':'0');}catch(_){}}
+}
+function togglePanel(){setPanel(!panelOpen,true);}
+window.addEventListener('keydown',e=>{
+  if((e.metaKey||e.ctrlKey)&&e.key==='e'){e.preventDefault();togglePanel();}
+});
+// default: collapsed; restore from localStorage
+(function(){
+  let v='0';
+  try{v=localStorage.getItem('isotopo-panel')??'0';}catch(_){}
+  setPanel(v==='1',false);
+})();
+
+/* ── editor pane drag-resize ────────────────────────────────────── */
 function setPaneWidth(w){
   w=Math.min(Math.max(w,320),Math.max(360,window.innerWidth*0.7));
   sideEl.style.flex='0 0 '+w+'px';
