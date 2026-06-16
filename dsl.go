@@ -231,8 +231,9 @@ type WorldPoint struct {
 type Geom struct {
 	W     float64 `yaml:"w,omitempty" json:"w,omitempty"`
 	D     float64 `yaml:"d,omitempty" json:"d,omitempty"`
-	H     float64 `yaml:"h,omitempty" json:"h,omitempty"`
-	Sides int     `yaml:"sides,omitempty" json:"sides,omitempty"`
+	H        float64 `yaml:"h,omitempty" json:"h,omitempty"`
+	Sides    int     `yaml:"sides,omitempty" json:"sides,omitempty"`
+	TopScale float64 `yaml:"topScale,omitempty" json:"topScale,omitempty"`
 }
 
 // Style groups every visual knob. Each sub-block is a pointer so the merge
@@ -297,6 +298,35 @@ type Text struct {
 	BoxBorder string   `yaml:"boxBorder,omitempty" json:"boxBorder,omitempty"`
 }
 
+// EffectItem is one entry in an ordered effects pipeline (style.effects list).
+// Kind is one of: backglow | blur | grain | outline | dropShadow.
+// Parameters mirror the flat Effect sub-structs but are unified here so a
+// single list can hold any mix of effects in author-controlled order.
+type EffectItem struct {
+	Kind string `yaml:"kind" json:"kind"`
+
+	// backglow
+	Color   string  `yaml:"color,omitempty" json:"color,omitempty"`
+	Radius  float64 `yaml:"radius,omitempty" json:"radius,omitempty"`
+	Opacity float64 `yaml:"opacity,omitempty" json:"opacity,omitempty"`
+
+	// blur
+	StdDev float64 `yaml:"stdDev,omitempty" json:"stdDev,omitempty"`
+
+	// grain
+	Intensity float64 `yaml:"intensity,omitempty" json:"intensity,omitempty"`
+	Scale     float64 `yaml:"scale,omitempty" json:"scale,omitempty"`
+
+	// outline
+	Width float64 `yaml:"width,omitempty" json:"width,omitempty"`
+	Dash  string  `yaml:"dash,omitempty" json:"dash,omitempty"`
+
+	// dropShadow
+	Dx float64 `yaml:"dx,omitempty" json:"dx,omitempty"`
+	Dy float64 `yaml:"dy,omitempty" json:"dy,omitempty"`
+	Blur float64 `yaml:"blur,omitempty" json:"blur,omitempty"`
+}
+
 // Effects holds compositional knobs that aren't tied to a single face.
 // v2.1 — DropShadow / Backglow / Pattern lift the existing iso25d-internal
 // features into the DSL so authors and agents can opt into them.
@@ -324,6 +354,12 @@ type Effects struct {
 	// distinct from per-face style.stroke: a selection / emphasis ring
 	// that hugs the outer outline. Painted on top of every face.
 	Outline *Outline `yaml:"outline,omitempty" json:"outline,omitempty"`
+
+	// v3.9 — ordered effect pipeline. When List is non-empty it OVERRIDES
+	// the individual scalar fields above: the renderer applies effects in
+	// list order, allowing backglow+grain+outline to stack in author-
+	// controlled order. The same effect kind may appear multiple times.
+	List []*EffectItem `yaml:"effects,omitempty" json:"effects,omitempty"`
 }
 
 // Outline is a silhouette-following accent stroke (emphasis / selection

@@ -1,0 +1,8 @@
+nodes:
+  hierarchy:
+    shape: pyramid
+    geom: { w: 140, d: 140, h: 100 }
+    label: "Data\nPyramid"
+    style:
+      palette: { top: "#E0E7FF", left: "#3730A3", right: "#4F46E5" }
+      stroke: { color: "#1E1B4B", width: 1.5 }

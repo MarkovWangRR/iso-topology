@@ -119,7 +119,8 @@ func buildShapeCaps() []ShapeCap {
 	}
 	// Add native iso names that aren't in the d2 catalog.
 	for _, iso := range []string{"rectangle", "cylinder", "circle", "cloud", "person", "iso_text", "composite", "group",
-		"prism", "diamond", "triprism", "hexprism", "octprism", "boundary"} {
+		"prism", "diamond", "triprism", "hexprism", "octprism", "boundary",
+		"cone", "pyramid", "frustum", "dome", "torus", "capsule"} {
 		if _, ok := by[iso]; !ok {
 			by[iso] = &bucket{isoName: iso, hMul: 1.0, acceptedAs: map[string]struct{}{iso: {}}}
 		}
@@ -155,6 +156,12 @@ func buildShapeCaps() []ShapeCap {
 		"triprism":  "v3.2 — 3-gon prism: alert / one-way fan-out semantics",
 		"hexprism":  "v3.2 — 6-gon prism: API gateway / middleware semantics",
 		"octprism":  "v3.2 — 8-gon prism: firewall (stop-sign) semantics",
+		"cone":     "v3.5 — smooth circular cone (topScale=0, sides=32 default). geom.sides and geom.topScale override. Semantic: traffic convergence, load balancer, flow aggregation.",
+		"pyramid":  "v3.5 — square pyramid (topScale=0, sides=4). Any regular polygon apex via geom.sides. Semantic: data pyramid, layered architecture.",
+		"frustum":  "v3.5 — truncated cone / frustum (topScale=0.5 default). Adjust with geom.topScale and geom.sides. Semantic: object storage bucket (S3/GCS), distribution funnel.",
+		"dome":     "v3.6 — hemispherical revolution body (quarter-circle profile). Semantic: security zone, protective enclosure, isolation region.",
+		"torus":    "v3.6 — donut-shaped revolution body. Semantic: consistent-hashing ring, replication ring, circular cache topology.",
+		"capsule":  "v3.6 — cylinder with rounded (hemispherical) end caps. Semantic: container pod, process instance, encapsulated service.",
 	}
 	out := make([]ShapeCap, 0, len(by))
 	for _, b := range by {

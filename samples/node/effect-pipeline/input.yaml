@@ -1,0 +1,22 @@
+nodes:
+  hero:
+    shape: hexprism
+    geom: { w: 160, d: 160, h: 60 }
+    label: "API Gateway"
+    icon: "iso://glyph/cloud"
+    style:
+      palette: { top: "#EDE9FE", left: "#6D28D9", right: "#8B5CF6" }
+      stroke: { color: "#4C1D95", width: 1.6 }
+      effects:
+        effects:
+          - kind: backglow
+            color: "#A78BFA"
+            radius: 40
+            opacity: 0.5
+          - kind: grain
+            intensity: 0.2
+            scale: 1.0
+          - kind: outline
+            color: "#DDD6FE"
+            width: 2.5
+            opacity: 0.9
