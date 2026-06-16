@@ -262,6 +262,18 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo,
 		}
 	}
 
+	// P2 — obstacle footprints for routing avoidance: every non-substrate part
+	// as a world rect, so the default elbow pick can prefer the staircase that
+	// doesn't tunnel an unrelated node. Reuses the scorecard's planRect kernel
+	// (routeTunnels), so the router and the evaluator judge tunnelling alike.
+	var obstacles []planRect
+	for _, p := range infos {
+		if p.id == "" || p.isSubstrate {
+			continue
+		}
+		obstacles = append(obstacles, planRect{id: p.id, x: p.offWX, y: p.offWY, z: p.offWZ, w: p.w, d: p.d, h: p.h})
+	}
+
 	ar := &anchorResolver{byID: byID, tx: tx, ty: ty}
 
 	// v1.6.2 fan-out: count how many orthogonal connectors share each
@@ -472,25 +484,39 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo,
 			case "yFirst":
 				xFirst = false
 			default:
-				// v4.3 — kill the "tent": in iso, screen-y ∝ (x+y) at a
-				// fixed routeZ, so an L whose corner has (x+y) OUTSIDE the
-				// endpoints' range projects to a ∧/∨ detour that climbs
-				// then plunges. The two elbow orders put the corner at
-				// (tStub,sStub) or (sStub,tStub); pick the one whose corner
-				// sum stays between the endpoints (monotonic screen-y), and
-				// on a tie the one closest to the straight-line midpoint.
-				const eps0 = 0.5
-				srcSum, tgtSum := sWX+sWY, tWX+tWY
-				lo, hi := math.Min(srcSum, tgtSum), math.Max(srcSum, tgtSum)
-				cornerXFirst := tStubX + sStubY
-				cornerYFirst := sStubX + tStubY
-				xIn := cornerXFirst >= lo-eps0 && cornerXFirst <= hi+eps0
-				yIn := cornerYFirst >= lo-eps0 && cornerYFirst <= hi+eps0
-				if xIn != yIn {
-					xFirst = xIn
+				// P2 — obstacle-aware elbow: prefer the staircase order whose
+				// route tunnels fewer unrelated nodes. Both orders share the
+				// same five corners bar the elbow, so we score each against the
+				// node footprints with the scorecard kernel.
+				srcID, _ := ar.parse(c.From)
+				tgtID, _ := ar.parse(c.To)
+				xPts := [][2]float64{{sWX, sWY}, {sStubX, sStubY}, {tStubX, sStubY}, {tStubX, tStubY}, {tWX, tWY}}
+				yPts := [][2]float64{{sWX, sWY}, {sStubX, sStubY}, {sStubX, tStubY}, {tStubX, tStubY}, {tWX, tWY}}
+				xHits := routeTunnels(xPts, srcID, tgtID, routeZ, obstacles)
+				yHits := routeTunnels(yPts, srcID, tgtID, routeZ, obstacles)
+				if xHits != yHits {
+					xFirst = xHits < yHits
 				} else {
-					mid := (srcSum + tgtSum) / 2
-					xFirst = math.Abs(cornerXFirst-mid) <= math.Abs(cornerYFirst-mid)
+					// v4.3 — kill the "tent": in iso, screen-y ∝ (x+y) at a
+					// fixed routeZ, so an L whose corner has (x+y) OUTSIDE the
+					// endpoints' range projects to a ∧/∨ detour that climbs
+					// then plunges. The two elbow orders put the corner at
+					// (tStub,sStub) or (sStub,tStub); pick the one whose corner
+					// sum stays between the endpoints (monotonic screen-y), and
+					// on a tie the one closest to the straight-line midpoint.
+					const eps0 = 0.5
+					srcSum, tgtSum := sWX+sWY, tWX+tWY
+					lo, hi := math.Min(srcSum, tgtSum), math.Max(srcSum, tgtSum)
+					cornerXFirst := tStubX + sStubY
+					cornerYFirst := sStubX + tStubY
+					xIn := cornerXFirst >= lo-eps0 && cornerXFirst <= hi+eps0
+					yIn := cornerYFirst >= lo-eps0 && cornerYFirst <= hi+eps0
+					if xIn != yIn {
+						xFirst = xIn
+					} else {
+						mid := (srcSum + tgtSum) / 2
+						xFirst = math.Abs(cornerXFirst-mid) <= math.Abs(cornerYFirst-mid)
+					}
 				}
 			}
 			if xFirst {

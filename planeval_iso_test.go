@@ -2,6 +2,7 @@ package isotopo
 
 import (
 	"context"
+	"os"
 	"testing"
 )
 
@@ -35,6 +36,24 @@ func TestEvaluateIso_ParsesRealRoutes(t *testing.T) {
 	}
 	if rep.TotalEdgeLen <= 0 {
 		t.Fatalf("real-route edge length should be positive, got %v", rep.TotalEdgeLen)
+	}
+}
+
+// TestEvaluateIso_ObstacleAwareElbow locks the P2 win: the engine's real
+// routing must keep inference-board's GPU edges OUT of the other GPUs (the
+// obstacle-aware default elbow). Without it the engine tunnelled 2 GPUs.
+func TestEvaluateIso_ObstacleAwareElbow(t *testing.T) {
+	data, err := os.ReadFile("samples/topology/inference-board/input.yaml")
+	if err != nil {
+		t.Skip("sample missing")
+	}
+	rep, err := EvaluateIsoText("yaml", data)
+	if err != nil {
+		t.Fatalf("evaluate: %v", err)
+	}
+	if rep.EdgesThroughNodes != 0 {
+		t.Fatalf("obstacle-aware elbow should leave 0 tunnelling edges, got %d: %+v",
+			rep.EdgesThroughNodes, rep.ProblemEdges)
 	}
 }
 

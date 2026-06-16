@@ -270,6 +270,33 @@ func routeHitsRect(pts [][2]float64, r planRect) bool {
 	return false
 }
 
+// routeTunnels counts unrelated nodes a candidate world route passes through,
+// reusing the scorecard kernel so the engine router (inject.go) and the
+// evaluator judge tunnelling identically. routeZ is the route's world plane;
+// obstacles exclude substrates already.
+func routeTunnels(pts [][2]float64, srcID, tgtID string, routeZ float64, obstacles []planRect) int {
+	var src, tgt planRect
+	for _, r := range obstacles {
+		if r.id == srcID {
+			src = r
+		}
+		if r.id == tgtID {
+			tgt = r
+		}
+	}
+	n := 0
+	for _, r := range obstacles {
+		if r.id == srcID || r.id == tgtID || r.h <= planThinH ||
+			!sameFloor(routeZ, r) || enclosesBoth(r, src, tgt) {
+			continue
+		}
+		if routeHitsRect(pts, r) {
+			n++
+		}
+	}
+	return n
+}
+
 func rectsOverlap(a, b planRect) bool {
 	const eps = 1.0
 	return a.x+eps < b.x+b.w && b.x+eps < a.x+a.w &&
