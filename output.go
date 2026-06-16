@@ -1,6 +1,7 @@
 package isotopo
 
 import (
+	_ "embed"
 	"fmt"
 	"html"
 	"path/filepath"
