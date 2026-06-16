@@ -121,7 +121,8 @@ func buildShapeCaps() []ShapeCap {
 	for _, iso := range []string{"rectangle", "cylinder", "circle", "cloud", "person", "iso_text", "composite", "group",
 		"prism", "diamond", "triprism", "hexprism", "octprism", "boundary",
 		"cone", "pyramid", "frustum", "dome", "torus", "capsule",
-		"wedge", "custom_path"} {
+		"wedge", "custom_path",
+		"array1d", "array2d", "array3d", "screen", "browser-panel", "rack"} {
 		if _, ok := by[iso]; !ok {
 			by[iso] = &bucket{isoName: iso, hMul: 1.0, acceptedAs: map[string]struct{}{iso: {}}}
 		}
@@ -163,8 +164,14 @@ func buildShapeCaps() []ShapeCap {
 		"dome":     "v3.6 — hemispherical revolution body (quarter-circle profile). Semantic: security zone, protective enclosure, isolation region.",
 		"torus":    "v3.6 — donut-shaped revolution body. Semantic: consistent-hashing ring, replication ring, circular cache topology.",
 		"capsule":     "v3.6 — cylinder with rounded (hemispherical) end caps. Semantic: container pod, process instance, encapsulated service.",
-		"wedge":       "v3.10 — sloped prism: back edge raised to full height, front edge at z=0. Semantic: ramp, data ingestion pipeline, traffic escalation.",
-		"custom_path": "v3.10 — arbitrary polygon base extruded vertically. Provide path: in geom.params (M/L/Z SVG commands). Semantic: any brand or domain-specific shape.",
+		"wedge":        "v3.10 — sloped prism: back edge raised to full height, front edge at z=0. Semantic: ramp, data ingestion pipeline, traffic escalation.",
+		"custom_path":  "v3.10 — arbitrary polygon base extruded vertically. Provide path: in geom.params (M/L/Z SVG commands). Semantic: any brand or domain-specific shape.",
+		"array1d":      "v3.11 — 1D tiled cell grid (row of boxes). Params: countX, gap. Semantic: array, list, pipeline stages.",
+		"array2d":      "v3.11 — 2D tiled cell grid (rows × columns of boxes). Params: countX, countY, gap. Semantic: matrix, table, grid topology.",
+		"array3d":      "v3.11 — 3D tiled cell grid (X × Y × Z of boxes). Params: countX, countY, countZ, gap. Semantic: tensor, volumetric data, layered grid.",
+		"screen":       "v3.11 — upright thin panel rendered as a box with shallow depth. Semantic: monitor, display, UI screen.",
+		"browser-panel": "v3.11 — alias for screen; upright thin panel. Semantic: browser window, web panel.",
+		"rack":         "v3.11 — server rack with slot shelves. Params: slots (default 4). Semantic: server rack, hardware chassis, data-center equipment.",
 	}
 	out := make([]ShapeCap, 0, len(by))
 	for _, b := range by {

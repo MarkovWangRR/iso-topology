@@ -209,6 +209,33 @@ func Convert2DTo25D(shapeType string, o ConvertOpts) string {
 		}
 		return RenderIsoPrism(b, sides)
 
+	// v3.11 — array shapes: tiled cell grids (G-category).
+	case "array1d", "array2d", "array3d":
+		b := DefaultIsoBox()
+		applyBox(o, &b)
+		return RenderIsoArray(b, shapeType)
+
+	// v3.11 — screen / browser-panel: upright thin panel (H-category).
+	case "screen", "browser-panel":
+		b := DefaultIsoBox()
+		applyBox(o, &b)
+		return RenderIsoScreen(b)
+
+	// v3.11 — rack: server rack with slot shelves (E-category).
+	case "rack":
+		b := DefaultIsoBox()
+		applyBox(o, &b)
+		slots := 4
+		if o.Params != nil {
+			if v, ok := o.Params["slots"].(int); ok && v > 0 {
+				slots = v
+			}
+			if v, ok := o.Params["slots"].(float64); ok && v > 0 {
+				slots = int(v)
+			}
+		}
+		return RenderIsoRack(b, slots)
+
 	// rectangle / square / empty / unknown → plain iso box.
 	case "rectangle", "square", "":
 		b := DefaultIsoBox()
