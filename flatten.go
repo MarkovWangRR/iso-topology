@@ -23,6 +23,7 @@ func Flatten(n *Node, theme *Theme) (string, iso25d.ConvertOpts) {
 		o.Width, o.Depth, o.Height = n.Geom.W, n.Geom.D, n.Geom.H
 		o.Sides = n.Geom.Sides
 		o.TopScale = n.Geom.TopScale
+		o.Params = n.Geom.Params
 	}
 
 	if merged != nil {

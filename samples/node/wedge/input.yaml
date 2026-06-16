@@ -1,0 +1,8 @@
+nodes:
+  ramp:
+    shape: wedge
+    geom: { w: 160, d: 140, h: 80 }
+    label: "Traffic\nRamp"
+    style:
+      palette: { top: "#FEF3C7", left: "#D97706", right: "#F59E0B" }
+      stroke: { color: "#92400E", width: 1.5 }

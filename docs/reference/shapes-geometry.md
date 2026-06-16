@@ -19,6 +19,8 @@ patterns, effects).
 | **Cylinder** | `cylinder`, `queue`, `stored_data` | — |
 | **Sphere** | `circle` | — |
 | **Cloud** | `cloud` | — |
+| **Wedge** | `wedge` | — |
+| **Custom path** | `custom_path` | `geom.params.path` |
 
 ---
 
@@ -238,6 +240,74 @@ Scalar fields (the old API) remain fully supported and are unaffected when
 
 ---
 
+## Wedge (`shape: wedge`)
+
+A right-triangular prism on its side. The bottom is a rectangle at z=0; the
+back edge (y=0) rises to full height h; the front edge (y=d) stays at z=0.
+This produces a sloped ramp appearance.
+
+**Visible faces:** `slope` (the inclined top face) and `right` (the right
+triangular end face). The palette `top` colour fills the slope; `right`
+fills the right triangle.
+
+```yaml
+nodes:
+  ramp:
+    shape: wedge
+    geom: { w: 160, d: 140, h: 80 }
+    label: "Traffic\nRamp"
+    style:
+      palette: { top: "#FEF3C7", left: "#D97706", right: "#F59E0B" }
+      stroke: { color: "#92400E", width: 1.5 }
+```
+
+**Semantic guide:** ramp, data ingestion pipeline, traffic escalation,
+progressive rollout, CI/CD pipeline stage.
+
+---
+
+## Custom path (`shape: custom_path`)
+
+An arbitrary polygon base extruded vertically. The polygon is defined as an
+SVG-subset path string (M/L/Z commands only) in `geom.params.path`. The
+path coordinates are automatically normalised to fit the `w × d` footprint.
+
+```yaml
+nodes:
+  shield:
+    shape: custom_path
+    geom:
+      w: 140
+      d: 140
+      h: 50
+      params:
+        path: "M 70,0 L 140,30 L 140,90 L 70,140 L 0,90 L 0,30 Z"
+    label: "WAF"
+    style:
+      palette: { top: "#EFF6FF", left: "#1D4ED8", right: "#2563EB" }
+      stroke: { color: "#1E3A8A", width: 1.5 }
+```
+
+**Supported path commands:**
+
+| Command | Syntax | Description |
+|---------|--------|-------------|
+| `M` | `M x,y` | Move to / first point |
+| `L` | `L x,y` | Line to |
+| `Z` | `Z` | Close path (optional) |
+
+**Face names:** `top` (the top polygon) and `side0` … `sideN-1` (vertical
+walls, one per polygon edge). Wall shading follows the same nx ≥ ny →
+right-palette, nx < ny → left-palette rule as prisms.
+
+**Fallback:** if `path` is missing or unparseable the shape renders as a
+box (rectangle footprint).
+
+**Semantic guide:** any brand or domain-specific shape — shield (WAF),
+pentagon (security), hexagon (API), star burst (CDN), custom logo outline.
+
+---
+
 ## Surface vocabulary
 
 All shape families support the same `style.faces` overrides for per-face
@@ -251,6 +321,8 @@ the shape:
 | Tapered prism | `top` (frustum only), `side0` … `sideN-1` |
 | Revolution body | `top` (when radius > 0), `band0` … `bandM-1` |
 | Cylinder | `top`, `body`, `bottom-cap` |
+| Wedge | `slope`, `right` |
+| Custom path | `top`, `side0` … `sideN-1` |
 
 ```yaml
 style:

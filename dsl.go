@@ -232,8 +232,9 @@ type Geom struct {
 	W     float64 `yaml:"w,omitempty" json:"w,omitempty"`
 	D     float64 `yaml:"d,omitempty" json:"d,omitempty"`
 	H        float64 `yaml:"h,omitempty" json:"h,omitempty"`
-	Sides    int     `yaml:"sides,omitempty" json:"sides,omitempty"`
-	TopScale float64 `yaml:"topScale,omitempty" json:"topScale,omitempty"`
+	Sides    int            `yaml:"sides,omitempty" json:"sides,omitempty"`
+	TopScale float64        `yaml:"topScale,omitempty" json:"topScale,omitempty"`
+	Params   map[string]any `yaml:"params,omitempty" json:"params,omitempty"`
 }
 
 // Style groups every visual knob. Each sub-block is a pointer so the merge

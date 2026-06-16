@@ -120,7 +120,8 @@ func buildShapeCaps() []ShapeCap {
 	// Add native iso names that aren't in the d2 catalog.
 	for _, iso := range []string{"rectangle", "cylinder", "circle", "cloud", "person", "iso_text", "composite", "group",
 		"prism", "diamond", "triprism", "hexprism", "octprism", "boundary",
-		"cone", "pyramid", "frustum", "dome", "torus", "capsule"} {
+		"cone", "pyramid", "frustum", "dome", "torus", "capsule",
+		"wedge", "custom_path"} {
 		if _, ok := by[iso]; !ok {
 			by[iso] = &bucket{isoName: iso, hMul: 1.0, acceptedAs: map[string]struct{}{iso: {}}}
 		}
@@ -161,7 +162,9 @@ func buildShapeCaps() []ShapeCap {
 		"frustum":  "v3.5 — truncated cone / frustum (topScale=0.5 default). Adjust with geom.topScale and geom.sides. Semantic: object storage bucket (S3/GCS), distribution funnel.",
 		"dome":     "v3.6 — hemispherical revolution body (quarter-circle profile). Semantic: security zone, protective enclosure, isolation region.",
 		"torus":    "v3.6 — donut-shaped revolution body. Semantic: consistent-hashing ring, replication ring, circular cache topology.",
-		"capsule":  "v3.6 — cylinder with rounded (hemispherical) end caps. Semantic: container pod, process instance, encapsulated service.",
+		"capsule":     "v3.6 — cylinder with rounded (hemispherical) end caps. Semantic: container pod, process instance, encapsulated service.",
+		"wedge":       "v3.10 — sloped prism: back edge raised to full height, front edge at z=0. Semantic: ramp, data ingestion pipeline, traffic escalation.",
+		"custom_path": "v3.10 — arbitrary polygon base extruded vertically. Provide path: in geom.params (M/L/Z SVG commands). Semantic: any brand or domain-specific shape.",
 	}
 	out := make([]ShapeCap, 0, len(by))
 	for _, b := range by {

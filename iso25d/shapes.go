@@ -14,6 +14,7 @@ type ConvertOpts struct {
 	Width, Depth, Height float64
 	Sides                int                     // polygon sides (3+); only used by shape=polygon
 	TopScale             float64                 // tapered prism: 0=apex, 0..1=frustum, 1=prism
+	Params               map[string]any          // shape-specific parameters (e.g. custom_path.path)
 	FaceSurfaces         map[string]*FaceSurface // v3.3 — style.faces overrides
 	Blur                 float64                 // v3.7 — gaussian blur stdDev over the whole part
 	OutlineColor         string                  // v3.8 — silhouette accent ring
@@ -137,6 +138,24 @@ func Convert2DTo25D(shapeType string, o ConvertOpts) string {
 		b := DefaultIsoBox()
 		applyBox(o, &b)
 		return RenderIsoText(b)
+
+	// v3.10 — wedge: sloped ramp (back edge at h, front at 0).
+	case "wedge":
+		b := DefaultIsoBox()
+		applyBox(o, &b)
+		return RenderIsoWedge(b)
+
+	// v3.10 — custom_path: arbitrary polygon base extruded vertically.
+	case "custom_path":
+		b := DefaultIsoBox()
+		applyBox(o, &b)
+		pathStr := ""
+		if o.Params != nil {
+			if p, ok := o.Params["path"].(string); ok {
+				pathStr = p
+			}
+		}
+		return RenderIsoCustomPath(b, pathStr)
 
 	// v3.6 (C-category) — revolution bodies: dome, torus, capsule.
 	case "dome", "torus", "capsule":

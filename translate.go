@@ -81,9 +81,17 @@ var d2ShapeCatalog = map[string]d2ShapeProfile{
 	// can light up retroactively without rewriting this map.
 	"diamond":       {"diamond", 0.7},
 	"hexagon":       {"hexprism", 0.7},
-	"parallelogram": {"rectangle", 0.6},
+	"parallelogram": {"diamond", 0.6},
 	"step":          {"rectangle", 0.6},
 	"callout":       {"rectangle", 0.5},
+
+	// tapered / revolution bodies
+	"cone":    {"cone", 0.8},
+	"pyramid": {"pyramid", 0.8},
+	"frustum": {"frustum", 0.9},
+	"dome":    {"dome", 0.7},
+	"capsule": {"capsule", 1.1},
+	"wedge":   {"wedge", 0.7},
 
 	// structural / sql_table / class — paint as tall rectangles so the
 	// "stack of rows" look reads on the side face

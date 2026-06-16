@@ -1,0 +1,13 @@
+nodes:
+  shield:
+    shape: custom_path
+    geom:
+      w: 140
+      d: 140
+      h: 50
+      params:
+        path: "M 70,0 L 140,30 L 140,90 L 70,140 L 0,90 L 0,30 Z"
+    label: "WAF"
+    style:
+      palette: { top: "#EFF6FF", left: "#1D4ED8", right: "#2563EB" }
+      stroke: { color: "#1E3A8A", width: 1.5 }
