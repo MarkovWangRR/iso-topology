@@ -22,6 +22,7 @@ func Flatten(n *Node, theme *Theme) (string, iso25d.ConvertOpts) {
 	if n.Geom != nil {
 		o.Width, o.Depth, o.Height = n.Geom.W, n.Geom.D, n.Geom.H
 		o.Sides = n.Geom.Sides
+		o.TopScale = n.Geom.TopScale
 	}
 
 	if merged != nil {
@@ -88,6 +89,64 @@ func Flatten(n *Node, theme *Theme) (string, iso25d.ConvertOpts) {
 			o.FontColor = t.Color
 		}
 		if e := merged.Effects; e != nil {
+			// v3.9 — when the ordered effects list is present, synthesize
+			// the scalar effect fields from it so all renderers benefit
+			// without per-renderer changes. The list takes precedence over
+			// individual scalar fields.
+			for _, item := range e.List {
+				if item == nil {
+					continue
+				}
+				switch item.Kind {
+				case "backglow":
+					if item.Color != "" {
+						o.BackglowColor = item.Color
+					}
+					if item.Radius > 0 {
+						o.BackglowRadius = item.Radius
+					}
+					if item.Opacity > 0 {
+						o.BackglowOpacity = item.Opacity
+					}
+				case "blur":
+					if item.StdDev > 0 {
+						o.Blur = item.StdDev
+					}
+					// 'blur' field is an alias for stdDev.
+					if item.Blur > 0 {
+						o.Blur = item.Blur
+					}
+				case "grain":
+					if item.Intensity > 0 {
+						o.GrainIntensity = item.Intensity
+					}
+					if item.Scale > 0 {
+						o.GrainScale = item.Scale
+					}
+				case "outline":
+					if item.Color != "" {
+						o.OutlineColor = item.Color
+					}
+					if item.Width > 0 {
+						o.OutlineWidth = item.Width
+					}
+					if item.Dash != "" {
+						o.OutlineDash = item.Dash
+					}
+					if item.Opacity > 0 {
+						o.OutlineOpacity = item.Opacity
+					}
+				case "dropShadow":
+					if item.Color != "" {
+						o.ShadowColor = item.Color
+					}
+					o.ShadowDx = item.Dx
+					o.ShadowDy = item.Dy
+					if item.Blur > 0 {
+						o.ShadowBlur = item.Blur
+					}
+				}
+			}
 			if e.Opacity != nil {
 				o.Opacity = *e.Opacity
 			}

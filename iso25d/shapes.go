@@ -13,6 +13,7 @@ import (
 type ConvertOpts struct {
 	Width, Depth, Height float64
 	Sides                int                     // polygon sides (3+); only used by shape=polygon
+	TopScale             float64                 // tapered prism: 0=apex, 0..1=frustum, 1=prism
 	FaceSurfaces         map[string]*FaceSurface // v3.3 — style.faces overrides
 	Blur                 float64                 // v3.7 — gaussian blur stdDev over the whole part
 	OutlineColor         string                  // v3.8 — silhouette accent ring
@@ -136,6 +137,38 @@ func Convert2DTo25D(shapeType string, o ConvertOpts) string {
 		b := DefaultIsoBox()
 		applyBox(o, &b)
 		return RenderIsoText(b)
+
+	// v3.6 (C-category) — revolution bodies: dome, torus, capsule.
+	case "dome", "torus", "capsule":
+		b := DefaultIsoBox()
+		applyBox(o, &b)
+		return RenderIsoRevolve(b, shapeType)
+
+	// v3.5 (D-category) — tapered prism family: uniform top-scale.
+	case "cone", "pyramid", "frustum":
+		b := DefaultIsoBox()
+		applyBox(o, &b)
+		sides, topScale := o.Sides, o.TopScale
+		switch shapeType {
+		case "cone":
+			if sides < 3 {
+				sides = 32
+			}
+			// topScale stays 0 (apex) unless user set it explicitly.
+		case "pyramid":
+			if sides < 3 {
+				sides = 4
+			}
+			// topScale stays 0 (apex).
+		case "frustum":
+			if sides < 3 {
+				sides = 32
+			}
+			if topScale <= 0 {
+				topScale = 0.5
+			}
+		}
+		return RenderIsoTaperedPrism(b, sides, topScale)
 
 	// v3.2 (M2) — prism family: regular n-gon base × vertical extrude.
 	case "prism", "diamond", "triprism", "hexprism", "octprism":

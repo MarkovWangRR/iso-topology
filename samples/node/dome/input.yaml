@@ -1,0 +1,10 @@
+nodes:
+  shield:
+    shape: dome
+    geom: { w: 150, d: 150, h: 80 }
+    label: "Security\nDome"
+    style:
+      palette: { top: "#DBEAFE", left: "#1E40AF", right: "#2563EB" }
+      stroke: { color: "#1E3A8A", width: 1.5 }
+      effects:
+        backglow: { color: "#3B82F6", radius: 32, opacity: 0.4 }
