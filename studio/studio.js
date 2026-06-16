@@ -130,16 +130,113 @@ function glowOnly(id){
     g.classList.toggle('hi', gid===id || (id!==null && gid.replace(/~\d+$/,'')===id));
   });
 }
+/* ── drag-to-connect: draw a new connector by dragging from a node ────────
+   Hovering a node shows 4 small handle dots at its bbox edges (top/right/
+   bottom/left). Dragging one draws a rubber-band polyline; releasing over
+   another node commits a new connector to the DSL via /api/op?op=add-edge.
+   Handles live on a dedicated SVG overlay so they don't interfere with the
+   existing node SVG structure. ──────────────────────────────────────────── */
+let connDrag=null;       // {fromId, startX, startY, line} while dragging
+let connTarget=null;     // id of the node the pointer is currently over
+
+const HANDLE_R=5, HANDLE_COL='#2563EB', HANDLE_HOV='#1D4ED8';
+
+// Overlay SVG that lives on top of zoomer for handle dots + rubber-band line
+let connOverlay=null;
+function ensureOverlay(){
+  if(connOverlay) return;
+  connOverlay=document.createElementNS('http://www.w3.org/2000/svg','svg');
+  connOverlay.setAttribute('id','conn-overlay');
+  connOverlay.style.cssText='position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;overflow:visible;';
+  document.getElementById('zoomer').parentElement.appendChild(connOverlay);
+}
+function clearHandles(){
+  connOverlay&&connOverlay.querySelectorAll('.conn-handle').forEach(h=>h.remove());
+}
+function showHandles(g){
+  ensureOverlay();
+  clearHandles();
+  const rc=g.getBoundingClientRect();
+  const stage=document.getElementById('zoomer').parentElement.getBoundingClientRect();
+  // 4 cardinal positions on the bounding box
+  const pts=[
+    [rc.left+rc.width/2-stage.left, rc.top-stage.top],          // top
+    [rc.right-stage.left,           rc.top+rc.height/2-stage.top], // right
+    [rc.left+rc.width/2-stage.left, rc.bottom-stage.top],        // bottom
+    [rc.left-stage.left,            rc.top+rc.height/2-stage.top], // left
+  ];
+  pts.forEach(([cx,cy],side)=>{
+    const c=document.createElementNS('http://www.w3.org/2000/svg','circle');
+    c.setAttribute('cx',cx); c.setAttribute('cy',cy);
+    c.setAttribute('r',HANDLE_R);
+    c.setAttribute('fill',HANDLE_COL);
+    c.setAttribute('stroke','#fff'); c.setAttribute('stroke-width','1.5');
+    c.setAttribute('class','conn-handle');
+    c.style.cssText='pointer-events:all;cursor:crosshair;';
+    c.dataset.side=side;
+    c.dataset.cx=cx; c.dataset.cy=cy;
+    c.addEventListener('mouseenter',()=>c.setAttribute('fill',HANDLE_HOV));
+    c.addEventListener('mouseleave',()=>c.setAttribute('fill',HANDLE_COL));
+    c.addEventListener('mousedown',ev=>{
+      if(ev.button!==0) return;
+      ev.preventDefault(); ev.stopPropagation();
+      const fromId=g.getAttribute('data-part-id').replace(/~\d+$/,'');
+      // Rubber-band line
+      const line=document.createElementNS('http://www.w3.org/2000/svg','polyline');
+      line.setAttribute('points',cx+','+cy+' '+cx+','+cy);
+      line.setAttribute('stroke',HANDLE_COL); line.setAttribute('stroke-width','1.8');
+      line.setAttribute('fill','none'); line.setAttribute('stroke-dasharray','5,3');
+      line.setAttribute('id','conn-rubber');
+      connOverlay.appendChild(line);
+      connDrag={fromId, startX:cx, startY:cy, line};
+      document.body.style.cursor='crosshair';
+    });
+    connOverlay.appendChild(c);
+  });
+}
+
+window.addEventListener('mousemove',ev=>{
+  if(!connDrag) return;
+  const stage=document.getElementById('zoomer').parentElement.getBoundingClientRect();
+  const ex=ev.clientX-stage.left, ey=ev.clientY-stage.top;
+  connDrag.line.setAttribute('points',connDrag.startX+','+connDrag.startY+' '+ex+','+ey);
+},true);
+
+window.addEventListener('mouseup',async ev=>{
+  if(!connDrag) return;
+  const drag=connDrag; connDrag=null;
+  drag.line.remove(); clearHandles();
+  document.body.style.cursor='';
+  const toId=connTarget;
+  connTarget=null;
+  if(!toId||toId===drag.fromId||!serverOK) return;
+  pushUndo();
+  try{
+    const r=await fetch('/api/op?op=add-edge&from='+encodeURIComponent(drag.fromId)+'&to='+encodeURIComponent(toId)+'&format='+encodeURIComponent(LANG),
+      {method:'POST',body:srcEl.value});
+    if(!r.ok) return;
+    const data=await r.json();
+    if(typeof data.yaml==='string'){ srcEl.value=data.yaml; setDirty(srcEl.value!==ORIGINAL);
+      try{localStorage.setItem(DRAFTKEY,srcEl.value);}catch(_){} }
+    if(data.svg){ zoomer.innerHTML=data.svg; buildMap(); paint(pinnedRange()); wireHover(); wireDrag(); adaptStage(); markRendered(); }
+    showIssues(data.issues||[]);
+  }catch(_){}
+},true);
+
 function wireHover(){
   zoomer.querySelectorAll('g[data-part-id]').forEach(g=>{
     const id=g.getAttribute('data-part-id');
     g.style.cursor='move';
     g.addEventListener('mouseenter',()=>{
       g.classList.add('hi');
+      if(connDrag){ connTarget=id.replace(/~\d+$/,''); return; }
+      showHandles(g);
       const r=rangeFor(id); if(!r) return;
       paint(r); scrollToLine(r[0]);
     });
     g.addEventListener('mouseleave',()=>{
+      if(connDrag){ if(connTarget===id.replace(/~\d+$/,'')) connTarget=null; return; }
+      clearHandles();
       if(pinId!==id) g.classList.remove('hi');
       paint(pinnedRange());
     });

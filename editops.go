@@ -100,6 +100,16 @@ func ApplyOpText(format string, src []byte, op EditOp) ([]byte, error) {
 			return src, fmt.Errorf("add: scene parts block not found")
 		}
 		return []byte(out), nil
+	case "add-edge":
+		from, to := op.Fields["from"], op.Fields["to"]
+		if from == "" || to == "" {
+			return src, fmt.Errorf("add-edge: from and to are required")
+		}
+		out, ok := yamledit.AddConnector(string(src), from, to)
+		if !ok {
+			return src, fmt.Errorf("add-edge: connectors block not found and no parts block to anchor to")
+		}
+		return []byte(out), nil
 	case "delete":
 		return applyDelete(src, op)
 	case "duplicate":

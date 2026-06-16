@@ -510,10 +510,13 @@ func serveFile(in string) error {
 		// op ∈ add|delete|duplicate, kind ∈ node|edge → one EditOp kind.
 		op := isotopo.EditOp{Kind: q.Get("op"), Target: q.Get("kind"), ID: q.Get("id"), CI: ci}
 		switch q.Get("op") {
-		case "add", "delete", "duplicate":
+		case "add", "delete", "duplicate", "add-edge":
 		default:
-			http.Error(w, "op must be add|delete|duplicate", 400)
+			http.Error(w, "op must be add|add-edge|delete|duplicate", 400)
 			return
+		}
+		if q.Get("op") == "add-edge" {
+			op.Fields = map[string]string{"from": q.Get("from"), "to": q.Get("to")}
 		}
 		outB, oerr := isotopo.ApplyOpText(lang, body, op)
 		if oerr != nil {

@@ -922,6 +922,71 @@ func DuplicatePart(src, id string, ox, oy float64) (string, bool) {
 	return out, true
 }
 
+// AddConnector appends a new connector (from → to, orthogonal routing) to the
+// first connectors: block found in the scene node. If no connectors: key exists
+// yet, one is inserted just before the first `parts:` key at the same indent.
+func AddConnector(src, from, to string) (string, bool) {
+	lines := strings.Split(src, "\n")
+
+	// Find the first `connectors:` block and its indent.
+	connLine, connIndent := -1, 0
+	reConn := regexp.MustCompile(`^( *)connectors:\s*$`)
+	for i, l := range lines {
+		if m := reConn.FindStringSubmatch(l); m != nil {
+			connLine, connIndent = i, len(m[1])
+			break
+		}
+	}
+
+	itemLine := -1 // line AFTER which we insert the new item
+	var itemIndent string
+
+	if connLine >= 0 {
+		// Walk to end of connectors block to find the insertion point.
+		itemIndent = strings.Repeat(" ", connIndent+2)
+		end := len(lines)
+		for i := connLine + 1; i < len(lines); i++ {
+			if strings.TrimSpace(lines[i]) == "" {
+				continue
+			}
+			if indentOf(lines[i]) <= connIndent {
+				end = i
+				break
+			}
+			end = i + 1
+		}
+		itemLine = end - 1
+	} else {
+		// No connectors: key yet — find the shallowest `parts:` key and insert
+		// a connectors: block just before it (same indent level).
+		reParts := regexp.MustCompile(`^( *)parts:\s*$`)
+		partsLine, partsIndent := -1, 1<<30
+		for i, l := range lines {
+			if m := reParts.FindStringSubmatch(l); m != nil {
+				if len(m[1]) < partsIndent {
+					partsLine, partsIndent = i, len(m[1])
+				}
+			}
+		}
+		if partsLine < 0 {
+			return src, false
+		}
+		connIndent = partsIndent
+		itemIndent = strings.Repeat(" ", connIndent+2)
+		header := strings.Repeat(" ", connIndent) + "connectors:"
+		newLines := append(append([]string{}, lines[:partsLine]...),
+			header,
+		)
+		newLines = append(newLines, lines[partsLine:]...)
+		lines = newLines
+		itemLine = partsLine // insert after the new connectors: header
+	}
+
+	nl := itemIndent + fmt.Sprintf(`- { from: %s, to: %s, routing: orthogonal }`, from, to)
+	out := append(append(append([]string{}, lines[:itemLine+1]...), nl), lines[itemLine+1:]...)
+	return strings.Join(out, "\n"), true
+}
+
 func uniquePartID(src, base string) string {
 	id := base
 	for n := 2; ; n++ {
