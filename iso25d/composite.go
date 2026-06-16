@@ -97,6 +97,14 @@ func RenderComposite(parts []CompositePart) string {
 	// grow the SVG canvas, not the origin.
 	maxOuterX := maxX
 	maxOuterY := maxY
+	// v1.6.5 — also track overflow at the TOP and LEFT. The previous code
+	// only expanded the viewBox rightward/downward (maxOuter*), so shapes
+	// whose standalone SVG extends above or left of the 3D-corner bbox
+	// (e.g. the person's head, callout tails) were silently clipped.
+	// Fix: record how far each part's standalone SVG bleeds into negative
+	// composite coordinates; widen the viewBox by shifting its origin
+	// (vx, vy) without moving tx/ty — connector coordinates stay intact.
+	var bleedLeft, bleedTop float64
 	for _, r := range rs {
 		// Where the standalone (0, 0) lands in composite coords:
 		px := r.sx + tx - r.intTx
@@ -108,14 +116,22 @@ func RenderComposite(parts []CompositePart) string {
 		if ry := py + r.stdH - ty; ry > maxOuterY {
 			maxOuterY = ry
 		}
+		// Left / top overflow: standalone SVG bleeds into negative coords.
+		if px < 0 && -px > bleedLeft {
+			bleedLeft = -px
+		}
+		if py < 0 && -py > bleedTop {
+			bleedTop = -py
+		}
 	}
-	W := (maxOuterX - minX) + 2*pad
-	H := (maxOuterY - minY) + 2*pad
+	W := (maxOuterX - minX) + 2*pad + bleedLeft
+	H := (maxOuterY - minY) + 2*pad + bleedTop
+	vx, vy := -bleedLeft, -bleedTop
 
 	var sb strings.Builder
 	fmt.Fprintf(&sb,
-		`<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 %.2f %.2f" width="%.2f" height="%.2f">`,
-		W, H, W, H,
+		`<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="%.2f %.2f %.2f %.2f" width="%.2f" height="%.2f">`,
+		vx, vy, W, H, W, H,
 	)
 	for i, r := range rs {
 		// Outer translate places the part's WORLD (offWX, offWY, offWZ)
