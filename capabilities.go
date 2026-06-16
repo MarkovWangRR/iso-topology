@@ -119,7 +119,7 @@ func buildShapeCaps() []ShapeCap {
 	}
 	// Add native iso names that aren't in the d2 catalog.
 	for _, iso := range []string{"rectangle", "cylinder", "circle", "cloud", "person", "iso_text", "composite", "group",
-		"prism", "diamond", "triprism", "hexprism", "octprism", "boundary"} {
+		"prism", "diamond", "triprism", "hexprism", "octprism", "boundary", "cone", "pyramid", "frustum", "dome", "capsule", "wedge", "custom_path"} {
 		if _, ok := by[iso]; !ok {
 			by[iso] = &bucket{isoName: iso, hMul: 1.0, acceptedAs: map[string]struct{}{iso: {}}}
 		}
@@ -155,6 +155,13 @@ func buildShapeCaps() []ShapeCap {
 		"triprism":  "v3.2 — 3-gon prism: alert / one-way fan-out semantics",
 		"hexprism":  "v3.2 — 6-gon prism: API gateway / middleware semantics",
 		"octprism":  "v3.2 — 8-gon prism: firewall (stop-sign) semantics",
+		"cone":        "tapered prism with circular base converging to a point; top apex semantics",
+		"pyramid":     "tapered prism with rectangular base converging to a point; monument / hierarchy semantics",
+		"frustum":     "truncated cone/pyramid (cone with top cut off); container / tier semantics",
+		"dome":        "revolution body — half-sphere cap; canopy / coverage semantics",
+		"capsule":     "revolution body — cylinder capped by hemispheres; pill / pod / container semantics",
+		"wedge":       "ramp/slope shape — rectangular base, one edge lifted; ramp / transition semantics",
+		"custom_path": "extrude an arbitrary SVG M/L/Z outline path; params.path provides the SVG commands",
 	}
 	out := make([]ShapeCap, 0, len(by))
 	for _, b := range by {

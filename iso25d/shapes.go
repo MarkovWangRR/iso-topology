@@ -157,6 +157,26 @@ func Convert2DTo25D(shapeType string, o ConvertOpts) string {
 		}
 		return RenderIsoPrism(b, sides)
 
+	case "cone", "pyramid", "frustum":
+		b := DefaultIsoBox()
+		applyBox(o, &b)
+		return RenderIsoTaperedPrism(b, strings.ToLower(strings.TrimSpace(shapeType)))
+
+	case "dome", "torus", "capsule":
+		b := DefaultIsoBox()
+		applyBox(o, &b)
+		return RenderIsoRevolve(b, strings.ToLower(strings.TrimSpace(shapeType)))
+
+	case "wedge":
+		b := DefaultIsoBox()
+		applyBox(o, &b)
+		return RenderIsoWedge(b)
+
+	case "custom_path":
+		b := DefaultIsoBox()
+		applyBox(o, &b)
+		return RenderIsoCustomPath(b, nil)
+
 	// rectangle / square / empty / unknown → plain iso box.
 	case "rectangle", "square", "":
 		b := DefaultIsoBox()

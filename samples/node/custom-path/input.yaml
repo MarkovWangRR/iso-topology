@@ -1,0 +1,8 @@
+nodes:
+  triangle:
+    shape: custom_path
+    geom: { w: 160, d: 120, h: 40 }
+    label: "Custom"
+    style:
+      palette: { top: "#DBEAFE", left: "#1D4ED8", right: "#3B82F6" }
+      stroke: { color: "#1E3A8A", width: 1.4 }
