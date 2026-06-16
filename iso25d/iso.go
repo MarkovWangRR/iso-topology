@@ -79,6 +79,7 @@ type IsoBoxOpts struct {
 	PatternAngle    float64
 	Cells           [][]string
 	CellColors      [][]string
+	Params          map[string]any
 }
 
 func DefaultIsoBox() IsoBoxOpts {

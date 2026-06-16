@@ -328,4 +328,5 @@ func applyBox(o ConvertOpts, b *IsoBoxOpts) {
 	b.PatternAngle = o.PatternAngle
 	b.Cells = o.Cells
 	b.CellColors = o.CellColors
+	b.Params = o.Params
 }
