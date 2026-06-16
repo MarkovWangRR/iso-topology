@@ -1,0 +1,10 @@
+nodes:
+  rack:
+    shape: rack
+    geom: { w: 80, d: 60, h: 220 }
+    label: "Server\nRack"
+    params:
+      slots: 5
+    style:
+      palette: { top: "#334155", left: "#0F172A", right: "#1E293B" }
+      stroke: { color: "#64748B", width: 1.2 }

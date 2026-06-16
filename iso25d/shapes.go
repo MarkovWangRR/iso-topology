@@ -209,19 +209,22 @@ func Convert2DTo25D(shapeType string, o ConvertOpts) string {
 		}
 		return RenderIsoPrism(b, sides)
 
-	// v3.11 — array shapes: tiled cell grids (G-category).
+	// v3.11 — array shapes: tiled cell grids.
 	case "array1d", "array2d", "array3d":
 		b := DefaultIsoBox()
 		applyBox(o, &b)
 		return RenderIsoArray(b, shapeType)
 
-	// v3.11 — screen / browser-panel: upright thin panel (H-category).
+	// v3.11 — screen / browser-panel: upright thin panel.
 	case "screen", "browser-panel":
 		b := DefaultIsoBox()
 		applyBox(o, &b)
+		if b.Depth <= 0 {
+			b.Depth = 14
+		}
 		return RenderIsoScreen(b)
 
-	// v3.11 — rack: server rack with slot shelves (E-category).
+	// v3.11 — rack: server rack with slot shelves.
 	case "rack":
 		b := DefaultIsoBox()
 		applyBox(o, &b)

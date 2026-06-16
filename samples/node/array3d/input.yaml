@@ -1,0 +1,13 @@
+nodes:
+  cluster:
+    shape: array3d
+    geom: { w: 200, d: 200, h: 160 }
+    label: "GPU Cluster"
+    params:
+      countX: 3
+      countY: 3
+      countZ: 3
+      gap: 8
+    style:
+      palette: { top: "#F0FDF4", left: "#15803D", right: "#16A34A" }
+      stroke: { color: "#14532D", width: 0.8 }

@@ -1,0 +1,8 @@
+nodes:
+  app:
+    shape: screen
+    geom: { w: 100, d: 14, h: 160 }
+    label: "Mobile\nApp"
+    style:
+      palette: { top: "#0F172A", left: "#020617", right: "#1E3A8A" }
+      stroke: { color: "#334155", width: 1.5 }

@@ -21,6 +21,9 @@ patterns, effects).
 | **Cloud** | `cloud` | — |
 | **Wedge** | `wedge` | — |
 | **Custom path** | `custom_path` | `geom.params.path` |
+| **Array** | `array1d`, `array2d`, `array3d` | `countX`, `countY`, `countZ`, `gap` |
+| **Screen** | `screen`, `browser-panel` | — |
+| **Rack** | `rack` | `params.slots` |
 
 ---
 
@@ -342,3 +345,91 @@ style:
 ```
 
 See [DSL YAML reference](./dsl-yaml.md) for the full `style.faces` schema.
+
+---
+
+## Array shapes (`shape: array1d` / `array2d` / `array3d`)
+
+Tiled cell grids: `array1d` is a linear row, `array2d` is a flat N×M grid,
+`array3d` is a volumetric N×M×K grid. Each cell is a small iso box sharing
+the same palette. Painter order is correct for the iso camera.
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `countX` | 3 | Number of cells along world X |
+| `countY` | 3 (`array2d`/`array3d`) or 1 (`array1d`) | Cells along world Y |
+| `countZ` | 1 (`array1d`/`array2d`) or 3 (`array3d`) | Cells along world Z |
+| `gap` | 6 | Gap between cells in world units |
+
+```yaml
+nodes:
+  matrix:
+    shape: array2d
+    geom: { w: 200, d: 200, h: 24 }
+    label: "Shard Matrix"
+    params:
+      countX: 4
+      countY: 4
+      gap: 6
+    style:
+      palette: { top: "#DBEAFE", left: "#1E40AF", right: "#2563EB" }
+```
+
+| Shape | Default grid | Semantic use |
+|-------|-------------|--------------|
+| `array1d` | 3×1×1 | Pipeline stages, replica group |
+| `array2d` | 3×3×1 | Shard matrix, node pool, partition table |
+| `array3d` | 3×3×3 | GPU cluster, tensor, embedding matrix |
+
+---
+
+## Screen / browser-panel (`shape: screen`)
+
+An upright thin panel (small depth). The label and icon anchor on the right
+face (the large face pointing toward the iso viewer), making it ideal for
+representing displays, mobile apps, or browser windows.
+
+Default geometry: W=100, D=14, H=160 (portrait proportions).
+
+```yaml
+nodes:
+  app:
+    shape: screen
+    geom: { w: 100, d: 14, h: 160 }
+    label: "Mobile App"
+    style:
+      palette: { top: "#0F172A", left: "#020617", right: "#1E3A8A" }
+      stroke: { color: "#334155", width: 1.5 }
+```
+
+`browser-panel` is an alias for `screen`.
+
+---
+
+## Rack (`shape: rack`)
+
+A server rack: outer frame box with N horizontal slab shelves inside.
+Use `params.slots` to set the shelf count.
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `slots` | 4 | Number of slot shelves |
+
+```yaml
+nodes:
+  rack:
+    shape: rack
+    geom: { w: 80, d: 60, h: 220 }
+    label: "Server Rack"
+    params:
+      slots: 5
+    style:
+      palette: { top: "#334155", left: "#0F172A", right: "#1E293B" }
+      stroke: { color: "#64748B", width: 1.2 }
+```
+
+| Family | Built-in shapes | Key parameter |
+|--------|----------------|---------------|
+| **Array** | `array1d`, `array2d`, `array3d` | `countX`, `countY`, `countZ`, `gap` |
+| **Screen** | `screen`, `browser-panel` | — |
+| **Rack** | `rack` | `params.slots` |

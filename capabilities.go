@@ -164,14 +164,14 @@ func buildShapeCaps() []ShapeCap {
 		"dome":     "v3.6 — hemispherical revolution body (quarter-circle profile). Semantic: security zone, protective enclosure, isolation region.",
 		"torus":    "v3.6 — donut-shaped revolution body. Semantic: consistent-hashing ring, replication ring, circular cache topology.",
 		"capsule":     "v3.6 — cylinder with rounded (hemispherical) end caps. Semantic: container pod, process instance, encapsulated service.",
-		"wedge":        "v3.10 — sloped prism: back edge raised to full height, front edge at z=0. Semantic: ramp, data ingestion pipeline, traffic escalation.",
-		"custom_path":  "v3.10 — arbitrary polygon base extruded vertically. Provide path: in geom.params (M/L/Z SVG commands). Semantic: any brand or domain-specific shape.",
-		"array1d":      "v3.11 — 1D tiled cell grid (row of boxes). Params: countX, gap. Semantic: array, list, pipeline stages.",
-		"array2d":      "v3.11 — 2D tiled cell grid (rows × columns of boxes). Params: countX, countY, gap. Semantic: matrix, table, grid topology.",
-		"array3d":      "v3.11 — 3D tiled cell grid (X × Y × Z of boxes). Params: countX, countY, countZ, gap. Semantic: tensor, volumetric data, layered grid.",
-		"screen":       "v3.11 — upright thin panel rendered as a box with shallow depth. Semantic: monitor, display, UI screen.",
-		"browser-panel": "v3.11 — alias for screen; upright thin panel. Semantic: browser window, web panel.",
-		"rack":         "v3.11 — server rack with slot shelves. Params: slots (default 4). Semantic: server rack, hardware chassis, data-center equipment.",
+		"wedge":       "v3.10 — sloped prism: back edge raised to full height, front edge at z=0. Semantic: ramp, data ingestion pipeline, traffic escalation.",
+		"custom_path": "v3.10 — arbitrary polygon base extruded vertically. Provide path: in geom.params (M/L/Z SVG commands). Semantic: any brand or domain-specific shape.",
+		"array1d":       "v3.11 — linear row of N identical cells. params: countX (default 3), gap (default 6). Semantic: pipeline stages, replica group.",
+		"array2d":       "v3.11 — N×M grid of cells on the ground plane. params: countX, countY (default 3×3), gap. Semantic: shard matrix, node pool, partition table.",
+		"array3d":       "v3.11 — N×M×K volumetric grid. params: countX, countY, countZ (default 3×3×3), gap. Semantic: GPU cluster, tensor, embedding matrix.",
+		"screen":        "v3.11 — upright thin panel; label and icon anchor on the front (right) face. Default geom: w=100 d=14 h=160. Semantic: mobile app, display, monitor.",
+		"browser-panel": "v3.11 — alias for screen. Semantic: web frontend, browser window, dashboard.",
+		"rack":          "v3.11 — server rack with slot shelves. params: slots (default 4). Semantic: physical server rack, blade chassis, equipment cabinet.",
 	}
 	out := make([]ShapeCap, 0, len(by))
 	for _, b := range by {

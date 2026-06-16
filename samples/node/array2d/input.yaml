@@ -1,0 +1,12 @@
+nodes:
+  matrix:
+    shape: array2d
+    geom: { w: 200, d: 200, h: 24 }
+    label: "Shard Matrix"
+    params:
+      countX: 4
+      countY: 4
+      gap: 6
+    style:
+      palette: { top: "#DBEAFE", left: "#1E40AF", right: "#2563EB" }
+      stroke: { color: "#1E3A8A", width: 0.8 }
