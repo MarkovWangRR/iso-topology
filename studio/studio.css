@@ -69,6 +69,7 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:1px;}
 button:disabled{opacity:.45;cursor:default;}
 #render{background:var(--accent);border-color:transparent;color:white;}
 #render:hover{background:var(--accent-deep);}
+#viewtoggle.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-deep);}
 label.auto{font:11.5px Inter,sans-serif;color:var(--muted);display:flex;gap:5px;align-items:center;}
 label.auto input{accent-color:var(--accent);}
 .filetab{display:flex;align-items:center;gap:8px;padding:8px 16px;border-bottom:1px solid var(--border);
@@ -147,6 +148,11 @@ svg path[data-connector].pinned{stroke:var(--accent-deep);filter:drop-shadow(0 0
 #ctxmenu button{display:block;width:100%;text-align:left;border:0;background:transparent;border-radius:5px;
   font:12px Inter,sans-serif;color:#334155;padding:7px 11px;cursor:pointer;}
 #ctxmenu button:hover{background:var(--accent-soft);color:var(--accent-deep);}
+/* The per-kind menu gating sets `.hidden` on individual items; the id-only
+   `#ctxmenu button{display:block}` above would otherwise out-specify the UA
+   [hidden] rule and keep them painted (Add on a node, Duplicate on an edge…).
+   This id+element+attr rule restores the hide. */
+#ctxmenu button[hidden]{display:none;}
 #detailModal{position:fixed;inset:0;z-index:60;background:rgba(15,23,42,.30);display:flex;align-items:center;justify-content:center;}
 /* id+attr specificity beats the id-only display rules above, so the HTML
    hidden attribute actually hides these. A bare [hidden] display:none UA rule

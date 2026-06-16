@@ -82,6 +82,55 @@ func Validate(doc *Document) []Issue {
 		collectGroupIDs(n.Parts)
 	}
 
+	// Duplicate part ids: connectors and annotations bind targets BY id, so two
+	// parts sharing an id make every reference to it ambiguous — the renderer
+	// silently picks the first and the second is unreachable. (Direct-manip
+	// "duplicate" of a container used to mint exactly this; this catches it
+	// wherever it comes from, including hand-edited YAML.)
+	idCount := map[string]int{}
+	var countIDs func(parts []*CompositePart)
+	countIDs = func(parts []*CompositePart) {
+		for _, p := range parts {
+			if p == nil {
+				continue
+			}
+			if p.ID != "" {
+				idCount[p.ID]++
+			}
+			countIDs(p.Parts)
+		}
+	}
+	for _, n := range doc.Nodes {
+		countIDs(n.Parts)
+	}
+	dupIDs := make([]string, 0)
+	for id, c := range idCount {
+		if c > 1 {
+			dupIDs = append(dupIDs, id)
+		}
+	}
+	sort.Strings(dupIDs)
+	for _, id := range dupIDs {
+		issues = append(issues, Issue{
+			Severity: SeverityError,
+			Path:     "nodes",
+			Message:  fmt.Sprintf("duplicate part id %q — %d parts share it; connector/annotation references to it are ambiguous", id, idCount[id]),
+		})
+	}
+
+	// Validate canvas.projection
+	if doc.Canvas != nil && doc.Canvas.Projection != "" {
+		valid := []string{"iso", "top"}
+		if !contains(valid, strings.ToLower(doc.Canvas.Projection)) {
+			issues = append(issues, Issue{
+				Severity: SeverityError,
+				Path:     "canvas.projection",
+				Message:  fmt.Sprintf("unknown projection %q", doc.Canvas.Projection),
+				Suggest:  nearest(doc.Canvas.Projection, valid),
+			})
+		}
+	}
+
 	// Validate canvas.grid
 	if doc.Canvas != nil && doc.Canvas.Grid != "" {
 		valid := []string{"iso", "dots", "hatch", "solid", "none"}

@@ -35,7 +35,8 @@ import (
 // CLI flag state — set by parseFlags. Layout is consulted only for .d2
 // inputs (YAML/JSON have no layout step).
 var (
-	flagLayout = "dagre"
+	flagLayout     = "dagre"
+	flagProjection = "" // "" | iso | top — overrides canvas.projection
 )
 
 func main() {
@@ -85,10 +86,70 @@ func main() {
 			os.Exit(1)
 		}
 		os.Exit(code)
+	case "evaluate":
+		// isotopo evaluate <input> [output-dir]
+		//   prints the plan-view layout scorecard as JSON; if output-dir is
+		//   given, also writes plan.svg with crossings/tunnelling marked red.
+		if len(os.Args) < 3 || len(os.Args) > 4 {
+			usage()
+			os.Exit(2)
+		}
+		outDir := ""
+		if len(os.Args) == 4 {
+			outDir = os.Args[3]
+		}
+		if err := evaluateFile(os.Args[2], outDir); err != nil {
+			fmt.Fprintln(os.Stderr, "error:", err)
+			os.Exit(1)
+		}
 	default:
 		usage()
 		os.Exit(2)
 	}
+}
+
+// evaluateFile scores the document's auto-layout connection quality from the
+// flat top-down geometry and prints the scorecard as JSON. With outDir set, it
+// also writes an annotated plan.svg (crossings + tunnelling edges in red).
+func evaluateFile(in, outDir string) error {
+	var data []byte
+	var err error
+	if in == "-" {
+		data, err = io.ReadAll(os.Stdin)
+	} else {
+		data, err = os.ReadFile(in)
+	}
+	if err != nil {
+		return err
+	}
+	sourceLang, _ := classifyInput(in)
+	doc, err := loadDocument(sourceLang, data)
+	if err != nil {
+		return err
+	}
+	scene := doc.Scene()
+	if scene == nil {
+		return fmt.Errorf("document has no scene to evaluate")
+	}
+	svg, planReport := isotopo.RenderPlanAnnotated(scene, doc.Theme, doc.Canvas)
+	isoReport := isotopo.EvaluateIso(scene, doc.Theme, doc.Canvas)
+	// plan = the simplified preview router; iso = the engine's REAL routes.
+	// Emitting both makes the gap (and the engine's actual quality) explicit.
+	enc := json.NewEncoder(os.Stdout)
+	enc.SetIndent("", "  ")
+	if err := enc.Encode(map[string]any{"plan": planReport, "iso": isoReport}); err != nil {
+		return err
+	}
+	if outDir != "" {
+		if err := os.MkdirAll(outDir, 0o755); err != nil {
+			return err
+		}
+		if err := writeFile(filepath.Join(outDir, "plan.svg"), []byte(svg)); err != nil {
+			return err
+		}
+		fmt.Fprintln(os.Stderr, "wrote", filepath.Join(outDir, "plan.svg"))
+	}
+	return nil
 }
 
 // validateFile parses the input and runs Validate, emitting structured
@@ -168,6 +229,14 @@ func parseFlags(argv []string) ([]string, error) {
 			i++
 		case strings.HasPrefix(a, "--layout="):
 			flagLayout = strings.TrimPrefix(a, "--layout=")
+		case a == "--projection":
+			if i+1 >= len(argv) {
+				return nil, fmt.Errorf("--projection requires a value")
+			}
+			flagProjection = argv[i+1]
+			i++
+		case strings.HasPrefix(a, "--projection="):
+			flagProjection = strings.TrimPrefix(a, "--projection=")
 		default:
 			positional = append(positional, a)
 		}
@@ -177,12 +246,17 @@ func parseFlags(argv []string) ([]string, error) {
 	default:
 		return nil, fmt.Errorf("invalid --layout %q (want dagre|elk)", flagLayout)
 	}
+	switch flagProjection {
+	case "", "iso", "top":
+	default:
+		return nil, fmt.Errorf("invalid --projection %q (want iso|top)", flagProjection)
+	}
 	return positional, nil
 }
 
 func usage() {
 	fmt.Fprintln(os.Stderr, `usage:
-  isotopo render [--layout dagre|elk] <input.yaml|input.d2|-> <output-dir>
+  isotopo render [--layout dagre|elk] [--projection iso|top] <input.yaml|input.d2|-> <output-dir>
   isotopo capabilities
 
 input formats:
@@ -190,8 +264,10 @@ input formats:
   .d2            d2 graph source (auto-layout)
 
 flags:
-  --layout dagre  natural-bend polyline edges (default)
-  --layout elk    orthogonal right-angle edges with obstacle avoidance
+  --layout dagre      natural-bend polyline edges (default)
+  --layout elk        orthogonal right-angle edges with obstacle avoidance
+  --projection iso    2.5D isometric view (default)
+  --projection top    flat top-down plan view (footprints + orthogonal edges)
 
 subcommands:
   render         render an input file to <output-dir>
@@ -201,6 +277,11 @@ subcommands:
   validate <in>  parse + structural validate the input file. Emits JSON
                  of issues with paths and "did you mean" suggestions.
                  exit: 0 = clean, 2 = warnings only, 3 = errors
+  evaluate <in> [out-dir]
+                 score auto-layout connection quality from the flat plan
+                 view (crossings, edges-through-nodes, backward edges,
+                 lengths, bends). JSON to stdout; with out-dir also writes
+                 plan.svg with problems marked in red
   serve <in>     local live-preview server (default :8731, override with
                  ISOTOPO_PORT): the interactive topology.html with hover
                  source-mapping, zoom/pan, edit-to-re-render against an
@@ -294,6 +375,13 @@ func renderFile(in, outDir string) error {
 // library's scene rules.
 func renderTopologySVG(doc *isotopo.Document) string {
 	if scene := doc.Scene(); scene != nil {
+		// --projection overrides whatever canvas.projection the document set.
+		if flagProjection != "" {
+			if doc.Canvas == nil {
+				doc.Canvas = &isotopo.Canvas{}
+			}
+			doc.Canvas.Projection = flagProjection
+		}
 		return isotopo.RenderWithCanvas(scene, doc.Theme, doc.Canvas, doc.Annotations)
 	}
 	return ""
@@ -352,10 +440,18 @@ func serveFile(in string) error {
 		port = "8731"
 	}
 
-	render := func(lang string, data []byte) (string, []isotopo.Issue, error) {
+	render := func(lang string, data []byte, projection string) (string, []isotopo.Issue, error) {
 		doc, err := loadDocument(lang, data)
 		if err != nil {
 			return "", []isotopo.Issue{{Severity: isotopo.SeverityError, Path: "$", Message: err.Error()}}, nil
+		}
+		// Studio view switch: an iso/top override for THIS render only, never
+		// written back to the document the editor holds (a pure preview).
+		if projection != "" {
+			if doc.Canvas == nil {
+				doc.Canvas = &isotopo.Canvas{}
+			}
+			doc.Canvas.Projection = projection
 		}
 		issues := isotopo.Validate(doc)
 		if lang != "d2" {
@@ -393,7 +489,7 @@ func serveFile(in string) error {
 		if lang == "" {
 			lang = sourceLang
 		}
-		svg, issues, err := render(lang, body)
+		svg, issues, err := render(lang, body, r.URL.Query().Get("projection"))
 		if err != nil {
 			http.Error(w, err.Error(), 500)
 			return
@@ -438,7 +534,7 @@ func serveFile(in string) error {
 			http.Error(w, oerr.Error(), 422)
 			return
 		}
-		svg, issues, _ := render(lang, out)
+		svg, issues, _ := render(lang, out, r.URL.Query().Get("projection"))
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]any{"yaml": string(out), "svg": svg, "issues": issues})
 	})
@@ -489,7 +585,7 @@ func serveFile(in string) error {
 			return
 		}
 		out := string(outB)
-		svg, issues, _ := render(lang, outB)
+		svg, issues, _ := render(lang, outB, r.URL.Query().Get("projection"))
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]any{"yaml": out, "svg": svg, "issues": issues})
 	})
@@ -524,7 +620,7 @@ func serveFile(in string) error {
 			return
 		}
 		out := string(outB)
-		svg, issues, _ := render(lang, outB)
+		svg, issues, _ := render(lang, outB, r.URL.Query().Get("projection"))
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]any{"yaml": out, "svg": svg, "issues": issues})
 	})
@@ -594,7 +690,7 @@ func serveFile(in string) error {
 			http.Error(w, err.Error(), 500)
 			return
 		}
-		svg, _, _ := render(sourceLang, data)
+		svg, _, _ := render(sourceLang, data, "")
 		w.Header().Set("Content-Type", "image/svg+xml")
 		w.Write([]byte(svg))
 	})
@@ -608,7 +704,7 @@ func serveFile(in string) error {
 			http.Error(w, err.Error(), 500)
 			return
 		}
-		svg, _, _ := render(sourceLang, data)
+		svg, _, _ := render(sourceLang, data, "")
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		// Never let the browser serve a stale Studio page — the template
 		// changes between builds and a cached copy would run old JS (the

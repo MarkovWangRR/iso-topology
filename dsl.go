@@ -511,6 +511,10 @@ type Canvas struct {
 	// composition. Sparse hero shots need air the content bbox can't
 	// describe; default 0 keeps the tight crop.
 	Padding float64 `yaml:"padding,omitempty" json:"padding,omitempty"`
+	// v0.8 — projection mode. "iso" (default, empty) renders the 2.5D
+	// isometric view; "top" renders a flat top-down plan (footprints +
+	// orthogonal connectors, height dropped) via planview.go.
+	Projection string `yaml:"projection,omitempty" json:"projection,omitempty"`
 }
 
 // Annotation is a screen-space callout pinned to a composite part. It

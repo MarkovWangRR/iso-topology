@@ -407,7 +407,7 @@ async function commitMove(kind,key,dwx,dwy,dropX,dropY,wp){
   let qp = kind==='node' ? 'kind=node&id='+encodeURIComponent(key) : 'kind=edge&ci='+key;
   if(wp) qp += '&wp='+encodeURIComponent(JSON.stringify(wp));
   try{
-    const r=await fetch('/api/move?'+qp+'&dwx='+dwx+'&dwy='+dwy+'&snap='+snap+'&format='+encodeURIComponent(LANG),
+    const r=await fetch('/api/move?'+qp+'&dwx='+dwx+'&dwy='+dwy+'&snap='+snap+'&format='+encodeURIComponent(LANG)+projQS(),
       {method:'POST',body:srcEl.value});
     if(!r.ok) return;
     const data=await r.json();
@@ -450,13 +450,27 @@ const detailFields=document.getElementById('detailFields');
 const detailTitle=document.getElementById('detailTitle');
 let ctxTarget=null, detailTarget=null;
 function escAttr(t){return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');}
+// A part is a container (group/boundary/composite lane) if its source block
+// holds a nested `parts:` key. Containers can't be duplicated (children would
+// get colliding ids) or deleted from the canvas (it'd remove the whole lane),
+// matching the server-side guards in ApplyOp — so we hide those items.
+function isContainerId(id){
+  const r=lineMap[id]; if(!r) return false;
+  const lines=srcEl.value.split('\n');
+  for(let i=r[0];i<=r[1]&&i<lines.length;i++){
+    if(/^\s*parts:\s*(#.*)?$/.test(lines[i])) return true;
+  }
+  return false;
+}
 function showCtx(x,y,kind,key){
   ctxTarget={kind,key};
-  // Add node only from the empty canvas; Duplicate nodes only; Delete
-  // nodes/edges; canvas itself is edit + add only.
+  // Add node only from the empty canvas; Duplicate leaf nodes only; Delete
+  // leaf nodes/edges; canvas itself is edit + add only; containers (lanes) are
+  // edit-only — structural ops on them corrupt or wipe a whole group.
+  const container = kind==='node' && isContainerId(key);
   document.getElementById('ctxadd').hidden = kind!=='canvas';
-  document.getElementById('ctxdup').hidden = kind!=='node';
-  document.getElementById('ctxdel').hidden = kind==='canvas';
+  document.getElementById('ctxdup').hidden = kind!=='node' || container;
+  document.getElementById('ctxdel').hidden = kind==='canvas' || container;
   ctxmenu.style.left=Math.min(x,innerWidth-160)+'px';
   ctxmenu.style.top=Math.min(y,innerHeight-110)+'px';
   ctxmenu.hidden=false;
@@ -474,7 +488,7 @@ async function opCommit(op,t){
   if(!serverOK) return;
   pushUndo();
   try{
-    const r=await fetch('/api/op?op='+op+'&'+qpFor(t)+'&format='+encodeURIComponent(LANG),{method:'POST',body:srcEl.value});
+    const r=await fetch('/api/op?op='+op+'&'+qpFor(t)+'&format='+encodeURIComponent(LANG)+projQS(),{method:'POST',body:srcEl.value});
     if(!r.ok) return;
     const data=await r.json();
     if(typeof data.yaml==='string'){ srcEl.value=data.yaml; setDirty(srcEl.value!==ORIGINAL);
@@ -729,7 +743,7 @@ async function applyDetail(){
   pushUndo();
   const qp = qpFor(t);
   try{
-    const r=await fetch('/api/edit?'+qp+'&f='+encodeURIComponent(JSON.stringify(changes))+'&format='+encodeURIComponent(LANG),
+    const r=await fetch('/api/edit?'+qp+'&f='+encodeURIComponent(JSON.stringify(changes))+'&format='+encodeURIComponent(LANG)+projQS(),
       {method:'POST',body:srcEl.value});
     if(!r.ok) return;
     const data=await r.json();
@@ -1015,12 +1029,23 @@ async function probe(){
     markRendered(); // recovered (or first probe): the shown canvas is current
   }
 }
+// View mode: 'iso' (2.5D, default) or 'top' (flat plan). It's a PREVIEW
+// override sent as ?projection= on every render/edit round-trip — the source
+// the editor holds is never rewritten, so toggling back is lossless.
+let VIEWMODE='iso';
+function projQS(){ return VIEWMODE==='top' ? '&projection=top' : ''; }
+function toggleView(){
+  VIEWMODE = VIEWMODE==='top' ? 'iso' : 'top';
+  const b=document.getElementById('viewtoggle');
+  if(b){ b.textContent = VIEWMODE==='top' ? '◰ Plan' : '◳ Iso'; b.classList.toggle('on', VIEWMODE==='top'); }
+  if(serverOK) rerender();
+}
 async function rerender(){
   if(!serverOK) return;
   renderBtn.textContent='Rendering…';
   setStatus('','Rendering…','');
   try{
-    const r=await fetch('/api/render?format='+encodeURIComponent(LANG),{method:'POST',body:srcEl.value});
+    const r=await fetch('/api/render?format='+encodeURIComponent(LANG)+projQS(),{method:'POST',body:srcEl.value});
     const data=await r.json();
     showIssues(data.issues||[]);
     if(data.svg){

@@ -111,7 +111,7 @@ func ApplyOpText(format string, src []byte, op EditOp) ([]byte, error) {
 		}
 		return []byte(out), nil
 	case "delete":
-		return applyDelete(src, op)
+		return applyDelete(format, src, op)
 	case "duplicate":
 		return applyDuplicate(format, src, op)
 	default:
@@ -243,10 +243,58 @@ func applySetField(src []byte, op EditOp) ([]byte, error) {
 	return []byte(out), nil
 }
 
-func applyDelete(src []byte, op EditOp) ([]byte, error) {
+// findPart locates a composite part by id anywhere in the document's node
+// trees, or nil if no part carries that id (a bare top-level node is not a
+// part). Mirrors the walk in ResolvePartStyle.
+func findPart(doc *Document, id string) *CompositePart {
+	if doc == nil {
+		return nil
+	}
+	var found *CompositePart
+	var walk func(ps []*CompositePart)
+	walk = func(ps []*CompositePart) {
+		for _, p := range ps {
+			if p == nil || found != nil {
+				continue
+			}
+			if p.ID == id {
+				found = p
+				return
+			}
+			walk(p.Parts)
+		}
+	}
+	for _, n := range doc.Nodes {
+		if n == nil {
+			continue
+		}
+		walk(n.Parts)
+		if found != nil {
+			break
+		}
+	}
+	return found
+}
+
+// partIsContainer reports whether a part is a container — a group/boundary
+// substrate or any part that actually wraps nested parts. Structural edits are
+// blocked on these: duplicating one clones its children with COLLIDING ids
+// (the rename touches only the container's own id), and deleting one removes a
+// whole lane and its contents in a single click. Edit the YAML directly for
+// those.
+func partIsContainer(p *CompositePart) bool {
+	return p != nil && (isContainerShape(p.Shape) || len(p.Parts) > 0)
+}
+
+func applyDelete(format string, src []byte, op EditOp) ([]byte, error) {
 	s := string(src)
 	switch op.Target {
 	case "node":
+		if doc, derr := LoadInput(context.Background(), format, src, LayoutDagre); derr == nil {
+			if partIsContainer(findPart(doc, op.ID)) {
+				return src, fmt.Errorf("delete: %q is a container — remove its nested parts first (deleting a whole lane from the canvas is disabled)", op.ID)
+			}
+		}
 		out, ok := yamledit.DeletePart(s, op.ID)
 		if !ok {
 			return src, fmt.Errorf("delete: node %q not found", op.ID)
@@ -264,6 +312,9 @@ func applyDelete(src []byte, op EditOp) ([]byte, error) {
 func applyDuplicate(format string, src []byte, op EditOp) ([]byte, error) {
 	ox, oy := 40.0, 40.0
 	if doc, derr := LoadInput(context.Background(), format, src, LayoutDagre); derr == nil {
+		if partIsContainer(findPart(doc, op.ID)) {
+			return src, fmt.Errorf("duplicate: %q is a container — duplicating it would clone its nested parts with colliding ids; duplicate the children individually", op.ID)
+		}
 		if cx, cy, _, found := ResolvePartOffset(doc, op.ID); found {
 			ox, oy = cx+40, cy+40
 		}

@@ -31,6 +31,12 @@ func RenderWithCanvas(n *Node, theme *Theme, canvas *Canvas, anns []*Annotation)
 	if n == nil {
 		return ""
 	}
+	// v0.8 — flat top-down plan view is a separate renderer (planview.go);
+	// it shares the layout solver and style cascade but never touches the
+	// isometric path, so iso output is byte-for-byte unchanged.
+	if canvas != nil && canvas.Projection == "top" {
+		return RenderPlan(n, theme, canvas, anns)
+	}
 	if n.Shape == "composite" {
 		return renderComposite(n, theme, canvas, anns)
 	}

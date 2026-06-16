@@ -1,6 +1,7 @@
 package isotopo
 
 import (
+	"context"
 	"strings"
 	"testing"
 )
@@ -162,6 +163,76 @@ nodes:
     parts:
       - {id: cpu, shape: rectangle, geom: {w: 100, d: 100, h: 20}, icon: "iso://glyph/cpu", label: CPU}
 `
+
+const containerFixture = `# a lane (group) wrapping two leaf parts
+nodes:
+  scene:
+    shape: composite
+    parts:
+      - id: lane
+        shape: group
+        label: "Lane"
+        parts:
+          - { id: x, shape: rectangle, geom: { w: 100, d: 100, h: 20 }, label: X }
+          - { id: y, shape: rectangle, geom: { w: 100, d: 100, h: 20 }, label: Y }
+`
+
+func TestApplyOp_DuplicateContainerBlocked(t *testing.T) {
+	// Duplicating a container used to clone its children with colliding ids;
+	// the guard must refuse it. A leaf child still duplicates fine.
+	if _, err := ApplyOpText("yaml", []byte(containerFixture),
+		EditOp{Kind: "duplicate", Target: "node", ID: "lane"}); err == nil {
+		t.Fatal("expected duplicate of a container to be blocked")
+	}
+	out, err := ApplyOpText("yaml", []byte(containerFixture),
+		EditOp{Kind: "duplicate", Target: "node", ID: "x"})
+	if err != nil {
+		t.Fatalf("duplicate of a leaf child should succeed: %v", err)
+	}
+	if !strings.Contains(string(out), "x_copy") {
+		t.Fatalf("leaf duplicate produced no clone:\n%s", out)
+	}
+}
+
+func TestApplyOp_DeleteContainerBlocked(t *testing.T) {
+	// Deleting a container would wipe a whole lane in one click — blocked.
+	// Its leaf children delete normally.
+	if _, err := ApplyOpText("yaml", []byte(containerFixture),
+		EditOp{Kind: "delete", Target: "node", ID: "lane"}); err == nil {
+		t.Fatal("expected delete of a container to be blocked")
+	}
+	out, err := ApplyOpText("yaml", []byte(containerFixture),
+		EditOp{Kind: "delete", Target: "node", ID: "x"})
+	if err != nil {
+		t.Fatalf("delete of a leaf child should succeed: %v", err)
+	}
+	if strings.Contains(string(out), "id: x,") || strings.Contains(string(out), "label: X") {
+		t.Fatalf("leaf child x not removed:\n%s", out)
+	}
+}
+
+func TestValidate_DuplicatePartID(t *testing.T) {
+	dup := `nodes:
+  scene:
+    shape: composite
+    parts:
+      - { id: a, shape: rectangle, geom: { w: 10, d: 10, h: 10 } }
+      - { id: a, shape: rectangle, geom: { w: 10, d: 10, h: 10 } }
+`
+	doc, err := LoadInput(context.Background(), "yaml", []byte(dup), LayoutDagre)
+	if err != nil {
+		t.Fatalf("load: %v", err)
+	}
+	var found bool
+	for _, i := range Validate(doc) {
+		if i.Severity == SeverityError && strings.Contains(i.Message, "duplicate part id") {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatal("validator did not flag the duplicate part id")
+	}
+}
 
 func TestApplyOp_IconColorTint(t *testing.T) {
 	// set-field with the synthetic @iconColor must splice the tint into the icon
