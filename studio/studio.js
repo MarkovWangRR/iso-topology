@@ -131,9 +131,10 @@ function glowOnly(id){
   });
 }
 /* ── drag-to-connect: draw a new connector by dragging from a node ────────
-   Hovering a node shows 4 small handle dots at its bbox edges (top/right/
-   bottom/left). Dragging one draws a rubber-band polyline; releasing over
-   another node commits a new connector to the DSL via /api/op?op=add-edge.
+   Hovering a node shows 4 handle dots at the iso face centres (top, left,
+   right) and the nadir vertex. Positions are computed from the actual polygon
+   vertices via getScreenCTM() — NOT from the DOM bounding box — so they sit
+   exactly on the isometric surface regardless of zoom or scroll.
    Handles live on a dedicated SVG overlay so they don't interfere with the
    existing node SVG structure. ──────────────────────────────────────────── */
 let connDrag=null;       // {fromId, startX, startY, line} while dragging
@@ -153,18 +154,52 @@ function ensureOverlay(){
 function clearHandles(){
   connOverlay&&connOverlay.querySelectorAll('.conn-handle').forEach(h=>h.remove());
 }
+
+// Convert a polygon's centroid from SVG user-units → overlay-relative px.
+function polyFaceCentroid(polygon, stageRect){
+  if(!polygon) return null;
+  const pts=polygon.points;
+  if(!pts||pts.numberOfItems===0) return null;
+  let ux=0, uy=0;
+  for(let i=0;i<pts.numberOfItems;i++){ ux+=pts.getItem(i).x; uy+=pts.getItem(i).y; }
+  ux/=pts.numberOfItems; uy/=pts.numberOfItems;
+  const svgPt=polygon.ownerSVGElement.createSVGPoint();
+  svgPt.x=ux; svgPt.y=uy;
+  const screen=svgPt.matrixTransform(polygon.getScreenCTM());
+  return [screen.x-stageRect.left, screen.y-stageRect.top];
+}
+
+// Return the nadir (lowest screen point) across all face polygons —
+// the bottom-most vertex of the silhouette.
+function nadirPoint(g, stageRect){
+  let best=null;
+  g.querySelectorAll('polygon[data-face]').forEach(poly=>{
+    const pts=poly.points;
+    const ctm=poly.getScreenCTM();
+    const svg=poly.ownerSVGElement;
+    for(let i=0;i<pts.numberOfItems;i++){
+      const p=svg.createSVGPoint();
+      p.x=pts.getItem(i).x; p.y=pts.getItem(i).y;
+      const sc=p.matrixTransform(ctm);
+      if(!best||sc.y>best[1]) best=[sc.x-stageRect.left, sc.y-stageRect.top];
+    }
+  });
+  return best;
+}
+
 function showHandles(g){
   ensureOverlay();
   clearHandles();
-  const rc=g.getBoundingClientRect();
   const stage=document.getElementById('zoomer').parentElement.getBoundingClientRect();
-  // 4 cardinal positions on the bounding box
+
+  // Compute anchor positions from actual iso face geometry.
   const pts=[
-    [rc.left+rc.width/2-stage.left, rc.top-stage.top],          // top
-    [rc.right-stage.left,           rc.top+rc.height/2-stage.top], // right
-    [rc.left+rc.width/2-stage.left, rc.bottom-stage.top],        // bottom
-    [rc.left-stage.left,            rc.top+rc.height/2-stage.top], // left
-  ];
+    polyFaceCentroid(g.querySelector('polygon[data-face="top"]'),   stage),
+    polyFaceCentroid(g.querySelector('polygon[data-face="right"]'),  stage),
+    nadirPoint(g, stage),
+    polyFaceCentroid(g.querySelector('polygon[data-face="left"]'),   stage),
+  ].filter(Boolean); // drop nulls (shapes that lack a face, e.g. sphere)
+
   pts.forEach(([cx,cy],side)=>{
     const c=document.createElementNS('http://www.w3.org/2000/svg','circle');
     c.setAttribute('cx',cx); c.setAttribute('cy',cy);
