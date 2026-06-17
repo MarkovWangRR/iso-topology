@@ -347,7 +347,12 @@ func renderPlan(n *Node, theme *Theme, canvas *Canvas, hl *PlanReport) string {
 	}
 
 	sb.WriteString(`</svg>`)
-	return sb.String()
+	svg := sb.String()
+	ar := 16.0 / 10.0
+	if canvas != nil && canvas.AspectRatio != 0 {
+		ar = canvas.AspectRatio
+	}
+	return ceilOuterDims(enforceAspectRatio(svg, ar))
 }
 
 // planCollect walks the part tree, accumulating each part's ABSOLUTE world

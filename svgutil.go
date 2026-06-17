@@ -203,6 +203,49 @@ func ceilOuterDims(svg string) string {
 	return svg[:start] + out + svg[start+tagEnd+1:]
 }
 
+// enforceAspectRatio expands the SVG canvas so its width/height ratio is
+// at least minRatio (width÷height). When the content is already wider
+// than minRatio the SVG is returned unchanged. When it is taller, the
+// width is expanded symmetrically (equal whitespace left and right) so
+// the content stays centred. The canvas-bg rect is grown to fill the
+// new viewBox. minRatio ≤ 0 is a no-op.
+func enforceAspectRatio(svg string, minRatio float64) string {
+	if minRatio <= 0 {
+		return svg
+	}
+	start := strings.Index(svg, "<svg")
+	if start < 0 {
+		return svg
+	}
+	tagEnd := strings.Index(svg[start:], ">")
+	if tagEnd < 0 {
+		return svg
+	}
+	tag := svg[start : start+tagEnd+1]
+	vb := extractAttr(tag, "viewBox")
+	if vb == "" {
+		return svg
+	}
+	var x, y, w, h float64
+	if _, err := fmt.Sscanf(vb, "%f %f %f %f", &x, &y, &w, &h); err != nil {
+		return svg
+	}
+	if h <= 0 {
+		return svg
+	}
+	ratio := w / h
+	if ratio >= minRatio {
+		return svg // already wide enough
+	}
+	// Expand width symmetrically around the current content centre.
+	newW := h * minRatio
+	dx := (newW - w) / 2
+	return growViewBoxAround(svg, minSvgRect{
+		minX: x - dx, minY: y,
+		maxX: x + w + dx, maxY: y + h,
+	})
+}
+
 // padViewBox grows the root viewBox (and width/height) uniformly by pad
 // on every side. Used for canvas.padding and backglow halo reserve.
 func padViewBox(svg string, pad float64) string {

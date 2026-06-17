@@ -515,6 +515,12 @@ type Canvas struct {
 	// isometric view; "top" renders a flat top-down plan (footprints +
 	// orthogonal connectors, height dropped) via planview.go.
 	Projection string `yaml:"projection,omitempty" json:"projection,omitempty"`
+	// AspectRatio constrains the output SVG to a minimum width-to-height
+	// ratio by expanding the shorter axis symmetrically with neutral
+	// background. 0 (default) applies the built-in default of 16/10 to
+	// match Mac internal displays. Set to -1 to disable (tight crop).
+	// Example: 1.6 = 16:10, 1.7778 = 16:9, 1.5 = 3:2.
+	AspectRatio float64 `yaml:"aspectRatio,omitempty" json:"aspectRatio,omitempty"`
 }
 
 // Annotation is a screen-space callout pinned to a composite part. It

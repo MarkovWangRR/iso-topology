@@ -251,6 +251,13 @@ func renderComposite(n *Node, theme *Theme, canvas *Canvas, anns []*Annotation) 
 	if pad > 0 {
 		svg = padViewBox(svg, pad)
 	}
+	// Enforce minimum aspect ratio (default 16:10 for Mac displays).
+	// canvas.AspectRatio == -1 disables; 0 uses the 16/10 default.
+	ar := 16.0 / 10.0
+	if canvas != nil && canvas.AspectRatio != 0 {
+		ar = canvas.AspectRatio
+	}
+	svg = enforceAspectRatio(svg, ar)
 	// v3.0 — integer outer dimensions: fractional width/height attrs make
 	// 1:1 raster captures grow scrollbars and clip the bottom row.
 	return ceilOuterDims(svg)
