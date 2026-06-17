@@ -140,6 +140,12 @@ function glowOnly(id){
 let connDrag=null;       // {fromId, startX, startY, line} while dragging
 let connTarget=null;     // id of the node the pointer is currently over
 
+// World-space interaction model received from the server alongside each SVG.
+// Array of {id, container, x, y, w, d, anchors:[{name,wx,wy}]}.
+// Null until the first successful render response that includes the "model" key.
+let interactionModel=null;
+function updateModel(data){ if(data&&data.model) interactionModel=data.model; }
+
 const HANDLE_R=5, HANDLE_COL='#2563EB', HANDLE_HOV='#1D4ED8';
 
 // Overlay SVG that lives on top of zoomer for handle dots + rubber-band line
@@ -253,7 +259,7 @@ window.addEventListener('mouseup',async ev=>{
     const data=await r.json();
     if(typeof data.yaml==='string'){ srcEl.value=data.yaml; setDirty(srcEl.value!==ORIGINAL);
       try{localStorage.setItem(DRAFTKEY,srcEl.value);}catch(_){} }
-    if(data.svg){ zoomer.innerHTML=data.svg; buildMap(); paint(pinnedRange()); wireHover(); wireDrag(); adaptStage(); markRendered(); }
+    if(data.svg){ updateModel(data); zoomer.innerHTML=data.svg; buildMap(); paint(pinnedRange()); wireHover(); wireDrag(); adaptStage(); markRendered(); }
     showIssues(data.issues||[]);
   }catch(_){}
 },true);
@@ -414,6 +420,7 @@ async function commitMove(kind,key,dwx,dwy,dropX,dropY,wp){
     if(typeof data.yaml==='string'){ srcEl.value=data.yaml; setDirty(srcEl.value!==ORIGINAL);
       try{localStorage.setItem(DRAFTKEY,srcEl.value);}catch(_){} }
     if(data.svg){
+      updateModel(data);
       // A snapped node lands on the grid, NOT under the cursor — so (like an
       // edge bend) hold the scene still on a stable OTHER node instead of
       // drop-anchoring to the release point. Record it before the re-render.
@@ -493,7 +500,7 @@ async function opCommit(op,t){
     const data=await r.json();
     if(typeof data.yaml==='string'){ srcEl.value=data.yaml; setDirty(srcEl.value!==ORIGINAL);
       try{localStorage.setItem(DRAFTKEY,srcEl.value);}catch(_){} }
-    if(data.svg){ zoomer.innerHTML=data.svg; buildMap(); paint(pinnedRange()); wireHover(); wireDrag(); adaptStage(); markRendered(); }
+    if(data.svg){ updateModel(data); zoomer.innerHTML=data.svg; buildMap(); paint(pinnedRange()); wireHover(); wireDrag(); adaptStage(); markRendered(); }
     showIssues(data.issues||[]);
   }catch(_){}
 }
@@ -763,7 +770,7 @@ async function applyDetail(){
     const data=await r.json();
     if(typeof data.yaml==='string'){ srcEl.value=data.yaml; setDirty(srcEl.value!==ORIGINAL);
       try{localStorage.setItem(DRAFTKEY,srcEl.value);}catch(_){} }
-    if(data.svg){ zoomer.innerHTML=data.svg; buildMap(); paint(pinnedRange()); wireHover(); wireDrag(); adaptStage(); markRendered(); }
+    if(data.svg){ updateModel(data); zoomer.innerHTML=data.svg; buildMap(); paint(pinnedRange()); wireHover(); wireDrag(); adaptStage(); markRendered(); }
     showIssues(data.issues||[]);
     closeDetail();
   }catch(_){}
@@ -904,22 +911,45 @@ window.addEventListener('mouseup',e=>{
   }
 });
 
-// containerUnder returns the id of the innermost container (group/lane) slab
-// whose on-screen box contains (cx,cy), excluding the dragged node, or null
-// (→ scene root). Used to re-home a dragged node into / out of a group.
+// containerUnder returns the id of the container that the dragged node
+// (exceptId) should be re-homed into, or null (→ scene root).
+//
+// When the server has provided a world-space interaction model we use
+// footprint-overlap area (same coordinate space the server uses for layout),
+// which works even when the target container is smaller than the dragged node
+// or visually occluded by it. The cursor position (cx, cy) is no longer
+// needed for the decision — it is kept as a parameter so existing callers
+// don't break.
+//
+// Fallback (interactionModel === null, e.g. a d2 file or stale server):
+// the original pixel hit-test via elementsFromPoint.
 function containerUnder(cx, cy, exceptId){
-  // Hit-test the ACTUAL painted geometry (iso slabs are rhombi — their
-  // axis-aligned boxes overlap heavily, so a bbox test highlights the wrong
-  // lane). Walk the paint stack at the cursor: the first container slab whose
-  // pixels are under the cursor (skipping the dragged node + leaf nodes that
-  // sit on top of a slab) is the drop target.
+  if(interactionModel){
+    // Find the dragged node's AABB in the model.
+    const drag=interactionModel.find(p=>p.id===exceptId);
+    if(drag && drag.w>0 && drag.d>0){
+      const dragArea=drag.w*drag.d;
+      let bestId=null, bestOv=0;
+      for(const pm of interactionModel){
+        if(!pm.container || pm.id===exceptId) continue;
+        const ox=Math.min(drag.x+drag.w, pm.x+pm.w)-Math.max(drag.x, pm.x);
+        const oy=Math.min(drag.y+drag.d, pm.y+pm.d)-Math.max(drag.y, pm.y);
+        if(ox<=0||oy<=0) continue;
+        const ov=ox*oy;
+        // Require at least 5% overlap of the dragged node's area to qualify,
+        // preventing accidental re-homes when a node merely grazes an edge.
+        if(ov/dragArea>=0.05 && ov>bestOv){ bestOv=ov; bestId=pm.id; }
+      }
+      return bestId;
+    }
+  }
+  // Pixel fallback: walk the paint stack at the cursor.
   for(const el of document.elementsFromPoint(cx, cy)){
     const g=el.closest && el.closest('g[data-part-id]');
     if(!g) continue;
     const id=g.getAttribute('data-part-id').replace(/~\d+$/,'');
-    if(id===exceptId) continue;        // the node being dragged
-    if(isContainerId(id)) return id;   // a group slab under the cursor → target
-    // a leaf node on top of a slab: keep descending to the slab behind it
+    if(id===exceptId) continue;
+    if(isContainerId(id)) return id;
   }
   return null;
 }
@@ -931,7 +961,7 @@ async function reparentNode(id, target){
     if(!r.ok){ redoStack=[]; undoStack.pop(); return; }   // 422 (e.g. into own child) → drop the no-op undo entry
     const data=await r.json();
     if(typeof data.yaml==='string'){ srcEl.value=data.yaml; setDirty(srcEl.value!==ORIGINAL); try{localStorage.setItem(DRAFTKEY,srcEl.value);}catch(_){} }
-    if(data.svg){ zoomer.innerHTML=data.svg; buildMap(); paint(pinnedRange()); wireHover(); wireDrag(); adaptStage(); markRendered(); }
+    if(data.svg){ updateModel(data); zoomer.innerHTML=data.svg; buildMap(); paint(pinnedRange()); wireHover(); wireDrag(); adaptStage(); markRendered(); }
   }catch(_){ undoStack.pop(); }
 }
 
@@ -1116,6 +1146,7 @@ async function rerender(){
     const data=await r.json();
     showIssues(data.issues||[]);
     if(data.svg){
+      updateModel(data);
       zoomer.innerHTML=data.svg;
       buildMap(); paint(pinnedRange()); wireHover(); wireDrag(); adaptStage();
       staleEl.hidden=true;

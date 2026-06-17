@@ -503,10 +503,15 @@ func serveFile(in string) error {
 		port = "8731"
 	}
 
-	render := func(lang string, data []byte, projection string) (string, []isotopo.Issue, error) {
+	type renderResult struct {
+		svg    string
+		model  []isotopo.PartModel
+		issues []isotopo.Issue
+	}
+	render := func(lang string, data []byte, projection string) (renderResult, error) {
 		doc, err := loadDocument(lang, data)
 		if err != nil {
-			return "", []isotopo.Issue{{Severity: isotopo.SeverityError, Path: "$", Message: err.Error()}}, nil
+			return renderResult{issues: []isotopo.Issue{{Severity: isotopo.SeverityError, Path: "$", Message: err.Error()}}}, nil
 		}
 		// Studio view switch: an iso/top override for THIS render only, never
 		// written back to the document the editor holds (a pure preview).
@@ -522,20 +527,22 @@ func serveFile(in string) error {
 		}
 		for _, i := range issues {
 			if i.Severity == isotopo.SeverityError {
-				return "", issues, nil
+				return renderResult{issues: issues}, nil
 			}
 		}
 		svg := renderTopologySVG(doc)
 		if svg == "" {
-			// BUG3 (cross-test suite): a doc with zero nodes parses and
-			// validates clean, then renders nothing — the page showed the
-			// stale badge with an EMPTY issues panel. Say why instead.
 			issues = append(issues, isotopo.Issue{
 				Severity: isotopo.SeverityError, Path: "$",
 				Message: "document renders no scene — it has no nodes (or the scene resolves empty)",
 			})
+			return renderResult{issues: issues}, nil
 		}
-		return svg, issues, nil
+		// Build the interaction model (world-space AABBs + anchors) so Studio
+		// can do reparent hit-testing and anchor display without touching the SVG
+		// DOM. Only included when the document has a composite scene (iso/top).
+		model := isotopo.BuildInteractionModel(doc)
+		return renderResult{svg: svg, model: model, issues: issues}, nil
 	}
 
 	mux := http.NewServeMux()
@@ -552,13 +559,13 @@ func serveFile(in string) error {
 		if lang == "" {
 			lang = sourceLang
 		}
-		svg, issues, err := render(lang, body, r.URL.Query().Get("projection"))
+		res, err := render(lang, body, r.URL.Query().Get("projection"))
 		if err != nil {
 			http.Error(w, err.Error(), 500)
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]any{"svg": svg, "issues": issues})
+		json.NewEncoder(w).Encode(map[string]any{"svg": res.svg, "issues": res.issues, "model": res.model})
 	})
 	// v4.4 — drag-to-edit: the editor copy + a move op come in, the
 	// server text-edits the YAML (preserving comments/formatting), then
@@ -597,9 +604,9 @@ func serveFile(in string) error {
 			http.Error(w, oerr.Error(), 422)
 			return
 		}
-		svg, issues, _ := render(lang, out, r.URL.Query().Get("projection"))
+		res, _ := render(lang, out, r.URL.Query().Get("projection"))
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]any{"yaml": string(out), "svg": svg, "issues": issues})
+		json.NewEncoder(w).Encode(map[string]any{"yaml": string(out), "svg": res.svg, "issues": res.issues, "model": res.model})
 	})
 	// v4.7 — detail editor. /api/fields returns the scalar fields actually
 	// present in a node/edge's YAML, each with a semantic label, for the
@@ -648,9 +655,9 @@ func serveFile(in string) error {
 			return
 		}
 		out := string(outB)
-		svg, issues, _ := render(lang, outB, r.URL.Query().Get("projection"))
+		res, _ := render(lang, outB, r.URL.Query().Get("projection"))
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]any{"yaml": out, "svg": svg, "issues": issues})
+		json.NewEncoder(w).Encode(map[string]any{"yaml": out, "svg": res.svg, "issues": res.issues, "model": res.model})
 	})
 	// v4.8 — structural ops: delete a node (+its connectors) or edge, or
 	// duplicate a node. Comment-preserving text surgery on the posted source.
@@ -688,9 +695,9 @@ func serveFile(in string) error {
 			return
 		}
 		out := string(outB)
-		svg, issues, _ := render(lang, outB, r.URL.Query().Get("projection"))
+		res, _ := render(lang, outB, r.URL.Query().Get("projection"))
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]any{"yaml": out, "svg": svg, "issues": issues})
+		json.NewEncoder(w).Encode(map[string]any{"yaml": out, "svg": res.svg, "issues": res.issues, "model": res.model})
 	})
 	// The per-part gallery the footer links to. The render command writes
 	// these as files; serve answers them on the fly from the CURRENT file
@@ -758,7 +765,7 @@ func serveFile(in string) error {
 			http.Error(w, err.Error(), 500)
 			return
 		}
-		svg, _, _ := render(sourceLang, data, "")
+		res, _ := render(sourceLang, data, ""); svg := res.svg
 		w.Header().Set("Content-Type", "image/svg+xml")
 		w.Write([]byte(svg))
 	})
@@ -772,7 +779,7 @@ func serveFile(in string) error {
 			http.Error(w, err.Error(), 500)
 			return
 		}
-		svg, _, _ := render(sourceLang, data, "")
+		res, _ := render(sourceLang, data, ""); svg := res.svg
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		// Never let the browser serve a stale Studio page — the template
 		// changes between builds and a cached copy would run old JS (the
