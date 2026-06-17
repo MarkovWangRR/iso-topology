@@ -101,6 +101,14 @@ blue `#60A5FA/#3B82F6/#2563EB` · green `#4ADE80/#22C55E/#16A34A` ·
 purple `#C084FC/#A855F7/#9333EA` · orange `#FDBA74/#FB923C/#EA580C` ·
 amber `#FCD34D/#F59E0B/#D97706` · teal `#5EEAD4/#14B8A6/#0D9488`.
 
+**Contrast is non-negotiable: the TOP-FACE FILL must never be close in
+lightness to the top-face TEXT + ICON colour** — the caption and glyph sit on
+the top face, and a label that matches its background is invisible. Rule of
+thumb: a light top (`#FFFFFF`, pastel) takes dark ink (`style.text.color` ~
+`#1B2230`, icon untinted/dark); a dark/saturated top takes light ink (text
+`#F1F5F9`, `icon: "iso://…/light"`). Aim for a clear lightness gap, not a subtle
+one. When in doubt, white-or-pastel top + dark ink, or deep top + white ink.
+
 ## 3 · Design FIRST, then build
 
 Decide these BEFORE writing any DSL — they are what separate "senior architect"
@@ -119,9 +127,13 @@ from "auto-layout dump":
    sizes to fit). `boundary` is the same but renders as a dashed outline-only
    region (VPC / trust zone). (This is a real container — see the pitfall in §6
    about NOT faking it with a bare rectangle.)
-4. **Keep connectors simple.** When several nodes in a group talk to the
-   outside, route ONE representative/entry node out, not a wire per node — fewer
-   lines, far more readable. Express intra-group detail with intra-group edges.
+4. **Keep connectors simple — wire at the group level.** When several nodes in
+   a group talk to the outside, route ONE representative/entry node out, not a
+   wire per node. And the same on the RECEIVING end: **an edge bound for a group
+   should land on that group (its representative/entry node), not dive into a
+   specific deep child** — inter-module links read as module→module, with
+   intra-group detail expressed by intra-group edges. Fewer, higher-level wires
+   = far more readable.
 5. **Aim for a near-square canvas.** Architecture diagrams should not be long
    bars. Plan the module layout as a roughly square grid, not one long row.
 
@@ -176,8 +188,13 @@ isotopo render  scene.yaml ./out
   with nested `parts:` + `layout` — it arranges and auto-wraps its children. A
   big rectangle placed `behind:` others does NOT contain or move them and won't
   resize. (`boundary` = dashed-outline container, same nesting.)
-- **Fanning every node in a group out to the outside.** Route ONE representative
-  node out (§3.4); the rest stay internal. Wire-per-node is the #1 ugliness.
+- **A top-face fill too close to its label/icon colour** → the caption/glyph
+  vanish into the background. Keep a clear lightness gap (light top → dark ink,
+  dark top → light ink / `…/light` icon). See §2.
+- **Fanning every node in a group out** — or aiming an incoming edge at a deep
+  child instead of the group. Wire group→group through representative/entry
+  nodes (§3.4); intra-group detail stays inside. Wire-per-node is the #1
+  ugliness.
 - **More than 3 hues**, or a new hue per node. Same role → same hue, shades for
   sub-tiers, one accent for the hero.
 - **Inventing an icon glyph name** (or expecting a `custom:`/web-search icon
