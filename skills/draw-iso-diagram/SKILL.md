@@ -182,6 +182,9 @@ isotopo render  scene.yaml ./out
   screenshot and check: nothing clipped, labels legible, one hero, on-grid
   connectors. Cap at ~3 renders per round — don't spin.
 
+Once it's clean, finish with the delivery handoff in §8 — don't stop at a silent
+file write.
+
 ## 6 · Pitfalls — the things that actually go wrong
 
 - **Faking a group with a bare rectangle.** To group nodes, use a real `group`
@@ -218,15 +221,39 @@ the request has zero specifics ("make something cool"), ask ONE clarifying
 question with 2–3 complete, directly-actionable options; otherwise infer
 sensibly and proceed.
 
-## Hand off for visual tweaks
+## 8 · Deliver & hand off — ALWAYS do this last
 
-When the human wants to nudge by eye: `isotopo serve scene.yaml` →
-http://localhost:8731 — a browser workbench (drag to lay out, drag a node onto a
-group to re-home it, right-click to restyle, undo/redo, export SVG/PNG). Edits
-live in an in-browser copy (the file is never written), so taking changes back is
-explicit (`↓ YAML`). You can't drive Studio yourself; surfacing it lets the
-human do pixel work faster than round-tripping through you. Guide:
-`docs/guides/studio.md`.
+A render isn't done until you've told the human, in plain language, what was
+produced and how to take it further. Never end with a silent file write. Close
+every diagram with:
+
+**a) Name the artifacts** (give the actual paths from your `render`/`evaluate`):
+- `out/topology.svg` — the diagram (commit / embed this).
+- `out/topology.html` — the diagram next to its editable source.
+- `out/topology.<yaml|d2>` — the source copy.
+- `out/nodes/` — a per-element gallery (`_index.html` + `<id>.svg/.html/.yaml`).
+- `out/plan.svg` — if you ran `evaluate <in> out`, the flat layout with any
+  crossings/overlaps marked.
+
+**b) Open the live preview for the human.** Start Studio (it's a long-running
+server — launch it in the background) and give them the URL:
+
+```bash
+isotopo serve scene.yaml      # → http://localhost:8731  (leave it running)
+```
+
+**c) Spell out the human-in-the-loop options** (this is where a person beats
+round-tripping through you): in Studio they can **drag nodes to reposition**,
+**drag a node onto a group to move it in / onto the canvas to move it out**
+(the target group highlights), **right-click to restyle / edit details**,
+**toggle ◳ Iso / ◰ Plan**, **undo/redo**, and **export ↓ SVG / ↓ PNG / ↓ YAML**.
+Studio edits live in an in-browser copy (the file on disk is never written), so
+to keep changes they use **↓ YAML**. You can't drive Studio yourself — surfacing
+it is the handoff. Guide: `docs/guides/studio.md`.
+
+Speak in product terms ("your diagram's at out/topology.svg; I've opened the
+live editor at localhost:8731 — drag things around or restyle there, and hit
+Download YAML to keep edits"), not engine internals.
 
 ## Minimal scene template
 
