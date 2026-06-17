@@ -44,11 +44,19 @@ canvas:
   grid: iso               # iso | dots | hatch | solid | none
   gridColor: "#E2E6EE"    # pattern stroke / dot color
   gridStep: 40            # tile size in world units (default 40)
+  projection: iso         # iso (default) | top
 ```
 
 `grid: iso` draws a dashed-diamond ground plane that aligns with the
 iso projection — gives the scene a sense of place. Skip the field
 entirely to get a transparent background.
+
+`projection: top` renders a flat **top-down plan view** instead of the
+2.5D isometric one — each part as its footprint rectangle with
+orthogonal connectors, height dropped. Use it to read the layout/flow as
+a normal 2D diagram. Default (`iso`, or omitting the key) is unchanged.
+The CLI `--projection` flag and the Studio view toggle override it
+per-render without touching the source.
 
 `gridStep` doubles as the **cell** unit used by `layout`/`place`
 gaps, so arranged parts and orthogonal connectors land exactly on

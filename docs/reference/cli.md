@@ -9,19 +9,22 @@ rendering pipeline.
 ### `isotopo render` — produce SVG + embed assets
 
 ```
-isotopo render [--layout dagre|elk] <input> <output-dir>
+isotopo render [--layout dagre|elk] [--projection iso|top] <input> <output-dir>
 ```
 
 | Argument | Meaning |
 |---|---|
 | `--layout dagre` | default; natural-bend polyline edges |
 | `--layout elk` | orthogonal right-angle edges with obstacle avoidance |
+| `--projection iso` | default; 2.5D isometric view |
+| `--projection top` | flat top-down **plan view** — footprints + orthogonal edges, height dropped (good for reading the layout/flow). Overrides `canvas.projection`. |
 | `<input>` | path to `.yaml`, `.json`, or `.d2` (or `-` for stdin) |
 | `<output-dir>` | directory to write `topology.{svg,html,…}` and `nodes/<id>.{svg,html,yaml}` |
 
 The `--layout` flag is consulted only for `.d2` input (YAML/JSON
-already encode placement). Output structure is documented in
-[OUTPUTS.md](../reference/output-layout.md).
+already encode placement). The projection can also be set per-document
+with `canvas.projection` (see [DSL/YAML](dsl-yaml.md)). Output structure
+is documented in [OUTPUTS.md](../reference/output-layout.md).
 
 Examples:
 
@@ -107,6 +110,46 @@ if [ "$?" = "3" ]; then
 fi
 isotopo render scene.yaml ./out
 ```
+
+### `isotopo evaluate` — score the auto-layout connection quality
+
+```bash
+isotopo evaluate <input> [output-dir]
+```
+
+Measures how reasonable the layout's wiring is, from the flat top-down
+geometry (true world x,y — the iso projection skews distance/angle, so
+crossings and lengths can't be measured there). Prints a JSON scorecard
+to stdout; with an `output-dir`, also writes `plan.svg` with problems
+marked in **red**.
+
+The report has two halves — `plan` (the plan view's preview router) and
+`iso` (the **engine's real routes**, parsed from the rendered SVG) — so
+you can see both the achievable and the actual quality:
+
+| Metric | Meaning (lower is better) |
+|---|---|
+| `crossings` | edge–edge crossings between non-adjacent edges |
+| `edges_through_nodes` | edges tunnelling an unrelated node footprint |
+| `backward_edges` | edges running against the dominant flow |
+| `node_overlaps` | overlapping node footprints |
+| `total_bends` / `total_edge_len` / `max_edge_len` | route complexity |
+| `flow_axis` | inferred dominant flow (`vertical`\|`horizontal`\|`none`) |
+
+z-stacked scenes are handled: a part on another z-floor, a shared
+substrate both endpoints sit on, or a flat decoration (`h ≤ 2`) is not
+counted as an obstacle.
+
+```bash
+# scorecard only
+isotopo evaluate scene.yaml | jq '.iso'
+
+# scorecard + annotated plan.svg with crossings/tunnelling in red
+isotopo evaluate scene.yaml ./out
+```
+
+Library equivalents: `EvaluatePlan` / `EvaluateIso` / `RenderPlanAnnotated`
+(see [API reference](api.md)).
 
 ## `isotopo serve` — the Studio
 

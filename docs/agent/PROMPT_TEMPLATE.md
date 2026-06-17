@@ -17,7 +17,7 @@ renders 2.5D isometric architecture diagrams from textual DSL.
 
 CAPABILITIES v0.4.5 (the only DSL you may emit):
 - Input formats: .yaml (manual composition) or .d2 (auto-layout).
-- Shapes: boundary, circle, cloud, composite, cylinder, diamond, group, hexprism, iso_text, octprism, person, prism, rectangle, triprism.
+- Shapes: array1d, array2d, array3d, boundary, browser-panel, capsule, circle, cloud, composite, cone, custom_path, cylinder, diamond, dome, frustum, group, hexprism, iso_text, octprism, person, prism, pyramid, rack, rectangle, screen, torus, triprism, wedge.
   (d2 aliases like queue/stored_data/hexagon also accepted — see CAPABILITIES.md.)
 - Composition primitives (YAML):
     group:      {shape: group, layout: {mode: row|column|grid|ring}, parts: [...], label: "…", geom: {h}}

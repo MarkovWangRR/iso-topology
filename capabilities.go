@@ -226,6 +226,7 @@ func buildPrimitiveCaps() []PrimitiveCap {
 				"gridColor":  "pattern stroke / dot color",
 				"gridStep":   "tile size in world units (default 40)",
 				"padding":    "v3.1 — uniform breathing margin in px around the final composition; use 40-80 for sparse hero shots",
+				"projection": "v0.8 — iso (default) | top. top renders a flat top-down plan view (footprints + orthogonal edges, height dropped) for reading the layout/flow",
 			},
 		},
 		{

@@ -87,9 +87,15 @@ Right-click an element for a context menu:
 
 - **node** → Edit details · Duplicate (clone with a fresh id) · Delete
   (also removes its connectors and frees any sibling `place:`d against it)
+- **container** (a group/lane with nested parts) → Edit details only.
+  Duplicate/Delete are hidden: cloning would collide the children's ids,
+  and deleting would wipe the whole lane. Edit those in the YAML pane.
 - **edge** → Edit details · Delete
 - **empty canvas** → ＋ Add node (a default rectangle) · Edit details
   (the canvas background/grid)
+
+The same guards hold server-side (`ApplyOp` refuses a container
+duplicate/delete), so embedders get them too.
 
 ## Edit details
 
@@ -151,6 +157,7 @@ pattern**, **Grid color**, **Grid step**, **Padding** (it creates the
 | **Canvas** | Scroll to zoom, drag to pan, double-click resets, `⌘0` fits. The backdrop tints itself after `canvas.background`. Zoom controls bottom-right. |
 | **Editor** | Syntax-highlighted YAML over a line-number gutter. Tab indents. Drag-resizable splitter (remembers its width). |
 | **Render** | `Auto` re-renders (debounced) as you type; `⌘↵` forces it. A failed edit keeps the last good render with a "showing last good render" badge — the canvas never goes blank. |
+| **View toggle** | **◳ Iso / ◰ Plan** — flip between the 2.5D isometric view and a flat top-down **plan view** (footprints + orthogonal edges) to read the layout/flow. Preview-only: it sends `?projection=top` on the render round-trip and never rewrites your source. (Persist it with `canvas.projection: top`.) |
 | **Status** | One indicator, top-right: `Rendered HH:MM:SS` (green) stamps the last successful render so you can see how current the canvas is; `Render failed` (red) when the source has errors; `Offline` when the renderer is unreachable (re-checked every 5 s, so it re-enables itself when `isotopo serve` is back). |
 | **Issues** | Validation problems under the editor with did-you-mean suggestions. Click one to jump to (and flash) the line. |
 | **Export** | `↓ SVG` / `↓ PNG` (2×) / `↓ YAML` — capture exactly what the canvas shows (unsaved edits included). |

@@ -13,16 +13,28 @@ description matches your task, imitate its structure, then check
 
 | Fixture | Demonstrates |
 |---|---|
+| [`array2d`](../../samples/node/array2d/input.yaml) | (no header comment) |
+| [`array3d`](../../samples/node/array3d/input.yaml) | (no header comment) |
+| [`capsule`](../../samples/node/capsule/input.yaml) | (no header comment) |
 | [`circle`](../../samples/node/circle/input.yaml) | circle — the iso sphere: one ball with equator shading and a top label. |
 | [`cloud`](../../samples/node/cloud/input.yaml) | cloud — free-form rounded outline for external systems; no per-face palette. |
 | [`composite`](../../samples/node/composite/input.yaml) | composite — a stat card built from three primitives sharing one bbox. |
+| [`cone`](../../samples/node/cone/input.yaml) | (no header comment) |
+| [`custom-path`](../../samples/node/custom-path/input.yaml) | (no header comment) |
 | [`cylinder`](../../samples/node/cylinder/input.yaml) | cylinder — the database/queue primitive: elliptical top, curved side wall. |
+| [`dome`](../../samples/node/dome/input.yaml) | (no header comment) |
+| [`effect-pipeline`](../../samples/node/effect-pipeline/input.yaml) | (no header comment) |
 | [`faces-demo`](../../samples/node/faces-demo/input.yaml) | (no header comment) |
+| [`frustum`](../../samples/node/frustum/input.yaml) | (no header comment) |
 | [`group`](../../samples/node/group/input.yaml) | group — a low-extrusion translucent substrate that wraps nested parts. |
 | [`hexprism`](../../samples/node/hexprism/input.yaml) | (no header comment) |
 | [`iso-text`](../../samples/node/iso-text/input.yaml) | iso_text — flat text panel (near-zero extrusion); good for titles and captions. |
 | [`person`](../../samples/node/person/input.yaml) | person — human actor: sphere head tangent to a hemispherical dome body. |
+| [`pyramid`](../../samples/node/pyramid/input.yaml) | (no header comment) |
+| [`rack`](../../samples/node/rack/input.yaml) | (no header comment) |
 | [`rectangle`](../../samples/node/rectangle/input.yaml) | rectangle — the bread-and-butter iso box: three faces, top label, extrusion h. |
+| [`screen`](../../samples/node/screen/input.yaml) | (no header comment) |
+| [`wedge`](../../samples/node/wedge/input.yaml) | (no header comment) |
 
 ## samples/topology
 

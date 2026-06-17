@@ -114,8 +114,8 @@ _ = svg; _ = issues; _ = err
 | `move` | `Target` (`node`\|`edge`), `ID`/`CI`, `DWX`,`DWY`, `Snap`, `Waypoints` | nudge a node offset, or move an edge (waypoints / bend). First move on an auto-layout scene freezes it to explicit coordinates. |
 | `set-field` | `Target` (`node`\|`edge`\|`canvas`), `ID`/`CI`, `Fields` (dotted path → value) | write any DSL field, e.g. `{"style.palette.top": "#FFF"}` |
 | `add` | — | append a default rectangle to the scene |
-| `delete` | `Target`, `ID`/`CI` | remove a node (and its connectors) or an edge |
-| `duplicate` | `Target: node`, `ID` | clone a node with a fresh id, offset down-right |
+| `delete` | `Target`, `ID`/`CI` | remove a node (and its connectors) or an edge. Refused for a **container** (group/lane) — empty it first |
+| `duplicate` | `Target: node`, `ID` | clone a node with a fresh id, offset down-right. Refused for a **container** (cloning would collide its nested ids) |
 
 ```go
 // Apply only the text transform (e.g. you render separately, or with ELK):
@@ -147,8 +147,10 @@ isotopo.UnknownKeyIssues(data []byte) []Issue        // misspelled/unknown DSL k
 // 4. Render
 isotopo.Render(n *Node, theme *Theme) string                          // single node, no canvas
 isotopo.RenderWithCanvas(n, theme, canvas, anns) string                // scene with backdrop + callouts
+                                                                       //   (canvas.Projection == "top" → flat plan view)
 isotopo.RenderDocument(doc *Document) map[string]string                // every node → SVG
 isotopo.RenderParts(doc *Document) map[string]string                   // atomic per-part SVGs
+isotopo.RenderPlan(n, theme, canvas, anns) string                      // flat top-down plan view directly
 ```
 
 One-shot render + the stateless edit contract (the embedding surface):
@@ -157,6 +159,17 @@ One-shot render + the stateless edit contract (the embedding surface):
 isotopo.RenderSource(format string, src []byte) (svg string, issues []Issue, err error)
 isotopo.ApplyOp(format string, src []byte, op EditOp) (newSrc []byte, svg string, issues []Issue, err error)
 isotopo.ApplyOpText(format string, src []byte, op EditOp) (newSrc []byte, err error)
+```
+
+Layout evaluation — score the connection quality from the flat geometry
+(see [`isotopo evaluate`](cli.md)):
+
+```go
+isotopo.EvaluatePlan(n, theme, canvas) *PlanReport          // plan-router routes
+isotopo.EvaluateIso(n, theme, canvas) *PlanReport           // the engine's REAL routes
+isotopo.EvaluatePlanText(format string, src []byte) (*PlanReport, error)
+isotopo.EvaluateIsoText(format string, src []byte) (*PlanReport, error)
+isotopo.RenderPlanAnnotated(n, theme, canvas) (svg string, report *PlanReport)  // plan view + red problem marks
 ```
 
 Auxiliary:
@@ -196,10 +209,11 @@ isotopo.CapabilityReport() Capabilities
 | `Stack` | replicate a part N times vertically |
 | `Connector` | directed line between parts |
 | `Annotation` | screen-space callout with a leader line |
-| `Canvas` | document-level backdrop (`background`, `grid`, `gridColor`, `gridStep`) |
+| `Canvas` | document-level backdrop (`background`, `grid`, `gridColor`, `gridStep`, `projection`) |
 | `Theme` | document-level default Style with optional per-shape overrides |
 | `Style` | `{palette, stroke, text, effects}` — see [Style/Theme](dsl-theme.md) |
 | `Issue` | a validation finding: `{Severity, Path, Message, Suggest}` |
+| `PlanReport` | layout-quality scorecard from `EvaluatePlan`/`EvaluateIso` (crossings, edges-through-nodes, backward edges, bends, length, flow axis) |
 | `LayoutEngine` | `LayoutDagre` (default) or `LayoutELK` |
 
 ### Sub-package: `yamledit`

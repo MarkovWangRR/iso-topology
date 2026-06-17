@@ -28,20 +28,34 @@ override per-part via `geom.h`.
 
 | Iso shape | Accepted aliases | Height hint | Notes |
 |---|---|---|---|
+| **array1d** | `array1d` | 1.0 | v3.11 — linear row of N identical cells. params: countX (default 3), gap (default 6). Semantic: pipeline stages, replica group. |
+| **array2d** | `array2d` | 1.0 | v3.11 — N×M grid of cells on the ground plane. params: countX, countY (default 3×3), gap. Semantic: shard matrix, node pool, partition table. |
+| **array3d** | `array3d` | 1.0 | v3.11 — N×M×K volumetric grid. params: countX, countY, countZ (default 3×3×3), gap. Semantic: GPU cluster, tensor, embedding matrix. |
 | **boundary** | `boundary` | 1.0 | v3.5 — a group whose substrate is a dashed OUTLINE-ONLY flat region (VPC / subnet / trust zone). Same nesting/layout/autosize as group; style.stroke restyles the dashes |
+| **browser-panel** | `browser-panel` | 1.0 | v3.11 — alias for screen. Semantic: web frontend, browser window, dashboard. |
+| **capsule** | `capsule` | 1.1 | v3.6 — cylinder with rounded (hemispherical) end caps. Semantic: container pod, process instance, encapsulated service. |
 | **circle** | `circle`, `oval` | 1.0 |  |
 | **cloud** | `cloud` | 0.8 | free-form rounded outline; no per-face palette overrides |
 | **composite** | `composite` | 1.0 | container — holds parts: [] of CompositePart entries |
+| **cone** | `cone` | 0.8 | v3.5 — smooth circular cone (topScale=0, sides=32 default). geom.sides and geom.topScale override. Semantic: traffic convergence, load balancer, flow aggregation. |
+| **custom_path** | `custom_path` | 1.0 | v3.10 — arbitrary polygon base extruded vertically. Provide path: in geom.params (M/L/Z SVG commands). Semantic: any brand or domain-specific shape. |
 | **cylinder** | `cylinder`, `queue`, `stored-data`, `stored_data` | 1.0 |  |
-| **diamond** | `diamond` | 0.7 | v3.2 — 4-gon prism, base rotated 22.5 deg so the projection is a real lozenge with two shaded walls: decision / routing semantics |
+| **diamond** | `diamond`, `parallelogram` | 0.7 | v3.2 — 4-gon prism, base rotated 22.5 deg so the projection is a real lozenge with two shaded walls: decision / routing semantics |
+| **dome** | `dome` | 0.7 | v3.6 — hemispherical revolution body (quarter-circle profile). Semantic: security zone, protective enclosure, isolation region. |
+| **frustum** | `frustum` | 0.9 | v3.5 — truncated cone / frustum (topScale=0.5 default). Adjust with geom.topScale and geom.sides. Semantic: object storage bucket (S3/GCS), distribution funnel. |
 | **group** | `group` | 1.0 | v2 primitive — translucent labeled substrate wrapping nested parts |
 | **hexprism** | `hexagon` | 0.7 | v3.2 — 6-gon prism: API gateway / middleware semantics |
 | **iso_text** | `text` | 0.3 | flat text panel (low extrusion) |
 | **octprism** | `octprism` | 1.0 | v3.2 — 8-gon prism: firewall (stop-sign) semantics |
 | **person** | `c4-person`, `c4_person`, `person` | 1.2 |  |
 | **prism** | `prism` | 1.0 | v3.2 — regular n-gon base x vertical extrude; geom.sides picks the base (default 6). Side walls shade left/right palette by facing. Prisms take gradients/patterns/strokes via style.faces (v3.3) and backglow (v3.3.1); Full effects parity with the box family as of v3.4 (dropShadow, grain, backglow). Connectors anchor on the true polygon edge. |
-| **rectangle** | `callout`, `class`, `code`, `document`, `hierarchy`, `image`, `package`, `page`, `parallelogram`, `rectangle`, `sequence-diagram`, `sequence_diagram`, `sql-table`, `sql_table`, `square`, `step` | 1.0 |  |
+| **pyramid** | `pyramid` | 0.8 | v3.5 — square pyramid (topScale=0, sides=4). Any regular polygon apex via geom.sides. Semantic: data pyramid, layered architecture. |
+| **rack** | `rack` | 1.0 | v3.11 — server rack with slot shelves. params: slots (default 4). Semantic: physical server rack, blade chassis, equipment cabinet. |
+| **rectangle** | `callout`, `class`, `code`, `document`, `hierarchy`, `image`, `package`, `page`, `rectangle`, `sequence-diagram`, `sequence_diagram`, `sql-table`, `sql_table`, `square`, `step` | 1.0 |  |
+| **screen** | `screen` | 1.0 | v3.11 — upright thin panel; label and icon anchor on the front (right) face. Default geom: w=100 d=14 h=160. Semantic: mobile app, display, monitor. |
+| **torus** | `torus` | 1.0 | v3.6 — donut-shaped revolution body. Semantic: consistent-hashing ring, replication ring, circular cache topology. |
 | **triprism** | `triprism` | 1.0 | v3.2 — 3-gon prism: alert / one-way fan-out semantics |
+| **wedge** | `wedge` | 0.7 | v3.10 — sloped prism: back edge raised to full height, front edge at z=0. Semantic: ramp, data ingestion pipeline, traffic escalation. |
 
 ## Composition primitives
 
@@ -88,6 +102,7 @@ Paint an iso-aware backdrop under the scene. grid: iso draws a diamond rhombus l
 | `gridColor` | pattern stroke / dot color |
 | `gridStep` | tile size in world units (default 40) |
 | `padding` | v3.1 — uniform breathing margin in px around the final composition; use 40-80 for sparse hero shots |
+| `projection` | v0.8 — iso (default) | top. top renders a flat top-down plan view (footprints + orthogonal edges, height dropped) for reading the layout/flow |
 
 ### `annotation`
 
