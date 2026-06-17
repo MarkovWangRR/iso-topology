@@ -164,87 +164,52 @@ func RenderIsoCloud(o IsoBoxOpts) string {
 // recognisable variation; the trunk gives the silhouette body so the
 // cloud reads as "fluffy" rather than "pinched arc".
 func sampleCloudOutline(w, d float64) [][2]float64 {
-	out := [][2]float64{}
-
-	horizonY := 0.50 * d
-	bottomY := 0.85 * d
-	leftX := 0.04 * w
-	rightX := 0.96 * w
-	cornerR := 0.06 * d
-
-	// Bump layout: [leftX, rightX, peakY] in local frame. Bump 1 small,
-	// bump 2 big-and-tall, bump 3 small (matches reference cloud icon).
-	bumps := [3][3]float64{
-		{leftX, 0.26 * w, 0.32 * d},
-		{0.26 * w, 0.74 * w, 0.06 * d},
-		{0.74 * w, rightX, 0.24 * d},
+	// Organic cloud: the silhouette is the OUTER envelope of several overlapping
+	// lobes of VARYING radius, sampled radially from the centroid. Irregular
+	// lobe sizes/positions give natural billows; nothing is a straight or
+	// parallel edge (the old 3-uniform-bump-on-a-rectangular-trunk look read as
+	// mechanical). Lobes are authored in a unit frame, y-down (top = small y).
+	type lobe struct{ cx, cy, r float64 }
+	lobes := []lobe{
+		{0.17, 0.55, 0.16}, // left shoulder
+		{0.33, 0.42, 0.21}, // upper-left billow
+		{0.52, 0.35, 0.25}, // crown (tallest, off-centre → asymmetric)
+		{0.71, 0.44, 0.20}, // upper-right billow
+		{0.86, 0.55, 0.15}, // right shoulder
+		{0.40, 0.63, 0.21}, // lower-left belly
+		{0.63, 0.62, 0.21}, // lower-right belly
 	}
+	cx, cy := 0.52, 0.53
 
-	nPerBump := 16
-	for bi, b := range bumps {
-		bLeft, bRight, bPeak := b[0], b[1], b[2]
-		cx := (bLeft + bRight) / 2
-		rx := (bRight - bLeft) / 2
-		ry := horizonY - bPeak
-		startI := 0
-		if bi > 0 {
-			startI = 1
+	// The cloud is authored upright (billows up); the previous extrusion read
+	// the long axis the wrong way, so transpose the unit frame 90° before
+	// scaling — local x↔y — to set it upright in the iso projection.
+	pt := func(ux, uy float64) [2]float64 { return [2]float64{uy * w, ux * d} }
+
+	const N = 112
+	out := make([][2]float64, 0, N)
+	for i := 0; i < N; i++ {
+		ang := 2 * math.Pi * float64(i) / float64(N)
+		dx, dy := math.Cos(ang), math.Sin(ang)
+		best := 0.0
+		for _, lo := range lobes {
+			// farthest hit of ray centroid + t·dir with this lobe's circle
+			ox, oy := cx-lo.cx, cy-lo.cy
+			b := ox*dx + oy*dy
+			c := ox*ox + oy*oy - lo.r*lo.r
+			disc := b*b - c
+			if disc < 0 {
+				continue
+			}
+			if t := -b + math.Sqrt(disc); t > best {
+				best = t
+			}
 		}
-		for i := startI; i <= nPerBump; i++ {
-			t := float64(i) / float64(nPerBump)
-			angle := math.Pi - t*math.Pi
-			x := cx + rx*math.Cos(angle)
-			y := horizonY - ry*math.Sin(angle)
-			out = append(out, [2]float64{x, y})
+		if best <= 0 {
+			continue
 		}
+		out = append(out, pt(cx+best*dx, cy+best*dy))
 	}
-
-	// Right vertical edge of the trunk.
-	nSide := 6
-	for i := 1; i <= nSide; i++ {
-		t := float64(i) / float64(nSide)
-		y := horizonY + t*(bottomY-cornerR-horizonY)
-		out = append(out, [2]float64{rightX, y})
-	}
-
-	// Right-bottom rounded corner (quarter circle).
-	nCorner := 6
-	cxR := rightX - cornerR
-	cyR := bottomY - cornerR
-	for i := 1; i <= nCorner; i++ {
-		t := float64(i) / float64(nCorner)
-		angle := -t * math.Pi / 2
-		x := cxR + cornerR*math.Cos(angle)
-		y := cyR - cornerR*math.Sin(angle)
-		out = append(out, [2]float64{x, y})
-	}
-
-	// Flat bottom from right-corner-end to left-corner-start.
-	nBot := 16
-	for i := 1; i <= nBot; i++ {
-		t := float64(i) / float64(nBot)
-		x := (rightX - cornerR) + t*((leftX+cornerR)-(rightX-cornerR))
-		out = append(out, [2]float64{x, bottomY})
-	}
-
-	// Left-bottom rounded corner.
-	cxL := leftX + cornerR
-	cyL := bottomY - cornerR
-	for i := 1; i <= nCorner; i++ {
-		t := float64(i) / float64(nCorner)
-		angle := -math.Pi/2 - t*math.Pi/2
-		x := cxL + cornerR*math.Cos(angle)
-		y := cyL - cornerR*math.Sin(angle)
-		out = append(out, [2]float64{x, y})
-	}
-
-	// Left vertical edge.
-	for i := 1; i <= nSide; i++ {
-		t := float64(i) / float64(nSide)
-		y := (bottomY - cornerR) + t*(horizonY-(bottomY-cornerR))
-		out = append(out, [2]float64{leftX, y})
-	}
-
 	return out
 }
 
