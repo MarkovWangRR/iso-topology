@@ -116,6 +116,7 @@ _ = svg; _ = issues; _ = err
 | `add` | — | append a default rectangle to the scene |
 | `delete` | `Target`, `ID`/`CI` | remove a node (and its connectors) or an edge. Refused for a **container** (group/lane) — empty it first |
 | `duplicate` | `Target: node`, `ID` | clone a node with a fresh id, offset down-right. Refused for a **container** (cloning would collide its nested ids) |
+| `reparent` | `ID` (node), `Target` (group id, or `""` for the scene root) | move a node into another group / out to the root; its stale offset is dropped so the new parent lays it out. No-op when the parent is unchanged; refused into its own descendant |
 
 ```go
 // Apply only the text transform (e.g. you render separately, or with ELK):

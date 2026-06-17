@@ -114,6 +114,8 @@ func ApplyOpText(format string, src []byte, op EditOp) ([]byte, error) {
 		return applyDelete(format, src, op)
 	case "duplicate":
 		return applyDuplicate(format, src, op)
+	case "reparent":
+		return applyReparent(format, src, op)
 	default:
 		return src, fmt.Errorf("unknown op kind %q", op.Kind)
 	}
@@ -475,6 +477,78 @@ func applyDuplicate(format string, src []byte, op EditOp) ([]byte, error) {
 		return src, fmt.Errorf("duplicate: node %q not found", op.ID)
 	}
 	return []byte(out), nil
+}
+
+// applyReparent moves a node into another group (op.Target) or to the scene
+// root (op.Target == ""). It's the engine half of Studio's drag-into / drag-out
+// of a group: the part's stale offset is dropped so the new parent lays it out.
+func applyReparent(format string, src []byte, op EditOp) ([]byte, error) {
+	if doc, derr := LoadInput(context.Background(), format, src, LayoutDagre); derr == nil {
+		// No-op when the parent doesn't actually change, so an in-group drag
+		// (which also fires a reparent to the same group) keeps its offset.
+		if parentOf(doc, op.ID) == op.Target {
+			return src, nil
+		}
+		if op.Target != "" {
+			if !partIsContainer(findPart(doc, op.Target)) {
+				return src, fmt.Errorf("reparent: target %q is not a container", op.Target)
+			}
+			// A container can't be moved into its own subtree (it would orphan
+			// itself); refuse op.Target that lives inside op.ID.
+			if moving := findPart(doc, op.ID); partContains(moving, op.Target) {
+				return src, fmt.Errorf("reparent: cannot move %q into its own descendant %q", op.ID, op.Target)
+			}
+		}
+	}
+	out, ok := yamledit.MovePart(string(src), op.ID, op.Target)
+	if !ok {
+		return src, fmt.Errorf("reparent: could not move %q into %q", op.ID, op.Target)
+	}
+	return []byte(out), nil
+}
+
+// parentOf returns the id of the container holding the given part, or "" if it
+// sits at the scene root (or isn't found).
+func parentOf(doc *Document, id string) string {
+	if doc == nil {
+		return ""
+	}
+	var found string
+	var walk func(parentID string, ps []*CompositePart)
+	walk = func(parentID string, ps []*CompositePart) {
+		for _, p := range ps {
+			if p == nil || found != "" {
+				continue
+			}
+			if p.ID == id {
+				found = parentID
+				return
+			}
+			walk(p.ID, p.Parts)
+		}
+	}
+	for _, n := range doc.Nodes {
+		if n != nil {
+			walk("", n.Parts)
+		}
+	}
+	return found
+}
+
+// partContains reports whether want is p or anywhere in p's subtree.
+func partContains(p *CompositePart, want string) bool {
+	if p == nil {
+		return false
+	}
+	if p.ID == want {
+		return true
+	}
+	for _, c := range p.Parts {
+		if partContains(c, want) {
+			return true
+		}
+	}
+	return false
 }
 
 // targetLine resolves an op's edit target to the source line its block starts

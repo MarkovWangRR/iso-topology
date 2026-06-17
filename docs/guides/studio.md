@@ -97,6 +97,11 @@ Right-click an element for a context menu:
 The same guards hold server-side (`ApplyOp` refuses a container
 duplicate/delete), so embedders get them too.
 
+**Drag a node between groups.** Dropping a node onto a group's slab moves it
+INTO that group; dropping it on the bare canvas moves it OUT to the scene root.
+The re-home rewrites the DSL hierarchy and drops the node's old offset so the
+new parent lays it out — an in-group nudge (same parent) is unaffected.
+
 ## Edit details
 
 **Edit details** — double-click an element (or right-click → Edit
@@ -183,7 +188,7 @@ point `isotopo serve` at the source. Exports still work.
 | `POST /api/move?kind=node\|edge&…` | text-edit a node offset / edge waypoints in the posted source; returns `{"yaml","svg","issues"}` |
 | `POST /api/fields?kind=node\|edge\|canvas&…` | the detail-editor schema for an element, with current values |
 | `POST /api/edit?kind=…&f=<json>` | apply detail-editor changes to the posted source; returns `{"yaml","svg","issues"}` |
-| `POST /api/op?op=add\|delete\|duplicate&kind=node\|edge&…` | structural ops (add a node, delete a node+its connectors, duplicate a node); returns `{"yaml","svg","issues"}` |
+| `POST /api/op?op=add\|delete\|duplicate\|reparent&kind=node\|edge&…` | structural ops (add / delete / duplicate; `reparent&id=&target=` moves a node into a group or to root); returns `{"yaml","svg","issues"}` |
 | `GET /api/ping` | health |
 
 All write endpoints do comment-preserving text surgery on the YAML you

@@ -877,10 +877,44 @@ window.addEventListener('mouseup',e=>{
     // interior corners (drop the docked endpoints) become the waypoint list
     const interior=d.wp.slice(1,d.wp.length-1).map(w=>[Math.round(w.wx),Math.round(w.wy)]);
     commitMove('edge', d.ci, 0, 0, e.clientX, e.clientY, interior);
+  }else if(kind==='node'){
+    // Position first, then re-home: drop onto a group's slab joins it; drop on
+    // bare canvas returns it to the scene root. The server no-ops the reparent
+    // when the parent is unchanged, so an in-group nudge keeps its offset.
+    const target=containerUnder(e.clientX, e.clientY, d.id);
+    commitMove(kind, d.id, Math.round(wd[0]), Math.round(wd[1]), e.clientX, e.clientY)
+      .then(()=>reparentNode(d.id, target||''));
   }else{
-    commitMove(kind, kind==='node'?d.id:d.ci, Math.round(wd[0]), Math.round(wd[1]), e.clientX, e.clientY);
+    commitMove(kind, d.ci, Math.round(wd[0]), Math.round(wd[1]), e.clientX, e.clientY);
   }
 });
+
+// containerUnder returns the id of the innermost container (group/lane) slab
+// whose on-screen box contains (cx,cy), excluding the dragged node, or null
+// (→ scene root). Used to re-home a dragged node into / out of a group.
+function containerUnder(cx, cy, exceptId){
+  let best=null, bestArea=Infinity;
+  zoomer.querySelectorAll('g[data-part-id]').forEach(g=>{
+    const id=g.getAttribute('data-part-id').replace(/~\d+$/,'');
+    if(id===exceptId || !isContainerId(id)) return;
+    const r=g.getBoundingClientRect();
+    if(cx>=r.left && cx<=r.right && cy>=r.top && cy<=r.bottom && r.width*r.height<bestArea){
+      bestArea=r.width*r.height; best=id;
+    }
+  });
+  return best;
+}
+async function reparentNode(id, target){
+  if(!serverOK) return;
+  pushUndo();
+  try{
+    const r=await fetch('/api/op?op=reparent&id='+encodeURIComponent(id)+'&target='+encodeURIComponent(target)+'&format='+encodeURIComponent(LANG)+projQS(),{method:'POST',body:srcEl.value});
+    if(!r.ok){ redoStack=[]; undoStack.pop(); return; }   // 422 (e.g. into own child) → drop the no-op undo entry
+    const data=await r.json();
+    if(typeof data.yaml==='string'){ srcEl.value=data.yaml; setDirty(srcEl.value!==ORIGINAL); try{localStorage.setItem(DRAFTKEY,srcEl.value);}catch(_){} }
+    if(data.svg){ zoomer.innerHTML=data.svg; buildMap(); paint(pinnedRange()); wireHover(); wireDrag(); adaptStage(); markRendered(); }
+  }catch(_){ undoStack.pop(); }
+}
 
 /* reverse mapping: caret inside a part's block lights the node up */
 function caretSync(){

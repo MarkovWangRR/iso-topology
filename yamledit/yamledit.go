@@ -904,6 +904,112 @@ func AddPart(src string) (string, bool) {
 	return strings.Join(out, "\n"), true
 }
 
+// stripInlineOffset removes an inline `offset: { ... }` (and a dangling comma)
+// from a part's flow/line text, so a reparented node is positioned by its new
+// parent instead of a stale offset in the old frame.
+func stripInlineOffset(s string) string {
+	s = regexp.MustCompile(`offset:\s*\{[^}]*\}\s*,?\s*`).ReplaceAllString(s, "")
+	s = regexp.MustCompile(`,\s*offset:\s*\{[^}]*\}`).ReplaceAllString(s, "")
+	s = strings.ReplaceAll(s, "{ , ", "{ ")
+	s = strings.ReplaceAll(s, "{,", "{")
+	return s
+}
+
+// MovePart relocates a part's item block into another parent's parts: list,
+// re-indenting it and dropping its now-stale offset so the new parent places
+// it. targetParentID == "" moves the part to the SCENE-ROOT parts: block. It is
+// a no-op (false) when the part isn't found, the target group has no parts:
+// block to find/seed, or the move is degenerate (into itself).
+func MovePart(src, id, targetParentID string) (string, bool) {
+	if id == targetParentID {
+		return src, false
+	}
+	lines := strings.Split(src, "\n")
+	s, e, ok := findPartItemRange(src, id)
+	if !ok {
+		return src, false
+	}
+	item := stripInlineOffset(strings.Join(lines[s:e], "\n"))
+	srcIndent := indentOf(lines[s])
+
+	// Remove the item from its current location first.
+	without := append(append([]string{}, lines[:s]...), lines[e:]...)
+
+	// Find the destination parts: block and the indent its items sit at.
+	partsLine, partsIndent := -1, 0
+	if targetParentID == "" {
+		// scene root = the shallowest parts: key
+		re := regexp.MustCompile(`^( *)parts:\s*$`)
+		for i, l := range without {
+			if m := re.FindStringSubmatch(l); m != nil {
+				if partsLine < 0 || len(m[1]) < partsIndent {
+					partsLine, partsIndent = i, len(m[1])
+				}
+			}
+		}
+	} else {
+		// the target group's OWN nested parts: (first parts: after its id line,
+		// before the next line at ≤ the group's indent)
+		gLine := FindPartIDLine(strings.Join(without, "\n"), targetParentID)
+		if gLine < 0 {
+			return src, false
+		}
+		gIndent := indentOf(without[gLine])
+		reParts := regexp.MustCompile(`^( *)parts:\s*$`)
+		for i := gLine + 1; i < len(without); i++ {
+			if strings.TrimSpace(without[i]) == "" {
+				continue
+			}
+			if indentOf(without[i]) <= gIndent && !strings.HasPrefix(strings.TrimSpace(without[i]), "-") {
+				break // left the group block
+			}
+			if m := reParts.FindStringSubmatch(without[i]); m != nil && len(m[1]) > gIndent {
+				partsLine, partsIndent = i, len(m[1])
+				break
+			}
+		}
+		if partsLine < 0 {
+			// seed a parts: block right after the group's id line
+			partsIndent = gIndent + 2
+			header := strings.Repeat(" ", partsIndent) + "parts:"
+			without = append(without[:gLine+1], append([]string{header}, without[gLine+1:]...)...)
+			partsLine = gLine + 1
+		}
+	}
+	if partsLine < 0 {
+		return src, false
+	}
+
+	// Insert as the FIRST child, right after the parts: header — robust against
+	// the block's deeper nested items (scanning for "the last sibling" would be
+	// pulled into a grandchild's indent). Arrangement within parts: is order-
+	// independent; the new parent's layout places it.
+	itemIndent := partsIndent + 2
+	end := partsLine + 1
+
+	// Re-indent the extracted item lines by the indent delta.
+	delta := itemIndent - srcIndent
+	reindented := make([]string, 0)
+	for _, l := range strings.Split(item, "\n") {
+		if strings.TrimSpace(l) == "" {
+			reindented = append(reindented, l)
+			continue
+		}
+		if delta >= 0 {
+			reindented = append(reindented, strings.Repeat(" ", delta)+l)
+		} else {
+			trim := -delta
+			if trim > len(l)-len(strings.TrimLeft(l, " ")) {
+				trim = len(l) - len(strings.TrimLeft(l, " "))
+			}
+			reindented = append(reindented, l[trim:])
+		}
+	}
+
+	out := append(append(append([]string{}, without[:end]...), reindented...), without[end:]...)
+	return strings.Join(out, "\n"), true
+}
+
 // DuplicatePart clones a node's block under a fresh id, placed at (ox,oy).
 func DuplicatePart(src, id string, ox, oy float64) (string, bool) {
 	lines := strings.Split(src, "\n")

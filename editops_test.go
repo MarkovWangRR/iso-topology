@@ -280,6 +280,55 @@ func TestApplyOp_MoveLeavesClearEdgeStraight(t *testing.T) {
 	}
 }
 
+const nestFixture = `nodes:
+  scene:
+    shape: composite
+    parts:
+      - id: g
+        shape: group
+        label: G
+        parts:
+          - { id: x, shape: rectangle, geom: { w: 80, d: 80, h: 30 }, offset: { wx: 0, wy: 0 }, label: X }
+          - { id: y, shape: rectangle, geom: { w: 80, d: 80, h: 30 }, label: Y }
+`
+
+func TestApplyOp_ReparentOutAndBack(t *testing.T) {
+	// x out of g → scene root (sibling of g), then back into g.
+	toRoot, err := ApplyOpText("yaml", []byte(nestFixture), EditOp{Kind: "reparent", ID: "x", Target: ""})
+	if err != nil {
+		t.Fatalf("reparent to root: %v", err)
+	}
+	root := string(toRoot)
+	// x must now sit at the scene-parts indent (6 spaces), not g's child indent.
+	if !strings.Contains(root, "\n      - { id: x,") {
+		t.Fatalf("x should be a scene-root part after reparent:\n%s", root)
+	}
+	back, err := ApplyOpText("yaml", toRoot, EditOp{Kind: "reparent", ID: "x", Target: "g"})
+	if err != nil {
+		t.Fatalf("reparent back into g: %v", err)
+	}
+	if !strings.Contains(string(back), "\n          - { id: x,") {
+		t.Fatalf("x should be g's child again:\n%s", back)
+	}
+}
+
+func TestApplyOp_ReparentSameParentNoop(t *testing.T) {
+	out, err := ApplyOpText("yaml", []byte(nestFixture), EditOp{Kind: "reparent", ID: "x", Target: "g"})
+	if err != nil {
+		t.Fatalf("reparent: %v", err)
+	}
+	if string(out) != nestFixture {
+		t.Fatalf("reparent to the SAME parent must be a no-op; got:\n%s", out)
+	}
+}
+
+func TestApplyOp_ReparentRejectsIntoOwnChild(t *testing.T) {
+	// can't move g into its own child x.
+	if _, err := ApplyOpText("yaml", []byte(nestFixture), EditOp{Kind: "reparent", ID: "g", Target: "x"}); err == nil {
+		t.Fatal("expected reparent of a container into its own descendant to be refused")
+	}
+}
+
 func TestApplyOp_IconColorTint(t *testing.T) {
 	// set-field with the synthetic @iconColor must splice the tint into the icon
 	// ref suffix, headless — and preserve comments.
