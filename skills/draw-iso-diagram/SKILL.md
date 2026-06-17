@@ -5,121 +5,216 @@ description: Generate design-grade 2.5D isometric architecture diagrams from tex
 
 # Draw an isometric architecture diagram
 
-You are driving `isotopo`, a deterministic renderer that turns text
-DSL into 2.5D isometric SVG. You never compute coordinates — you
-declare relations and the solver does geometry.
+You are driving `isotopo`, a deterministic renderer that turns text DSL into
+2.5D isometric SVG. You are BOTH a designer (topology, colour, icons, captions)
+and a DSL engineer (you only emit grammar the engine recognises). You never
+compute coordinates — you declare *relations* and the solver does the geometry.
 
-## 0. Preflight
+Assume **zero prior knowledge**: the four steps below take you from "is this
+tool even installed?" to a committed, professional diagram. Do them in order.
+
+## 0 · Preflight — is the tool installed?
 
 ```bash
-isotopo capabilities >/dev/null 2>&1 || go install github.com/MarkovWangRR/iso-topology/cmd/isotopo@latest
+isotopo capabilities >/dev/null 2>&1 && echo "isotopo: ready"
 ```
 
-Read `isotopo capabilities` once per session — it is the complete,
-current inventory of shapes, primitives, and style keys you may emit.
+If that prints nothing / errors, install it, in this order of preference:
 
-## 1. Choose the input mode
+```bash
+# A) Go toolchain present → install the binary onto PATH
+go install github.com/MarkovWangRR/iso-topology/cmd/isotopo@latest   # adds to $(go env GOPATH)/bin
 
-- Plain box-and-arrow graph, no styling demands → write **`.d2`**
-  (`a -> b: label`, nested `{}` for containers) and let auto-layout
-  do everything.
-- Composed scene (hero element, boards, stairs, styled marketing
-  visual) → write **`.yaml`** and follow the rules below.
+# B) Inside a clone of the repo, no install needed → prefix every command with:
+go run ./cmd/isotopo <args>
 
-## 2. Find a scene to imitate
+# C) No Go at all → tell the user; they need Go ≥1.21 (https://go.dev/dl) or a
+#    prebuilt binary from the repo's Releases. Don't fake a render.
+```
 
-Pick the fixture whose description best matches the task from
-[docs/agent/SAMPLES.md](https://raw.githubusercontent.com/MarkovWangRR/iso-topology/main/docs/agent/SAMPLES.md)
-and mirror its structure. The gallery scenes (`ai-platform`,
-`llm-serving`, `rag-pipeline`, `training-compute`) are the quality
-bar and are all coordinate-free.
+Re-run `isotopo capabilities >/dev/null && echo ok` until it succeeds. If you
+used (B), read every `isotopo …` below as `go run ./cmd/isotopo …`.
 
-## 3. Author the YAML — positioning rules (hard requirements)
+## 1 · Learn the tool in one shot
 
-- NEVER hand-compute coordinates. Pick ONE anchor part (no `place`),
-  chain everything else off it with
-  `place: {rightOf|leftOf|above|inFrontOf|behind: <sibling-id>, gap: N}`;
-  arrange container children with
-  `layout: {mode: row|column|grid|ring, gap: N}`. Gaps are in CELLS
-  (1 cell = canvas `gridStep`, default 40 world units).
-- A stair = each tile `{rightOf: prev, inFrontOf: prev}`. A board =
-  one `group` with `layout: {mode: grid}` — omit its `geom.w/d`, the
-  substrate auto-sizes. A ring = satellites placed on the four sides
-  and four diagonals of the anchor.
-- `offset` is a fine-tune delta only; `offset.wz` lifts a part
-  vertically (the one axis the solver never touches).
-- Sizes stay semantic: hero 150–220, standard boxes ~90–120 with
+`isotopo capabilities` (run ONCE per session) is the complete, current,
+machine-readable inventory of every shape, primitive, style key, and enum you
+may emit — it is the source of truth, not your memory. The whole workflow is
+four commands:
+
+| command | what it's for |
+|---|---|
+| `isotopo capabilities` | discover what's available (shapes, icons, style keys) |
+| `isotopo validate <in>` | **legality self-check** — exit 0 clean / 2 warnings / 3 errors; JSON issues with `suggest` fixes |
+| `isotopo evaluate <in>` | **layout-quality self-check** (headless, deterministic) — crossings, edges-through-nodes, overlaps, bends, flow axis |
+| `isotopo render <in> <out-dir>` | produce `topology.svg` (+ html + per-part fragments) |
+
+`validate` and `evaluate` are your eyes when you can't see pixels — lean on
+them. `render` is only needed to ship or to eyeball observable polish.
+
+## 2 · Vocabulary you may use (don't invent names)
+
+**Input mode.** Plain box-and-arrow graph with no styling demands → write a
+`.d2` file (`a -> b: label`, nested `{}` for groups) and let auto-layout do
+everything. A composed, styled scene → write `.yaml` (rest of this skill).
+
+**Shapes — pick by ROLE, don't make everything a rectangle:**
+
+| role | shape |
+|---|---|
+| service / app | `rectangle` |
+| database | `cylinder` |
+| gateway / load balancer | `hexprism` |
+| external system / SaaS | `cloud` |
+| person / team | `person` |
+| cluster / node pool / k8s | `rack` |
+| frontend / console | `screen`, `browser-panel` |
+| function / endpoint | `capsule` |
+| queue / shard / tensor | `array1d`, `array2d`, `array3d` |
+| route / branch | `diamond` |
+| event / small node | `circle` |
+| service variants (tier apart) | `prism`, `triprism`, `octprism` |
+| accent (CDN/funnel/ring bus — sparingly) | `cone`, `dome`, `frustum`, `pyramid`, `wedge`, `torus` |
+| title / legend / annotation | `iso_text` |
+| **grouping container** | `group` (and `boundary` for a dashed zone) — see §3 |
+| the required top wrapper | `composite` (the one `scene`) |
+
+**Icons** (top face carries ONE icon + a short caption):
+- `iso://si/<slug>` — ~150 REAL brand logos (`postgresql`, `apachekafka`,
+  `docker`, `openai`, `snowflake`, …). Prefer a real logo when a node IS a
+  brand/product.
+- `iso://glyph/<name>` — generic concepts (`database`, `warehouse`, `stream`,
+  `queue`, `cpu`, `gpu`, `model`, `agent`, `shield`, `chart`, `cloud`, …).
+- `iso://brand/<name>` — a few engine-built brand marks (`spark`, `kafka`).
+- Suffix `/light` for dark top faces, `/RRGGBB` to tint. Full index:
+  `docs/agent/ICONS.md`. **Never invent a glyph name** — an unknown icon is a
+  hard fail; if nothing fits, omit the icon.
+
+**Connectors:** `routing: orthogonal` (rides the iso grid — the default you
+want) | `straight` | `bezier`; arrow `triangle` | `none`. Async links differ by
+`stroke.dash`, not by routing. Hairline widths (1–2) beat thick pipes.
+
+**Colour** — there is NO `style.fill`. A box is shaded by its three iso faces
+`style.palette { top: <light>, left: <mid>, right: <dark> }` (or per-face
+`*Gradient`). Reusable swatches (top/left/right triples):
+blue `#60A5FA/#3B82F6/#2563EB` · green `#4ADE80/#22C55E/#16A34A` ·
+purple `#C084FC/#A855F7/#9333EA` · orange `#FDBA74/#FB923C/#EA580C` ·
+amber `#FCD34D/#F59E0B/#D97706` · teal `#5EEAD4/#14B8A6/#0D9488`.
+
+## 3 · Design FIRST, then build
+
+Decide these BEFORE writing any DSL — they are what separate "senior architect"
+from "auto-layout dump":
+
+1. **Palette, up front. ≤ 3 hues for the whole diagram** (+ optionally one
+   accent hue for the single most important node). Pick the domain's
+   conventional colours (AWS amber, cloud blue, data green, security red…). When
+   you have many tiers, separate sub-items by **light/dark shades of the SAME
+   hue** — never add a 4th hue. >3 hues reads as noise.
+2. **One hero, the rest quiet.** At most one node gets gradient flanks +
+   `backglow` + `dropShadow`. Everything else stays calm.
+3. **Group with real containers.** To draw a "zone/lane/module", use a `group`
+   with nested `parts:` and a `layout: { mode: row|column|grid }` — it arranges
+   its children AND its slab auto-wraps them (omit the group's `geom.w/d` so it
+   sizes to fit). `boundary` is the same but renders as a dashed outline-only
+   region (VPC / trust zone). (This is a real container — see the pitfall in §6
+   about NOT faking it with a bare rectangle.)
+4. **Keep connectors simple.** When several nodes in a group talk to the
+   outside, route ONE representative/entry node out, not a wire per node — fewer
+   lines, far more readable. Express intra-group detail with intra-group edges.
+5. **Aim for a near-square canvas.** Architecture diagrams should not be long
+   bars. Plan the module layout as a roughly square grid, not one long row.
+
+For a big/vague request, divide and conquer: (a) sketch 2–6 modules with their
+members (6–12 meaningful nodes, not 3 toy boxes); (b) lock the palette + icon
++ size conventions; (c) build one module at a time, `validate` each before the
+next; (d) wire cross-module edges, then `evaluate` + `render`. A single small
+diagram can skip the module loop.
+
+## 4 · Positioning rules (hard requirements)
+
+- NEVER hand-compute coordinates. Pick ONE anchor part (no `place`); chain the
+  rest with `place: {rightOf|leftOf|above|inFrontOf|behind: <sibling-id>, gap: N}`.
+  `gap` is in CELLS (1 cell = canvas `gridStep`, default 40). Arrange a
+  container's children with `layout: {mode: row|column|grid|ring, gap: N}`.
+- A stair = each tile `{rightOf: prev, inFrontOf: prev}`. A board = one `group`
+  with `layout: {mode: grid}`, `geom.w/d` omitted (auto-sizes). A ring =
+  satellites on the anchor's four sides + four diagonals.
+- `offset` is a fine-tune delta only; `offset.wz` lifts a part (the one axis the
+  solver never sets). Sizes stay semantic: hero 150–220, standard ~90–120 with
   h 30–60, thin tiles h 8–20.
+- Reuse styles with `theme.presets` (define `hero`/`tile`/`ghost` once, parts
+  say `preset: tile`) instead of repeating style blocks.
 
-Reuse styles with `theme.presets` (define `hero` / `tile` / `ghost`
-once, parts say `preset: tile`) instead of repeating style blocks or
-YAML anchors. Full visual playbook: `docs/guides/scene-design.md`.
+Playbooks: `docs/guides/scene-design.md`, task→primitive `docs/agent/RECIPES.md`.
 
-Visual quality rules (what makes the output look professional):
-
-- ONE hero per scene: gradient flanks + `backglow` + `dropShadow`.
-  Everything else stays quiet. One accent hue per scene.
-- Top faces carry an icon AND a short caption — not paragraphs.
-  (The renderer auto-wraps/auto-shrinks labels and clamps icons so
-  nothing overflows the face, but short captions still LOOK better.)
-  `icon: "iso://si/<slug>"` for ~150 REAL brand logos (mysql,
-  postgresql, apachekafka, docker, openai, …) or
-  `iso://glyph/<name>` for generic concepts (gpu, model, agent,
-  chat, vector, lake, …); both take `/light` on dark tops and
-  `/RRGGBB` for any color. Index: docs/agent/ICONS.md.
-- Connectors: `routing: orthogonal`, ALWAYS — every segment must
-  ride the iso grid; async links differ by `dash`, never by bezier
-  or straight routing. Hairline widths (1–2) beat thick pipes.
-- Dark scenes: near-black canvas (`#0A0A0B`), `grid: iso` with a
-  whisper grid color, white or neon glyphs. Light scenes: off-white
-  canvas, ink glyphs.
-- Texture registers (pick at most one per scene): hatch-filled
-  accent tiles = blueprint/PCB; `effects.grain` = monochrome print
-  editorial; dots panel = depth. Wireframe + dashed stroke = ghost
-  frames (overlap-warning exempt).
-
-## 4. Validate until clean
+## 5 · Self-check loop, then render
 
 ```bash
-isotopo validate scene.yaml
-# exit 0 = clean, 2 = warnings only, 3 = errors
+isotopo validate scene.yaml     # legality — fix every error (exit 3) first
+isotopo evaluate scene.yaml     # layout quality — JSON scorecard (plan + real iso routes)
+isotopo render  scene.yaml ./out
 ```
 
-Issues are JSONPath-located and carry a `suggest` value — apply it
-and re-run. Overlap warnings name the exact colliding pair: raise
-that `place` gap or rearrange. Do not render while exit code is 3.
+- `validate`: issues are JSONPath-located with a `suggest` — apply it, re-run.
+  Overlap warnings name the colliding pair → raise that `place` gap. **Never
+  render at exit 3.**
+- `evaluate`: aim for `crossings: 0` and `edges_through_nodes: 0`. A nonzero
+  count means a connector tunnels a node or two edges cross — fix by routing the
+  group's representative node (§3.4), nudging placement, or splitting a lane.
+  `evaluate scene.yaml ./out` also writes `plan.svg` marking the problems red.
+- **Aspect ratio:** read the rendered `topology.svg` `viewBox` (or `width`/
+  `height`). If w:h is more lopsided than ~2.2:1 (or 1:2.2), re-grid the modules
+  toward square before shipping.
+- If you can rasterize (headless Chrome at the SVG's viewBox size), take ONE
+  screenshot and check: nothing clipped, labels legible, one hero, on-grid
+  connectors. Cap at ~3 renders per round — don't spin.
 
-## 5. Render and verify
+## 6 · Pitfalls — the things that actually go wrong
 
-```bash
-isotopo render scene.yaml ./out
-```
+- **Faking a group with a bare rectangle.** To group nodes, use a real `group`
+  with nested `parts:` + `layout` — it arranges and auto-wraps its children. A
+  big rectangle placed `behind:` others does NOT contain or move them and won't
+  resize. (`boundary` = dashed-outline container, same nesting.)
+- **Fanning every node in a group out to the outside.** Route ONE representative
+  node out (§3.4); the rest stay internal. Wire-per-node is the #1 ugliness.
+- **More than 3 hues**, or a new hue per node. Same role → same hue, shades for
+  sub-tiers, one accent for the hero.
+- **Inventing an icon glyph name** (or expecting a `custom:`/web-search icon
+  flow — there is none). Icons are only `iso://si|glyph|brand/<name>` from the
+  index; unknown = hard fail.
+- **Referencing a non-existent id** in `place`/`connector`, or giving one node
+  **two `place` relations** / duplicate `place`.
+- **An illegal arrow/routing** (only `triangle`/`none`; `orthogonal`/`straight`/
+  `bezier`) or a stray top-level key (`edges:`, connector fields inside `geom`).
+  Top level is ONLY `canvas` / `theme` / `nodes`; `nodes` holds ONE `composite`
+  scene.
+- **A long-bar canvas** (re-grid toward square) or rendering before `validate`
+  is clean.
 
-`out/topology.svg` is the scene; `out/topology.html` shows it next
-to the editable source. If you can rasterize (headless Chrome), take
-one screenshot sized from the SVG's viewBox and check: nothing
-clipped, labels legible, one hero, connectors on-grid.
+## 7 · Voice & when to ask
 
-## 6. Hand off for visual tweaks
+Think out loud in PRODUCT language ("add a Redis cache between the gateway and
+the services"), never expose YAML field names, validator diagnostics, or struct
+names — the user sees a design tool, not the engine. If the canvas is empty and
+the request has zero specifics ("make something cool"), ask ONE clarifying
+question with 2–3 complete, directly-actionable options; otherwise infer
+sensibly and proceed.
 
-You author by editing the YAML and re-rendering. When the human wants
-to nudge things by eye instead, tell them to open **Studio**:
+## Hand off for visual tweaks
 
-```bash
-isotopo serve scene.yaml     # → http://localhost:8731
-```
-
-A browser workbench — drag nodes to lay out, right-click to restyle,
-undo/redo, export SVG/PNG. Edits are an in-browser copy (the file is
-never written), so taking changes back is explicit (`↓ YAML`). You
-can't drive Studio yourself, but surfacing it closes the loop:
-pixel-level adjustments are faster for a human there than round-tripping
-change requests through you. Guide: `docs/guides/studio.md`.
+When the human wants to nudge by eye: `isotopo serve scene.yaml` →
+http://localhost:8731 — a browser workbench (drag to lay out, drag a node onto a
+group to re-home it, right-click to restyle, undo/redo, export SVG/PNG). Edits
+live in an in-browser copy (the file is never written), so taking changes back is
+explicit (`↓ YAML`). You can't drive Studio yourself; surfacing it lets the
+human do pixel work faster than round-tripping through you. Guide:
+`docs/guides/studio.md`.
 
 ## Minimal scene template
 
 ```yaml
-canvas: { background: "#F5F6F8" }
+canvas: { background: "#F5F6F8", grid: iso, gridColor: "#E8ECF2", gridStep: 40 }
 theme:
   text: { family: "Inter, system-ui, sans-serif", size: 10, weight: "600", color: "#3F3F46" }
 nodes:
@@ -136,25 +231,23 @@ nodes:
             top: "#FFFFFF"
             leftGradient:  { from: "#7C3AED", to: "#4C1D95", dir: "down" }
             rightGradient: { from: "#8B5CF6", to: "#5B21B6", dir: "down" }
-          effects:
-            cornerRadius: 14
-            backglow: { color: "#A78BFA", radius: 46, opacity: 0.4 }
-      - id: satellite
-        shape: rectangle
+          effects: { cornerRadius: 14, backglow: { color: "#A78BFA", radius: 46, opacity: 0.4 } }
+      - id: store
+        shape: cylinder
         place: { rightOf: hero, gap: 2.5 }
-        geom: { w: 118, d: 118, h: 12 }
+        geom: { w: 118, d: 118, h: 40 }
         icon: "iso://glyph/database"
         label: "Store"
-        style:
-          palette: { top: "#FFFFFF", left: "#E2E4EA", right: "#EEF0F4" }
-          effects: { cornerRadius: 12 }
+        style: { palette: { top: "#C084FC", left: "#9333EA", right: "#7E22CE" } }
     connectors:
-      - { from: hero, to: satellite, routing: orthogonal, arrow: triangle, stroke: { color: "#8B5CF6", width: 1.2 } }
+      - { from: hero, to: store, routing: orthogonal, arrow: triangle, stroke: { color: "#8B5CF6", width: 1.2 } }
 ```
 
 ## References (fetch on demand, don't preload)
 
 - Full DSL grammar: `docs/reference/dsl-yaml.md`
 - Task → primitive mapping: `docs/agent/RECIPES.md`
-- Machine-readable schema: `docs/agent/schema/dsl.schema.json`
+- Icon index: `docs/agent/ICONS.md` · Machine schema: `docs/agent/schema/dsl.schema.json`
+- Layout scorecard / `evaluate`: `docs/reference/cli.md`
 - MCP alternative to shelling out: `docs/agent/MCP.md`
+```
