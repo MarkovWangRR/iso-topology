@@ -954,7 +954,7 @@ window.addEventListener('mousemove',e=>{
   if(nodeDrag && d.edges) d.edges.forEach(ed=>ed.el.setAttribute('d', shiftEnds(ed.baseD, ed.mf, ed.mt, dx, dy)));
   // live drop-target feedback: highlight the group the node would land in, so
   // it's obvious BEFORE releasing whether the re-home was recognised.
-  if(nodeDrag){const lwd=screenToWorldDelta(dx,dy);highlightDropTarget(containerUnder(e.clientX,e.clientY,d.id,Math.round(lwd[0]),Math.round(lwd[1])));}
+  if(nodeDrag) highlightDropTarget(containerUnder(e.clientX,e.clientY,d.id));
 });
 // Mark one group slab as the active drop target (clears any previous one).
 let dropTargetId=null;
@@ -989,7 +989,7 @@ window.addEventListener('mouseup',e=>{
     // Position first, then re-home: drop onto a group's slab joins it; drop on
     // bare canvas returns it to the scene root. The server no-ops the reparent
     // when the parent is unchanged, so an in-group nudge keeps its offset.
-    const target=containerUnder(e.clientX, e.clientY, d.id, Math.round(wd[0]), Math.round(wd[1]));
+    const target=containerUnder(e.clientX, e.clientY, d.id);
     commitMove(kind, d.id, Math.round(wd[0]), Math.round(wd[1]), e.clientX, e.clientY)
       .then(()=>reparentNode(d.id, target||''));
   }else{
@@ -997,38 +997,45 @@ window.addEventListener('mouseup',e=>{
   }
 });
 
-// containerUnder returns the id of the container that the dragged node
-// (exceptId) should be re-homed into, or null (→ scene root).
+// containerUnder returns the id of the container the drag cursor landed
+// in, or null (drop to scene root).
 //
-// When the server has provided a world-space interaction model we use
-// footprint-overlap area (same coordinate space the server uses for layout),
-// which works even when the target container is smaller than the dragged node
-// or visually occluded by it. The cursor position (cx, cy) is no longer
-// needed for the decision — it is kept as a parameter so existing callers
-// don't break.
+// Algorithm: inverse-project the cursor's screen position (cx, cy) to world
+// coordinates, then find the innermost (smallest-AABB) container whose world
+// AABB contains that point.
 //
-// Fallback (interactionModel === null, e.g. a d2 file or stale server):
-// the original pixel hit-test via elementsFromPoint.
-function containerUnder(cx, cy, exceptId, dwx, dwy){
+// Why cursor-position rather than node-AABB overlap:
+//   Drag-OUT: once the cursor leaves the container's world footprint the node
+//   escapes — even if the node's own footprint still straddles the boundary.
+//   The previous 5%-overlap approach failed whenever a group's AABB covered
+//   the entire viewport (e.g. an auto-sized boundary with many children spread
+//   across the scene), making it impossible to drag a child out at all.
+//   Drag-IN to small container: cursor precision is sufficient; users aim the
+//   cursor at the target group, not the node's centroid.
+//   Nested containers: the innermost container wins (smallest area containing
+//   the cursor point), without any extra bookkeeping.
+//
+// Fallback (interactionModel null, e.g. d2 file or stale server):
+// pixel hit-test via elementsFromPoint.
+function containerUnder(cx, cy, exceptId){
   if(window.interactionModel){
-    // Find the dragged node's AABB in the model, shifted by the drag delta.
-    const drag=window.interactionModel.find(p=>p.id===exceptId);
-    if(drag && drag.w>0 && drag.d>0){
-      const nx=drag.x+(dwx||0), ny=drag.y+(dwy||0);
-      const dragArea=drag.w*drag.d;
-      let bestId=null, bestOv=0;
-      for(const pm of window.interactionModel){
-        if(!pm.container || pm.id===exceptId) continue;
-        const ox=Math.min(nx+drag.w, pm.x+pm.w)-Math.max(nx, pm.x);
-        const oy=Math.min(ny+drag.d, pm.y+pm.d)-Math.max(ny, pm.y);
-        if(ox<=0||oy<=0) continue;
-        const ov=ox*oy;
-        // Require at least 5% overlap of the dragged node's area to qualify,
-        // preventing accidental re-homes when a node merely grazes an edge.
-        if(ov/dragArea>=0.05 && ov>bestOv){ bestOv=ov; bestId=pm.id; }
+    // Inverse iso projection: screen (cx,cy) → world (curWx, curWy).
+    //   screen_x = (wx-wy)*C30*scale + panX  ⟹  wx-wy = (scx-panX)/(C30*scale)
+    //   screen_y = (wx+wy)*S30*scale + panY  ⟹  wx+wy = (scy-panY)/(S30*scale)
+    // screenToWorldDelta(dsx,dsy) already implements the inverse for unscaled
+    // stage-relative deltas: call it with (scx-panX)/scale, (scy-panY)/scale.
+    const stage=document.getElementById('zoomer').parentElement.getBoundingClientRect();
+    const scx=cx-stage.left, scy=cy-stage.top;
+    const [curWx,curWy]=screenToWorldDelta((scx-panX)/scale,(scy-panY)/scale);
+    let bestId=null, bestArea=Infinity;
+    for(const pm of window.interactionModel){
+      if(!pm.container||pm.id===exceptId) continue;
+      if(curWx>=pm.x&&curWx<=pm.x+pm.w&&curWy>=pm.y&&curWy<=pm.y+pm.d){
+        const area=pm.w*pm.d;
+        if(area<bestArea){bestArea=area;bestId=pm.id;}
       }
-      return bestId;
     }
+    return bestId;
   }
   // Pixel fallback: walk the paint stack at the cursor.
   for(const el of document.elementsFromPoint(cx, cy)){
