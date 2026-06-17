@@ -105,7 +105,7 @@ func ApplyOpText(format string, src []byte, op EditOp) ([]byte, error) {
 		if from == "" || to == "" {
 			return src, fmt.Errorf("add-edge: from and to are required")
 		}
-		out, ok := yamledit.AddConnector(string(src), from, to)
+		out, ok := yamledit.AddConnector(string(src), from, to, op.Fields["fromAnchor"], op.Fields["toAnchor"])
 		if !ok {
 			return src, fmt.Errorf("add-edge: connectors block not found and no parts block to anchor to")
 		}

@@ -1072,7 +1072,17 @@ func DuplicatePart(src, id string, ox, oy float64) (string, bool) {
 // AddConnector appends a new connector (from → to, orthogonal routing) to the
 // first connectors: block found in the scene node. If no connectors: key exists
 // yet, one is inserted just before the first `parts:` key at the same indent.
-func AddConnector(src, from, to string) (string, bool) {
+//
+// fromAnchor and toAnchor are optional anchor names (e.g. "right", "left").
+// When non-empty they are appended to the id with a dot: "partID.anchorName".
+// Empty strings produce the bare id, preserving the original behaviour.
+func AddConnector(src, from, to, fromAnchor, toAnchor string) (string, bool) {
+	if fromAnchor != "" {
+		from = from + "." + fromAnchor
+	}
+	if toAnchor != "" {
+		to = to + "." + toAnchor
+	}
 	lines := strings.Split(src, "\n")
 
 	// Find the first `connectors:` block and its indent.

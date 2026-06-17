@@ -682,7 +682,10 @@ func serveFile(in string) error {
 			return
 		}
 		if q.Get("op") == "add-edge" {
-			op.Fields = map[string]string{"from": q.Get("from"), "to": q.Get("to")}
+			op.Fields = map[string]string{
+				"from": q.Get("from"), "to": q.Get("to"),
+				"fromAnchor": q.Get("fanchor"), "toAnchor": q.Get("tanchor"),
+			}
 		}
 		if q.Get("op") == "reparent" {
 			// reparent's Target is the DESTINATION group id ("" = scene root),

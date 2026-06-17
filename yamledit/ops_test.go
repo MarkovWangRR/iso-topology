@@ -219,6 +219,87 @@ func TestFindCanvasLine(t *testing.T) {
 	}
 }
 
+// ── AddConnector ─────────────────────────────────────────────────────────────
+
+func TestAddConnector_NoAnchor(t *testing.T) {
+	out, ok := AddConnector(editDoc, "a", "b", "", "")
+	if !ok {
+		t.Fatal("AddConnector returned !ok")
+	}
+	if !strings.Contains(out, "from: a, to: b") {
+		t.Errorf("connector not written without anchors:\n%s", out)
+	}
+	// Original connector and all parts must survive.
+	for _, keep := range []string{"id: a", "id: b", "from: a, to: b, arrow: triangle"} {
+		if !strings.Contains(out, keep) {
+			t.Errorf("AddConnector clobbered %q", keep)
+		}
+	}
+}
+
+func TestAddConnector_WithBothAnchors(t *testing.T) {
+	out, ok := AddConnector(editDoc, "a", "b", "right", "left")
+	if !ok {
+		t.Fatal("AddConnector returned !ok")
+	}
+	if !strings.Contains(out, "from: a.right, to: b.left") {
+		t.Errorf("anchor suffixes not written:\n%s", out)
+	}
+}
+
+func TestAddConnector_FromAnchorOnly(t *testing.T) {
+	out, ok := AddConnector(editDoc, "a", "b", "top", "")
+	if !ok {
+		t.Fatal("AddConnector returned !ok")
+	}
+	if !strings.Contains(out, "from: a.top, to: b") {
+		t.Errorf("only from-anchor should appear:\n%s", out)
+	}
+}
+
+func TestAddConnector_ToAnchorOnly(t *testing.T) {
+	out, ok := AddConnector(editDoc, "a", "b", "", "bottom")
+	if !ok {
+		t.Fatal("AddConnector returned !ok")
+	}
+	if !strings.Contains(out, "from: a, to: b.bottom") {
+		t.Errorf("only to-anchor should appear:\n%s", out)
+	}
+}
+
+func TestAddConnector_NoExistingConnectors(t *testing.T) {
+	// Document with no connectors: block yet.
+	src := `nodes:
+  scene:
+    shape: composite
+    parts:
+      - { id: x, shape: rectangle }
+      - { id: y, shape: rectangle }
+`
+	out, ok := AddConnector(src, "x", "y", "right", "left")
+	if !ok {
+		t.Fatal("AddConnector returned !ok on doc without connectors block")
+	}
+	if !strings.Contains(out, "connectors:") {
+		t.Error("connectors: header not inserted")
+	}
+	if !strings.Contains(out, "from: x.right, to: y.left") {
+		t.Errorf("connector with anchors not written:\n%s", out)
+	}
+}
+
+func TestAddConnector_PreservesComments(t *testing.T) {
+	out, ok := AddConnector(editDoc, "a", "b", "right", "left")
+	if !ok {
+		t.Fatal("not ok")
+	}
+	for _, comment := range []string{"# canvas comment", "# keep me", "# flow part", "# block part"} {
+		if !strings.Contains(out, comment) {
+			t.Errorf("comment %q lost after AddConnector", comment)
+		}
+	}
+}
+
 func TestScalarHelpers(t *testing.T) {
 	if got := unquoteYAML(`"hi there"`); got != "hi there" {
 		t.Errorf("unquoteYAML = %q", got)

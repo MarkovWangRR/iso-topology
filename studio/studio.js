@@ -162,6 +162,7 @@ function clearHandles(){
 }
 
 // Convert a polygon's centroid from SVG user-units → overlay-relative px.
+// Kept as fallback for shapes without interaction model data.
 function polyFaceCentroid(polygon, stageRect){
   if(!polygon) return null;
   const pts=polygon.points;
@@ -175,8 +176,7 @@ function polyFaceCentroid(polygon, stageRect){
   return [screen.x-stageRect.left, screen.y-stageRect.top];
 }
 
-// Return the nadir (lowest screen point) across all face polygons —
-// the bottom-most vertex of the silhouette.
+// Return the nadir (lowest screen point) across all face polygons.
 function nadirPoint(g, stageRect){
   let best=null;
   g.querySelectorAll('polygon[data-face]').forEach(poly=>{
@@ -193,20 +193,63 @@ function nadirPoint(g, stageRect){
   return best;
 }
 
+// Convert a world-space anchor point to overlay-relative screen px.
+// Iso projection: sx=(wx-wy)*C30, sy=(wx+wy)*S30, then zoomer transform.
+// C30/S30 are declared below alongside screenToWorldDelta.
+function worldToScreen(wx, wy, stageRect){
+  const sx=(wx-wy)*C30, sy=(wx+wy)*S30;
+  // Apply zoomer's current pan/scale (same variables used by liveTranslate).
+  return [sx*scale+panX+stageRect.left-stageRect.left, sy*scale+panY];
+}
+
+// nearestAnchorScreen finds the anchor on partId closest to the cursor
+// (scx, scy in overlay-relative px) and returns {name, cx, cy}.
+// Returns null if interactionModel has no entry for partId.
+function nearestAnchorScreen(partId, scx, scy, stageRect){
+  if(!interactionModel) return null;
+  const pm=interactionModel.find(p=>p.id===partId);
+  if(!pm||!pm.anchors||!pm.anchors.length) return null;
+  let best=null, bestD=Infinity;
+  for(const a of pm.anchors){
+    const [cx,cy]=worldToScreen(a.wx,a.wy,stageRect);
+    const d=Math.hypot(scx-cx,scy-cy);
+    if(d<bestD){bestD=d;best={name:a.name,cx,cy};}
+  }
+  return best;
+}
+
+// showHandles renders anchor dots for the hovered node.
+// When interactionModel is available the positions come from world-space
+// AABB face centres (accurate for all shapes). Falls back to the polygon
+// vertex method for shapes not in the model (e.g. d2 files).
 function showHandles(g){
   ensureOverlay();
   clearHandles();
   const stage=document.getElementById('zoomer').parentElement.getBoundingClientRect();
+  const partId=g.getAttribute('data-part-id').replace(/~\d+$/,'');
 
-  // Compute anchor positions from actual iso face geometry.
-  const pts=[
-    polyFaceCentroid(g.querySelector('polygon[data-face="top"]'),   stage),
-    polyFaceCentroid(g.querySelector('polygon[data-face="right"]'),  stage),
-    nadirPoint(g, stage),
-    polyFaceCentroid(g.querySelector('polygon[data-face="left"]'),   stage),
-  ].filter(Boolean); // drop nulls (shapes that lack a face, e.g. sphere)
+  // Build the list of {name, cx, cy} anchor points to display.
+  let anchors=[];
+  const pm=interactionModel&&interactionModel.find(p=>p.id===partId);
+  if(pm&&pm.anchors&&pm.anchors.length){
+    for(const a of pm.anchors){
+      const [cx,cy]=worldToScreen(a.wx,a.wy,stage);
+      anchors.push({name:a.name,cx,cy});
+    }
+  }else{
+    // Polygon fallback: top/right/bottom(nadir)/left
+    const fallback=[
+      {name:'top',    pt:polyFaceCentroid(g.querySelector('polygon[data-face="top"]'),   stage)},
+      {name:'right',  pt:polyFaceCentroid(g.querySelector('polygon[data-face="right"]'),  stage)},
+      {name:'bottom', pt:nadirPoint(g,stage)},
+      {name:'left',   pt:polyFaceCentroid(g.querySelector('polygon[data-face="left"]'),   stage)},
+    ];
+    for(const f of fallback){
+      if(f.pt) anchors.push({name:f.name,cx:f.pt[0],cy:f.pt[1]});
+    }
+  }
 
-  pts.forEach(([cx,cy],side)=>{
+  anchors.forEach(({name,cx,cy})=>{
     const c=document.createElementNS('http://www.w3.org/2000/svg','circle');
     c.setAttribute('cx',cx); c.setAttribute('cy',cy);
     c.setAttribute('r',HANDLE_R);
@@ -214,33 +257,50 @@ function showHandles(g){
     c.setAttribute('stroke','#fff'); c.setAttribute('stroke-width','1.5');
     c.setAttribute('class','conn-handle');
     c.style.cssText='pointer-events:all;cursor:crosshair;';
-    c.dataset.side=side;
+    c.dataset.name=name;
     c.dataset.cx=cx; c.dataset.cy=cy;
     c.addEventListener('mouseenter',()=>c.setAttribute('fill',HANDLE_HOV));
     c.addEventListener('mouseleave',()=>c.setAttribute('fill',HANDLE_COL));
     c.addEventListener('mousedown',ev=>{
       if(ev.button!==0) return;
       ev.preventDefault(); ev.stopPropagation();
-      const fromId=g.getAttribute('data-part-id').replace(/~\d+$/,'');
-      // Rubber-band line
       const line=document.createElementNS('http://www.w3.org/2000/svg','polyline');
       line.setAttribute('points',cx+','+cy+' '+cx+','+cy);
       line.setAttribute('stroke',HANDLE_COL); line.setAttribute('stroke-width','1.8');
       line.setAttribute('fill','none'); line.setAttribute('stroke-dasharray','5,3');
       line.setAttribute('id','conn-rubber');
       connOverlay.appendChild(line);
-      connDrag={fromId, startX:cx, startY:cy, line};
+      // Record which anchor the drag started from.
+      connDrag={fromId:partId, fromAnchor:name, startX:cx, startY:cy, line};
       document.body.style.cursor='crosshair';
     });
     connOverlay.appendChild(c);
   });
 }
 
+// highlightNearestHandle highlights the anchor dot closest to (scx, scy)
+// in overlay-relative coords. Called on mousemove during hover (not drag).
+function highlightNearestHandle(scx, scy){
+  const handles=[...connOverlay.querySelectorAll('.conn-handle')];
+  if(!handles.length) return;
+  let bestEl=null, bestD=Infinity;
+  for(const h of handles){
+    const hx=parseFloat(h.getAttribute('cx')), hy=parseFloat(h.getAttribute('cy'));
+    const d=Math.hypot(scx-hx,scy-hy);
+    if(d<bestD){bestD=d;bestEl=h;}
+  }
+  for(const h of handles) h.setAttribute('fill',h===bestEl?HANDLE_HOV:HANDLE_COL);
+}
+
 window.addEventListener('mousemove',ev=>{
-  if(!connDrag) return;
   const stage=document.getElementById('zoomer').parentElement.getBoundingClientRect();
   const ex=ev.clientX-stage.left, ey=ev.clientY-stage.top;
-  connDrag.line.setAttribute('points',connDrag.startX+','+connDrag.startY+' '+ex+','+ey);
+  if(connDrag){
+    connDrag.line.setAttribute('points',connDrag.startX+','+connDrag.startY+' '+ex+','+ey);
+  }else if(connOverlay&&connOverlay.querySelector('.conn-handle')){
+    // Highlight the nearest anchor dot while just hovering (no drag yet).
+    highlightNearestHandle(ex, ey);
+  }
 },true);
 
 window.addEventListener('mouseup',async ev=>{
@@ -253,8 +313,16 @@ window.addEventListener('mouseup',async ev=>{
   if(!toId||toId===drag.fromId||!serverOK) return;
   pushUndo();
   try{
-    const r=await fetch('/api/op?op=add-edge&from='+encodeURIComponent(drag.fromId)+'&to='+encodeURIComponent(toId)+'&format='+encodeURIComponent(LANG),
-      {method:'POST',body:srcEl.value});
+    // Find the anchor on the target node nearest to where the drag was released.
+    const stage=document.getElementById('zoomer').parentElement.getBoundingClientRect();
+    const dropX=ev.clientX-stage.left, dropY=ev.clientY-stage.top;
+    const toAnchorInfo=nearestAnchorScreen(toId, dropX, dropY, stage);
+    const toAnchor=toAnchorInfo?toAnchorInfo.name:'';
+    const fromAnchor=drag.fromAnchor||'';
+    let url='/api/op?op=add-edge&from='+encodeURIComponent(drag.fromId)+'&to='+encodeURIComponent(toId)+'&format='+encodeURIComponent(LANG);
+    if(fromAnchor) url+='&fanchor='+encodeURIComponent(fromAnchor);
+    if(toAnchor)   url+='&tanchor='+encodeURIComponent(toAnchor);
+    const r=await fetch(url,{method:'POST',body:srcEl.value});
     if(!r.ok) return;
     const data=await r.json();
     if(typeof data.yaml==='string'){ srcEl.value=data.yaml; setDirty(srcEl.value!==ORIGINAL);

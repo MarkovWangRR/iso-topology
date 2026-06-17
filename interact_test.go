@@ -2,6 +2,7 @@ package isotopo
 
 import (
 	"context"
+	"strings"
 	"testing"
 )
 
@@ -230,4 +231,118 @@ func TestWorldDropTarget_ContainerExcludesSelf(t *testing.T) {
 	if got := WorldDropTarget(model, "grp", 0.0); got != "" {
 		t.Errorf("container dragging itself: expected root, got %q", got)
 	}
+}
+
+// ── faceAnchors / anchor geometry ───────────────────────────────────────────
+
+func TestFaceAnchors_Names(t *testing.T) {
+	r := planRect{id: "x", x: 10, y: 20, w: 100, d: 80}
+	anchors := faceAnchors(r)
+	if len(anchors) != 4 {
+		t.Fatalf("expected 4 anchors, got %d", len(anchors))
+	}
+	names := map[string]bool{}
+	for _, a := range anchors {
+		names[a.Name] = true
+	}
+	for _, want := range []string{"top", "right", "bottom", "left"} {
+		if !names[want] {
+			t.Errorf("missing anchor %q", want)
+		}
+	}
+}
+
+func TestFaceAnchors_Positions(t *testing.T) {
+	r := planRect{id: "x", x: 0, y: 0, w: 100, d: 60}
+	byName := map[string]AnchorPoint{}
+	for _, a := range faceAnchors(r) {
+		byName[a.Name] = a
+	}
+
+	// top: centre x, min y
+	if byName["top"].WX != 50 || byName["top"].WY != 0 {
+		t.Errorf("top anchor = (%g,%g), want (50,0)", byName["top"].WX, byName["top"].WY)
+	}
+	// bottom: centre x, max y
+	if byName["bottom"].WX != 50 || byName["bottom"].WY != 60 {
+		t.Errorf("bottom anchor = (%g,%g), want (50,60)", byName["bottom"].WX, byName["bottom"].WY)
+	}
+	// left: min x, centre y
+	if byName["left"].WX != 0 || byName["left"].WY != 30 {
+		t.Errorf("left anchor = (%g,%g), want (0,30)", byName["left"].WX, byName["left"].WY)
+	}
+	// right: max x, centre y
+	if byName["right"].WX != 100 || byName["right"].WY != 30 {
+		t.Errorf("right anchor = (%g,%g), want (100,30)", byName["right"].WX, byName["right"].WY)
+	}
+}
+
+func TestFaceAnchors_OnBoundary(t *testing.T) {
+	// Every anchor must lie on the perimeter of the AABB.
+	r := planRect{id: "y", x: 5, y: 10, w: 80, d: 40}
+	for _, a := range faceAnchors(r) {
+		onEdge := a.WX == r.x || a.WX == r.x+r.w || a.WY == r.y || a.WY == r.y+r.d
+		if !onEdge {
+			t.Errorf("anchor %q (%g,%g) not on AABB boundary", a.Name, a.WX, a.WY)
+		}
+	}
+}
+
+// ── AddConnector with anchors (integration via ApplyOpText) ─────────────────
+
+func TestApplyOpText_AddEdgeWithAnchors(t *testing.T) {
+	src := []byte(subgraphFixture)
+	op := EditOp{
+		Kind:   "add-edge",
+		Fields: map[string]string{"from": "agent_a", "to": "server", "fromAnchor": "right", "toAnchor": "left"},
+	}
+	out, err := ApplyOpText("yaml", src, op)
+	if err != nil {
+		t.Fatalf("ApplyOpText add-edge with anchors: %v", err)
+	}
+	outStr := string(out)
+	if !strings.Contains(outStr, "agent_a.right") {
+		t.Errorf("fromAnchor not written: %s", outStr)
+	}
+	if !strings.Contains(outStr, "server.left") {
+		t.Errorf("toAnchor not written: %s", outStr)
+	}
+}
+
+func TestApplyOpText_AddEdgeNoAnchors(t *testing.T) {
+	src := []byte(subgraphFixture)
+	op := EditOp{
+		Kind:   "add-edge",
+		Fields: map[string]string{"from": "agent_a", "to": "server"},
+	}
+	out, err := ApplyOpText("yaml", src, op)
+	if err != nil {
+		t.Fatalf("ApplyOpText add-edge: %v", err)
+	}
+	outStr := string(out)
+	// No anchor dot should appear in the new connector line.
+	// Check that the newly added connector line has no anchor dot suffix.
+	for _, l := range splitLines(outStr) {
+		if strings.Contains(l, "from: agent_a") && strings.Contains(l, "to: server") {
+			if strings.Contains(l, "agent_a.") || strings.Contains(l, "server.") {
+				t.Errorf("anchor dot in no-anchor add-edge: %s", l)
+			}
+			break
+		}
+	}
+}
+
+func splitLines(s string) []string {
+	var out []string
+	start := 0
+	for i := 0; i < len(s); i++ {
+		if s[i] == '\n' {
+			out = append(out, s[start:i])
+			start = i + 1
+		}
+	}
+	if start < len(s) {
+		out = append(out, s[start:])
+	}
+	return out
 }
