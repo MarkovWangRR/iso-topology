@@ -229,7 +229,7 @@ func renderComposite(n *Node, theme *Theme, canvas *Canvas, anns []*Annotation) 
 	//                       = painted first = furthest back)
 	var connRects []screenRect
 	if len(n.Connectors) > 0 {
-		svg, connRects = injectCompositeConnectors(svg, n.Connectors, infos, nSubstrates)
+		svg, connRects = injectCompositeConnectors(svg, n.Connectors, infos, n.Parts, nSubstrates)
 	}
 	if canvas != nil {
 		svg = injectCanvasBackground(svg, canvas)

@@ -26,8 +26,9 @@ var anchorNames = []string{
 // independently testable unit instead of ~200 lines inline in an 800-line
 // function. All methods are pure reads of byID / tx / ty.
 type anchorResolver struct {
-	byID   map[string]partInfo
-	tx, ty float64 // parts→screen origin translation (for screen())
+	byID     map[string]partInfo
+	tx, ty   float64        // parts→screen origin translation (for screen())
+	parentOf map[string]string // nested part ID → scene-level container ID (Fix 2)
 }
 
 func newAnchorResolver(infos []partInfo, tx, ty float64) *anchorResolver {
@@ -37,7 +38,7 @@ func newAnchorResolver(infos []partInfo, tx, ty float64) *anchorResolver {
 			byID[p.id] = p
 		}
 	}
-	return &anchorResolver{byID: byID, tx: tx, ty: ty}
+	return &anchorResolver{byID: byID, tx: tx, ty: ty, parentOf: nil}
 }
 
 // parse splits "partID.anchor" into (id, anchor). Bare "partID" defaults to
@@ -234,4 +235,47 @@ func (ar *anchorResolver) auto(ref, otherRef string) string {
 		return ref + ".front"
 	}
 	return ref + ".back"
+}
+
+// promoteToContainer promotes a bare ref to its scene-level container ID when
+// the other endpoint (otherID) is outside the same container. This is used for
+// the source side of a connector to ensure the route exits the boundary cleanly
+// rather than starting at the nested part's interior position and crossing
+// sibling parts. Only the source is promoted, not the destination.
+func (ar *anchorResolver) promoteToContainer(ref, otherRef string) string {
+	if ar.parentOf == nil || strings.Contains(ref, ".") {
+		return ref
+	}
+	id, _ := ar.parse(ref)
+	parentID, nested := ar.parentOf[id]
+	if !nested {
+		return ref
+	}
+	oid, _ := ar.parse(otherRef)
+	otherParent := ar.parentOf[oid]
+	// Only promote when the other endpoint is outside the same container.
+	if otherParent == parentID || oid == parentID {
+		return ref
+	}
+	// Return parentID with the correct facing anchor.
+	p, ok := ar.byID[parentID]
+	if !ok {
+		return ref
+	}
+	o, ok2 := ar.byID[oid]
+	if !ok2 {
+		return parentID
+	}
+	dx := (o.offWX + o.w/2) - (p.offWX + p.w/2)
+	dy := (o.offWY + o.d/2) - (p.offWY + p.d/2)
+	if math.Abs(dx) >= math.Abs(dy) {
+		if dx >= 0 {
+			return parentID + ".right"
+		}
+		return parentID + ".left"
+	}
+	if dy >= 0 {
+		return parentID + ".front"
+	}
+	return parentID + ".back"
 }

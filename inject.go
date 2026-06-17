@@ -251,7 +251,41 @@ func orthoThread(p [][3]float64) [][3]float64 {
 
 // route segment so later layers (screen labels, annotations) can treat
 // routes as collision obstacles.
-func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo, nSubstrates int) (string, []screenRect) {
+// collectDescendantObstacles recursively walks the CompositePart subtree and
+// appends every named descendant as a planRect obstacle. baseX/Y/Z are the
+// absolute world offsets of the parent (already accumulated from ancestors).
+// This supplements the flat infos-based obstacle set so that grandchildren of
+// boundary containers are seen by the elbow picker even when the boundary
+// itself was lowered to a substrate (and thus skipped in the primary loop).
+func collectDescendantObstacles(parts []*CompositePart, baseX, baseY, baseZ float64, obstacles *[]planRect) {
+	for _, p := range parts {
+		if p == nil || p.ID == "" {
+			continue
+		}
+		ox, oy, oz := baseX, baseY, baseZ
+		if p.Offset != nil {
+			ox += p.Offset.WX
+			oy += p.Offset.WY
+			oz += p.Offset.WZ
+		}
+		w, d, h := 140.0, 140.0, 80.0
+		if p.Geom != nil {
+			if p.Geom.W > 0 {
+				w = p.Geom.W
+			}
+			if p.Geom.D > 0 {
+				d = p.Geom.D
+			}
+			if p.Geom.H > 0 {
+				h = p.Geom.H
+			}
+		}
+		*obstacles = append(*obstacles, planRect{id: p.ID, x: ox, y: oy, z: oz, w: w, d: d, h: h})
+		collectDescendantObstacles(p.Parts, ox, oy, oz, obstacles)
+	}
+}
+
+func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo, sceneParts []*CompositePart, nSubstrates int) (string, []screenRect) {
 	project := projectIso
 	tx, ty := partsScreenOrigin(infos)
 
@@ -273,8 +307,62 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo,
 		}
 		obstacles = append(obstacles, planRect{id: p.id, x: p.offWX, y: p.offWY, z: p.offWZ, w: p.w, d: p.d, h: p.h})
 	}
+	// Fix 1 — recursive obstacle expansion: also add grandchildren of boundary
+	// containers. The flat infos loop above skips substrates (group slabs), so
+	// it may already include the nested parts; this explicit walk guarantees
+	// coverage even when a child uses pre-lowering geometry (Geom) rather than
+	// the opts.* dims that infos records.
+	for _, sp := range sceneParts {
+		if sp == nil || !isContainerShape(sp.Shape) {
+			continue
+		}
+		ox, oy, oz := 0.0, 0.0, 0.0
+		if sp.Offset != nil {
+			ox, oy, oz = sp.Offset.WX, sp.Offset.WY, sp.Offset.WZ
+		}
+		collectDescendantObstacles(sp.Parts, ox, oy, oz, &obstacles)
+	}
 
-	ar := &anchorResolver{byID: byID, tx: tx, ty: ty}
+	// Fix 2 — cross-hierarchy anchor promotion: build a map from nested-part ID
+	// to its scene-level ancestor ID. When a connector endpoint is a nested part
+	// and the other endpoint lives outside that same container, the anchor is
+	// promoted to the container's face so the route exits the boundary cleanly
+	// rather than crossing siblings inside it.
+	parentOf := map[string]string{} // nested ID → scene-level container ID
+	var walkParent func(parts []*CompositePart, ancestorID string)
+	walkParent = func(parts []*CompositePart, ancestorID string) {
+		for _, p := range parts {
+			if p == nil {
+				continue
+			}
+			if p.ID != "" && ancestorID != "" {
+				parentOf[p.ID] = ancestorID
+			}
+			if isContainerShape(p.Shape) {
+				// children of this container get this container's ID as ancestor
+				// (only if this container itself is a direct scene child; deeper
+				// nesting keeps pointing to the scene-level ancestor)
+				aid := ancestorID
+				if aid == "" {
+					aid = p.ID
+				}
+				walkParent(p.Parts, aid)
+			} else {
+				walkParent(p.Parts, ancestorID)
+			}
+		}
+	}
+	// Walk scene-level parts; top-level containers become the anchor ancestors.
+	for _, sp := range sceneParts {
+		if sp == nil {
+			continue
+		}
+		if isContainerShape(sp.Shape) {
+			walkParent(sp.Parts, sp.ID)
+		}
+	}
+
+	ar := &anchorResolver{byID: byID, tx: tx, ty: ty, parentOf: parentOf}
 
 	// v1.6.2 fan-out: count how many orthogonal connectors share each
 	// (partID, side) so the per-connector pass can stagger their stubs
@@ -295,8 +383,13 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo,
 	effFrom := make([]string, len(conns))
 	effTo := make([]string, len(conns))
 	for i, c := range conns {
-		effFrom[i] = ar.auto(c.From, c.To)
-		effTo[i] = ar.auto(c.To, c.From)
+		// Fix 2 — cross-hierarchy anchor promotion: promote only the SOURCE
+		// endpoint when it's a nested part leaving its container. The destination
+		// endpoint is kept as-is so the connector still visually targets the
+		// specific nested part (the route enters through the boundary).
+		promFrom := ar.promoteToContainer(c.From, c.To)
+		effFrom[i] = ar.auto(promFrom, c.To)
+		effTo[i] = ar.auto(c.To, promFrom)
 		if c.Routing != "orthogonal" {
 			continue
 		}
