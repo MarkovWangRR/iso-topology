@@ -238,3 +238,48 @@ func TestGhostPartsExemptFromOverlap(t *testing.T) {
 		}
 	}
 }
+
+// A group with no authored geom.w/d and explicit-offset children (e.g. one
+// frozen by a drag) must still auto-size its slab to wrap them, so nodes added
+// or dragged in never stick out past the substrate.
+func TestAutosizeManualGroupWrapsChildren(t *testing.T) {
+	two := &Node{Shape: "composite", Parts: []*CompositePart{{
+		ID: "g", Shape: "group", Geom: &Geom{H: 14},
+		Parts: []*CompositePart{
+			{ID: "a", Shape: "rectangle", Geom: &Geom{W: 80, D: 80, H: 20}, Offset: &WorldPoint{WX: 40, WY: 40}},
+			{ID: "b", Shape: "rectangle", Geom: &Geom{W: 80, D: 80, H: 20}, Offset: &WorldPoint{WX: 160, WY: 40}},
+		},
+	}}}
+	applyLayout(two, nil)
+	if two.Parts[0].Geom.W <= 0 || two.Parts[0].Geom.D <= 0 {
+		t.Fatalf("manual group should gain a wrapping footprint, got %+v", two.Parts[0].Geom)
+	}
+	// adding a third child grows it
+	w2 := two.Parts[0].Geom.W
+	three := &Node{Shape: "composite", Parts: []*CompositePart{{
+		ID: "g", Shape: "group", Geom: &Geom{H: 14},
+		Parts: []*CompositePart{
+			{ID: "a", Shape: "rectangle", Geom: &Geom{W: 80, D: 80, H: 20}, Offset: &WorldPoint{WX: 40, WY: 40}},
+			{ID: "b", Shape: "rectangle", Geom: &Geom{W: 80, D: 80, H: 20}, Offset: &WorldPoint{WX: 160, WY: 40}},
+			{ID: "c", Shape: "rectangle", Geom: &Geom{W: 80, D: 80, H: 20}, Offset: &WorldPoint{WX: 280, WY: 40}},
+		},
+	}}}
+	applyLayout(three, nil)
+	if three.Parts[0].Geom.W <= w2 {
+		t.Fatalf("adding a child should widen the slab: was %.0f now %.0f", w2, three.Parts[0].Geom.W)
+	}
+}
+
+// A group with AUTHORED geom.w/d must NOT be auto-resized (author intent wins).
+func TestAuthoredGroupFootprintRespected(t *testing.T) {
+	n := &Node{Shape: "composite", Parts: []*CompositePart{{
+		ID: "g", Shape: "group", Geom: &Geom{W: 360, D: 220, H: 6},
+		Parts: []*CompositePart{
+			{ID: "a", Shape: "rectangle", Geom: &Geom{W: 110, D: 90, H: 30}, Offset: &WorldPoint{WX: 30, WY: 30}},
+		},
+	}}}
+	applyLayout(n, nil)
+	if n.Parts[0].Geom.W != 360 || n.Parts[0].Geom.D != 220 {
+		t.Fatalf("authored footprint must be kept, got %.0fx%.0f", n.Parts[0].Geom.W, n.Parts[0].Geom.D)
+	}
+}

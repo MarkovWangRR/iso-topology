@@ -400,8 +400,16 @@ func solveContainer(parts []*CompositePart, lay *Layout, owner *CompositePart, c
 		arrangeContainer(parts, lay, owner, cell, path, issues)
 	} else {
 		placed := placeSiblings(parts, cell, path, issues)
-		if owner != nil && placed {
+		switch {
+		case owner == nil:
+			// scene root — never auto-sized
+		case placed:
 			autosizeGroup(owner, parts, cell)
+		case owner.Geom == nil || owner.Geom.W <= 0 || owner.Geom.D <= 0:
+			// children positioned by explicit offsets and the group has no
+			// authored footprint (e.g. a group frozen by a drag) — still wrap
+			// the slab around them so added/dragged nodes never stick out.
+			autosizeManualGroup(owner, parts, cell)
 		}
 	}
 	checkSiblingOverlaps(parts, path, issues)
@@ -903,6 +911,44 @@ func autosizeGroup(owner *CompositePart, parts []*CompositePart, cell float64) {
 		bakeOffset(p, padW-minX, padW-minY)
 	}
 	ensureFootprint(owner, (maxX-minX)+2*padW, (maxY-minY)+2*padW)
+}
+
+// autosizeManualGroup wraps a group whose children are positioned by explicit
+// offsets (no layout/place) — typically a group frozen by a drag. Like
+// autosizeGroup it normalises children to a padding inset and derives the
+// footprint, but it ALSO shifts the owner's own offset by the inverse, so the
+// children don't move on screen — the frozen group stays put and its slab just
+// grows to contain them. Only called when the owner has no authored geom.w/d.
+func autosizeManualGroup(owner *CompositePart, parts []*CompositePart, cell float64) {
+	minX, minY := math.Inf(1), math.Inf(1)
+	maxX, maxY := math.Inf(-1), math.Inf(-1)
+	for _, p := range parts {
+		if p == nil {
+			continue
+		}
+		x, y := 0.0, 0.0
+		if p.Offset != nil {
+			x, y = p.Offset.WX, p.Offset.WY
+		}
+		w, d := partFootprint(p)
+		minX, minY = math.Min(minX, x), math.Min(minY, y)
+		maxX, maxY = math.Max(maxX, x+w), math.Max(maxY, y+d)
+	}
+	if math.IsInf(minX, 1) {
+		return
+	}
+	pad := cell
+	sx, sy := pad-minX, pad-minY
+	for _, p := range parts {
+		if p != nil {
+			bakeOffset(p, sx, sy)
+		}
+	}
+	if owner.Offset != nil { // keep an already-positioned (frozen) group put
+		owner.Offset.WX -= sx
+		owner.Offset.WY -= sy
+	}
+	ensureFootprint(owner, (maxX-minX)+2*pad, (maxY-minY)+2*pad)
 }
 
 // ── post-solve diagnostics ───────────────────────────────────────────
