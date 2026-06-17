@@ -114,6 +114,10 @@ var (
 type CompositePart struct {
 	ID      string      `yaml:"id,omitempty" json:"id,omitempty"` // v1.4 — referenced by Connectors
 	Shape   string      `yaml:"shape" json:"shape"`
+	// groupLabel marks the iso_text the lowering pass emits for a group's name
+	// (internal; never parsed). The occlusion pass repaints these last so an
+	// upper-layer node can't cover a lane label. Unexported → not serialised.
+	groupLabel bool      `yaml:"-" json:"-"`
 	Geom    *Geom       `yaml:"geom,omitempty" json:"geom,omitempty"`
 	Style   *Style      `yaml:"style,omitempty" json:"style,omitempty"`
 	Preset  string      `yaml:"preset,omitempty" json:"preset,omitempty"` // v2.5 — theme.presets reference

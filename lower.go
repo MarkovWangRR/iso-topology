@@ -253,9 +253,10 @@ func groupLabelPart(sub *CompositePart, label string) *CompositePart {
 		off.WZ += sub.Offset.WZ
 	}
 	return &CompositePart{
-		Shape:  "iso_text",
-		Label:  label,
-		Offset: off,
+		Shape:      "iso_text",
+		groupLabel: true,
+		Label:      label,
+		Offset:     off,
 		Style: &Style{
 			Text: &Text{Color: color, Size: &size},
 		},

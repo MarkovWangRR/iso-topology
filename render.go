@@ -59,6 +59,7 @@ func renderComposite(n *Node, theme *Theme, canvas *Canvas, anns []*Annotation) 
 	if len(flat) == 0 {
 		return ""
 	}
+	flat = resolveGroupLabelOcclusion(flat)
 
 	// v3.0 — stable-partition substrates to the front of the painter
 	// order. A group slab is a thin plate at the ground (or its parent's
