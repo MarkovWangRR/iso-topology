@@ -557,11 +557,60 @@ isotopo validate scene.yaml
 ```
 
 JSON output is JSONPath-located with "did you mean" suggestions —
-apply them programmatically and re-validate. Layout-specific checks:
-dangling `place` refs and cycles are errors; post-solve sibling
-overlaps are warnings naming the exact pair and overlap size. See
+apply them programmatically and re-validate. See
 [`PROMPT_TEMPLATE.md`](PROMPT_TEMPLATE.md) for the agent-side
 boilerplate.
+
+### What the validator checks
+
+**Errors** (block render):
+- Unknown shape names, with "did you mean" suggestions
+- Connector `from`/`to` referencing a non-existent part id
+- Duplicate part ids; `place` cycles and dangling references
+- Negative dimensions or gaps; invalid anchor suffixes
+
+**Warnings** (render succeeds, quality suffers):
+
+| Check | Threshold | Path in JSON |
+|---|---|---|
+| Top-face fill vs label text contrast | ratio < 3.0 | `.style.fill` |
+| Node fill vs canvas background | ratio < 1.5 | `.style.fill` |
+| Group fill vs direct-child fill | ratio < 1.3 | `.style.fill` |
+| Label truncation risk | estimated px > 95% of node width | `.label` |
+| Label too long | > 40 chars | `.label` |
+| High connector out-degree | ≥ 5 outgoing from one part | `.connectors[N]` |
+| Deep group nesting | depth > 3 | `.parts[id]` |
+| Post-solve sibling overlaps | any footprint intersection | `.parts[id]` |
+
+Contrast ratios use WCAG relative luminance (sRGB linearised). Only
+`#RRGGBB` / `#RGB` colours are evaluated; named colours and
+`rgba(…)` are skipped silently.
+
+### I want to track whether an edit improved quality (golden diff)
+
+```go
+before := isotopo.Validate(docBefore)
+after  := isotopo.Validate(docAfter)
+diff   := isotopo.DiffIssues(before, after)
+// diff.Fixed    — issues resolved by the edit
+// diff.New      — issues introduced by the edit
+// diff.Remained — unchanged issues
+```
+
+`DiffIssues` matches issues by `(Path, Message)` pair. Use it in an
+agent loop to confirm each iteration moves toward zero issues, not
+just changes them:
+
+```python
+before_issues = validate(dsl_v1)
+for attempt in range(3):
+    dsl = llm.fix(dsl, issues)
+    after_issues = validate(dsl)
+    diff = diff_issues(before_issues, after_issues)
+    if not diff["new"] and not diff["remained"]:
+        break          # all clean
+    before_issues = after_issues
+```
 
 ## When you want behaviour we don't have
 

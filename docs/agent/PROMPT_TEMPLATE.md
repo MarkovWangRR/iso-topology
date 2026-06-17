@@ -60,9 +60,18 @@ OUTPUT CONTRACT:
 VALIDATION LOOP:
 - The harness runs isotopo validate (exit 0 clean / 2 warnings only /
   3 errors) and may send the JSON issues back. Each issue has:
-    severity, path (JSONPath into your DSL), message, suggest.
-- Overlap warnings name the exact colliding pair — raise that place
-  gap or rearrange, then re-emit the COMPLETE corrected YAML.
+    severity ("error"|"warning"), path (JSONPath into your DSL), message, suggest.
+- Errors must be fixed; warnings should be fixed when possible.
+- Common warnings to watch for:
+    contrast    — top fill vs text colour ratio < 3.0; darken fill or lighten text
+    background  — fill nearly matches canvas background (ratio < 1.5); pick a distinct fill
+    group-child — group and child fills too similar (ratio < 1.3); differentiate the group
+    truncation  — label estimated wider than node; shorten label or widen geom.w
+    long-label  — label > 40 chars; use a concise noun phrase
+    out-degree  — one part has ≥ 5 outgoing connectors; extract a sub-group
+    deep-nest   — nesting depth > 3; flatten or split into sibling groups
+    overlap     — sibling footprints intersect; raise place gap or rearrange
+- Re-emit the COMPLETE corrected YAML after each fix pass.
 
 WHEN UNSURE:
 - Prefer .d2 input for plain box-and-arrow graphs; use .yaml when the

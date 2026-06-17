@@ -404,6 +404,12 @@ func Validate(doc *Document) []Issue {
 	// structural pass can't see (see lint.go).
 	issues = append(issues, VisualLint(doc)...)
 
+	// v: visual quality warnings (contrast, labels, connectivity, nesting).
+	issues = append(issues, VisualContrastIssues(doc)...)
+	issues = append(issues, labelIssues(doc)...)
+	issues = append(issues, outDegreeIssues(doc)...)
+	issues = append(issues, nestingIssues(doc)...)
+
 	return issues
 }
 
