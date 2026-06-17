@@ -859,9 +859,24 @@ window.addEventListener('mousemove',e=>{
   liveTranslate(d.el, d.base, dx, dy);
   // node drag: docked connector endpoints track the node in real time
   if(nodeDrag && d.edges) d.edges.forEach(ed=>ed.el.setAttribute('d', shiftEnds(ed.baseD, ed.mf, ed.mt, dx, dy)));
+  // live drop-target feedback: highlight the group the node would land in, so
+  // it's obvious BEFORE releasing whether the re-home was recognised.
+  if(nodeDrag) highlightDropTarget(containerUnder(e.clientX, e.clientY, d.id));
 });
+// Mark one group slab as the active drop target (clears any previous one).
+let dropTargetId=null;
+function highlightDropTarget(id){
+  if(id===dropTargetId) return;
+  dropTargetId=id;
+  zoomer.querySelectorAll('g[data-part-id].drop-target').forEach(g=>g.classList.remove('drop-target'));
+  if(id){
+    const g=zoomer.querySelector('g[data-part-id="'+(window.CSS&&CSS.escape?CSS.escape(id):id)+'"]');
+    if(g) g.classList.add('drop-target');
+  }
+}
 window.addEventListener('mouseup',e=>{
   const d=nodeDrag||edgeDrag, kind=nodeDrag?'node':(edgeDrag?'edge':null);
+  highlightDropTarget(null);   // clear the drop-target glow regardless of outcome
   if(!kind) return;
   nodeDrag=null; edgeDrag=null;
   // restore the pre-drag transform; commit re-renders the SVG fresh
@@ -893,16 +908,20 @@ window.addEventListener('mouseup',e=>{
 // whose on-screen box contains (cx,cy), excluding the dragged node, or null
 // (→ scene root). Used to re-home a dragged node into / out of a group.
 function containerUnder(cx, cy, exceptId){
-  let best=null, bestArea=Infinity;
-  zoomer.querySelectorAll('g[data-part-id]').forEach(g=>{
+  // Hit-test the ACTUAL painted geometry (iso slabs are rhombi — their
+  // axis-aligned boxes overlap heavily, so a bbox test highlights the wrong
+  // lane). Walk the paint stack at the cursor: the first container slab whose
+  // pixels are under the cursor (skipping the dragged node + leaf nodes that
+  // sit on top of a slab) is the drop target.
+  for(const el of document.elementsFromPoint(cx, cy)){
+    const g=el.closest && el.closest('g[data-part-id]');
+    if(!g) continue;
     const id=g.getAttribute('data-part-id').replace(/~\d+$/,'');
-    if(id===exceptId || !isContainerId(id)) return;
-    const r=g.getBoundingClientRect();
-    if(cx>=r.left && cx<=r.right && cy>=r.top && cy<=r.bottom && r.width*r.height<bestArea){
-      bestArea=r.width*r.height; best=id;
-    }
-  });
-  return best;
+    if(id===exceptId) continue;        // the node being dragged
+    if(isContainerId(id)) return id;   // a group slab under the cursor → target
+    // a leaf node on top of a slab: keep descending to the slab behind it
+  }
+  return null;
 }
 async function reparentNode(id, target){
   if(!serverOK) return;

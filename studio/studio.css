@@ -70,6 +70,9 @@ button:disabled{opacity:.45;cursor:default;}
 #render{background:var(--accent);border-color:transparent;color:white;}
 #render:hover{background:var(--accent-deep);}
 #viewtoggle.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-deep);}
+/* drag-to-reparent: the group a dragged node would land in glows in the accent
+   colour, so it's obvious the drop target was recognised before releasing. */
+g[data-part-id].drop-target{filter:drop-shadow(0 0 1px var(--accent)) drop-shadow(0 0 10px var(--accent)) brightness(1.06);}
 label.auto{font:11.5px Inter,sans-serif;color:var(--muted);display:flex;gap:5px;align-items:center;}
 label.auto input{accent-color:var(--accent);}
 .filetab{display:flex;align-items:center;gap:8px;padding:8px 16px;border-bottom:1px solid var(--border);
