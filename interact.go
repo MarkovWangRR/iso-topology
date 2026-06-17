@@ -19,19 +19,24 @@ package isotopo
 // PartModel is the world-space geometry of one part after layout resolution.
 // Coordinates are in world units (same space as offset.wx/wy/wz in the DSL).
 type PartModel struct {
-	ID          string       `json:"id"`
-	Container   bool         `json:"container"`
-	X, Y, Z     float64      `json:"x,omitempty"`  // world corner (min)
-	W, D, H     float64      `json:"w,omitempty"`  // world extent
-	Anchors     []AnchorPoint `json:"anchors,omitempty"`
+	ID        string        `json:"id"`
+	Container bool          `json:"container"`
+	X         float64       `json:"x"`
+	Y         float64       `json:"y"`
+	Z         float64       `json:"z,omitempty"`
+	W         float64       `json:"w"`
+	D         float64       `json:"d"`
+	H         float64       `json:"h,omitempty"`
+	Anchors   []AnchorPoint `json:"anchors,omitempty"`
 }
 
 // AnchorPoint is one named connection point on a part's surface.
 // Name matches the anchor suffix used in connector from/to (e.g. "top",
 // "left", "right", "bottom"). WX/WY are world coordinates.
 type AnchorPoint struct {
-	Name    string  `json:"name"`
-	WX, WY float64 `json:"wx,wy"`
+	Name string  `json:"name"`
+	WX   float64 `json:"wx"`
+	WY   float64 `json:"wy"`
 }
 
 // BuildInteractionModel returns the world-space geometry for every part in the

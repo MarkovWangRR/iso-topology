@@ -142,9 +142,9 @@ let connTarget=null;     // id of the node the pointer is currently over
 
 // World-space interaction model received from the server alongside each SVG.
 // Array of {id, container, x, y, w, d, anchors:[{name,wx,wy}]}.
-// Null until the first successful render response that includes the "model" key.
-let interactionModel=null;
-function updateModel(data){ if(data&&data.model) interactionModel=data.model; }
+// Exposed on window so E2E tests (Playwright) can inspect it directly.
+window.interactionModel=null;
+function updateModel(data){ if(data&&data.model) window.interactionModel=data.model; }
 
 const HANDLE_R=5, HANDLE_COL='#2563EB', HANDLE_HOV='#1D4ED8';
 
@@ -157,9 +157,17 @@ function ensureOverlay(){
   connOverlay.style.cssText='position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;overflow:visible;';
   document.getElementById('zoomer').parentElement.appendChild(connOverlay);
 }
-function clearHandles(){
-  connOverlay&&connOverlay.querySelectorAll('.conn-handle').forEach(h=>h.remove());
+let _clearTimer=null;
+function clearHandles(immediate){
+  if(immediate){
+    if(_clearTimer){clearTimeout(_clearTimer);_clearTimer=null;}
+    connOverlay&&connOverlay.querySelectorAll('.conn-handle').forEach(h=>h.remove());
+  }else{
+    if(_clearTimer) return;
+    _clearTimer=setTimeout(()=>{_clearTimer=null;connOverlay&&connOverlay.querySelectorAll('.conn-handle').forEach(h=>h.remove());},120);
+  }
 }
+function cancelClear(){ if(_clearTimer){clearTimeout(_clearTimer);_clearTimer=null;} }
 
 // Convert a polygon's centroid from SVG user-units → overlay-relative px.
 // Kept as fallback for shapes without interaction model data.
@@ -206,8 +214,8 @@ function worldToScreen(wx, wy, stageRect){
 // (scx, scy in overlay-relative px) and returns {name, cx, cy}.
 // Returns null if interactionModel has no entry for partId.
 function nearestAnchorScreen(partId, scx, scy, stageRect){
-  if(!interactionModel) return null;
-  const pm=interactionModel.find(p=>p.id===partId);
+  if(!window.interactionModel) return null;
+  const pm=window.interactionModel.find(p=>p.id===partId);
   if(!pm||!pm.anchors||!pm.anchors.length) return null;
   let best=null, bestD=Infinity;
   for(const a of pm.anchors){
@@ -230,7 +238,7 @@ function showHandles(g){
 
   // Build the list of {name, cx, cy} anchor points to display.
   let anchors=[];
-  const pm=interactionModel&&interactionModel.find(p=>p.id===partId);
+  const pm=window.interactionModel&&window.interactionModel.find(p=>p.id===partId);
   if(pm&&pm.anchors&&pm.anchors.length){
     for(const a of pm.anchors){
       const [cx,cy]=worldToScreen(a.wx,a.wy,stage);
@@ -259,7 +267,7 @@ function showHandles(g){
     c.style.cssText='pointer-events:all;cursor:crosshair;';
     c.dataset.name=name;
     c.dataset.cx=cx; c.dataset.cy=cy;
-    c.addEventListener('mouseenter',()=>c.setAttribute('fill',HANDLE_HOV));
+    c.addEventListener('mouseenter',()=>{cancelClear();c.setAttribute('fill',HANDLE_HOV);});
     c.addEventListener('mouseleave',()=>c.setAttribute('fill',HANDLE_COL));
     c.addEventListener('mousedown',ev=>{
       if(ev.button!==0) return;
@@ -297,16 +305,22 @@ window.addEventListener('mousemove',ev=>{
   const ex=ev.clientX-stage.left, ey=ev.clientY-stage.top;
   if(connDrag){
     connDrag.line.setAttribute('points',connDrag.startX+','+connDrag.startY+' '+ex+','+ey);
-  }else if(connOverlay&&connOverlay.querySelector('.conn-handle')){
-    // Highlight the nearest anchor dot while just hovering (no drag yet).
-    highlightNearestHandle(ex, ey);
+  }else if(connOverlay){
+    const overHandle=ev.target&&ev.target.classList&&ev.target.classList.contains('conn-handle');
+    const overNode=ev.target&&ev.target.closest&&ev.target.closest('g[data-part-id]');
+    if(overHandle||overNode){
+      cancelClear();
+      if(connOverlay.querySelector('.conn-handle')) highlightNearestHandle(ex,ey);
+    }else if(connOverlay.querySelector('.conn-handle')){
+      clearHandles(); // debounced 120ms
+    }
   }
 },true);
 
 window.addEventListener('mouseup',async ev=>{
   if(!connDrag) return;
   const drag=connDrag; connDrag=null;
-  drag.line.remove(); clearHandles();
+  drag.line.remove(); clearHandles(true);
   document.body.style.cursor='';
   const toId=connTarget;
   connTarget=null;
@@ -343,8 +357,12 @@ function wireHover(){
       const r=rangeFor(id); if(!r) return;
       paint(r); scrollToLine(r[0]);
     });
-    g.addEventListener('mouseleave',()=>{
+    g.addEventListener('mouseleave',(ev)=>{
       if(connDrag){ if(connTarget===id.replace(/~\d+$/,'')) connTarget=null; return; }
+      // Don't clear handles if the cursor moved onto one of them — they live
+      // in an overlay on top of the node and the browser fires mouseleave on
+      // the <g> when the pointer enters an overlaid element.
+      if(ev.relatedTarget && ev.relatedTarget.classList && ev.relatedTarget.classList.contains('conn-handle')) return;
       clearHandles();
       if(pinId!==id) g.classList.remove('hi');
       paint(pinnedRange());
@@ -936,7 +954,7 @@ window.addEventListener('mousemove',e=>{
   if(nodeDrag && d.edges) d.edges.forEach(ed=>ed.el.setAttribute('d', shiftEnds(ed.baseD, ed.mf, ed.mt, dx, dy)));
   // live drop-target feedback: highlight the group the node would land in, so
   // it's obvious BEFORE releasing whether the re-home was recognised.
-  if(nodeDrag) highlightDropTarget(containerUnder(e.clientX, e.clientY, d.id));
+  if(nodeDrag){const lwd=screenToWorldDelta(dx,dy);highlightDropTarget(containerUnder(e.clientX,e.clientY,d.id,Math.round(lwd[0]),Math.round(lwd[1])));}
 });
 // Mark one group slab as the active drop target (clears any previous one).
 let dropTargetId=null;
@@ -971,7 +989,7 @@ window.addEventListener('mouseup',e=>{
     // Position first, then re-home: drop onto a group's slab joins it; drop on
     // bare canvas returns it to the scene root. The server no-ops the reparent
     // when the parent is unchanged, so an in-group nudge keeps its offset.
-    const target=containerUnder(e.clientX, e.clientY, d.id);
+    const target=containerUnder(e.clientX, e.clientY, d.id, Math.round(wd[0]), Math.round(wd[1]));
     commitMove(kind, d.id, Math.round(wd[0]), Math.round(wd[1]), e.clientX, e.clientY)
       .then(()=>reparentNode(d.id, target||''));
   }else{
@@ -991,17 +1009,18 @@ window.addEventListener('mouseup',e=>{
 //
 // Fallback (interactionModel === null, e.g. a d2 file or stale server):
 // the original pixel hit-test via elementsFromPoint.
-function containerUnder(cx, cy, exceptId){
-  if(interactionModel){
-    // Find the dragged node's AABB in the model.
-    const drag=interactionModel.find(p=>p.id===exceptId);
+function containerUnder(cx, cy, exceptId, dwx, dwy){
+  if(window.interactionModel){
+    // Find the dragged node's AABB in the model, shifted by the drag delta.
+    const drag=window.interactionModel.find(p=>p.id===exceptId);
     if(drag && drag.w>0 && drag.d>0){
+      const nx=drag.x+(dwx||0), ny=drag.y+(dwy||0);
       const dragArea=drag.w*drag.d;
       let bestId=null, bestOv=0;
-      for(const pm of interactionModel){
+      for(const pm of window.interactionModel){
         if(!pm.container || pm.id===exceptId) continue;
-        const ox=Math.min(drag.x+drag.w, pm.x+pm.w)-Math.max(drag.x, pm.x);
-        const oy=Math.min(drag.y+drag.d, pm.y+pm.d)-Math.max(drag.y, pm.y);
+        const ox=Math.min(nx+drag.w, pm.x+pm.w)-Math.max(nx, pm.x);
+        const oy=Math.min(ny+drag.d, pm.y+pm.d)-Math.max(ny, pm.y);
         if(ox<=0||oy<=0) continue;
         const ov=ox*oy;
         // Require at least 5% overlap of the dragged node's area to qualify,
@@ -1445,5 +1464,5 @@ if(location.hash.indexOf('#src=')===0){
   }).catch(()=>{});
 }
 buildMap(); paint(null); wireHover(); wireDrag(); renderPath(); adaptStage();
-probe().then(()=>{if(serverOK&&dirty)rerender();});
+probe().then(()=>{if(serverOK)rerender();});
 if(location.protocol.startsWith('http')) setInterval(probe,5000);
