@@ -168,11 +168,14 @@ func resizeCanvasBg(body string, x, y, w, h float64) string {
 // node-id → SVG string. The document's Theme is applied to every node.
 // v2 — the document's top-level "scene" composite picks up Canvas
 
-// ceilOuterDims rewrites the root <svg> width/height attributes to the
-// ceiling of their values. The precise viewBox is left untouched —
-// only the CSS pixel size becomes integral, so 1:1 raster captures
-// (e.g. headless Chrome at --window-size=WxH) need no scrollbars and
-// lose no bottom/right edge.
+// ceilOuterDims integer-snaps the root <svg> frame: the viewBox origin floors,
+// its far edge ceils, and width/height + the canvas-bg rect follow. The viewBox
+// is just the canvas WINDOW — sub-pixel precision buys nothing visible, but it
+// puts coordinates on .xx5 rounding boundaries that flip across CPUs (the Go
+// compiler may fuse multiply-add differently on arm64 vs amd64), so the SAME
+// scene produced byte-different goldens on two machines. Integers are
+// deterministic and visually identical. (Also keeps 1:1 raster captures
+// scrollbar-free, the original intent.)
 func ceilOuterDims(svg string) string {
 	start := strings.Index(svg, "<svg")
 	if start < 0 {
@@ -183,24 +186,41 @@ func ceilOuterDims(svg string) string {
 		return svg
 	}
 	tag := svg[start : start+tagEnd+1]
-	out := tag
-	for _, attr := range []string{"width", "height"} {
-		key := attr + `="`
-		i := strings.Index(out, key)
-		if i < 0 {
-			continue
+
+	vb := extractAttr(tag, "viewBox")
+	if vb == "" {
+		// No viewBox — just ceil the width/height (legacy fallback).
+		out := tag
+		for _, attr := range []string{"width", "height"} {
+			key := attr + `="`
+			i := strings.Index(out, key)
+			if i < 0 {
+				continue
+			}
+			j := strings.Index(out[i+len(key):], `"`)
+			if j < 0 {
+				continue
+			}
+			var v float64
+			if _, err := fmt.Sscanf(out[i+len(key):i+len(key)+j], "%f", &v); err != nil {
+				continue
+			}
+			out = out[:i] + fmt.Sprintf(`%s="%d"`, attr, int(math.Ceil(v))) + out[i+len(key)+j+1:]
 		}
-		j := strings.Index(out[i+len(key):], `"`)
-		if j < 0 {
-			continue
-		}
-		var v float64
-		if _, err := fmt.Sscanf(out[i+len(key):i+len(key)+j], "%f", &v); err != nil {
-			continue
-		}
-		out = out[:i] + fmt.Sprintf(`%s="%d"`, attr, int(math.Ceil(v))) + out[i+len(key)+j+1:]
+		return svg[:start] + out + svg[start+tagEnd+1:]
 	}
-	return svg[:start] + out + svg[start+tagEnd+1:]
+
+	var x, y, w, h float64
+	if _, err := fmt.Sscanf(vb, "%f %f %f %f", &x, &y, &w, &h); err != nil {
+		return svg
+	}
+	nx, ny := math.Floor(x), math.Floor(y)
+	nw, nh := math.Ceil(x+w)-nx, math.Ceil(y+h)-ny
+	out := replaceAttr(tag, "viewBox", fmt.Sprintf("%d %d %d %d", int(nx), int(ny), int(nw), int(nh)))
+	out = replaceAttr(out, "width", fmt.Sprintf("%d", int(nw)))
+	out = replaceAttr(out, "height", fmt.Sprintf("%d", int(nh)))
+	body := resizeCanvasBg(svg[start+tagEnd+1:], nx, ny, nw, nh)
+	return svg[:start] + out + body
 }
 
 // enforceAspectRatio expands the SVG canvas so its width/height ratio is
