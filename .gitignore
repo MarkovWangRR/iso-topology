@@ -19,3 +19,4 @@ samples/*/*/actual.svg
 /tools/gen-docs/gen-docs
 tools/visreg/baselines/*.actual.png
 .claude/
+test-results/
