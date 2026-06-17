@@ -141,11 +141,14 @@ func RenderIsoCloud(o IsoBoxOpts) string {
 		)
 	}
 
-	// Label + icon on top face (matrix transform tilts content onto iso plane).
+	// Label on the top face (matrix transform tilts content onto the iso
+	// plane). Cloud is an outline silhouette, not a flat slab — a pasted icon
+	// reads as floating debris, so the cloud shape deliberately ignores o.Icon;
+	// its identity IS the cloud form.
 	writeTopLabelAndIcon(
 		&sb,
 		tx, ty-h, w, d,
-		o.Label, o.Icon, o.IconScale,
+		o.Label, "", o.IconScale,
 		o.FontFamily, o.FontSize, o.FontWeight, o.FontColor,
 	)
 

@@ -157,13 +157,21 @@ func nodeSchema(shape string) []Field {
 	var f []Field
 
 	// ── Content (open) ────────────────────────────────────────────────
-	f = append(f, grp("Content", false,
-		Field{Path: "label", Label: "Label", Desc: "Text rendered on the node", Type: "text"},
-		Field{Path: "shape", Label: "Shape", Desc: "Geometric form of the node", Type: "choice", Options: shapeOptions()},
-		Field{Path: "preset", Label: "Style preset", Desc: "Named style from theme.presets", Type: "text"},
-		Field{Path: "icon", Label: "Icon", Desc: "iso://… ref, image URL, or pick a local file", Type: "icon"},
-		Field{Path: "@iconColor", Label: "Icon color", Desc: "Tint for iso:// glyph/logo icons (blank = default ink)", Type: "color"},
-	)...)
+	content := []Field{
+		{Path: "label", Label: "Label", Desc: "Text rendered on the node", Type: "text"},
+		{Path: "shape", Label: "Shape", Desc: "Geometric form of the node", Type: "choice", Options: shapeOptions()},
+		{Path: "preset", Label: "Style preset", Desc: "Named style from theme.presets", Type: "text"},
+	}
+	// Cloud is an outline silhouette (not a flat slab): a pasted icon floats on
+	// it, so the renderer ignores it — don't offer the field. Other "fill"
+	// shapes (circle/person) keep icons.
+	if !strings.EqualFold(strings.TrimSpace(shape), "cloud") {
+		content = append(content,
+			Field{Path: "icon", Label: "Icon", Desc: "iso://… ref, image URL, or pick a local file", Type: "icon"},
+			Field{Path: "@iconColor", Label: "Icon color", Desc: "Tint for iso:// glyph/logo icons (blank = default ink)", Type: "color"},
+		)
+	}
+	f = append(f, grp("Content", false, content...)...)
 
 	// ── Size (open) ───────────────────────────────────────────────────
 	size := []Field{

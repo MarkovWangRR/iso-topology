@@ -151,20 +151,22 @@ func RenderIsoArray(o IsoBoxOpts, shapeName string) string {
 				x0, y0, z0 := offX, offY, offZ
 				x1, y1, z1 := offX+cellW, offY+cellD, offZ+cellH
 
-				// Left face: x=x0, y goes from y0 to y1, z goes from z0 to z1
+				// Front-left wall: y=y1 (screen-left in this projection), spans x.
 				leftPts := [4][2]float64{
-					proj(x0, y0, z0),
-					proj(x0, y0, z1),
-					proj(x0, y1, z1),
 					proj(x0, y1, z0),
+					proj(x0, y1, z1),
+					proj(x1, y1, z1),
+					proj(x1, y1, z0),
 				}
 				writeFace(&sb, fmt.Sprintf("cell-%d-%d-%d-left", i, j, k),
 					o.LeftFill, stroke, sw*0.7, "", 0, leftPts[:]...)
 
-				// Right face: y=y1, x goes from x0 to x1, z goes from z0 to z1
+				// Front-right wall: x=x1 (screen-right), spans y. The old code drew
+				// x=x0 — a hidden BACK face — leaving every exposed cell's right
+				// side open; x=x1 is the camera-facing wall that closes the cell.
 				rightPts := [4][2]float64{
-					proj(x0, y1, z0),
-					proj(x0, y1, z1),
+					proj(x1, y0, z0),
+					proj(x1, y0, z1),
 					proj(x1, y1, z1),
 					proj(x1, y1, z0),
 				}

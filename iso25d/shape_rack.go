@@ -63,15 +63,18 @@ func RenderIsoRack(o IsoBoxOpts, slots int) string {
 		return [2]float64{p[0] + m, p[1] + m}
 	}
 
-	// Outer left face
+	// Closed outer shell: the two CAMERA-FACING walls + the top cap.
+	// prismLocal projects screenX = (x−y): the front-left wall is y=D (spans x)
+	// and the front-right wall is x=W (spans y); x=0/y=0 are hidden back faces.
+	// (The previous code drew x=0 — a back face — and never drew x=W, so the
+	// right side was open and the slot slabs floated past it.)
 	writeFace(&sb, "left", leftFill, stroke, sw, "", 0,
-		proj(0, D, 0), proj(0, D, H), proj(0, 0, H), proj(0, 0, 0))
-
-	// Outer right face
-	writeFace(&sb, "right", rightFill, stroke, sw, "", 0,
 		proj(0, D, 0), proj(W, D, 0), proj(W, D, H), proj(0, D, H))
+	writeFace(&sb, "right", rightFill, stroke, sw, "", 0,
+		proj(W, 0, 0), proj(W, D, 0), proj(W, D, H), proj(W, 0, H))
 
-	// Slot slabs
+	// Slot grooves: a translucent dark band across both visible walls at each
+	// shelf, so the rack reads as slotted WITHOUT breaking the closed shell.
 	slotH := 8.0
 	totalGap := H - float64(slots)*slotH
 	if totalGap < 0 {
@@ -83,15 +86,12 @@ func RenderIsoRack(o IsoBoxOpts, slots int) string {
 	for i := 0; i < slots; i++ {
 		z0 := slotGap + float64(i)*(slotH+slotGap)
 		z1 := z0 + slotH
-
-		writeFace(&sb, fmt.Sprintf("slot-left-%d", i), leftFill, stroke, sw*0.5, "", 0.85,
-			proj(0, D, z0), proj(0, D, z1), proj(0, 0, z1), proj(0, 0, z0))
-
-		writeFace(&sb, fmt.Sprintf("slot-right-%d", i), rightFill, stroke, sw*0.5, "", 0.85,
+		// recessed band on the front-left wall (y=D)
+		writeFace(&sb, fmt.Sprintf("slot-left-%d", i), "#000000", "none", 0, "", 0.16,
 			proj(0, D, z0), proj(W, D, z0), proj(W, D, z1), proj(0, D, z1))
-
-		writeFace(&sb, fmt.Sprintf("slot-top-%d", i), topFill, stroke, sw*0.5, "", 0.85,
-			proj(0, 0, z1), proj(W, 0, z1), proj(W, D, z1), proj(0, D, z1))
+		// recessed band on the front-right wall (x=W)
+		writeFace(&sb, fmt.Sprintf("slot-right-%d", i), "#000000", "none", 0, "", 0.10,
+			proj(W, 0, z0), proj(W, D, z0), proj(W, D, z1), proj(W, 0, z1))
 	}
 
 	// Top cap

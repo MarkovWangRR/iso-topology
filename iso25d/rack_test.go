@@ -16,8 +16,14 @@ func TestRackRenderSmoke(t *testing.T) {
 	if !strings.HasPrefix(svg, "<svg") {
 		t.Error("rack: expected SVG output")
 	}
+	// Closed shell = two camera-facing walls + top; each slot adds a recessed
+	// band on both walls (5 slots → 3 + 2*5 = 13 faces). data-face="right" is
+	// the front-right wall — the closure fix — so assert it's present.
+	if !strings.Contains(svg, `data-face="right"`) || !strings.Contains(svg, `data-face="left"`) {
+		t.Error("rack: expected a closed shell with both visible walls")
+	}
 	count := strings.Count(svg, "<polygon")
-	if count < 18 {
-		t.Errorf("rack 5 slots: expected >=18 polygons, got %d", count)
+	if count < 13 {
+		t.Errorf("rack 5 slots: expected >=13 polygons, got %d", count)
 	}
 }

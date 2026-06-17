@@ -648,7 +648,21 @@ function optGlyph(key,val){
     'shape:diamond':'<path d="M10 3 16 10 10 17 4 10Z"/>',
     'shape:group':'<rect x="3" y="3" width="14" height="14" rx="2" stroke-dasharray="3 2"/>',
     'shape:boundary':'<rect x="3" y="3" width="14" height="14" rx="3" stroke-dasharray="3 2.5"/>',
-    'shape:text':'<path d="M5 5 15 5M10 5 10 15"/>'
+    'shape:text':'<path d="M5 5 15 5M10 5 10 15"/>',
+    'shape:array1d':'<rect x="2" y="8" width="4" height="4"/><rect x="8" y="8" width="4" height="4"/><rect x="14" y="8" width="4" height="4"/>',
+    'shape:array2d':'<rect x="3" y="3" width="4" height="4"/><rect x="8" y="3" width="4" height="4"/><rect x="13" y="3" width="4" height="4"/><rect x="3" y="8" width="4" height="4"/><rect x="8" y="8" width="4" height="4"/><rect x="13" y="8" width="4" height="4"/><rect x="3" y="13" width="4" height="4"/><rect x="8" y="13" width="4" height="4"/><rect x="13" y="13" width="4" height="4"/>',
+    'shape:array3d':'<rect x="6" y="6" width="4" height="4"/><rect x="11" y="6" width="4" height="4"/><rect x="6" y="11" width="4" height="4"/><rect x="11" y="11" width="4" height="4"/><path d="M8 4 17 4 17 13M13 4 13 8"/>',
+    'shape:browser-panel':'<rect x="3" y="4" width="14" height="12" rx="1.5"/><path d="M3 8 17 8"/><circle cx="5.6" cy="6" r="0.7" fill="currentColor" stroke="none"/><circle cx="8" cy="6" r="0.7" fill="currentColor" stroke="none"/>',
+    'shape:capsule':'<rect x="3" y="6" width="14" height="8" rx="4"/>',
+    'shape:cone':'<path d="M10 3 5 14M10 3 15 14"/><ellipse cx="10" cy="14" rx="5" ry="2"/>',
+    'shape:custom_path':'<path d="M4 12 C5 5 9 5 10 9 C11 13 15 13 16 7"/>',
+    'shape:dome':'<path d="M4 14 A6 6 0 0 1 16 14"/><path d="M3 14 17 14"/>',
+    'shape:frustum':'<path d="M6 5 14 5 17 15 3 15Z"/>',
+    'shape:pyramid':'<path d="M10 2 4 11 10 14 16 11Z"/><path d="M4 11 10 14 16 11"/>',
+    'shape:rack':'<rect x="5" y="3" width="10" height="14" rx="1"/><path d="M5 7 15 7M5 11 15 11M5 14 15 14"/>',
+    'shape:screen':'<rect x="3" y="3" width="14" height="10" rx="1"/><path d="M10 13 10 16M7 16 13 16"/>',
+    'shape:torus':'<circle cx="10" cy="10" r="6.5"/><circle cx="10" cy="10" r="2.4"/>',
+    'shape:wedge':'<path d="M3 15 12 15 12 6Z"/><path d="M12 6 17 8 17 17 12 15"/><path d="M3 15 8 17 17 17"/>'
   };
   // Gradient direction → an actual arrow (matched by VALUE, since the key
   // varies per face: top/left/rightGradient.dir).
