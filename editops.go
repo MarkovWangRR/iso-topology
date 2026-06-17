@@ -272,6 +272,27 @@ func avoidingRoute(fr, to planRect, obstacles []planRect) [][2]float64 {
 	return best
 }
 
+// freezeOffsets writes an explicit `offset:` for every id in offs (re-finding
+// each line since a write shifts numbers), adding the world delta to nudgeID.
+func freezeOffsets(out string, offs map[string][3]float64, nudgeID string, dwx, dwy float64, snap func(float64) float64) string {
+	ids := make([]string, 0, len(offs))
+	for id := range offs {
+		ids = append(ids, id)
+	}
+	sort.Strings(ids)
+	for _, id := range ids {
+		o := offs[id]
+		wx, wy, wz := o[0], o[1], o[2]
+		if id == nudgeID {
+			wx, wy = snap(wx+dwx), snap(wy+dwy)
+		}
+		if o2, ok := yamledit.UpsertInlineKey(out, yamledit.FindPartIDLine(out, id), "offset", wx, wy, wz); ok {
+			out = o2
+		}
+	}
+	return out
+}
+
 func applyMove(format string, src []byte, op EditOp) ([]byte, error) {
 	doc, derr := LoadInput(context.Background(), format, src, LayoutDagre)
 	if derr != nil {
@@ -286,6 +307,20 @@ func applyMove(format string, src []byte, op EditOp) ([]byte, error) {
 	s := string(src)
 	switch op.Target {
 	case "node":
+		// A node nested in a LAYOUT-driven group: the root-only freeze below
+		// never moves it (ResolveAllOffsets/SceneNeedsFreeze are root-scoped).
+		// Freeze that group instead — drop its layout and pin every child to its
+		// resolved offset — so the dragged child can actually move. Freeze the
+		// root too if it still needs it, so the group itself stays put.
+		if parent := parentOf(doc, op.ID); parent != "" && GroupHasLayout(doc, parent) {
+			out := s
+			if SceneNeedsFreeze(doc) {
+				out = freezeOffsets(yamledit.FreezeLayoutText(out), ResolveAllOffsets(doc), "", 0, 0, snap)
+			}
+			out = yamledit.FreezeGroupLayoutText(out, parent)
+			out = freezeOffsets(out, ResolveChildOffsets(doc, parent), op.ID, op.DWX, op.DWY, snap)
+			return rerouteMovedConnectors(format, []byte(out), op.ID), nil
+		}
 		// drawio model: the FIRST manual move freezes the whole scene into
 		// explicit coordinates and drops auto-layout, so the engine never
 		// re-decides positions; later moves just nudge one node.

@@ -1153,6 +1153,79 @@ func SceneNeedsFreeze(doc *Document) bool {
 	return false
 }
 
+// ResolveChildOffsets runs layout and returns the resolved offsets (relative to
+// the group) of a group's DIRECT children, keyed by id — the nested analogue of
+// ResolveAllOffsets, used to freeze a layout group when one of its children is
+// dragged so the rest keep their spots.
+func ResolveChildOffsets(doc *Document, groupID string) map[string][3]float64 {
+	out := map[string][3]float64{}
+	if doc == nil {
+		return out
+	}
+	scene := doc.Scene()
+	if scene == nil {
+		return out
+	}
+	applyLayout(scene, doc.Canvas)
+	var grp *CompositePart
+	var walk func(ps []*CompositePart)
+	walk = func(ps []*CompositePart) {
+		for _, p := range ps {
+			if p == nil || grp != nil {
+				continue
+			}
+			if p.ID == groupID {
+				grp = p
+				return
+			}
+			walk(p.Parts)
+		}
+	}
+	walk(scene.Parts)
+	if grp == nil {
+		return out
+	}
+	for _, c := range grp.Parts {
+		if c == nil || c.ID == "" {
+			continue
+		}
+		if c.Offset != nil {
+			out[c.ID] = [3]float64{c.Offset.WX, c.Offset.WY, c.Offset.WZ}
+		} else {
+			out[c.ID] = [3]float64{0, 0, 0}
+		}
+	}
+	return out
+}
+
+// GroupHasLayout reports whether the named container arranges its children with
+// a layout (so a child drag must first freeze that group).
+func GroupHasLayout(doc *Document, groupID string) bool {
+	if doc == nil {
+		return false
+	}
+	scene := doc.Scene()
+	if scene == nil {
+		return false
+	}
+	var found bool
+	var walk func(ps []*CompositePart)
+	walk = func(ps []*CompositePart) {
+		for _, p := range ps {
+			if p == nil || found {
+				continue
+			}
+			if p.ID == groupID {
+				found = p.Layout != nil
+				return
+			}
+			walk(p.Parts)
+		}
+	}
+	walk(scene.Parts)
+	return found
+}
+
 // ResolveAllOffsets runs layout on the scene and returns every
 // ROOT-level part's resolved world (wx, wy) keyed by id. Used to bake
 // an auto-layout scene into explicit per-node coordinates on the first

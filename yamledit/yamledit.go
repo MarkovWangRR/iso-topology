@@ -1010,6 +1010,47 @@ func MovePart(src, id, targetParentID string) (string, bool) {
 	return strings.Join(out, "\n"), true
 }
 
+// FreezeGroupLayoutText drops the `layout:` from a single named group's block
+// (inline or block form) so its children render from explicit offsets once one
+// is dragged. Other groups and the scene root are untouched.
+func FreezeGroupLayoutText(src, groupID string) string {
+	lines := strings.Split(src, "\n")
+	gLine := FindPartIDLine(src, groupID)
+	if gLine < 0 {
+		return src
+	}
+	gIndent := indentOf(lines[gLine])
+	end := len(lines)
+	for i := gLine + 1; i < len(lines); i++ {
+		if strings.TrimSpace(lines[i]) == "" {
+			continue
+		}
+		if indentOf(lines[i]) <= gIndent {
+			end = i
+			break
+		}
+	}
+	layoutRe := regexp.MustCompile(`^ *layout:`)
+	out := append([]string{}, lines[:gLine+1]...)
+	for i := gLine + 1; i < end; i++ {
+		if layoutRe.MatchString(lines[i]) {
+			if strings.Contains(lines[i], "{") {
+				continue // inline → drop the one line
+			}
+			ki := indentOf(lines[i]) // block → drop line + its deeper body
+			j := i + 1
+			for j < end && (strings.TrimSpace(lines[j]) == "" || indentOf(lines[j]) > ki) {
+				j++
+			}
+			i = j - 1
+			continue
+		}
+		out = append(out, lines[i])
+	}
+	out = append(out, lines[end:]...)
+	return strings.Join(out, "\n")
+}
+
 // DuplicatePart clones a node's block under a fresh id, placed at (ox,oy).
 func DuplicatePart(src, id string, ox, oy float64) (string, bool) {
 	lines := strings.Split(src, "\n")

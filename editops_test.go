@@ -259,6 +259,43 @@ func TestApplyOp_MoveRoutesEdgeAroundObstacle(t *testing.T) {
 	}
 }
 
+func TestApplyOp_MoveNestedNodeInLayoutGroup(t *testing.T) {
+	// Dragging a node nested in a row-layout group must actually move it: the
+	// group's layout is frozen and the child gets an explicit, nudged offset.
+	// (Regression: the old root-only freeze left nested nodes stuck in place.)
+	src := `nodes:
+  scene:
+    shape: composite
+    parts:
+      - id: lane
+        shape: group
+        label: Lane
+        layout: { mode: row, gap: 1 }
+        parts:
+          - { id: a, shape: rectangle, geom: { w: 80, d: 80, h: 20 }, label: A }
+          - { id: b, shape: rectangle, geom: { w: 80, d: 80, h: 20 }, label: B }
+`
+	out, err := ApplyOpText("yaml", []byte(src), EditOp{Kind: "move", Target: "node", ID: "b", DWX: -40, DWY: -70})
+	if err != nil {
+		t.Fatalf("move nested: %v", err)
+	}
+	s := string(out)
+	// lane's row layout is frozen, and b now carries its own offset.
+	laneBlock := s[strings.Index(s, "id: lane"):]
+	if strings.Contains(laneBlock[:strings.Index(laneBlock, "id: a")], "layout:") {
+		t.Fatalf("lane layout should be frozen after a child drag:\n%s", s)
+	}
+	bLine := ""
+	for _, l := range strings.Split(s, "\n") {
+		if strings.Contains(l, "id: b") {
+			bLine = l
+		}
+	}
+	if !strings.Contains(bLine, "offset") {
+		t.Fatalf("nested node b should have gained an offset:\n%s", s)
+	}
+}
+
 func TestApplyOp_MoveLeavesClearEdgeStraight(t *testing.T) {
 	// With nothing in the way, a move must NOT rewrite the edge's routing.
 	clear := `nodes:
