@@ -40,23 +40,37 @@ func RenderIsoCloud(o IsoBoxOpts) string {
 	sb.WriteString(svgHeader(W, H))
 	openWrapper(&sb, W, H, o.Background, o.Opacity, o.StrokeDasharray, "")
 
-	// Per-segment front-facing test.
+	// Per-segment front-facing test, in SCREEN space: a vertical side wall is
+	// visible iff it sits on the lower silhouette — its outward normal points
+	// toward the camera (+screenY). We orient each edge's normal away from the
+	// projected centroid, so the test holds for ANY outline winding (the old
+	// dy>dx heuristic on local coords only worked for the previous fixed bump
+	// layout, so the organic outline lost most of its wall).
+	var cxs, cys float64
+	for i := 0; i < n; i++ {
+		cxs += proj[i].topX
+		cys += proj[i].topY
+	}
+	cxs /= float64(n)
+	cys /= float64(n)
 	visible := make([]bool, n)
 	for i := 0; i < n; i++ {
 		j := (i + 1) % n
-		dx := outline[j][0] - outline[i][0]
-		dy := outline[j][1] - outline[i][1]
-		visible[i] = dy > dx
+		ex := proj[j].topX - proj[i].topX
+		ey := proj[j].topY - proj[i].topY
+		nx, ny := ey, -ex // a perpendicular to the edge
+		mx := (proj[i].topX+proj[j].topX)/2 - cxs
+		my := (proj[i].topY+proj[j].topY)/2 - cys
+		if mx*nx+my*ny < 0 { // flip so the normal points AWAY from centroid
+			ny = -ny
+		}
+		visible[i] = ny > 0 // outward normal faces down → camera-facing wall
 	}
 
-	// Walk visible runs and draw one polygon per run (fill only, no stroke
-	// so adjacent run boundaries don't double-stroke each other).
-	//
-	// The (dy > dx) test catches the steep descent tail of each bump as
-	// "visible", producing 2–5 segment "fin" runs under bumps 1–3. We drop
-	// runs shorter than minRunPoints — the real bottom-arc run is 30+
-	// segments so the threshold cleanly separates noise from signal.
-	const minRunPoints = 7
+	// Walk visible runs and draw one polygon per run (fill only, no stroke so
+	// adjacent run boundaries don't double-stroke each other). The screen-space
+	// test yields the single contiguous lower-silhouette arc, so no run-length
+	// filtering is needed.
 	type run struct{ idx []int }
 	runs := []run{}
 	for i := 0; i < n; i++ {
@@ -71,9 +85,6 @@ func RenderIsoCloud(o IsoBoxOpts) string {
 			if j == i {
 				break
 			}
-		}
-		if len(r.idx) < minRunPoints {
-			continue
 		}
 		runs = append(runs, r)
 	}
