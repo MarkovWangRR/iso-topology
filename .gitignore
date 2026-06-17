@@ -20,3 +20,6 @@ samples/*/*/actual.svg
 tools/visreg/baselines/*.actual.png
 .claude/
 test-results/
+
+# scratch playground (screenshots, experiments) — not repo content
+samples/playground/
