@@ -234,6 +234,52 @@ func TestValidate_DuplicatePartID(t *testing.T) {
 	}
 }
 
+const rerouteFixture = `nodes:
+  scene:
+    shape: composite
+    parts:
+      - { id: a, shape: rectangle, geom: { w: 70, d: 70, h: 30 }, offset: { wx: 0,   wy: 0 } }
+      - { id: c, shape: rectangle, geom: { w: 70, d: 70, h: 30 }, offset: { wx: 200, wy: 0 } }
+      - { id: b, shape: rectangle, geom: { w: 70, d: 70, h: 30 }, offset: { wx: 400, wy: 0 } }
+    connectors:
+      - { from: a, to: b }
+`
+
+func TestApplyOp_MoveRoutesEdgeAroundObstacle(t *testing.T) {
+	// a→b runs straight through c; moving a must reroute the edge around it
+	// (orthogonal + waypoints), the Studio drag → auto-route behaviour.
+	out, err := ApplyOpText("yaml", []byte(rerouteFixture),
+		EditOp{Kind: "move", Target: "node", ID: "a", DWX: 0, DWY: 0})
+	if err != nil {
+		t.Fatalf("ApplyOpText move: %v", err)
+	}
+	s := string(out)
+	if !strings.Contains(s, "routing: orthogonal") || !strings.Contains(s, "waypoints:") {
+		t.Fatalf("expected the a→b edge to be rerouted around c:\n%s", s)
+	}
+}
+
+func TestApplyOp_MoveLeavesClearEdgeStraight(t *testing.T) {
+	// With nothing in the way, a move must NOT rewrite the edge's routing.
+	clear := `nodes:
+  scene:
+    shape: composite
+    parts:
+      - { id: a, shape: rectangle, geom: { w: 70, d: 70, h: 30 }, offset: { wx: 0, wy: 0 } }
+      - { id: b, shape: rectangle, geom: { w: 70, d: 70, h: 30 }, offset: { wx: 300, wy: 0 } }
+    connectors:
+      - { from: a, to: b }
+`
+	out, err := ApplyOpText("yaml", []byte(clear),
+		EditOp{Kind: "move", Target: "node", ID: "a", DWX: 10, DWY: 0})
+	if err != nil {
+		t.Fatalf("ApplyOpText move: %v", err)
+	}
+	if strings.Contains(string(out), "routing: orthogonal") || strings.Contains(string(out), "waypoints:") {
+		t.Fatalf("a clear edge must stay straight after a move:\n%s", out)
+	}
+}
+
 func TestApplyOp_IconColorTint(t *testing.T) {
 	// set-field with the synthetic @iconColor must splice the tint into the icon
 	// ref suffix, headless — and preserve comments.

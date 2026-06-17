@@ -119,6 +119,157 @@ func ApplyOpText(format string, src []byte, op EditOp) ([]byte, error) {
 	}
 }
 
+// rerouteMovedConnectors gives obstacle avoidance to the edges touching a
+// just-moved node (the Studio drag → auto-route behaviour). For each connector
+// on movedID whose straight line now tunnels another node, it computes an
+// avoiding orthogonal route with the scorecard kernel and writes
+// `routing: orthogonal` + interior `waypoints` to that connector. Edges that
+// are already clear — or that can't be cleared — are left untouched, so a
+// default straight edge only becomes routed when a move actually creates a
+// collision. Non-yaml formats are returned unchanged.
+func rerouteMovedConnectors(format string, src []byte, movedID string) []byte {
+	if format == "d2" {
+		return src
+	}
+	doc, err := LoadInput(context.Background(), format, src, LayoutDagre)
+	if err != nil {
+		return src
+	}
+	scene := doc.Scene()
+	if scene == nil {
+		return src
+	}
+	rects, byID, _ := buildPlanModelOpt(scene, doc.Theme, doc.Canvas, false)
+	var leaves []planRect
+	for _, r := range rects {
+		if !r.container {
+			leaves = append(leaves, r)
+		}
+	}
+	out := string(src)
+	for ci, c := range scene.Connectors {
+		if c == nil {
+			continue
+		}
+		fromID, toID := connectorTarget(c.From), connectorTarget(c.To)
+		if fromID != movedID && toID != movedID {
+			continue
+		}
+		fr, okF := byID[fromID]
+		to, okT := byID[toID]
+		if !okF || !okT {
+			continue
+		}
+		ez := edgeZLevel(fr, to)
+		// Inflate obstacles by a clearance margin so routes are pushed to keep
+		// a visible gap (a route that merely grazes a face is not "avoiding").
+		obstacles := inflateRects(leaves, 12)
+		straight := [][2]float64{{fr.x + fr.w/2, fr.y + fr.d/2}, {to.x + to.w/2, to.y + to.d/2}}
+		if routeTunnels(straight, fromID, toID, ez, obstacles) == 0 {
+			continue // already clear — leave the edge as the author drew it
+		}
+		route := avoidingRoute(fr, to, obstacles)
+		if routeTunnels(route, fromID, toID, ez, obstacles) > 0 {
+			continue // no candidate clears it — don't write a still-broken detour
+		}
+		var wps [][2]float64
+		for _, p := range route[1 : len(route)-1] {
+			if len(wps) > 0 && math.Abs(wps[len(wps)-1][0]-p[0]) < 0.5 && math.Abs(wps[len(wps)-1][1]-p[1]) < 0.5 {
+				continue // drop coincident corners
+			}
+			wps = append(wps, p)
+		}
+		if len(wps) == 0 {
+			continue
+		}
+		line := yamledit.FindConnectorLine(out, ci)
+		if line < 0 {
+			continue
+		}
+		if o2, ok := yamledit.SetField(out, line, []string{"routing"}, "orthogonal"); ok {
+			out = o2
+		}
+		if line = yamledit.FindConnectorLine(out, ci); line < 0 {
+			continue
+		}
+		if o2, ok := yamledit.UpsertInlineList(out, line, "waypoints", wps); ok {
+			out = o2
+		}
+	}
+	return []byte(out)
+}
+
+// inflateRects grows each footprint by m on every side (x/y only — z-floor
+// stays) so routing keeps a visible clearance instead of grazing a face.
+func inflateRects(rs []planRect, m float64) []planRect {
+	out := make([]planRect, len(rs))
+	for i, r := range rs {
+		out[i] = r
+		out[i].x, out[i].y = r.x-m, r.y-m
+		out[i].w, out[i].d = r.w+2*m, r.d+2*m
+	}
+	return out
+}
+
+// avoidingRoute returns the orthogonal route between two footprints that least
+// tunnels the obstacles: the normal staircases PLUS detour candidates whose
+// cross-leg runs in a clear lane just beyond the obstacle cluster (so the route
+// goes AROUND it, not through it). Cost ranks by tunnelling, then bends/length.
+func avoidingRoute(fr, to planRect, obstacles []planRect) [][2]float64 {
+	ez := edgeZLevel(fr, to)
+	cands := planRouteCandidates(fr, to)
+
+	var obs []planRect
+	for _, r := range obstacles {
+		if r.id == fr.id || r.id == to.id || r.h <= planThinH || !sameFloor(ez, r) || enclosesBoth(r, fr, to) {
+			continue
+		}
+		obs = append(obs, r)
+	}
+	if len(obs) > 0 {
+		minX, minY := math.Inf(1), math.Inf(1)
+		maxX, maxY := math.Inf(-1), math.Inf(-1)
+		for _, r := range obs {
+			minX, minY = math.Min(minX, r.x), math.Min(minY, r.y)
+			maxX, maxY = math.Max(maxX, r.x+r.w), math.Max(maxY, r.y+r.d)
+		}
+		const mgn = 16.0
+		fcx, fcy := fr.x+fr.w/2, fr.y+fr.d/2
+		tcx, tcy := to.x+to.w/2, to.y+to.d/2
+		// vertical detours: exit along y to a clear lane above/below, cross, return
+		for _, laneY := range []float64{minY - mgn, maxY + mgn} {
+			sy, ey := fr.y, to.y
+			if laneY > fcy {
+				sy = fr.y + fr.d
+			}
+			if laneY > tcy {
+				ey = to.y + to.d
+			}
+			cands = append(cands, [][2]float64{{fcx, sy}, {fcx, laneY}, {tcx, laneY}, {tcx, ey}})
+		}
+		// horizontal detours: exit along x to a clear lane left/right, cross, return
+		for _, laneX := range []float64{minX - mgn, maxX + mgn} {
+			sx, ex := fr.x, to.x
+			if laneX > fcx {
+				sx = fr.x + fr.w
+			}
+			if laneX > tcx {
+				ex = to.x + to.w
+			}
+			cands = append(cands, [][2]float64{{sx, fcy}, {laneX, fcy}, {laneX, tcy}, {ex, tcy}})
+		}
+	}
+
+	best := cands[0]
+	bestCost := routeCost(best, fr, to, obstacles, nil)
+	for _, c := range cands[1:] {
+		if cost := routeCost(c, fr, to, obstacles, nil); cost < bestCost {
+			best, bestCost = c, cost
+		}
+	}
+	return best
+}
+
 func applyMove(format string, src []byte, op EditOp) ([]byte, error) {
 	doc, derr := LoadInput(context.Background(), format, src, LayoutDagre)
 	if derr != nil {
@@ -156,7 +307,7 @@ func applyMove(format string, src []byte, op EditOp) ([]byte, error) {
 					return src, fmt.Errorf("move: part %q not found after freeze", id)
 				}
 			}
-			return []byte(out), nil
+			return rerouteMovedConnectors(format, []byte(out), op.ID), nil
 		}
 		cx, cy, cz, found := ResolvePartOffset(doc, op.ID)
 		if !found {
@@ -166,7 +317,7 @@ func applyMove(format string, src []byte, op EditOp) ([]byte, error) {
 		if !ok {
 			return src, fmt.Errorf("move: part %q line not found", op.ID)
 		}
-		return []byte(out), nil
+		return rerouteMovedConnectors(format, []byte(out), op.ID), nil
 	case "edge":
 		// Per-segment waypoint edit (drawio-style) when supplied; else the
 		// legacy single-corner bend accumulated from the current value.
