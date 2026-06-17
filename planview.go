@@ -26,12 +26,12 @@ const (
 )
 
 type planRect struct {
-	id        string
-	label     string
-	x, y      float64 // absolute world corner
-	w, d      float64
-	z, h      float64 // world z-floor + height — kept only so the evaluator can
-	                  // tell same-floor obstacles from things stacked above/below
+	id    string
+	label string
+	x, y  float64 // absolute world corner
+	w, d  float64
+	z, h  float64 // world z-floor + height — kept only so the evaluator can
+	// tell same-floor obstacles from things stacked above/below
 	fill      string
 	stroke    string
 	textColor string

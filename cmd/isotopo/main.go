@@ -102,10 +102,67 @@ func main() {
 			fmt.Fprintln(os.Stderr, "error:", err)
 			os.Exit(1)
 		}
+	case "preview":
+		// isotopo preview [--projection iso|top] <input> <out.svg> <id> [id...]
+		//   render a SUBSET of the scene (parts / containers / edge:N) to one SVG.
+		args, err := parseFlags(os.Args[2:])
+		if err != nil || len(args) < 3 {
+			usage()
+			os.Exit(2)
+		}
+		if err := previewFile(args[0], args[1], args[2:]); err != nil {
+			fmt.Fprintln(os.Stderr, "error:", err)
+			os.Exit(1)
+		}
 	default:
 		usage()
 		os.Exit(2)
 	}
+}
+
+// previewFile renders a SUBSET of the input's scene — selected by part id,
+// container id, or "edge:N" — to a single SVG file. The selection is
+// re-laid-out and cropped on its own, so the output is a standalone preview
+// of just those elements (and any wire between them).
+func previewFile(in, outSVG string, ids []string) error {
+	var data []byte
+	var err error
+	if in == "-" {
+		data, err = io.ReadAll(os.Stdin)
+	} else {
+		data, err = os.ReadFile(in)
+	}
+	if err != nil {
+		return err
+	}
+	sourceLang, _ := classifyInput(in)
+	doc, err := loadDocument(sourceLang, data)
+	if err != nil {
+		return err
+	}
+	// --projection top previews the flat plan view of the subset.
+	if flagProjection != "" {
+		if doc.Canvas == nil {
+			doc.Canvas = &isotopo.Canvas{}
+		}
+		doc.Canvas.Projection = flagProjection
+	}
+	svg, err := isotopo.RenderSubgraph(doc, ids)
+	if err != nil {
+		return err
+	}
+	if outSVG == "-" {
+		_, err = os.Stdout.WriteString(svg)
+		return err
+	}
+	if err := os.MkdirAll(filepath.Dir(outSVG), 0o755); err != nil {
+		return err
+	}
+	if err := writeFile(outSVG, []byte(svg)); err != nil {
+		return err
+	}
+	fmt.Fprintf(os.Stderr, "previewed %d selection(s) into %s\n", len(ids), outSVG)
+	return nil
 }
 
 // evaluateFile scores the document's auto-layout connection quality from the
@@ -282,6 +339,12 @@ subcommands:
                  view (crossings, edges-through-nodes, backward edges,
                  lengths, bends). JSON to stdout; with out-dir also writes
                  plan.svg with problems marked in red
+  preview [--projection iso|top] <in> <out.svg> <id> [id...]
+                 render a SUBSET of the scene to one SVG — a single node, a
+                 container group (brings its whole subtree), or "edge:N" (the
+                 connector plus both endpoints). Connectors whose endpoints
+                 are both inside the selection are kept. The subset is
+                 re-laid-out and cropped on its own. out.svg "-" writes stdout
   serve <in>     local live-preview server (default :8731, override with
                  ISOTOPO_PORT): the interactive topology.html with hover
                  source-mapping, zoom/pan, edit-to-re-render against an

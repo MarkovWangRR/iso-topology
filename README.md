@@ -155,7 +155,17 @@ human in the loop:
 isotopo capabilities          # machine-readable DSL inventory (read once)
 isotopo validate scene.yaml   # JSONPath-located issues + fix suggestions
 isotopo render   scene.yaml out
+isotopo evaluate scene.yaml   # layout scorecard: crossings / overlaps / tunnelling
+isotopo preview  scene.yaml out.svg runner edge:6   # crop ONE node / group / edge
 ```
+
+`preview` renders just a slice of the scene to a single SVG — one node, a
+container group (its whole subtree comes along), or `edge:N` (the connector
+plus both endpoints). Connectors whose endpoints are both inside the
+selection are kept, and the slice is re-laid-out and cropped on its own, so
+an agent can zoom into a region without re-reading the whole diagram. Pass
+`-` as the output path to stream the SVG to stdout, or `--projection top`
+for the flat plan view of the slice.
 
 `validate` output for a draft with a typo — apply `suggest`, re-run:
 

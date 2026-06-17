@@ -229,9 +229,9 @@ type WorldPoint struct {
 // is consumed only by `shape: polygon` — number of sides for the polygonal
 // prism (3 = triangular, 5 = pentagon, 8 = octagon, etc.).
 type Geom struct {
-	W     float64 `yaml:"w,omitempty" json:"w,omitempty"`
-	D     float64 `yaml:"d,omitempty" json:"d,omitempty"`
-	H        float64 `yaml:"h,omitempty" json:"h,omitempty"`
+	W        float64        `yaml:"w,omitempty" json:"w,omitempty"`
+	D        float64        `yaml:"d,omitempty" json:"d,omitempty"`
+	H        float64        `yaml:"h,omitempty" json:"h,omitempty"`
 	Sides    int            `yaml:"sides,omitempty" json:"sides,omitempty"`
 	TopScale float64        `yaml:"topScale,omitempty" json:"topScale,omitempty"`
 	Params   map[string]any `yaml:"params,omitempty" json:"params,omitempty"`
@@ -323,8 +323,8 @@ type EffectItem struct {
 	Dash  string  `yaml:"dash,omitempty" json:"dash,omitempty"`
 
 	// dropShadow
-	Dx float64 `yaml:"dx,omitempty" json:"dx,omitempty"`
-	Dy float64 `yaml:"dy,omitempty" json:"dy,omitempty"`
+	Dx   float64 `yaml:"dx,omitempty" json:"dx,omitempty"`
+	Dy   float64 `yaml:"dy,omitempty" json:"dy,omitempty"`
 	Blur float64 `yaml:"blur,omitempty" json:"blur,omitempty"`
 }
 
