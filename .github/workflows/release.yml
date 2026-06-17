@@ -1,0 +1,33 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Version tag (e.g. v0.9.0)'
+        required: true
+      body:
+        description: 'Release notes (markdown)'
+        required: true
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create tag
+        run: |
+          git config user.email "actions@github.com"
+          git config user.name "GitHub Actions"
+          git tag ${{ github.event.inputs.tag }}
+          git push origin ${{ github.event.inputs.tag }}
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.tag }}
+          name: ${{ github.event.inputs.tag }}
+          body: ${{ github.event.inputs.body }}
+          draft: false
+          prerelease: false
