@@ -97,6 +97,44 @@ func offsetVal(key string, wx, wy, wz float64) string {
 	return fmt.Sprintf("%s: { wx: %.0f, wy: %.0f }", key, wx, wy)
 }
 
+// collapseFlowMap checks whether lines[startLine] opens a multi-line YAML
+// flow map (has "{" but not the matching "}"). If so it joins the lines into
+// a single string and returns it together with the index of the last line of
+// the map. The caller can replace lines[startLine..lastLine] with the joined
+// string and then apply single-line flow-map edit logic.
+// Returns ("", -1) when the flow map is already on one line or the block is
+// not a flow map.
+func collapseFlowMap(lines []string, startLine int) (string, int) {
+	l0 := lines[startLine]
+	if !strings.Contains(l0, "{") || strings.Contains(l0, "}") {
+		return "", -1 // single-line or not a flow map
+	}
+	// Count brace depth (simple, ignores braces inside quoted strings — safe
+	// for the connector YAML patterns used in this codebase).
+	depth := 0
+	var buf strings.Builder
+	for i := startLine; i < len(lines); i++ {
+		if i > startLine {
+			buf.WriteByte(' ')
+			buf.WriteString(strings.TrimLeft(lines[i], " \t"))
+		} else {
+			buf.WriteString(l0)
+		}
+		for _, ch := range lines[i] {
+			switch ch {
+			case '{':
+				depth++
+			case '}':
+				depth--
+			}
+		}
+		if depth == 0 {
+			return buf.String(), i
+		}
+	}
+	return "", -1 // unclosed — leave as-is
+}
+
 func UpsertInlineKey(src string, startLine int, key string, wx, wy, wz float64) (string, bool) {
 	lines := strings.Split(src, "\n")
 	if startLine < 0 || startLine >= len(lines) {
@@ -114,9 +152,26 @@ func UpsertInlineKey(src string, startLine int, key string, wx, wy, wz float64) 
 			break
 		}
 	}
-	// Flow-map form on the start line itself (e.g. `- { id: c, … }`):
-	// upsert the key INSIDE the braces, since the part is one line.
-	if strings.Contains(lines[startLine], "{") && strings.Contains(lines[startLine], "}") {
+	// Flow-map form (e.g. `- { id: c, … }`), possibly spanning multiple lines
+	// when keys are long. Collapse to a single string before editing so the
+	// logic below always applies.
+	isSingleLine := strings.Contains(lines[startLine], "{") && strings.Contains(lines[startLine], "}")
+	if collapsed, lastLine := collapseFlowMap(lines, startLine); collapsed != "" {
+		l := collapsed
+		l = regexp.MustCompile(`,?\s*`+regexp.QuoteMeta(key)+`:\s*\{[^}]*\}`).ReplaceAllString(l, "")
+		val := offsetVal(key, wx, wy, wz) + ", "
+		if i := strings.Index(l, "{"); i >= 0 {
+			l = l[:i+1] + " " + val + strings.TrimLeft(l[i+1:], " ")
+		}
+		l = regexp.MustCompile(`\{\s*,`).ReplaceAllString(l, "{ ")
+		l = regexp.MustCompile(`,\s*,`).ReplaceAllString(l, ", ")
+		l = regexp.MustCompile(`,\s*\}`).ReplaceAllString(l, " }")
+		out := append([]string{}, lines[:startLine]...)
+		out = append(out, l)
+		out = append(out, lines[lastLine+1:]...)
+		return strings.Join(out, "\n"), true
+	}
+	if isSingleLine {
 		l := lines[startLine]
 		// drop an existing top-level offset/bend (value has no nested braces)
 		l = regexp.MustCompile(`,?\s*`+regexp.QuoteMeta(key)+`:\s*\{[^}]*\}`).ReplaceAllString(l, "")
@@ -179,9 +234,30 @@ func UpsertInlineList(src string, startLine int, key string, pts [][2]float64) (
 	itemIndent := indentOf(lines[startLine])
 	childIndent := itemIndent + 2
 
-	// Flow-map form on the start line itself (e.g. `- { from: a, to: b, … }`):
-	// edit inside the braces.
-	if strings.Contains(lines[startLine], "{") && strings.Contains(lines[startLine], "}") {
+	// Flow-map form: connector is `- { from: a, to: b, … }`.
+	// This may span multiple lines when keys are long; collapse to one string
+	// first so the single-line edit logic always applies.
+	isSingleLine := strings.Contains(lines[startLine], "{") && strings.Contains(lines[startLine], "}")
+	if collapsed, lastLine := collapseFlowMap(lines, startLine); collapsed != "" {
+		// Multi-line flow map → collapse, edit, replace the span with one line.
+		l := collapsed
+		l = regexp.MustCompile(`,?\s*bend:\s*\{[^}]*\}`).ReplaceAllString(l, "")
+		l = regexp.MustCompile(`,?\s*`+regexp.QuoteMeta(key)+`:\s*\[[^\]]*\]`).ReplaceAllString(l, "")
+		if len(pts) > 0 {
+			val := fmt.Sprintf("%s: %s, ", key, listVal)
+			if i := strings.Index(l, "{"); i >= 0 {
+				l = l[:i+1] + " " + val + strings.TrimLeft(l[i+1:], " ")
+			}
+		}
+		l = regexp.MustCompile(`\{\s*,`).ReplaceAllString(l, "{ ")
+		l = regexp.MustCompile(`,\s*,`).ReplaceAllString(l, ", ")
+		l = regexp.MustCompile(`,\s*\}`).ReplaceAllString(l, " }")
+		out := append([]string{}, lines[:startLine]...)
+		out = append(out, l)
+		out = append(out, lines[lastLine+1:]...)
+		return strings.Join(out, "\n"), true
+	}
+	if isSingleLine {
 		l := lines[startLine]
 		l = regexp.MustCompile(`,?\s*bend:\s*\{[^}]*\}`).ReplaceAllString(l, "")
 		l = regexp.MustCompile(`,?\s*`+regexp.QuoteMeta(key)+`:\s*\[[^\]]*\]`).ReplaceAllString(l, "")
@@ -443,11 +519,26 @@ func SetField(src string, startLine int, path []string, value string) (string, b
 		return src, false
 	}
 	line := lines[startLine]
-	// Flow-form item: the whole element lives in `{ … }` on this line.
+	// Flow-form item: the whole element lives in `{ … }`.
+	// The braces may span multiple lines (e.g. a connector with a long label).
+	// Collapse to a single string, edit, then replace the line span.
 	if open := strings.Index(line, "{"); open >= 0 {
 		if close := strings.LastIndex(line, "}"); close > open {
+			// Single-line flow map.
 			lines[startLine] = line[:open] + setInInlineMap(line[open:close+1], path, value) + line[close+1:]
 			return strings.Join(lines, "\n"), true
+		}
+		// Multi-line flow map: { on startLine, } on a later line.
+		if collapsed, lastLine := collapseFlowMap(lines, startLine); collapsed != "" {
+			co := strings.Index(collapsed, "{")
+			cc := strings.LastIndex(collapsed, "}")
+			if co >= 0 && cc > co {
+				edited := collapsed[:co] + setInInlineMap(collapsed[co:cc+1], path, value) + collapsed[cc+1:]
+				out := append([]string{}, lines[:startLine]...)
+				out = append(out, edited)
+				out = append(out, lines[lastLine+1:]...)
+				return strings.Join(out, "\n"), true
+			}
 		}
 	}
 	if len(path) == 1 {
@@ -520,8 +611,7 @@ func upsertScalar(src string, startLine int, key, value string) (string, bool) {
 	childIndent := itemIndent + 2
 	remove := value == ""
 
-	if strings.Contains(lines[startLine], "{") && strings.Contains(lines[startLine], "}") {
-		l := lines[startLine]
+	editFlowMap := func(l string) string {
 		l = regexp.MustCompile(`,?\s*`+regexp.QuoteMeta(key)+`:\s*("(?:[^"\\]|\\.)*"|[^,}]*)`).ReplaceAllString(l, "")
 		if !remove {
 			val := fmt.Sprintf("%s: %s, ", key, yamlScalar(value))
@@ -532,8 +622,18 @@ func upsertScalar(src string, startLine int, key, value string) (string, bool) {
 		l = regexp.MustCompile(`\{\s*,`).ReplaceAllString(l, "{ ")
 		l = regexp.MustCompile(`,\s*,`).ReplaceAllString(l, ", ")
 		l = regexp.MustCompile(`,\s*\}`).ReplaceAllString(l, " }")
-		lines[startLine] = l
+		return l
+	}
+	if strings.Contains(lines[startLine], "{") && strings.Contains(lines[startLine], "}") {
+		lines[startLine] = editFlowMap(lines[startLine])
 		return strings.Join(lines, "\n"), true
+	}
+	if collapsed, lastLine := collapseFlowMap(lines, startLine); collapsed != "" {
+		edited := editFlowMap(collapsed)
+		out := append([]string{}, lines[:startLine]...)
+		out = append(out, edited)
+		out = append(out, lines[lastLine+1:]...)
+		return strings.Join(out, "\n"), true
 	}
 
 	// Block form. The anchor key on the start line (`- key: value`) is edited
