@@ -869,6 +869,12 @@ function wireDrag(){
     // canvas pan cursor (open-hand 'grab'), so a movable object reads as
     // movable the instant the pointer is over it.
     g.style.cursor='move';
+    // Container shapes (boundary/group) use fill:none so clicks miss the interior.
+    // bounding-box makes the whole rectangular envelope clickable.
+    if(window.interactionModel){
+      const pm=window.interactionModel.find(p=>p.id===g.getAttribute('data-part-id').replace(/~\d+$/,''));
+      if(pm&&pm.container) g.setAttribute('pointer-events','bounding-box');
+    }
     g.addEventListener('mousedown',e=>{
       if(e.button!==0) return;   // left-button drags only; right-click = context menu
       e.preventDefault();   // suppress the browser's native SVG image-drag
@@ -897,8 +903,10 @@ function wireDrag(){
     });
   });
   zoomer.querySelectorAll('path[data-connector]').forEach(p=>{
+    // Widen the pointer-events hit area so thin lines are easy to hover.
     p.setAttribute('stroke-width', Math.max(parseFloat(p.getAttribute('stroke-width')||'1.4'),3));
-    p.style.cursor='move';
+    // Initial cursor — updated dynamically on mousemove below.
+    p.style.cursor='grab';
     p.addEventListener('contextmenu',e=>{
       e.preventDefault(); e.stopPropagation();
       showCtx(e.clientX,e.clientY,'edge',p.getAttribute('data-connector'));
@@ -907,6 +915,18 @@ function wireDrag(){
       e.preventDefault(); e.stopPropagation();
       openDetail({kind:'edge',key:p.getAttribute('data-connector')});
     });
+    // Dynamic directional cursor: reflect the iso axis the segment will travel on.
+    // world-X segment (axisIsX) drags in world-Y → screen direction ↗↙ (nesw-resize)
+    // world-Y segment (!axisIsX) drags in world-X → screen direction ↖↘ (nwse-resize)
+    function refreshEdgeCursor(cx,cy){
+      if(nodeDrag||edgeDrag) return;
+      const route=parseRoute(p); if(!route||route.length<2){p.style.cursor='grab';return;}
+      const seg=nearestSegment(p,route,cx,cy);
+      p.style.cursor=seg.axisIsX?'nesw-resize':'nwse-resize';
+    }
+    p.addEventListener('mouseenter',e=>{ refreshEdgeCursor(e.clientX,e.clientY); showSegHandles(p); });
+    p.addEventListener('mousemove',e=>{ refreshEdgeCursor(e.clientX,e.clientY); });
+    p.addEventListener('mouseleave',()=>{ if(!edgeDrag) removeSegHandles(p); });
     p.addEventListener('mousedown',e=>{
       if(e.button!==0) return;   // left-button drags only; right-click = context menu
       e.preventDefault();
@@ -914,12 +934,47 @@ function wireDrag(){
       p.style.cursor='grabbing';
       document.body.style.cursor='grabbing';
       p.classList.add('dragging');
+      removeSegHandles(p);
       const route=parseRoute(p);
       const seg=route?nearestSegment(p,route,e.clientX,e.clientY):null;
       edgeDrag={el:p,ci:p.getAttribute('data-connector'),x:e.clientX,y:e.clientY,
         base:p.getAttribute('transform')||'',baseD:p.getAttribute('d'),route,seg,wp:null};
     });
   });
+}
+
+// showSegHandles / removeSegHandles: place small circle affordances at each
+// segment midpoint to make it obvious every segment is independently draggable.
+// The circles are inserted into the same <svg> as the path so they share the
+// coordinate system (no CTM math needed — SVG-user coords from data-route).
+function showSegHandles(p){
+  removeSegHandles(p);
+  const route=parseRoute(p); if(!route||route.length<2) return;
+  const svg=p.ownerSVGElement; if(!svg) return;
+  const NS='http://www.w3.org/2000/svg';
+  const accent=getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()||'#10aeb9';
+  for(let i=0;i<route.length-1;i++){
+    const a=route[i], b=route[i+1];
+    const mx=(a.sx+b.sx)/2, my=(a.sy+b.sy)/2;
+    const c=document.createElementNS(NS,'circle');
+    c.setAttribute('cx', mx.toFixed(2));
+    c.setAttribute('cy', my.toFixed(2));
+    c.setAttribute('r','5');
+    c.setAttribute('fill', accent);
+    c.setAttribute('stroke','#fff');
+    c.setAttribute('stroke-width','1.5');
+    c.setAttribute('pointer-events','none');   // clicks fall through to path
+    c.setAttribute('data-seg-handle', p.getAttribute('data-connector')||'');
+    c.classList.add('seg-handle');
+    svg.appendChild(c);
+    // Animate in — next microtask so transition fires.
+    requestAnimationFrame(()=>c.classList.add('visible'));
+  }
+}
+function removeSegHandles(p){
+  const ci=p.getAttribute('data-connector')||'';
+  const svg=p.ownerSVGElement; if(!svg) return;
+  svg.querySelectorAll(`circle[data-seg-handle="${CSS.escape(ci)}"]`).forEach(c=>c.remove());
 }
 // Live follow by COMPOSING with the element's existing transform
 // attribute. A node <g> already carries transform="translate(x y)";
@@ -978,7 +1033,8 @@ window.addEventListener('mouseup',e=>{
   // restore live-followed edges; the commit re-render replaces them cleanly,
   // and a below-threshold release leaves nothing changed.
   if(d.edges) d.edges.forEach(ed=>ed.el.setAttribute('d', ed.baseD));
-  d.el.classList.remove('dragging'); d.el.style.cursor='move'; document.body.style.cursor='';
+  d.el.classList.remove('dragging'); d.el.style.cursor=(kind==='edge'?'grab':'move'); document.body.style.cursor='';
+  if(kind==='edge') removeSegHandles(d.el);
   const wd=screenToWorldDelta((e.clientX-d.x)/scale,(e.clientY-d.y)/scale);
   if(Math.abs(wd[0])<=2 && Math.abs(wd[1])<=2) return;   // below drag threshold
   if(kind==='edge' && d.wp){
@@ -1020,22 +1076,39 @@ window.addEventListener('mouseup',e=>{
 function containerUnder(cx, cy, exceptId){
   if(window.interactionModel){
     // Inverse iso projection: screen (cx,cy) → world (curWx, curWy).
-    //   screen_x = (wx-wy)*C30*scale + panX  ⟹  wx-wy = (scx-panX)/(C30*scale)
-    //   screen_y = (wx+wy)*S30*scale + panY  ⟹  wx+wy = (scy-panY)/(S30*scale)
-    // screenToWorldDelta(dsx,dsy) already implements the inverse for unscaled
-    // stage-relative deltas: call it with (scx-panX)/scale, (scy-panY)/scale.
-    const stage=document.getElementById('zoomer').parentElement.getBoundingClientRect();
-    const scx=cx-stage.left, scy=cy-stage.top;
-    const [curWx,curWy]=screenToWorldDelta((scx-panX)/scale,(scy-panY)/scale);
-    let bestId=null, bestArea=Infinity;
-    for(const pm of window.interactionModel){
-      if(!pm.container||pm.id===exceptId) continue;
-      if(curWx>=pm.x&&curWx<=pm.x+pm.w&&curWy>=pm.y&&curWy<=pm.y+pm.d){
-        const area=pm.w*pm.d;
-        if(area<bestArea){bestArea=area;bestId=pm.id;}
+    //
+    // The SVG is positioned by CSS flex layout (not by panX/panY alone), so we
+    // can't use stage.left/top + panX/panY as the coordinate origin. Instead we
+    // use the SVG element's getScreenCTM() which accounts for all CSS transforms,
+    // flex positioning, and the viewBox, plus the data-scene-tx/ty attributes that
+    // the renderer embeds to record where world (0,0) sits in SVG user space.
+    //
+    //   SVG user (u,v)  =  (wx-wy)*C30 + sceneTx,  (wx+wy)*S30 + sceneTy
+    //   screen (cx,cy)  =  m.a*u + m.e,  m.d*v + m.f   (m = getScreenCTM)
+    //
+    // Rearranging: u = (cx - m.e)/m.a,  v = (cy - m.f)/m.d
+    //              dsx = u - sceneTx,  dsy = v - sceneTy
+    //              [curWx, curWy] = screenToWorldDelta(dsx, dsy)
+    const svg = zoomer.querySelector('svg');
+    if(svg){
+      const m = svg.getScreenCTM();
+      if(m && m.a){
+        const sceneTx = parseFloat(svg.dataset.sceneTx||'0');
+        const sceneTy = parseFloat(svg.dataset.sceneTy||'0');
+        const dsx = (cx - m.e) / m.a - sceneTx;
+        const dsy = (cy - m.f) / m.d - sceneTy;
+        const [curWx,curWy] = screenToWorldDelta(dsx, dsy);
+        let bestId=null, bestArea=Infinity;
+        for(const pm of window.interactionModel){
+          if(!pm.container||pm.id===exceptId) continue;
+          if(curWx>=pm.x&&curWx<=pm.x+pm.w&&curWy>=pm.y&&curWy<=pm.y+pm.d){
+            const area=pm.w*pm.d;
+            if(area<bestArea){bestArea=area;bestId=pm.id;}
+          }
+        }
+        return bestId;
       }
     }
-    return bestId;
   }
   // Pixel fallback: walk the paint stack at the cursor.
   for(const el of document.elementsFromPoint(cx, cy)){
