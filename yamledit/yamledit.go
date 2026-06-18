@@ -1013,6 +1013,10 @@ func MovePart(src, id, targetParentID string) (string, bool) {
 // FreezeGroupLayoutText drops the `layout:` from a single named group's block
 // (inline or block form) so its children render from explicit offsets once one
 // is dragged. Other groups and the scene root are untouched.
+//
+// Only the layout: key that belongs DIRECTLY to the named group is removed —
+// layout: keys of nested child groups are preserved so their own internal
+// arrangements are not disrupted.
 func FreezeGroupLayoutText(src, groupID string) string {
 	lines := strings.Split(src, "\n")
 	gLine := FindPartIDLine(src, groupID)
@@ -1020,6 +1024,26 @@ func FreezeGroupLayoutText(src, groupID string) string {
 		return src
 	}
 	gIndent := indentOf(lines[gLine])
+
+	// directIndent is the indentation level of the named group's own keys
+	// (shape:, label:, layout:, …). It's the first non-empty line after gLine
+	// that is indented more than gLine.
+	directIndent := -1
+	for i := gLine + 1; i < len(lines); i++ {
+		if strings.TrimSpace(lines[i]) == "" {
+			continue
+		}
+		ind := indentOf(lines[i])
+		if ind <= gIndent {
+			break // end of block before finding any children
+		}
+		directIndent = ind
+		break
+	}
+	if directIndent < 0 {
+		return src // empty block
+	}
+
 	end := len(lines)
 	for i := gLine + 1; i < len(lines); i++ {
 		if strings.TrimSpace(lines[i]) == "" {
@@ -1033,7 +1057,8 @@ func FreezeGroupLayoutText(src, groupID string) string {
 	layoutRe := regexp.MustCompile(`^ *layout:`)
 	out := append([]string{}, lines[:gLine+1]...)
 	for i := gLine + 1; i < end; i++ {
-		if layoutRe.MatchString(lines[i]) {
+		if layoutRe.MatchString(lines[i]) && indentOf(lines[i]) == directIndent {
+			// This layout: belongs to the named group itself — drop it.
 			if strings.Contains(lines[i], "{") {
 				continue // inline → drop the one line
 			}
