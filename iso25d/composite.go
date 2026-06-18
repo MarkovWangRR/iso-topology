@@ -129,9 +129,11 @@ func RenderComposite(parts []CompositePart) string {
 	vx, vy := -bleedLeft, -bleedTop
 
 	var sb strings.Builder
+	// data-scene-tx / data-scene-ty: SVG user coordinates of world (0,0,0).
+	// Studio's containerUnder reads these to correctly project screen → world.
 	fmt.Fprintf(&sb,
-		`<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="%.2f %.2f %.2f %.2f" width="%.2f" height="%.2f">`,
-		vx, vy, W, H, W, H,
+		`<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="%.2f %.2f %.2f %.2f" width="%.2f" height="%.2f" data-scene-tx="%.4f" data-scene-ty="%.4f">`,
+		vx, vy, W, H, W, H, tx, ty,
 	)
 	for i, r := range rs {
 		// Outer translate places the part's WORLD (offWX, offWY, offWZ)

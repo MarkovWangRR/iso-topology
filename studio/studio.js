@@ -869,6 +869,12 @@ function wireDrag(){
     // canvas pan cursor (open-hand 'grab'), so a movable object reads as
     // movable the instant the pointer is over it.
     g.style.cursor='move';
+    // Container shapes (boundary/group) use fill:none so clicks miss the interior.
+    // bounding-box makes the whole rectangular envelope clickable.
+    if(window.interactionModel){
+      const pm=window.interactionModel.find(p=>p.id===g.getAttribute('data-part-id').replace(/~\d+$/,''));
+      if(pm&&pm.container) g.setAttribute('pointer-events','bounding-box');
+    }
     g.addEventListener('mousedown',e=>{
       if(e.button!==0) return;   // left-button drags only; right-click = context menu
       e.preventDefault();   // suppress the browser's native SVG image-drag
@@ -1020,22 +1026,39 @@ window.addEventListener('mouseup',e=>{
 function containerUnder(cx, cy, exceptId){
   if(window.interactionModel){
     // Inverse iso projection: screen (cx,cy) → world (curWx, curWy).
-    //   screen_x = (wx-wy)*C30*scale + panX  ⟹  wx-wy = (scx-panX)/(C30*scale)
-    //   screen_y = (wx+wy)*S30*scale + panY  ⟹  wx+wy = (scy-panY)/(S30*scale)
-    // screenToWorldDelta(dsx,dsy) already implements the inverse for unscaled
-    // stage-relative deltas: call it with (scx-panX)/scale, (scy-panY)/scale.
-    const stage=document.getElementById('zoomer').parentElement.getBoundingClientRect();
-    const scx=cx-stage.left, scy=cy-stage.top;
-    const [curWx,curWy]=screenToWorldDelta((scx-panX)/scale,(scy-panY)/scale);
-    let bestId=null, bestArea=Infinity;
-    for(const pm of window.interactionModel){
-      if(!pm.container||pm.id===exceptId) continue;
-      if(curWx>=pm.x&&curWx<=pm.x+pm.w&&curWy>=pm.y&&curWy<=pm.y+pm.d){
-        const area=pm.w*pm.d;
-        if(area<bestArea){bestArea=area;bestId=pm.id;}
+    //
+    // The SVG is positioned by CSS flex layout (not by panX/panY alone), so we
+    // can't use stage.left/top + panX/panY as the coordinate origin. Instead we
+    // use the SVG element's getScreenCTM() which accounts for all CSS transforms,
+    // flex positioning, and the viewBox, plus the data-scene-tx/ty attributes that
+    // the renderer embeds to record where world (0,0) sits in SVG user space.
+    //
+    //   SVG user (u,v)  =  (wx-wy)*C30 + sceneTx,  (wx+wy)*S30 + sceneTy
+    //   screen (cx,cy)  =  m.a*u + m.e,  m.d*v + m.f   (m = getScreenCTM)
+    //
+    // Rearranging: u = (cx - m.e)/m.a,  v = (cy - m.f)/m.d
+    //              dsx = u - sceneTx,  dsy = v - sceneTy
+    //              [curWx, curWy] = screenToWorldDelta(dsx, dsy)
+    const svg = zoomer.querySelector('svg');
+    if(svg){
+      const m = svg.getScreenCTM();
+      if(m && m.a){
+        const sceneTx = parseFloat(svg.dataset.sceneTx||'0');
+        const sceneTy = parseFloat(svg.dataset.sceneTy||'0');
+        const dsx = (cx - m.e) / m.a - sceneTx;
+        const dsy = (cy - m.f) / m.d - sceneTy;
+        const [curWx,curWy] = screenToWorldDelta(dsx, dsy);
+        let bestId=null, bestArea=Infinity;
+        for(const pm of window.interactionModel){
+          if(!pm.container||pm.id===exceptId) continue;
+          if(curWx>=pm.x&&curWx<=pm.x+pm.w&&curWy>=pm.y&&curWy<=pm.y+pm.d){
+            const area=pm.w*pm.d;
+            if(area<bestArea){bestArea=area;bestId=pm.id;}
+          }
+        }
+        return bestId;
       }
     }
-    return bestId;
   }
   // Pixel fallback: walk the paint stack at the cursor.
   for(const el of document.elementsFromPoint(cx, cy)){
