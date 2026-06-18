@@ -143,9 +143,14 @@ svg g[data-part-id].hi{filter:drop-shadow(0 0 3px rgba(16,174,185,.85));}
 svg g[data-part-id]{transition:filter .12s;}
 svg g[data-part-id]:hover{filter:drop-shadow(0 0 5px var(--accent));}
 svg g[data-part-id].dragging{filter:drop-shadow(0 0 9px var(--accent));opacity:.82;}
-svg path[data-connector]:hover{stroke:var(--accent-deep);filter:drop-shadow(0 0 3px var(--accent)) drop-shadow(0 0 7px var(--accent));}
-svg path[data-connector].dragging{stroke:var(--accent);filter:drop-shadow(0 0 5px var(--accent)) drop-shadow(0 0 11px var(--accent));}
-svg path[data-connector].pinned{stroke:var(--accent-deep);filter:drop-shadow(0 0 3px var(--accent)) drop-shadow(0 0 7px var(--accent));}
+svg path[data-connector]{transition:stroke .1s,stroke-width .1s,filter .1s;}
+svg path[data-connector]:hover{stroke:var(--accent);stroke-width:6 !important;filter:drop-shadow(0 0 2px var(--accent)) drop-shadow(0 0 10px var(--accent)) drop-shadow(0 0 22px color-mix(in srgb,var(--accent) 45%,transparent));}
+svg path[data-connector].dragging{stroke:var(--accent);stroke-width:6 !important;filter:drop-shadow(0 0 5px var(--accent)) drop-shadow(0 0 14px var(--accent));}
+svg path[data-connector].pinned{stroke:var(--accent-deep);stroke-width:5 !important;filter:drop-shadow(0 0 3px var(--accent)) drop-shadow(0 0 9px var(--accent));}
+/* segment mid-point drag handles — circles inserted by JS on hover */
+circle.seg-handle{fill:var(--accent);stroke:#fff;stroke-width:1.5;r:5;opacity:0;transition:opacity .12s;}
+circle.seg-handle.visible{opacity:1;}
+circle.seg-handle:hover{r:7;opacity:1;}
 #ctxmenu{position:fixed;z-index:50;background:white;border:1px solid var(--border);border-radius:8px;
   box-shadow:0 8px 28px rgba(15,23,42,.18);padding:4px;min-width:128px;}
 #ctxmenu button{display:block;width:100%;text-align:left;border:0;background:transparent;border-radius:5px;
