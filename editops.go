@@ -89,6 +89,26 @@ func ApplyOp(format string, src []byte, op EditOp) (newSrc []byte, svg string, i
 // comment-preserving transform, without rendering. Embedders that render
 // separately (or with a non-default layout engine) use this.
 func ApplyOpText(format string, src []byte, op EditOp) ([]byte, error) {
+	out, err := applyOpText(format, src, op)
+	if err != nil {
+		return out, err
+	}
+	// Universal safety net: a text-surgery op must NEVER return a document it
+	// made unparseable (the result is fed to the next edit in the chain, so a
+	// silent corruption poisons the whole session). If the original parsed and
+	// the result doesn't, surface it as an error on the ORIGINAL source instead.
+	// Skips d2, whose source isn't YAML/JSON.
+	if format != "d2" && string(out) != string(src) {
+		if _, perr := Parse(out); perr != nil {
+			if _, ok := Parse(src); ok == nil {
+				return src, fmt.Errorf("%s: edit would make the document unparseable: %w", op.Kind, perr)
+			}
+		}
+	}
+	return out, nil
+}
+
+func applyOpText(format string, src []byte, op EditOp) ([]byte, error) {
 	switch op.Kind {
 	case "move":
 		return applyMove(format, src, op)
@@ -354,11 +374,17 @@ func applyMove(format string, src []byte, op EditOp) ([]byte, error) {
 		// only when the part has no offset yet (pure auto-layout).
 		cx, cy, cz, authored := yamledit.ReadInlineOffset(s, yamledit.FindPartIDLine(s, op.ID))
 		if !authored {
-			var found bool
-			cx, cy, cz, found = ResolvePartOffset(doc, op.ID)
-			if !found {
+			// No authored offset — derive the part's CURRENT local offset from the
+			// renderer's own resolver (world position minus its parent's child
+			// origin), not ResolvePartOffset, whose solved baseline diverges from
+			// what's drawn and made a move of an offset-less node non-idempotent.
+			lowered := resolveLowered(doc)
+			if lowered[op.ID] == nil {
 				return src, fmt.Errorf("move: part %q not found", op.ID)
 			}
+			wx, wy, wz := worldXYZ(lowered[op.ID])
+			cox, coy, coz := childOrigin(doc, lowered, s, parentOf(doc, op.ID))
+			cx, cy, cz = wx-cox, wy-coy, wz-coz
 		}
 		out, ok := yamledit.UpsertInlineKey(s, yamledit.FindPartIDLine(s, op.ID), "offset", snap(cx+op.DWX), snap(cy+op.DWY), cz)
 		if !ok {
@@ -480,15 +506,7 @@ func applySetField(src []byte, op EditOp) ([]byte, error) {
 	if renameID {
 		out = yamledit.RenamePart(out, op.ID, newID)
 	}
-	// Safety net: never return a document the edit made unparseable (e.g. a
-	// scalar written into a list-typed field like content.rows). Surface it as
-	// an error on the ORIGINAL source instead of silently corrupting it.
-	if _, err := Parse([]byte(out)); err != nil {
-		if _, ok := Parse(src); ok == nil {
-			return src, fmt.Errorf("set-field: edit would make the document unparseable: %w", err)
-		}
-	}
-	return []byte(out), nil
+	return []byte(out), nil // ApplyOpText applies the universal unparseable-guard
 }
 
 // findPart locates a composite part by id anywhere in the document's node

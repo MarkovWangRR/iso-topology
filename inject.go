@@ -1397,9 +1397,17 @@ func prismSidesFor(shape string, geomSides int) int {
 		return 8
 	case "prism":
 		if geomSides >= 3 {
+			if geomSides > maxPrismSides {
+				return maxPrismSides // cap: a huge side count is a render-time DoS
+			}
 			return geomSides
 		}
 		return 6
 	}
 	return 0
 }
+
+// maxPrismSides caps polygon sides at the render boundary so a fat-fingered or
+// hostile geom.sides (e.g. 1e9) can't exhaust CPU/memory building a useless
+// near-circle. 512 sides is already visually a smooth circle.
+const maxPrismSides = 512

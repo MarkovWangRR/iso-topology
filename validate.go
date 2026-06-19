@@ -83,6 +83,15 @@ func checkGeom(g *Geom, path string, issues *[]Issue) {
 			})
 		}
 	}
+	// A huge polygon side count is a render-time resource sink — flag it (the
+	// renderer also hard-caps at maxPrismSides as the actual safety net).
+	if g.Sides > maxPrismSides {
+		*issues = append(*issues, Issue{
+			Severity: SeverityError,
+			Path:     path + ".geom.sides",
+			Message:  fmt.Sprintf("geom.sides=%d is too large (max %d); it would exhaust render resources", g.Sides, maxPrismSides),
+		})
+	}
 }
 
 func Validate(doc *Document) []Issue {
@@ -191,6 +200,18 @@ func Validate(doc *Document) []Issue {
 				Path:     "canvas.grid",
 				Message:  fmt.Sprintf("unknown grid mode %q", doc.Canvas.Grid),
 				Suggest:  nearest(doc.Canvas.Grid, valid),
+			})
+		}
+	}
+
+	// canvas.padding feeds the viewBox directly; a non-finite or astronomically
+	// large value overflows it (the renderer also clamps as the safety net).
+	if doc.Canvas != nil {
+		if p := doc.Canvas.Padding; math.IsNaN(p) || math.IsInf(p, 0) || p > maxGeomDim {
+			issues = append(issues, Issue{
+				Severity: SeverityError,
+				Path:     "canvas.padding",
+				Message:  fmt.Sprintf("canvas.padding=%g must be a finite, reasonable value", p),
 			})
 		}
 	}

@@ -247,7 +247,11 @@ func renderComposite(n *Node, theme *Theme, canvas *Canvas, anns []*Annotation) 
 	// don't kiss the frame.
 	pad := glowPad
 	if canvas != nil && canvas.Padding > 0 {
-		pad = math.Max(pad, canvas.Padding)
+		p := canvas.Padding
+		if math.IsInf(p, 1) || p > maxGeomDim {
+			p = maxGeomDim // clamp a hostile/absurd padding before it overflows the viewBox
+		}
+		pad = math.Max(pad, p)
 	}
 	if pad > 0 {
 		svg = padViewBox(svg, pad)

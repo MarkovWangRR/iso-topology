@@ -1177,6 +1177,55 @@ func stripInlineOffset(s string) string {
 // it. targetParentID == "" moves the part to the SCENE-ROOT parts: block. It is
 // a no-op (false) when the part isn't found, the target group has no parts:
 // block to find/seed, or the move is degenerate (into itself).
+// expandFlowItem converts a single-line flow-map list item
+//
+//	<ind>- { k1: v1, k2: v2, … }
+//
+// into block form
+//
+//	<ind>- k1: v1
+//	<ind+2>k2: v2
+//	…
+//
+// so a nested block `parts:` can be appended under it (a group authored or
+// morphed in flow style otherwise has no place for children). Nested braces
+// (e.g. geom: { … }) stay inline — splitTopCommas only splits at depth 0.
+// Returns nil if the line isn't a closed single-line flow item.
+func expandFlowItem(line string) []string {
+	ind := indentOf(line)
+	t := strings.TrimLeft(line, " ")
+	if !strings.HasPrefix(t, "- ") {
+		return nil
+	}
+	body := strings.TrimSpace(t[2:])
+	if !strings.HasPrefix(body, "{") || !strings.HasSuffix(body, "}") {
+		return nil
+	}
+	var out []string
+	first := true
+	for _, kv := range splitTopCommas(body[1 : len(body)-1]) {
+		if kv = strings.TrimSpace(kv); kv == "" {
+			continue
+		}
+		// As a BLOCK mapping line the key colon needs a trailing space — a tight
+		// `offset:{…}` is valid inline but not block. Space only the first
+		// (key) colon; inner inline values keep their own colons.
+		if i := strings.IndexByte(kv, ':'); i >= 0 && i+1 < len(kv) && kv[i+1] != ' ' {
+			kv = kv[:i+1] + " " + kv[i+1:]
+		}
+		if first {
+			out = append(out, strings.Repeat(" ", ind)+"- "+kv)
+			first = false
+		} else {
+			out = append(out, strings.Repeat(" ", ind+2)+kv)
+		}
+	}
+	if first {
+		return nil // empty flow map — nothing to expand
+	}
+	return out
+}
+
 func MovePart(src, id, targetParentID string) (string, bool) {
 	if id == targetParentID {
 		return src, false
@@ -1229,8 +1278,20 @@ func MovePart(src, id, targetParentID string) (string, bool) {
 			// seed a parts: block right after the group's id line
 			partsIndent = gIndent + 2
 			header := strings.Repeat(" ", partsIndent) + "parts:"
-			without = append(without[:gLine+1], append([]string{header}, without[gLine+1:]...)...)
-			partsLine = gLine + 1
+			if exp := expandFlowItem(without[gLine]); exp != nil {
+				// Single-line flow group `- { … }` — expand to block form first so
+				// the block `parts:` is valid under it (otherwise it gets slammed
+				// under a closed flow scalar, producing unparseable YAML).
+				block := append(append([]string{}, exp...), header)
+				res := append([]string{}, without[:gLine]...)
+				res = append(res, block...)
+				res = append(res, without[gLine+1:]...)
+				without = res
+				partsLine = gLine + len(exp)
+			} else {
+				without = append(without[:gLine+1], append([]string{header}, without[gLine+1:]...)...)
+				partsLine = gLine + 1
+			}
 		}
 	}
 	if partsLine < 0 {
@@ -1443,7 +1504,7 @@ func AddConnector(src, from, to, fromAnchor, toAnchor string) (string, bool) {
 		itemLine = partsLine // insert after the new connectors: header
 	}
 
-	nl := itemIndent + fmt.Sprintf(`- { from: %s, to: %s, routing: orthogonal }`, from, to)
+	nl := itemIndent + fmt.Sprintf(`- { from: %s, to: %s, routing: orthogonal }`, yamlScalar(from), yamlScalar(to))
 	out := append(append(append([]string{}, lines[:itemLine+1]...), nl), lines[itemLine+1:]...)
 	return strings.Join(out, "\n"), true
 }

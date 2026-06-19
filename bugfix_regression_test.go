@@ -226,6 +226,65 @@ func TestSetField_EscapedQuoteCommaSurvives(t *testing.T) {
 	}
 }
 
+// TestReparent_IntoFlowStyleGroup: reparenting into a single-line flow group
+// (`- { id: g, shape: group, … }`, as produced by authoring or a shape morph)
+// must expand it to block form and nest the child — not slam an unparseable
+// block `parts:` under a closed flow scalar.
+func TestReparent_IntoFlowStyleGroup(t *testing.T) {
+	src := "nodes:\n  scene:\n    shape: composite\n    parts:\n" +
+		"      - { id: leaf, shape: rectangle, geom: {w:80,d:60,h:30} }\n" +
+		"      - { id: grp, shape: group, geom: {w:300,d:200,h:6}, label: G }\n"
+	out, err := ApplyOpText("yaml", []byte(src), EditOp{Kind: "reparent", ID: "leaf", Target: "grp"})
+	if err != nil {
+		t.Fatalf("reparent into flow group: %v", err)
+	}
+	if _, issues, _ := RenderSource("yaml", out); hasErr(issues) {
+		t.Fatalf("flow-group reparent produced a broken doc:\n%s\n%s", errMsgs(issues), out)
+	}
+	if !strings.Contains(string(out), "id: grp") || !strings.Contains(string(out), "parts:") {
+		t.Fatalf("group not expanded / child not nested:\n%s", out)
+	}
+}
+
+// TestApplyOp_UnparseableGuard: ANY edit op that would make the document
+// unparseable must return an error on the original source, never corrupt text.
+func TestApplyOp_UnparseableGuard(t *testing.T) {
+	src := "nodes:\n  scene:\n    shape: composite\n    parts:\n      - { id: a, shape: rectangle, geom: {w:80,d:60,h:30} }\n"
+	// content.rows (a list field) set to a scalar would break the YAML.
+	if _, err := ApplyOpText("yaml", []byte(src), EditOp{Kind: "set-field", Target: "node", ID: "a", Fields: map[string]string{"content.rows": "boom"}}); err == nil {
+		t.Fatal("an unparseable-making edit should error, not corrupt")
+	}
+}
+
+// TestValidate_OversizeSidesAndPadding: a huge geom.sides (render DoS) and a
+// non-finite/huge canvas.padding (viewBox overflow) must be flagged.
+func TestValidate_OversizeSidesAndPadding(t *testing.T) {
+	sides := "nodes:\n  scene:\n    shape: composite\n    parts:\n      - { id: a, shape: prism, geom: {w:80,d:60,h:30, sides: 1000000000} }\n"
+	if _, issues, _ := RenderSource("yaml", []byte(sides)); !hasErr(issues) {
+		t.Error("oversize geom.sides should be flagged")
+	}
+	pad := "nodes:\n  scene:\n    shape: composite\n    parts:\n      - { id: a, shape: rectangle, geom: {w:80,d:60,h:30} }\ncanvas: { padding: 1e20 }\n"
+	if _, issues, _ := RenderSource("yaml", []byte(pad)); !hasErr(issues) {
+		t.Error("oversize canvas.padding should be flagged")
+	}
+}
+
+// TestMove_OffsetlessIdempotentInBoundary: a zero-delta move of an offset-less
+// node inside a non-layout container must be a true no-op (the resolver-derived
+// base must match the rendered position, not a divergent solved baseline).
+func TestMove_OffsetlessIdempotentInBoundary(t *testing.T) {
+	src := "nodes:\n  scene:\n    shape: composite\n    parts:\n" +
+		"      - id: b\n        shape: boundary\n        geom: {w:300,d:200,h:2}\n        parts:\n" +
+		"          - { id: db, shape: rectangle, geom: {w:80,d:60,h:30} }\n" +
+		"          - { id: x, shape: rectangle, geom: {w:80,d:60,h:30} }\n"
+	before, _, _ := RenderSource("yaml", []byte(src))
+	out, _ := ApplyOpText("yaml", []byte(src), EditOp{Kind: "move", Target: "node", ID: "db", DWX: 0, DWY: 0})
+	after, _, _ := RenderSource("yaml", out)
+	if before != after {
+		t.Errorf("zero-delta move of an offset-less node in a boundary changed the render")
+	}
+}
+
 // TestValidate_DefaultFillNoFalseContrast: an unstyled part must not trip the
 // contrast lint, which had hard-coded the wrong default top fill.
 func TestValidate_DefaultFillNoFalseContrast(t *testing.T) {

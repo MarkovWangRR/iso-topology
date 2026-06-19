@@ -22,9 +22,16 @@ func (PrismShapeProvider) Names() []string {
 
 // prismSides resolves the side count from params (set by the renderer
 // from shape name or geom.sides). Default hexagon.
+// maxPrismSides caps polygon sides so a hostile geom.sides can't exhaust
+// resources building a useless near-circle (512 already looks like a circle).
+const maxPrismSides = 512
+
 func prismSides(params map[string]any) int {
 	if params != nil {
 		if n, ok := params["sides"].(int); ok && n >= 3 {
+			if n > maxPrismSides {
+				return maxPrismSides
+			}
 			return n
 		}
 	}
