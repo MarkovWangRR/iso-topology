@@ -82,11 +82,39 @@ func assertPreserved(t *testing.T, target string, before, after map[string][2]fl
 	}
 }
 
+// assertRelative checks that the listed leaf nodes preserve their RELATIVE
+// positions: every one moves by the SAME delta. A uniform delta is an allowed
+// canvas reframe (e.g. an autosize slab growing to wrap the reparented node);
+// only a node moving DIFFERENTLY from the others is a real drift. Container
+// slabs are intentionally not listed — they may resize/reposition.
+func assertRelative(t *testing.T, leaves []string, before, after map[string][2]float64) {
+	t.Helper()
+	var rdx, rdy float64
+	have := false
+	for _, id := range leaves {
+		b, okb := before[id]
+		a, oka := after[id]
+		if !okb || !oka {
+			t.Fatalf("leaf %q missing from render before/after", id)
+		}
+		dx, dy := a[0]-b[0], a[1]-b[1]
+		if !have {
+			rdx, rdy, have = dx, dy, true
+			continue
+		}
+		if math.Abs(dx-rdx) > posEps || math.Abs(dy-rdy) > posEps {
+			t.Errorf("leaf %q moved Δ(%.2f,%.2f) but the others moved Δ(%.2f,%.2f) — relative position changed",
+				id, dx, dy, rdx, rdy)
+		}
+	}
+}
+
 // ── G2: reparent preserves the node's screen position, no collateral ──────────
 
 func TestAccept_ReparentPreserves(t *testing.T) {
 	cases := []struct {
 		name, src, id, target string
+		leaves                []string
 	}{
 		{"2a_out_of_offset0_group",
 			scene(`- id: g
@@ -95,7 +123,7 @@ func TestAccept_ReparentPreserves(t *testing.T) {
         parts:
           - { id: n, shape: rectangle, geom: {w:90,d:70,h:30}, offset: {wx:30,wy:30} }
       - { id: keep, shape: rectangle, geom: {w:90,d:70,h:30}, offset: {wx:60,wy:340} }`),
-			"n", ""},
+			"n", "", []string{"n", "keep"}},
 		{"2b_out_of_offset_group",
 			scene(`- id: g
         shape: group
@@ -104,7 +132,7 @@ func TestAccept_ReparentPreserves(t *testing.T) {
         parts:
           - { id: n, shape: rectangle, geom: {w:90,d:70,h:30}, offset: {wx:30,wy:30} }
       - { id: keep, shape: rectangle, geom: {w:90,d:70,h:30}, offset: {wx:60,wy:340} }`),
-			"n", ""},
+			"n", "", []string{"n", "keep"}},
 		{"2c_out_of_nested_group",
 			scene(`- id: g0
         shape: group
@@ -118,7 +146,7 @@ func TestAccept_ReparentPreserves(t *testing.T) {
             parts:
               - { id: n, shape: rectangle, geom: {w:80,d:60,h:30}, offset: {wx:30,wy:30} }
       - { id: keep, shape: rectangle, geom: {w:90,d:70,h:30}, offset: {wx:60,wy:420} }`),
-			"n", ""},
+			"n", "", []string{"n", "keep"}},
 		{"2d_cross_group",
 			scene(`- id: ga
         shape: group
@@ -132,7 +160,7 @@ func TestAccept_ReparentPreserves(t *testing.T) {
         offset: { wx: 400, wy: 60 }
         parts:
           - { id: other, shape: rectangle, geom: {w:80,d:60,h:30}, offset: {wx:30,wy:30} }`),
-			"n", "gb"},
+			"n", "gb", []string{"n", "other"}},
 		{"2e_into_autosize_group",
 			scene(`- id: ga
         shape: group
@@ -146,7 +174,7 @@ func TestAccept_ReparentPreserves(t *testing.T) {
         offset: { wx: 400, wy: 60 }
         parts:
           - { id: other, shape: rectangle, geom: {w:80,d:60,h:30}, offset: {wx:30,wy:30} }`),
-			"n", "gb"},
+			"n", "gb", []string{"n", "other"}},
 		{"2f_into_authored_geom_group",
 			scene(`- id: ga
         shape: group
@@ -160,13 +188,13 @@ func TestAccept_ReparentPreserves(t *testing.T) {
         offset: { wx: 400, wy: 60 }
         parts:
           - { id: other, shape: rectangle, geom: {w:80,d:60,h:30}, offset: {wx:30,wy:30} }`),
-			"n", "gb"},
+			"n", "gb", []string{"n", "other"}},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			before := nodePositions(t, c.src)
 			after := nodePositions(t, applyT(t, c.src, EditOp{Kind: "reparent", ID: c.id, Target: c.target}))
-			assertPreserved(t, c.id, before, after)
+			assertRelative(t, c.leaves, before, after)
 		})
 	}
 }
