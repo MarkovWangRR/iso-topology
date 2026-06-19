@@ -1024,10 +1024,16 @@ func DeletePart(src, id string) (string, bool) {
 		if removed[s] {
 			return true
 		}
-		if i := strings.IndexByte(s, '.'); i > 0 {
-			return removed[s[:i]]
+		// Strip a ".anchor" suffix and/or a "~N" stack-instance suffix to reach
+		// the base part id (e.g. "db~2", "db.left", "db~2.left" all → "db").
+		base := s
+		if i := strings.IndexByte(base, '.'); i > 0 {
+			base = base[:i]
 		}
-		return false
+		if i := strings.IndexByte(base, '~'); i > 0 {
+			base = base[:i]
+		}
+		return removed[base]
 	}
 	conns := FindConnectors(mustParse(src))
 	var refs []int
@@ -1049,7 +1055,7 @@ func DeletePart(src, id string) (string, bool) {
 		var aref []int
 		for i, a := range anns {
 			if m, ok := a.(map[string]interface{}); ok {
-				if s, _ := m["anchor"].(string); removed[s] {
+				if refsRemoved(m["anchor"]) {
 					aref = append(aref, i)
 				}
 			}
@@ -1495,14 +1501,18 @@ func FreezeGroupLayoutText(src, groupID string) string {
 // Without this a rename stranded every reference, silently breaking the render.
 func RenamePart(src, oldID, newID string) string {
 	q := regexp.QuoteMeta(oldID)
+	// Quote the new id if it would otherwise re-decode as a non-string (e.g.
+	// "null"/booleans) — a bare `id: null` silently became an empty id.
+	nv := yamlScalar(newID)
 	// The part's own id key — at line-start indent, or after a -, {, or , in
 	// flow form. Anchored by a trailing delimiter so "web" never matches inside
 	// "webNEW".
 	idKey := regexp.MustCompile(`(?m)((?:^\s*|[-{,]\s*)id:\s*)"?` + q + `"?(\s*(?:[,}\n]|$))`)
-	src = idKey.ReplaceAllString(src, `${1}`+newID+`${2}`)
-	// References, with an optional ".anchor" suffix preserved.
-	refKey := regexp.MustCompile(`((?:from|to|rightOf|leftOf|inFrontOf|behind|above|anchor):\s*)"?` + q + `(\.[A-Za-z0-9_-]+)?"?(\s*(?:[,}\n]|$))`)
-	src = refKey.ReplaceAllString(src, `${1}`+newID+`${2}${3}`)
+	src = idKey.ReplaceAllString(src, `${1}`+nv+`${2}`)
+	// References, with an optional ".anchor" OR "~N" (stack instance) suffix
+	// preserved — both forms must be rewritten or they dangle after the rename.
+	refKey := regexp.MustCompile(`((?:from|to|rightOf|leftOf|inFrontOf|behind|above|anchor):\s*)"?` + q + `((?:\.[A-Za-z0-9_-]+)|(?:~[0-9]+))?"?(\s*(?:[,}\n]|$))`)
+	src = refKey.ReplaceAllString(src, `${1}`+nv+`${2}${3}`)
 	return src
 }
 

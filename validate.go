@@ -269,15 +269,19 @@ func Validate(doc *Document) []Issue {
 			// arrow/routing typos likewise fall back silently to the default.
 			if c.Arrow != "" && !contains(arrowNames, c.Arrow) {
 				issues = append(issues, Issue{
-					Severity: SeverityError, Path: cPath + ".arrow",
-					Message: fmt.Sprintf("unknown arrow %q", c.Arrow),
+					// Warning, not Error: the renderer falls back to the default
+					// arrow, so a typo shouldn't blank the whole diagram.
+					Severity: SeverityWarning, Path: cPath + ".arrow",
+					Message: fmt.Sprintf("unknown arrow %q (using default)", c.Arrow),
 					Suggest: nearest(c.Arrow, arrowNames),
 				})
 			}
 			if c.Routing != "" && !contains(routingNames, c.Routing) {
 				issues = append(issues, Issue{
-					Severity: SeverityError, Path: cPath + ".routing",
-					Message: fmt.Sprintf("unknown routing %q", c.Routing),
+					// Warning, not Error: the renderer falls back to a straight
+					// route, so a typo shouldn't blank the whole diagram.
+					Severity: SeverityWarning, Path: cPath + ".routing",
+					Message: fmt.Sprintf("unknown routing %q (using default)", c.Routing),
 					Suggest: nearest(c.Routing, routingNames),
 				})
 			}
@@ -602,7 +606,9 @@ func checkAnchor(ref, path string, allIDs map[string]struct{}, issues *[]Issue) 
 		return
 	}
 	*issues = append(*issues, Issue{
-		Severity: SeverityError,
+		// Warning, not Error: the renderer falls back to top-mid, so a bad anchor
+		// shouldn't blank the whole diagram — surface it without killing render.
+		Severity: SeverityWarning,
 		Path:     path,
 		Message:  fmt.Sprintf("unknown anchor %q on %q — renders at top-mid; valid anchors: top/bottom/left/right/front/back (+ -mid)", suffix, ref[:dot]),
 		Suggest:  nearest(suffix, anchorNames),

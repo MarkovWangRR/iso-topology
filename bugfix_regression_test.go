@@ -330,6 +330,81 @@ func TestReparent_DropsEmptiedGroupParts(t *testing.T) {
 	}
 }
 
+// TestSetField_RenameToReservedWordKeepsID: renaming an id TO a YAML reserved
+// word (null/~) must quote it so the part keeps that literal id (was a
+// regression: bare `id: null` silently emptied the id).
+func TestSetField_RenameToReservedWordKeepsID(t *testing.T) {
+	src := "nodes:\n  scene:\n    shape: composite\n    parts:\n" +
+		"      - { id: web, shape: rectangle, geom: {w:80,d:60,h:30} }\n" +
+		"      - { id: api, shape: rectangle, geom: {w:80,d:60,h:30}, offset:{wx:160,wy:0} }\n" +
+		"    connectors:\n      - { from: web, to: api }\n"
+	out, err := ApplyOpText("yaml", []byte(src), EditOp{Kind: "set-field", Target: "node", ID: "web", Fields: map[string]string{"id": "null"}})
+	if err != nil {
+		t.Fatalf("rename: %v", err)
+	}
+	doc, _ := LoadInput(context.Background(), "yaml", out, LayoutDagre)
+	found := false
+	for _, p := range doc.Scene().Parts {
+		if p != nil && p.ID == "null" {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("renamed-to-null part lost its id:\n%s", out)
+	}
+}
+
+// TestSetField_InvalidIDRejected: empty, dotted, or punctuation ids are refused.
+func TestSetField_InvalidIDRejected(t *testing.T) {
+	src := "nodes:\n  scene:\n    shape: composite\n    parts:\n      - { id: web, shape: rectangle, geom: {w:80,d:60,h:30} }\n"
+	for _, bad := range []string{"", "a.b", "a c", "a,b", "a:b"} {
+		if _, err := ApplyOpText("yaml", []byte(src), EditOp{Kind: "set-field", Target: "node", ID: "web", Fields: map[string]string{"id": bad}}); err == nil {
+			t.Errorf("invalid id %q should be rejected", bad)
+		}
+	}
+}
+
+// TestAddEdge_NonexistentEndpointRejected: add-edge to a missing part errors,
+// rather than silently appending a dangling connector that blanks the render.
+func TestAddEdge_NonexistentEndpointRejected(t *testing.T) {
+	src := "nodes:\n  scene:\n    shape: composite\n    parts:\n      - { id: a, shape: rectangle, geom: {w:80,d:60,h:30} }\n"
+	if _, err := ApplyOpText("yaml", []byte(src), EditOp{Kind: "add-edge", Fields: map[string]string{"from": "a", "to": "ghost"}}); err == nil {
+		t.Fatal("add-edge to a nonexistent endpoint should error")
+	}
+}
+
+// TestParse_EscapedQuoteFlowColons: an escaped quote inside a double-quoted
+// value must not desync normalizeFlowColons and zero out later tight offsets.
+func TestParse_EscapedQuoteFlowColons(t *testing.T) {
+	src := "nodes:\n  scene:\n    shape: composite\n    parts:\n" +
+		"      - { id: a, shape: rectangle, geom: {w:80,d:60,h:30}, label: \"x\\\"y\" }\n" +
+		"      - { id: b, shape: rectangle, geom: {w:200,d:80,h:30}, offset: {wx:200,wy:50} }\n"
+	doc, err := LoadInput(context.Background(), "yaml", []byte(src), LayoutDagre)
+	if err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+	for _, p := range doc.Scene().Parts {
+		if p != nil && p.ID == "b" {
+			if p.Geom == nil || p.Geom.W != 200 || p.Offset == nil || p.Offset.WX != 200 {
+				t.Fatalf("escaped quote desynced the parser — b geom/offset zeroed: %+v %+v", p.Geom, p.Offset)
+			}
+		}
+	}
+}
+
+// TestValidate_TypoEnumIsWarningNotBlank: a typo'd routing/arrow falls back and
+// renders (a Warning), instead of erroring and blanking the whole diagram.
+func TestValidate_TypoEnumIsWarningNotBlank(t *testing.T) {
+	src := "nodes:\n  scene:\n    shape: composite\n    parts:\n" +
+		"      - { id: a, shape: rectangle, geom: {w:80,d:60,h:30} }\n" +
+		"      - { id: b, shape: rectangle, geom: {w:80,d:60,h:30}, offset:{wx:160,wy:0} }\n" +
+		"    connectors:\n      - { from: a, to: b, routing: curved }\n"
+	svg, issues, _ := RenderSource("yaml", []byte(src))
+	if svg == "" {
+		t.Fatalf("a typo'd routing blanked the render:\n%s", errMsgs(issues))
+	}
+}
+
 // TestValidate_DefaultFillNoFalseContrast: an unstyled part must not trip the
 // contrast lint, which had hard-coded the wrong default top fill.
 func TestValidate_DefaultFillNoFalseContrast(t *testing.T) {

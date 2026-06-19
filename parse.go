@@ -29,18 +29,24 @@ func normalizeFlowColons(s string) string {
 	var b strings.Builder
 	b.Grow(len(s) + 16)
 	depth := 0
-	var inSQ, inDQ bool
+	var inSQ, inDQ, esc bool
 	rs := []rune(s)
 	for i := 0; i < len(rs); i++ {
 		c := rs[i]
 		b.WriteRune(c)
+		if esc { // previous char was a backslash inside a double-quoted string
+			esc = false
+			continue
+		}
 		switch {
 		case inSQ:
 			if c == '\'' {
 				inSQ = false
 			}
 		case inDQ:
-			if c == '"' {
+			if c == '\\' {
+				esc = true // skip the escaped char so \" doesn't close the string
+			} else if c == '"' {
 				inDQ = false
 			}
 		case c == '\'':

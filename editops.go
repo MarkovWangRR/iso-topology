@@ -125,6 +125,16 @@ func applyOpText(format string, src []byte, op EditOp) ([]byte, error) {
 		if from == "" || to == "" {
 			return src, fmt.Errorf("add-edge: from and to are required")
 		}
+		// Validate both endpoints exist (mirrors set-field/delete) so we don't
+		// silently append a dangling connector that blanks the whole render.
+		if doc, derr := Parse(src); derr == nil {
+			if findPart(doc, edgeEndpointBase(from)) == nil {
+				return src, fmt.Errorf("add-edge: from %q not found", from)
+			}
+			if findPart(doc, edgeEndpointBase(to)) == nil {
+				return src, fmt.Errorf("add-edge: to %q not found", to)
+			}
+		}
 		out, ok := yamledit.AddConnector(string(src), from, to, op.Fields["fromAnchor"], op.Fields["toAnchor"])
 		if !ok {
 			return src, fmt.Errorf("add-edge: connectors block not found and no parts block to anchor to")
@@ -445,6 +455,32 @@ func foldIconColor(src []byte, op EditOp) map[string]string {
 	return out
 }
 
+// edgeEndpointBase reduces a connector endpoint ref to the part id it must
+// match: strips a ".anchor" suffix and a "~N" stack-instance suffix.
+func edgeEndpointBase(ref string) string {
+	id := connectorTarget(ref)
+	if i := strings.IndexByte(id, '~'); i > 0 {
+		id = id[:i]
+	}
+	return id
+}
+
+// isCleanID reports whether s is a usable part id: a non-empty run of letters,
+// digits, '_' or '-'. Excludes '.' (the partID.anchor separator), '~' (stack
+// instance), whitespace, and flow punctuation that would dangle refs or corrupt
+// the YAML.
+func isCleanID(s string) bool {
+	if s == "" {
+		return false
+	}
+	for _, r := range s {
+		if !(r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' || r >= '0' && r <= '9' || r == '_' || r == '-') {
+			return false
+		}
+	}
+	return true
+}
+
 func applySetField(src []byte, op EditOp) ([]byte, error) {
 	out := string(src)
 	// Work on a private copy — foldIconColor may return op.Fields itself, and we
@@ -454,9 +490,15 @@ func applySetField(src []byte, op EditOp) ([]byte, error) {
 		fields[k] = v
 	}
 
-	// Guard: renaming a part onto an id another part already uses would mint a
-	// silent duplicate (ambiguous connector/annotation targets) — refuse it.
-	if newID, ok := fields["id"]; ok && op.Target == "node" && newID != "" && newID != op.ID {
+	// Guard: an id must be a clean identifier. Empty, whitespace, a dot (the
+	// partID.anchor separator), or flow punctuation would dangle references or
+	// produce an unrenderable/unparseable doc. Reserved words like "null" are
+	// allowed (RenamePart quotes them).
+	if newID, ok := fields["id"]; ok && op.Target == "node" && newID != op.ID {
+		if !isCleanID(newID) {
+			return src, fmt.Errorf("set-field: invalid id %q — use letters, digits, '_' or '-' (no dots, spaces, or punctuation)", newID)
+		}
+		// And it must not collide with an existing part (silent duplicate).
 		if doc, err := Parse(src); err == nil && findPart(doc, newID) != nil {
 			return src, fmt.Errorf("set-field: id %q is already in use", newID)
 		}
