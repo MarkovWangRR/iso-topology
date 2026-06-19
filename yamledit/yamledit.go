@@ -414,10 +414,19 @@ func UpsertInlineList(src string, startLine int, key string, pts [][2]float64) (
 // nested {}/[] and double-quoted strings.
 func splitTopCommas(s string) []string {
 	var out []string
-	depth, inStr := 0, false
+	depth, inStr, esc := 0, false, false
 	var b strings.Builder
 	for _, r := range s {
+		if esc { // previous char was a backslash inside a string: take literally
+			esc = false
+			b.WriteRune(r)
+			continue
+		}
 		switch r {
+		case '\\':
+			if inStr {
+				esc = true
+			}
 		case '"':
 			inStr = !inStr
 		case '{', '[':
@@ -704,11 +713,22 @@ func SetField(src string, startLine int, path []string, value string) (string, b
 
 // yamlScalar renders a value for write-back, quoting when it contains
 // characters that aren't safe bare (spaces, ':', flow punctuation, …).
+var bareSafeRe = regexp.MustCompile(`^[A-Za-z0-9_.\-/]+$`)
+
+// reservedYAMLScalar matches NON-numeric plain values YAML would re-decode as
+// something other than a string — null/~ and the booleans (incl. YAML 1.1
+// yes/no/on/off), plus the special floats. Writing `label: null` bare would
+// round-trip to an empty/typed value, silently losing the literal text, so these
+// must be quoted. Numbers are deliberately NOT here: numeric fields (geom.w,
+// font size, …) legitimately want a bare number, and yamlScalar can't see the
+// target field's type.
+var reservedYAMLScalar = regexp.MustCompile(`(?i)^(null|~|true|false|yes|no|on|off|y|n|\.nan|[-+]?\.inf)$`)
+
 func yamlScalar(v string) string {
 	if v == "" {
 		return `""`
 	}
-	if regexp.MustCompile(`^[A-Za-z0-9_.\-/]+$`).MatchString(v) {
+	if bareSafeRe.MatchString(v) && !reservedYAMLScalar.MatchString(v) {
 		return v
 	}
 	// Double-quoted YAML scalar. Escape control characters too — a raw newline
@@ -1311,6 +1331,25 @@ func FreezeGroupLayoutText(src, groupID string) string {
 	}
 	out = append(out, lines[end:]...)
 	return strings.Join(out, "\n")
+}
+
+// RenamePart renames a part's id EVERYWHERE: its own structural `id:` key and
+// every reference to it — connector from/to (preserving an "id.anchor" suffix),
+// place rightOf/leftOf/inFrontOf/behind/above, and annotation anchor. References
+// are matched only in their key context (and as a whole token, via the trailing
+// delimiter) so a label or other text that merely contains the id is untouched.
+// Without this a rename stranded every reference, silently breaking the render.
+func RenamePart(src, oldID, newID string) string {
+	q := regexp.QuoteMeta(oldID)
+	// The part's own id key — at line-start indent, or after a -, {, or , in
+	// flow form. Anchored by a trailing delimiter so "web" never matches inside
+	// "webNEW".
+	idKey := regexp.MustCompile(`(?m)((?:^\s*|[-{,]\s*)id:\s*)"?` + q + `"?(\s*(?:[,}\n]|$))`)
+	src = idKey.ReplaceAllString(src, `${1}`+newID+`${2}`)
+	// References, with an optional ".anchor" suffix preserved.
+	refKey := regexp.MustCompile(`((?:from|to|rightOf|leftOf|inFrontOf|behind|above|anchor):\s*)"?` + q + `(\.[A-Za-z0-9_-]+)?"?(\s*(?:[,}\n]|$))`)
+	src = refKey.ReplaceAllString(src, `${1}`+newID+`${2}${3}`)
+	return src
 }
 
 // DuplicatePart clones a node's block under a fresh id, placed at (ox,oy).

@@ -421,34 +421,51 @@ func foldIconColor(src []byte, op EditOp) map[string]string {
 
 func applySetField(src []byte, op EditOp) ([]byte, error) {
 	out := string(src)
-	fields := foldIconColor(src, op)
-	// Renaming a part onto an id another part already uses would mint a silent
-	// duplicate (ambiguous connector/annotation targets) — refuse it, mirroring
-	// DuplicatePart's uniquePartID guard.
+	// Work on a private copy — foldIconColor may return op.Fields itself, and we
+	// mutate (delete "id") below.
+	fields := map[string]string{}
+	for k, v := range foldIconColor(src, op) {
+		fields[k] = v
+	}
+
+	// Guard: renaming a part onto an id another part already uses would mint a
+	// silent duplicate (ambiguous connector/annotation targets) — refuse it.
 	if newID, ok := fields["id"]; ok && op.Target == "node" && newID != "" && newID != op.ID {
 		if doc, err := Parse(src); err == nil && findPart(doc, newID) != nil {
 			return src, fmt.Errorf("set-field: id %q is already in use", newID)
 		}
 	}
+	// Guard: demoting a populated container (group/boundary) to a non-container
+	// shape would silently orphan its children (the renderer drops them). Refuse.
+	if newShape, ok := fields["shape"]; ok && op.Target == "node" {
+		if doc, err := Parse(src); err == nil {
+			if p := findPart(doc, op.ID); p != nil && len(p.Parts) > 0 && !isContainerShape(newShape) {
+				return src, fmt.Errorf("set-field: cannot change %q to non-container shape %q while it holds %d nested part(s); reparent or delete them first", op.ID, newShape, len(p.Parts))
+			}
+		}
+	}
+
 	// Editing the canvas when no `canvas:` block exists yet: create an empty
 	// one at the top so the writes below have somewhere to land.
 	if op.Target == "canvas" && yamledit.FindCanvasLine(out) < 0 {
 		out = "canvas: {}\n" + out
 	}
-	// Apply in a deterministic order, and write an `id` rename LAST: each write
-	// re-resolves the target by op.ID, so renaming first would strand every
-	// remaining field ("target not found") and the result would depend on Go's
-	// random map-iteration order.
+
+	// An id rename is handled LAST and specially — via RenamePart, which also
+	// rewrites every connector/place/annotation reference (a plain SetField
+	// would change only the key and strand the references). Pull it out so the
+	// other field writes still resolve the target by the original op.ID.
+	newID, renameID := "", false
+	if v, ok := fields["id"]; ok && op.Target == "node" && v != "" && v != op.ID {
+		newID, renameID = v, true
+		delete(fields, "id")
+	}
+
 	keys := make([]string, 0, len(fields))
 	for k := range fields {
 		keys = append(keys, k)
 	}
-	sort.Slice(keys, func(i, j int) bool {
-		if (keys[i] == "id") != (keys[j] == "id") {
-			return keys[j] == "id" // id sorts to the end
-		}
-		return keys[i] < keys[j]
-	})
+	sort.Strings(keys) // deterministic regardless of map order
 	for _, key := range keys {
 		line, ok := targetLine(out, op)
 		if !ok {
@@ -459,6 +476,17 @@ func applySetField(src []byte, op EditOp) ([]byte, error) {
 		}
 		// Re-find the target each write: a write can shift line numbers.
 		out, _ = yamledit.SetField(out, line, strings.Split(key, "."), fields[key])
+	}
+	if renameID {
+		out = yamledit.RenamePart(out, op.ID, newID)
+	}
+	// Safety net: never return a document the edit made unparseable (e.g. a
+	// scalar written into a list-typed field like content.rows). Surface it as
+	// an error on the ORIGINAL source instead of silently corrupting it.
+	if _, err := Parse([]byte(out)); err != nil {
+		if _, ok := Parse(src); ok == nil {
+			return src, fmt.Errorf("set-field: edit would make the document unparseable: %w", err)
+		}
 	}
 	return []byte(out), nil
 }

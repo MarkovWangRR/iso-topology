@@ -135,6 +135,97 @@ func TestSetField_NewlineValuePreserved(t *testing.T) {
 	}
 }
 
+// TestSetField_IDRenameCascades: renaming a part's id must rewrite every
+// reference (connector from/to incl .anchor, place, annotation anchor), not
+// strand them.
+func TestSetField_IDRenameCascades(t *testing.T) {
+	src := "nodes:\n  scene:\n    shape: composite\n    parts:\n" +
+		"      - { id: web, shape: rectangle, geom: {w:80,d:60,h:30} }\n" +
+		"      - { id: db, shape: rectangle, geom: {w:80,d:60,h:30}, offset:{wx:160,wy:0}, place: {rightOf: web} }\n" +
+		"    connectors:\n      - { from: web.right, to: db }\n"
+	out, err := ApplyOpText("yaml", []byte(src), EditOp{Kind: "set-field", Target: "node", ID: "web", Fields: map[string]string{"id": "webNEW"}})
+	if err != nil {
+		t.Fatalf("rename: %v", err)
+	}
+	s := string(out)
+	if strings.Contains(s, "from: web.") || strings.Contains(s, "rightOf: web\n") || strings.Contains(s, "rightOf: web ") {
+		t.Fatalf("references not cascaded:\n%s", s)
+	}
+	if !strings.Contains(s, "from: webNEW.right") || !strings.Contains(s, "rightOf: webNEW") {
+		t.Fatalf("references not rewritten to new id:\n%s", s)
+	}
+	if _, issues, _ := RenderSource("yaml", out); hasErr(issues) {
+		t.Fatalf("renamed doc has dangling refs:\n%s", errMsgs(issues))
+	}
+}
+
+// TestSetField_ContainerToLeafRefused: demoting a populated container to a
+// non-container shape must error, not silently orphan its children.
+func TestSetField_ContainerToLeafRefused(t *testing.T) {
+	src := "nodes:\n  scene:\n    shape: composite\n    parts:\n" +
+		"      - id: zone\n        shape: group\n        geom: {w:300,d:200,h:6}\n        parts:\n" +
+		"          - { id: cache, shape: rectangle, geom: {w:80,d:60,h:30}, offset:{wx:30,wy:30} }\n"
+	if _, err := ApplyOpText("yaml", []byte(src), EditOp{Kind: "set-field", Target: "node", ID: "zone", Fields: map[string]string{"shape": "rectangle"}}); err == nil {
+		t.Fatal("demoting a populated group to a leaf shape should error")
+	}
+}
+
+// TestSetField_ReservedWordValueQuoted: a string value that looks like a YAML
+// reserved word (null/true) must round-trip as that literal text; numeric
+// fields must stay bare numbers.
+func TestSetField_ReservedWordValueQuoted(t *testing.T) {
+	base := "nodes:\n  scene:\n    shape: composite\n    parts:\n      - { id: a, shape: rectangle, geom: {w:80,d:60,h:30}, label: X }\n"
+	for _, v := range []string{"null", "true"} {
+		out, _ := ApplyOpText("yaml", []byte(base), EditOp{Kind: "set-field", Target: "node", ID: "a", Fields: map[string]string{"label": v}})
+		doc, err := LoadInput(context.Background(), "yaml", out, LayoutDagre)
+		if err != nil {
+			t.Fatalf("reparse: %v", err)
+		}
+		got := ""
+		for _, p := range doc.Scene().Parts {
+			if p != nil && p.ID == "a" {
+				got = p.Label
+			}
+		}
+		if got != v {
+			t.Fatalf("label %q round-tripped to %q (reserved word not quoted)", v, got)
+		}
+	}
+	// numeric field stays bare + renders
+	wout, _, issues, _ := ApplyOp("yaml", []byte(base), EditOp{Kind: "set-field", Target: "node", ID: "a", Fields: map[string]string{"geom.w": "120"}})
+	if hasErr(issues) {
+		t.Fatalf("numeric geom.w write broke render:\n%s\n%s", errMsgs(issues), wout)
+	}
+}
+
+// TestSetField_NoSilentCorruption: an edit that would make the document
+// unparseable (e.g. a scalar into the list-typed content.rows) must error, not
+// return corrupt text.
+func TestSetField_NoSilentCorruption(t *testing.T) {
+	src := "nodes:\n  scene:\n    shape: composite\n    parts:\n      - { id: a, shape: rectangle, geom: {w:80,d:60,h:30} }\n"
+	if _, err := ApplyOpText("yaml", []byte(src), EditOp{Kind: "set-field", Target: "node", ID: "a", Fields: map[string]string{"content.rows": "hello"}}); err == nil {
+		t.Fatal("writing a scalar into the list-typed content.rows should error, not corrupt")
+	}
+}
+
+// TestSetField_EscapedQuoteCommaSurvives: a value containing an escaped quote
+// and a comma must not corrupt a SUBSEQUENT inline-map edit (splitTopCommas
+// must respect backslash escapes).
+func TestSetField_EscapedQuoteCommaSurvives(t *testing.T) {
+	base := "nodes:\n  scene:\n    shape: composite\n    parts:\n      - { id: a, shape: rectangle, geom: {w:80,d:60,h:30} }\n"
+	s1, err := ApplyOpText("yaml", []byte(base), EditOp{Kind: "set-field", Target: "node", ID: "a", Fields: map[string]string{"content.header": `x"y,z`}})
+	if err != nil {
+		t.Fatalf("first edit: %v", err)
+	}
+	s2, err := ApplyOpText("yaml", s1, EditOp{Kind: "set-field", Target: "node", ID: "a", Fields: map[string]string{"content.header": "safe"}})
+	if err != nil {
+		t.Fatalf("second edit corrupted by the escaped-quote value: %v", err)
+	}
+	if _, issues, _ := RenderSource("yaml", s2); hasErr(issues) {
+		t.Fatalf("doc unrenderable after edits:\n%s\n%s", errMsgs(issues), s2)
+	}
+}
+
 // TestValidate_DefaultFillNoFalseContrast: an unstyled part must not trip the
 // contrast lint, which had hard-coded the wrong default top fill.
 func TestValidate_DefaultFillNoFalseContrast(t *testing.T) {
