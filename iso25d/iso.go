@@ -280,7 +280,7 @@ func writeFace(sb *strings.Builder, name, fill, stroke string, strokeWidth float
 	}
 	fmt.Fprintf(sb,
 		`<polygon data-face="%s" points="%s" fill="%s"%s/>`,
-		name, strings.Join(parts, " "), fill, attrs,
+		name, strings.Join(parts, " "), escapeAttr(fill), attrs,
 	)
 }
 
@@ -293,13 +293,13 @@ func faceTag(sb *strings.Builder, name string, fill, stroke string, strokeWidth 
 	if stroke == "" || strokeWidth <= 0 {
 		fmt.Fprintf(sb,
 			`<polygon data-face="%s" points="%s" fill="%s" stroke="none"/>`,
-			name, strings.Join(parts, " "), fill,
+			name, strings.Join(parts, " "), escapeAttr(fill),
 		)
 		return
 	}
 	fmt.Fprintf(sb,
 		`<polygon data-face="%s" points="%s" fill="%s" stroke="%s" stroke-width="%.2f" stroke-linejoin="round" stroke-linecap="round"/>`,
-		name, strings.Join(parts, " "), fill, stroke, strokeWidth,
+		name, strings.Join(parts, " "), escapeAttr(fill), escapeAttr(stroke), strokeWidth,
 	)
 }
 
@@ -686,7 +686,23 @@ func iconAnchorXY(anchor string, faceW, faceD, iconSize float64) (float64, float
 	}
 }
 
+// stripXMLCtrl drops characters XML 1.0 forbids (control chars except tab, LF,
+// CR). They are otherwise emitted raw into text/attributes and make the document
+// non-well-formed — e.g. a U+0001 in a label from a d2 source.
+func stripXMLCtrl(s string) string {
+	return strings.Map(func(r rune) rune {
+		if r == '\t' || r == '\n' || r == '\r' {
+			return r
+		}
+		if r < 0x20 {
+			return -1
+		}
+		return r
+	}, s)
+}
+
 func escapeXML(s string) string {
+	s = stripXMLCtrl(s)
 	s = strings.ReplaceAll(s, "&", "&amp;")
 	s = strings.ReplaceAll(s, "<", "&lt;")
 	s = strings.ReplaceAll(s, ">", "&gt;")

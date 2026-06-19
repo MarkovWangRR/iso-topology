@@ -165,7 +165,7 @@ func RenderIsoCylinder(o IsoCylinderOpts) string {
 		rx, ry, botFrontX, botFrontY,
 		topFrontX, topFrontY,
 		rx, ry, leftTopX, leftTopY,
-		leftFill,
+		escapeAttr(leftFill),
 	)
 	fmt.Fprintf(&sb,
 		`<path data-face="side-right" d="M %.2f %.2f L %.2f %.2f A %.2f %.2f 0 0 1 %.2f %.2f L %.2f %.2f A %.2f %.2f 0 0 1 %.2f %.2f Z" fill="%s" stroke="none"/>`,
@@ -174,7 +174,7 @@ func RenderIsoCylinder(o IsoCylinderOpts) string {
 		rx, ry, botFrontX, botFrontY,
 		topFrontX, topFrontY,
 		rx, ry, rightTopX, rightTopY,
-		rightFill,
+		escapeAttr(rightFill),
 	)
 
 	// Body silhouette: left edge + full front-bottom arc + right edge.
@@ -187,14 +187,14 @@ func RenderIsoCylinder(o IsoCylinderOpts) string {
 			leftBotX, leftBotY,
 			rx, ry, rightBotX, rightBotY,
 			rightTopX, rightTopY,
-			o.Stroke, o.StrokeWidth,
+			escapeAttr(o.Stroke), o.StrokeWidth,
 		)
 	}
 
 	// Top ellipse.
 	fmt.Fprintf(&sb,
 		`<ellipse data-face="top" cx="%.2f" cy="%.2f" rx="%.2f" ry="%.2f" fill="%s" stroke="%s" stroke-width="%.2f"/>`,
-		sx(topCx), sy(topCy), rx, ry, topFill, o.Stroke, o.StrokeWidth,
+		sx(topCx), sy(topCy), rx, ry, escapeAttr(topFill), escapeAttr(o.Stroke), o.StrokeWidth,
 	)
 	// v2.4 — texture overlay on the top ellipse.
 	{

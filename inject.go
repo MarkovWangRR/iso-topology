@@ -472,7 +472,7 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo,
 		}
 		dashAttr := ""
 		if dash != "" {
-			dashAttr = fmt.Sprintf(` stroke-dasharray="%s"`, dash)
+			dashAttr = fmt.Sprintf(` stroke-dasharray="%s"`, escAttr(dash))
 		}
 
 		// Build the polyline waypoints in screen coords.
@@ -856,7 +856,7 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo,
 		toID, _ := ar.parse(c.To)
 		fmt.Fprintf(&sb,
 			`<path data-connector="%d" data-from="%s" data-to="%s"%s d="%s" fill="none" stroke="%s" stroke-width="%.2f" stroke-linecap="round" stroke-linejoin="round"%s/>`,
-			ci, fromID, toID, routeAttr, d.String(), stroke, width, dashAttr,
+			ci, escAttr(fromID), escAttr(toID), routeAttr, d.String(), escAttr(stroke), width, dashAttr,
 		)
 
 		// Record inflated segment rects (route obstacles for later layers).
@@ -882,7 +882,7 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo,
 			b2y := tipY - size*math.Sin(theta) - size*0.5*math.Cos(theta)
 			fmt.Fprintf(&overlay,
 				`<polygon points="%.2f,%.2f %.2f,%.2f %.2f,%.2f" fill="%s"/>`,
-				tipX, tipY, b1x, b1y, b2x, b2y, stroke,
+				tipX, tipY, b1x, b1y, b2x, b2y, escAttr(stroke),
 			)
 		}
 
@@ -941,11 +941,11 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo,
 			trackPt(mx+textW/2, my+10)
 			fmt.Fprintf(&overlay,
 				`<rect x="%.2f" y="%.2f" width="%.2f" height="20" rx="4" ry="4" fill="%s"/>`,
-				mx-textW/2, my-10, textW, bg,
+				mx-textW/2, my-10, textW, escAttr(bg),
 			)
 			fmt.Fprintf(&overlay,
 				`<text x="%.2f" y="%.2f" dy=".35em" font-family="Inter, sans-serif" font-size="%.1f" font-weight="600" fill="%s" text-anchor="middle">%s</text>`,
-				mx, my, lfs, escAttr(ink), c.Label,
+				mx, my, lfs, escAttr(ink), escapeXML(c.Label),
 			)
 		}
 	}

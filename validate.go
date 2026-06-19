@@ -2,9 +2,11 @@ package isotopo
 
 import (
 	"fmt"
-	"github.com/MarkovWangRR/iso-topology/iso25d"
+	"math"
 	"sort"
 	"strings"
+
+	"github.com/MarkovWangRR/iso-topology/iso25d"
 )
 
 // Severity is how loud an Issue is. Errors mean the document won't
@@ -41,6 +43,48 @@ type Issue struct {
 // Validate does NOT check YAML syntax — Parse already does that. It
 // runs on a successfully-decoded Document and answers "is this
 // document logically coherent?".
+// maxGeomDim is the largest dimension that survives the integer-snapped viewBox
+// without overflowing — past this, ceilOuterDims' int() conversion wraps and the
+// SVG comes out unusable (width=0 / int64-max). Comfortably above any real
+// diagram, low enough to catch a fat-fingered exponent.
+const maxGeomDim = 1e7
+
+// checkGeom flags geometry that renders degenerate or corrupts the canvas:
+// non-finite (NaN/Inf) dimensions emit literal "NaN"/"+Inf" into the SVG, and
+// absurd magnitudes overflow the viewBox. Shared by the node-level and part-level
+// walks so a top-level shape and a nested part get the same feedback. Negative is
+// a warning (zero is the legitimate "auto" case); non-finite/overflow is an error.
+func checkGeom(g *Geom, path string, issues *[]Issue) {
+	if g == nil {
+		return
+	}
+	for _, d := range []struct {
+		name string
+		v    float64
+	}{{"w", g.W}, {"d", g.D}, {"h", g.H}} {
+		switch {
+		case math.IsNaN(d.v) || math.IsInf(d.v, 0):
+			*issues = append(*issues, Issue{
+				Severity: SeverityError,
+				Path:     fmt.Sprintf("%s.geom.%s", path, d.name),
+				Message:  fmt.Sprintf("dimension %s must be a finite number, got %g", d.name, d.v),
+			})
+		case d.v < 0:
+			*issues = append(*issues, Issue{
+				Severity: SeverityWarning,
+				Path:     fmt.Sprintf("%s.geom.%s", path, d.name),
+				Message:  fmt.Sprintf("negative dimension %s=%g renders degenerate", d.name, d.v),
+			})
+		case d.v > maxGeomDim:
+			*issues = append(*issues, Issue{
+				Severity: SeverityError,
+				Path:     fmt.Sprintf("%s.geom.%s", path, d.name),
+				Message:  fmt.Sprintf("dimension %s=%g is too large; the canvas overflows", d.name, d.v),
+			})
+		}
+	}
+}
+
 func Validate(doc *Document) []Issue {
 	if doc == nil {
 		return []Issue{{Severity: SeverityError, Path: "$", Message: "document is nil"}}
@@ -96,6 +140,13 @@ func Validate(doc *Document) []Issue {
 			}
 			if p.ID != "" {
 				idCount[p.ID]++
+				// Mirror registerID's stack expansion so a replica id (a~1) that
+				// collides with an explicit part of the same id is caught too.
+				if p.Stack != nil && p.Stack.Count > 1 {
+					for k := 1; k < p.Stack.Count; k++ {
+						idCount[fmt.Sprintf("%s~%d", p.ID, k)]++
+					}
+				}
 			}
 			countIDs(p.Parts)
 		}
@@ -158,11 +209,21 @@ func Validate(doc *Document) []Issue {
 				Suggest:  nearest(n.Shape, validShapes),
 			})
 		}
+		checkGeom(n.Geom, nodePath, &issues)
 		for i, p := range n.Parts {
 			validatePart(p, fmt.Sprintf("%s.parts[%d]", nodePath, i), validShapes, &issues)
 		}
 		for i, c := range n.Connectors {
 			cPath := fmt.Sprintf("%s.connectors[%d]", nodePath, i)
+			// A self-loop (from==to) projects to a zero-length segment: the
+			// arrow points in an arbitrary direction and no route is visible.
+			if c.From != "" && connectorTarget(c.From) == connectorTarget(c.To) {
+				issues = append(issues, Issue{
+					Severity: SeverityWarning,
+					Path:     cPath,
+					Message:  fmt.Sprintf("self-loop connector (from==to==%q) renders as a zero-length edge", connectorTarget(c.From)),
+				})
+			}
 			if _, ok := allIDs[connectorTarget(c.From)]; !ok && c.From != "" {
 				issues = append(issues, Issue{
 					Severity: SeverityError,
@@ -443,16 +504,19 @@ func validatePart(p *CompositePart, path string, validShapes []string, issues *[
 	// Negative numbers are always a mistake (zero is the legitimate "auto"
 	// case, so only < 0 is flagged). A negative dimension renders degenerate;
 	// a negative gap pulls a part back over its own anchor.
-	if p.Geom != nil {
+	checkGeom(p.Geom, path, issues)
+	// Offset coordinates feed the projection directly; a non-finite one emits a
+	// literal NaN/Inf into the SVG transform — same hazard as geom, caught here.
+	if o := p.Offset; o != nil {
 		for _, d := range []struct {
 			name string
 			v    float64
-		}{{"w", p.Geom.W}, {"d", p.Geom.D}, {"h", p.Geom.H}} {
-			if d.v < 0 {
+		}{{"wx", o.WX}, {"wy", o.WY}, {"wz", o.WZ}} {
+			if math.IsNaN(d.v) || math.IsInf(d.v, 0) {
 				*issues = append(*issues, Issue{
-					Severity: SeverityWarning,
-					Path:     fmt.Sprintf("%s.geom.%s", path, d.name),
-					Message:  fmt.Sprintf("negative dimension %s=%g renders degenerate", d.name, d.v),
+					Severity: SeverityError,
+					Path:     fmt.Sprintf("%s.offset.%s", path, d.name),
+					Message:  fmt.Sprintf("offset.%s must be a finite number, got %g", d.name, d.v),
 				})
 			}
 		}

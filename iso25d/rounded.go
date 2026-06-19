@@ -282,12 +282,12 @@ func RenderIsoBoxRounded(o IsoBoxOpts) string {
 		// 1. Side wall fill (top-front-arc + right vertical + reverse bot-front-arc + left vertical).
 		if len(frontIdx) >= 2 {
 			fmt.Fprintf(&sb, `<path data-face="side" d="%s" fill="%s" stroke="none"/>`,
-				sideWallPath(p, frontIdx), sideFill,
+				sideWallPath(p, frontIdx), escapeAttr(sideFill),
 			)
 		}
 		// 2. Top face filled + stroked (full rounded perimeter at z=h).
 		fmt.Fprintf(&sb, `<path data-face="top" d="%s" fill="%s" stroke="%s" stroke-width="%.2f" stroke-linejoin="round"/>`,
-			perimeterPath(p, false), topFill, escapeAttr(stroke), sw)
+			perimeterPath(p, false), escapeAttr(topFill), escapeAttr(stroke), sw)
 		if fs := surfaceFor(o.FaceSurfaces, "top"); fs != nil {
 			for i, l := range fs.Strokes {
 				if l.Width <= 0 || l.Color == "" {

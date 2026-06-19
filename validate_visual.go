@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"math"
 	"strings"
+
+	"github.com/MarkovWangRR/iso-topology/iso25d"
 )
 
 // ── colour helpers ────────────────────────────────────────────────────────────
@@ -92,7 +94,9 @@ func topFillColor(st *Style) string {
 	if st != nil && st.Palette != nil && st.Palette.Top != "" {
 		return st.Palette.Top
 	}
-	return "#E2E8F0" // theme default
+	// Single source of truth: the same default the renderer paints. Hard-coding a
+	// different value here made every unstyled part false-fail the contrast check.
+	return iso25d.DefaultIsoBox().TopFill
 }
 
 func textColor(st *Style) string {

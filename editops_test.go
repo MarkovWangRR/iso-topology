@@ -2,6 +2,7 @@ package isotopo
 
 import (
 	"context"
+	"regexp"
 	"strings"
 	"testing"
 )
@@ -337,15 +338,144 @@ func TestApplyOp_ReparentOutAndBack(t *testing.T) {
 	}
 	root := string(toRoot)
 	// x must now sit at the scene-parts indent (6 spaces), not g's child indent.
-	if !strings.Contains(root, "\n      - { id: x,") {
-		t.Fatalf("x should be a scene-root part after reparent:\n%s", root)
+	// A position-preserving reparent prepends a re-homed `offset:` ahead of the
+	// id, so match the item by indent + id rather than a fixed key order.
+	if indentOfItemWithID(root, "x") != 6 {
+		t.Fatalf("x should be a scene-root part (6-space indent) after reparent:\n%s", root)
 	}
 	back, err := ApplyOpText("yaml", toRoot, EditOp{Kind: "reparent", ID: "x", Target: "g"})
 	if err != nil {
 		t.Fatalf("reparent back into g: %v", err)
 	}
-	if !strings.Contains(string(back), "\n          - { id: x,") {
-		t.Fatalf("x should be g's child again:\n%s", back)
+	if indentOfItemWithID(string(back), "x") != 10 {
+		t.Fatalf("x should be g's child again (10-space indent):\n%s", string(back))
+	}
+}
+
+// indentOfItemWithID returns the leading-space count of the `- { ... id: <id> ... }`
+// flow-list item carrying the given id, or -1 if not found. Key-order independent.
+func indentOfItemWithID(src, id string) int {
+	for _, ln := range strings.Split(src, "\n") {
+		t := strings.TrimSpace(ln)
+		if strings.HasPrefix(t, "- {") && strings.Contains(t, "id: "+id+",") {
+			return len(ln) - len(strings.TrimLeft(ln, " "))
+		}
+	}
+	return -1
+}
+
+// TestApplyOp_ReparentPreservesPosition guards the "node flies away" fix: a
+// reparent out of a manual group (and back) must NOT snap the node to the
+// connectivity-driven auto-layout spot. It re-homes the node's exact world
+// position as an explicit offset, so its rendered screen coordinates are
+// unchanged across the round-trip.
+func TestApplyOp_ReparentPreservesPosition(t *testing.T) {
+	const src = `nodes:
+  scene:
+    shape: composite
+    parts:
+      - id: vpc
+        shape: group
+        geom: { w: 460, d: 240, h: 6 }
+        parts:
+          - { id: db, shape: cylinder, geom: { w: 100, d: 100, h: 40 }, offset: { wx: 300, wy: 30 }, label: DB }
+    connectors:
+      - { from: db, to: db }
+`
+	posOf := func(yamlSrc, id string) (string, bool) {
+		svg, issues, _ := RenderSource("yaml", []byte(yamlSrc))
+		for _, i := range issues {
+			if i.Severity == SeverityError {
+				t.Fatalf("render error: %s", i.Message)
+			}
+		}
+		re := regexp.MustCompile(`data-part-id="` + id + `"[^>]*transform="translate\(([^)]*)\)`)
+		m := re.FindStringSubmatch(svg)
+		if len(m) < 2 {
+			return "", false
+		}
+		return m[1], true
+	}
+
+	want, ok := posOf(src, "db")
+	if !ok {
+		t.Fatal("baseline: db not rendered")
+	}
+
+	toRoot, err := ApplyOpText("yaml", []byte(src), EditOp{Kind: "reparent", ID: "db", Target: ""})
+	if err != nil {
+		t.Fatalf("reparent to root: %v", err)
+	}
+	if got, _ := posOf(string(toRoot), "db"); got != want {
+		t.Fatalf("reparent->root moved db: want %q got %q (the 'fly' bug)", want, got)
+	}
+
+	back, err := ApplyOpText("yaml", toRoot, EditOp{Kind: "reparent", ID: "db", Target: "vpc"})
+	if err != nil {
+		t.Fatalf("reparent back into vpc: %v", err)
+	}
+	if got, _ := posOf(string(back), "db"); got != want {
+		t.Fatalf("round-trip moved db: want %q got %q", want, got)
+	}
+}
+
+// TestApplyMove_NestedNodeUnderSceneFreeze guards a node nested in a non-layout
+// group from being swallowed by the root-only freeze path: a top-level place:
+// makes SceneNeedsFreeze true, but moving the nested node must still nudge it.
+func TestApplyMove_NestedNodeUnderSceneFreeze(t *testing.T) {
+	const src = `nodes:
+  scene:
+    shape: composite
+    parts:
+      - { id: anchor, shape: rectangle, geom: { w: 60, d: 60, h: 30 }, place: { gravity: NW }, label: A }
+      - id: g
+        shape: group
+        geom: { w: 300, d: 200, h: 6 }
+        offset: { wx: 120, wy: 0 }
+        parts:
+          - { id: inner, shape: rectangle, geom: { w: 80, d: 80, h: 30 }, offset: { wx: 20, wy: 20 }, label: I }
+`
+	out, err := ApplyOpText("yaml", []byte(src), EditOp{Kind: "move", Target: "node", ID: "inner", DWX: 40, DWY: 0})
+	if err != nil {
+		t.Fatalf("move nested: %v", err)
+	}
+	if !strings.Contains(string(out), "offset: { wx: 60, wy: 20 }") {
+		t.Fatalf("nested move swallowed — inner.offset should be wx:60:\n%s", out)
+	}
+}
+
+// TestApplyMove_NestedBlockOffsetNotCorrupted guards the UpsertInlineKey indent
+// match: moving a parent that lacks its own offset must add it at the parent's
+// indent, not hijack a nested child's block-form `offset:` line (which produced
+// invalid YAML).
+func TestApplyMove_NestedBlockOffsetNotCorrupted(t *testing.T) {
+	const src = `nodes:
+  scene:
+    shape: composite
+    parts:
+      - id: outer
+        shape: group
+        geom: { w: 300, d: 200, h: 6 }
+        parts:
+          - id: inner
+            shape: rectangle
+            geom: { w: 80, d: 80, h: 30 }
+            offset: { wx: 20, wy: 20 }
+            label: I
+`
+	out, err := ApplyOpText("yaml", []byte(src), EditOp{Kind: "move", Target: "node", ID: "outer", DWX: 50, DWY: 0})
+	if err != nil {
+		t.Fatalf("move outer: %v", err)
+	}
+	if _, issues, _ := RenderSource("yaml", out); true {
+		for _, i := range issues {
+			if i.Severity == SeverityError {
+				t.Fatalf("nested block offset corrupted: %s\n%s", i.Message, out)
+			}
+		}
+	}
+	if !strings.Contains(string(out), "offset: { wx: 20, wy: 20 }") {
+		t.Fatalf("inner.offset must survive the parent move:\n%s", out)
 	}
 }
 

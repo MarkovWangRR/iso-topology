@@ -324,7 +324,7 @@ func applyMove(format string, src []byte, op EditOp) ([]byte, error) {
 		// drawio model: the FIRST manual move freezes the whole scene into
 		// explicit coordinates and drops auto-layout, so the engine never
 		// re-decides positions; later moves just nudge one node.
-		if SceneNeedsFreeze(doc) {
+		if parentOf(doc, op.ID) == "" && SceneNeedsFreeze(doc) {
 			offs := ResolveAllOffsets(doc)
 			out := yamledit.FreezeLayoutText(s)
 			ids := make([]string, 0, len(offs))
@@ -346,9 +346,19 @@ func applyMove(format string, src []byte, op EditOp) ([]byte, error) {
 			}
 			return rerouteMovedConnectors(format, []byte(out), op.ID), nil
 		}
-		cx, cy, cz, found := ResolvePartOffset(doc, op.ID)
-		if !found {
-			return src, fmt.Errorf("move: part %q not found", op.ID)
+		// Prefer the AUTHORED offset (read from the source text) when the part has
+		// one: ResolvePartOffset returns the resolved render position, which inside
+		// an autosize group folds in the slab's padding shift — baking that back
+		// made a move non-idempotent (a zero-delta drag jumped the node by the
+		// padding). The authored offset is the true base; fall back to resolving
+		// only when the part has no offset yet (pure auto-layout).
+		cx, cy, cz, authored := yamledit.ReadInlineOffset(s, yamledit.FindPartIDLine(s, op.ID))
+		if !authored {
+			var found bool
+			cx, cy, cz, found = ResolvePartOffset(doc, op.ID)
+			if !found {
+				return src, fmt.Errorf("move: part %q not found", op.ID)
+			}
 		}
 		out, ok := yamledit.UpsertInlineKey(s, yamledit.FindPartIDLine(s, op.ID), "offset", snap(cx+op.DWX), snap(cy+op.DWY), cz)
 		if !ok {
@@ -412,12 +422,34 @@ func foldIconColor(src []byte, op EditOp) map[string]string {
 func applySetField(src []byte, op EditOp) ([]byte, error) {
 	out := string(src)
 	fields := foldIconColor(src, op)
+	// Renaming a part onto an id another part already uses would mint a silent
+	// duplicate (ambiguous connector/annotation targets) — refuse it, mirroring
+	// DuplicatePart's uniquePartID guard.
+	if newID, ok := fields["id"]; ok && op.Target == "node" && newID != "" && newID != op.ID {
+		if doc, err := Parse(src); err == nil && findPart(doc, newID) != nil {
+			return src, fmt.Errorf("set-field: id %q is already in use", newID)
+		}
+	}
 	// Editing the canvas when no `canvas:` block exists yet: create an empty
 	// one at the top so the writes below have somewhere to land.
 	if op.Target == "canvas" && yamledit.FindCanvasLine(out) < 0 {
 		out = "canvas: {}\n" + out
 	}
-	for key, val := range fields {
+	// Apply in a deterministic order, and write an `id` rename LAST: each write
+	// re-resolves the target by op.ID, so renaming first would strand every
+	// remaining field ("target not found") and the result would depend on Go's
+	// random map-iteration order.
+	keys := make([]string, 0, len(fields))
+	for k := range fields {
+		keys = append(keys, k)
+	}
+	sort.Slice(keys, func(i, j int) bool {
+		if (keys[i] == "id") != (keys[j] == "id") {
+			return keys[j] == "id" // id sorts to the end
+		}
+		return keys[i] < keys[j]
+	})
+	for _, key := range keys {
 		line, ok := targetLine(out, op)
 		if !ok {
 			return src, fmt.Errorf("set-field: target must be node|edge|canvas")
@@ -426,7 +458,7 @@ func applySetField(src []byte, op EditOp) ([]byte, error) {
 			return src, fmt.Errorf("set-field: target %q not found in source", op.ID)
 		}
 		// Re-find the target each write: a write can shift line numbers.
-		out, _ = yamledit.SetField(out, line, strings.Split(key, "."), val)
+		out, _ = yamledit.SetField(out, line, strings.Split(key, "."), fields[key])
 	}
 	return []byte(out), nil
 }
@@ -483,6 +515,11 @@ func applyDelete(format string, src []byte, op EditOp) ([]byte, error) {
 				return src, fmt.Errorf("delete: %q is a container — remove its nested parts first (deleting a whole lane from the canvas is disabled)", op.ID)
 			}
 		}
+		// Refuse to delete a block that defines a YAML anchor still aliased
+		// elsewhere — text deletion would strand the alias and corrupt the doc.
+		if anchors := yamledit.ReferencedAnchorsInPart(s, op.ID); len(anchors) > 0 {
+			return src, fmt.Errorf("delete: %q defines YAML anchor &%s still referenced elsewhere; inline or remove those references first", op.ID, strings.Join(anchors, ", &"))
+		}
 		out, ok := yamledit.DeletePart(s, op.ID)
 		if !ok {
 			return src, fmt.Errorf("delete: node %q not found", op.ID)
@@ -516,9 +553,13 @@ func applyDuplicate(format string, src []byte, op EditOp) ([]byte, error) {
 
 // applyReparent moves a node into another group (op.Target) or to the scene
 // root (op.Target == ""). It's the engine half of Studio's drag-into / drag-out
-// of a group: the part's stale offset is dropped so the new parent lays it out.
+// of a group. Into a LAYOUT-driven destination the part's offset is dropped so
+// the new parent arranges it; otherwise the part's pre-move world position is
+// re-homed as an explicit offset so it stays exactly where the user dropped it
+// instead of snapping back to the connectivity-driven auto-layout spot.
 func applyReparent(format string, src []byte, op EditOp) ([]byte, error) {
-	if doc, derr := LoadInput(context.Background(), format, src, LayoutDagre); derr == nil {
+	doc, derr := LoadInput(context.Background(), format, src, LayoutDagre)
+	if derr == nil {
 		// No-op when the parent doesn't actually change, so an in-group drag
 		// (which also fires a reparent to the same group) keeps its offset.
 		if parentOf(doc, op.ID) == op.Target {
@@ -538,6 +579,40 @@ func applyReparent(format string, src []byte, op EditOp) ([]byte, error) {
 	out, ok := yamledit.MovePart(string(src), op.ID, op.Target)
 	if !ok {
 		return src, fmt.Errorf("reparent: could not move %q into %q", op.ID, op.Target)
+	}
+
+	// Position-preserving reparent. MovePart strips the node's inline offset;
+	// in a non-layout destination that drops the node back onto the
+	// connectivity-driven auto-layout position, so it visibly "flies" away
+	// from where the user released it. Re-home it by writing an explicit
+	// offset equal to its pre-move WORLD position minus the new parent's world
+	// origin, so it stays put on screen. A LAYOUT-driven destination is left
+	// alone — there the group is meant to arrange the node, and an explicit
+	// offset would only be a fine-tune delta the solver double-counts.
+	if doc != nil {
+		destHasLayout := (op.Target != "" && GroupHasLayout(doc, op.Target)) ||
+			(op.Target == "" && SceneNeedsFreeze(doc))
+		if !destHasLayout {
+			if wx, wy, wz, found := ResolvePartOffset(doc, op.ID); found {
+				px, py, pz := 0.0, 0.0, 0.0
+				if op.Target != "" {
+					if a, b, c, ok2 := ResolvePartOffset(doc, op.Target); ok2 {
+						px, py, pz = a, b, c
+					}
+				}
+				// ResolvePartOffset carries authored offsets only; the renderer
+				// also lifts a child onto each ancestor group's slab (its
+				// geom.h). Leaving a group drops the node by that slab height,
+				// entering one raises it — counter the chain difference so the
+				// node holds its exact on-screen z too.
+				nz := wz - pz + sumAncestorSlabH(doc, parentOf(doc, op.ID)) - sumAncestorSlabH(doc, op.Target)
+				if line := yamledit.FindPartIDLine(out, op.ID); line >= 0 {
+					if o2, ok2 := yamledit.UpsertInlineKey(out, line, "offset", wx-px, wy-py, nz); ok2 {
+						out = o2
+					}
+				}
+			}
+		}
 	}
 	return []byte(out), nil
 }
@@ -568,6 +643,20 @@ func parentOf(doc *Document, id string) string {
 		}
 	}
 	return found
+}
+
+// sumAncestorSlabH sums the slab height (geom.h) of the container chain starting
+// at startID and walking up to the scene root. Used by position-preserving
+// reparent to counter the render-time lift a child gets from each ancestor
+// group's slab. startID == "" (scene root) sums to 0.
+func sumAncestorSlabH(doc *Document, startID string) float64 {
+	h := 0.0
+	for id := startID; id != ""; id = parentOf(doc, id) {
+		if p := findPart(doc, id); p != nil && p.Geom != nil {
+			h += p.Geom.H
+		}
+	}
+	return h
 }
 
 // partContains reports whether want is p or anywhere in p's subtree.

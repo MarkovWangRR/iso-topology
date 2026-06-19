@@ -111,18 +111,13 @@ func emitBackgroundDefs(defs *strings.Builder, opts *RenderOpts) (fillRef string
 }
 
 func escAttr(s string) string {
-	s = strings.ReplaceAll(s, "&", "&amp;")
-	s = strings.ReplaceAll(s, "<", "&lt;")
-	s = strings.ReplaceAll(s, ">", "&gt;")
+	s = escapeXML(s) // strips XML-invalid control chars + escapes & < >
 	s = strings.ReplaceAll(s, `"`, "&quot;")
 	return s
 }
 
 func escXML(s string) string {
-	s = strings.ReplaceAll(s, "&", "&amp;")
-	s = strings.ReplaceAll(s, "<", "&lt;")
-	s = strings.ReplaceAll(s, ">", "&gt;")
-	return s
+	return escapeXML(s)
 }
 
 // Single source: the projection constants live in iso25d; this package

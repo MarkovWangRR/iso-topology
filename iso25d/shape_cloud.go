@@ -99,7 +99,7 @@ func RenderIsoCloud(o IsoBoxOpts) string {
 		}
 		fmt.Fprintf(&sb,
 			`<polygon data-face="side" points="%s" fill="%s" stroke="none"/>`,
-			strings.TrimSpace(ptsSB.String()), o.LeftFill,
+			strings.TrimSpace(ptsSB.String()), escapeAttr(o.LeftFill),
 		)
 	}
 
@@ -143,12 +143,12 @@ func RenderIsoCloud(o IsoBoxOpts) string {
 	if strings.TrimSpace(o.Stroke) != "" && o.StrokeWidth > 0 {
 		fmt.Fprintf(&sb,
 			`<path data-face="top" d="%s" fill="%s" stroke="%s" stroke-width="%.2f" stroke-linejoin="round"/>`,
-			topPath.String(), o.TopFill, escapeAttr(o.Stroke), o.StrokeWidth,
+			topPath.String(), escapeAttr(o.TopFill), escapeAttr(o.Stroke), o.StrokeWidth,
 		)
 	} else {
 		fmt.Fprintf(&sb,
 			`<path data-face="top" d="%s" fill="%s" stroke="none"/>`,
-			topPath.String(), o.TopFill,
+			topPath.String(), escapeAttr(o.TopFill),
 		)
 	}
 

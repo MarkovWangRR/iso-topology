@@ -166,14 +166,14 @@ func RenderIsoPerson(o IsoPersonOpts) string {
 		apex[0], apex[1],
 		rx, h, groundL[0], groundL[1], // dome arc apex → groundL
 		rx, ry, groundF[0], groundF[1], // ground front-arc groundL → groundF (sweep=0)
-		o.BodyLeft,
+		escapeAttr(o.BodyLeft),
 	)
 	fmt.Fprintf(&sb,
 		`<path data-face="body-right" d="M %.2f %.2f A %.2f %.2f 0 0 1 %.2f %.2f A %.2f %.2f 0 0 1 %.2f %.2f Z" fill="%s" stroke="none"/>`,
 		apex[0], apex[1],
 		rx, h, groundR[0], groundR[1], // dome arc apex → groundR
 		rx, ry, groundF[0], groundF[1], // ground front-arc groundR → groundF (sweep=1)
-		o.BodyRight,
+		escapeAttr(o.BodyRight),
 	)
 
 	// Subtle iso "ridge" — vertical hairline from apex to front-touch,
@@ -195,7 +195,7 @@ func RenderIsoPerson(o IsoPersonOpts) string {
 			rx, h, groundR[0], groundR[1], // dome apex → groundR
 			rx, ry, groundL[0], groundL[1], // ground front-arc groundR → groundL (sweep=1, through groundF)
 			rx, h, apex[0], apex[1], // dome groundL → apex
-			o.Stroke, o.StrokeWidth,
+			escapeAttr(o.Stroke), o.StrokeWidth,
 		)
 	}
 

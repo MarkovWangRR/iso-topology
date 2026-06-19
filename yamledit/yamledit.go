@@ -17,6 +17,36 @@ import (
 
 func indentOf(s string) int { return len(s) - len(strings.TrimLeft(s, " ")) }
 
+// seqBlockEnd locates the end of the YAML sequence under a `key:` at keyIndent,
+// and the column its items sit at. YAML permits a sequence item at the SAME
+// column as its key (`- x` directly under the key) as well as indented deeper;
+// BOTH are inside the block. Only a shallower line, or a non-item line at
+// keyIndent (a sibling key), ends it. Returns (itemIndent, end): end is the
+// first line past the block; itemIndent is the existing items' column, or
+// keyIndent+2 when the block is still empty. Shared by AddPart / AddConnector so
+// the same-column case can't regress in just one of them.
+func seqBlockEnd(lines []string, keyLine, keyIndent int) (itemIndent, end int) {
+	itemIndent = keyIndent + 2
+	foundItem := false
+	end = len(lines)
+	for i := keyLine + 1; i < len(lines); i++ {
+		if strings.TrimSpace(lines[i]) == "" {
+			continue
+		}
+		ind := indentOf(lines[i])
+		isSeqItem := strings.HasPrefix(strings.TrimLeft(lines[i], " "), "-")
+		if ind < keyIndent || (ind == keyIndent && !isSeqItem) {
+			end = i
+			break
+		}
+		if isSeqItem && !foundItem {
+			itemIndent, foundItem = ind, true
+		}
+		end = i + 1
+	}
+	return itemIndent, end
+}
+
 // FreezeLayoutText strips the layout that drives root-part positions so
 // a frozen scene renders purely from explicit offsets: the scene-root
 // `layout:` (inline or block, ANY mode) and every root part's `place:`
@@ -91,10 +121,16 @@ func itoa(n int) string { return strconv.Itoa(n) }
 // wz is written only when non-zero (so 2D scenes stay byte-identical and a
 // node already carrying a wz keeps it through a 2D drag).
 func offsetVal(key string, wx, wy, wz float64) string {
+	// Preserve precision: %.0f rounded resolved coordinates to integers, so
+	// freezing a layout-solved scene (the first drag, or even a zero-delta move)
+	// shifted every node up to ~0.5px off where it was rendered. FormatFloat with
+	// precision -1 emits the shortest exact form — integers stay integers
+	// (`20`, not `20.0`), fractions survive.
+	f := func(v float64) string { return strconv.FormatFloat(v, 'f', -1, 64) }
 	if wz != 0 {
-		return fmt.Sprintf("%s: { wx: %.0f, wy: %.0f, wz: %.0f }", key, wx, wy, wz)
+		return fmt.Sprintf("%s: { wx: %s, wy: %s, wz: %s }", key, f(wx), f(wy), f(wz))
 	}
-	return fmt.Sprintf("%s: { wx: %.0f, wy: %.0f }", key, wx, wy)
+	return fmt.Sprintf("%s: { wx: %s, wy: %s }", key, f(wx), f(wy))
 }
 
 // collapseFlowMap checks whether lines[startLine] opens a multi-line YAML
@@ -133,6 +169,81 @@ func collapseFlowMap(lines []string, startLine int) (string, int) {
 		}
 	}
 	return "", -1 // unclosed — leave as-is
+}
+
+// ReadInlineOffset reads the AUTHORED offset of the part block starting at
+// startLine — the literal wx/wy/wz in the source, before any layout/autosize
+// resolution rewrites it. Handles the flow-map form (`- { … offset: { wx: N,
+// wy: N } … }`) and a block child `offset:` at the item's direct-child indent
+// (inline `{…}` or nested wx/wy/wz lines). ok is false when the part has no
+// authored offset, so callers can fall back to resolving its laid-out position.
+func ReadInlineOffset(src string, startLine int) (wx, wy, wz float64, ok bool) {
+	lines := strings.Split(src, "\n")
+	if startLine < 0 || startLine >= len(lines) {
+		return 0, 0, 0, false
+	}
+	itemIndent := indentOf(lines[startLine])
+	childIndent := itemIndent + 2
+	blockEnd := len(lines)
+	for i := startLine + 1; i < len(lines); i++ {
+		if strings.TrimSpace(lines[i]) == "" {
+			continue
+		}
+		if indentOf(lines[i]) <= itemIndent {
+			blockEnd = i
+			break
+		}
+	}
+	comp := func(s, name string) (float64, bool) {
+		m := regexp.MustCompile(name + `:\s*(-?[0-9]*\.?[0-9]+)`).FindStringSubmatch(s)
+		if m == nil {
+			return 0, false
+		}
+		v, err := strconv.ParseFloat(m[1], 64)
+		return v, err == nil
+	}
+	parse := func(body string) (float64, float64, float64, bool) {
+		x, okx := comp(body, "wx")
+		y, oky := comp(body, "wy")
+		z, _ := comp(body, "wz")
+		if !okx && !oky {
+			return 0, 0, 0, false
+		}
+		return x, y, z, true
+	}
+	offsetBraces := regexp.MustCompile(`offset:\s*\{([^}]*)\}`)
+	// Flow-map item: read the offset out of the (single- or multi-line) flow form.
+	// collapseFlowMap returns "" for an already-single-line map, so handle that
+	// directly off the start line.
+	flowStr := ""
+	if strings.Contains(lines[startLine], "{") && strings.Contains(lines[startLine], "}") {
+		flowStr = lines[startLine]
+	} else if collapsed, _ := collapseFlowMap(lines, startLine); collapsed != "" {
+		flowStr = collapsed
+	}
+	if flowStr != "" {
+		if m := offsetBraces.FindStringSubmatch(flowStr); m != nil {
+			return parse(m[1])
+		}
+		return 0, 0, 0, false
+	}
+	// Block item: find `offset:` at the item's direct-child indent.
+	offsetKey := regexp.MustCompile(`^\s*offset:`)
+	for i := startLine + 1; i < blockEnd; i++ {
+		if indentOf(lines[i]) != childIndent || !offsetKey.MatchString(lines[i]) {
+			continue
+		}
+		if m := offsetBraces.FindStringSubmatch(lines[i]); m != nil {
+			return parse(m[1]) // inline `offset: { … }`
+		}
+		var body strings.Builder // block form: gather deeper wx/wy/wz lines
+		for j := i + 1; j < blockEnd && (strings.TrimSpace(lines[j]) == "" || indentOf(lines[j]) > childIndent); j++ {
+			body.WriteString(" ")
+			body.WriteString(lines[j])
+		}
+		return parse(body.String())
+	}
+	return 0, 0, 0, false
 }
 
 func UpsertInlineKey(src string, startLine int, key string, wx, wy, wz float64) (string, bool) {
@@ -191,7 +302,11 @@ func UpsertInlineKey(src string, startLine int, key string, wx, wy, wz float64) 
 	newLine := strings.Repeat(" ", childIndent) + offsetVal(key, wx, wy, wz)
 	keyRe := regexp.MustCompile(`^\s*` + regexp.QuoteMeta(key) + `:`)
 	for i := startLine + 1; i < blockEnd; i++ {
-		if keyRe.MatchString(lines[i]) {
+		// Only match the key at THIS item's direct-child indent — a deeper
+		// `key:` belongs to a nested part, not to the item at startLine.
+		// Replacing a grandchild's offset with a line at childIndent mis-
+		// indents it and corrupts the YAML.
+		if indentOf(lines[i]) == childIndent && keyRe.MatchString(lines[i]) {
 			// drop a block-form value's deeper-indented sub-lines too
 			j := i + 1
 			for j < blockEnd && strings.TrimSpace(lines[j]) != "" && indentOf(lines[j]) > indentOf(lines[i]) {
@@ -596,7 +711,16 @@ func yamlScalar(v string) string {
 	if regexp.MustCompile(`^[A-Za-z0-9_.\-/]+$`).MatchString(v) {
 		return v
 	}
-	return `"` + strings.ReplaceAll(strings.ReplaceAll(v, `\`, `\\`), `"`, `\"`) + `"`
+	// Double-quoted YAML scalar. Escape control characters too — a raw newline
+	// would otherwise be folded back to a space (or break the line) on the next
+	// parse, silently corrupting multi-line label/content values.
+	s := v
+	s = strings.ReplaceAll(s, `\`, `\\`)
+	s = strings.ReplaceAll(s, `"`, `\"`)
+	s = strings.ReplaceAll(s, "\n", `\n`)
+	s = strings.ReplaceAll(s, "\r", `\r`)
+	s = strings.ReplaceAll(s, "\t", `\t`)
+	return `"` + s + `"`
 }
 
 // upsertScalar sets `key: value` inside the node/edge block at startLine
@@ -831,6 +955,33 @@ func DeleteLineRange(src string, start, end int) string {
 // DeletePart removes a node and any connectors that reference it (so the
 // scene stays valid — no dangling from/to). Connectors are removed
 // bottom-up so earlier indices don't shift.
+// ReferencedAnchorsInPart returns the YAML anchor names (&name) DEFINED inside
+// the part block `id` that are still referenced (*name) somewhere outside it.
+// Text surgery can't relocate an anchor's meaning, so deleting such a block
+// would leave a dangling alias and corrupt the document — callers refuse it.
+func ReferencedAnchorsInPart(src, id string) []string {
+	s, e, ok := findPartItemRange(src, id)
+	if !ok {
+		return nil
+	}
+	lines := strings.Split(src, "\n")
+	block := strings.Join(lines[s:e], "\n")
+	rest := strings.Join(append(append([]string{}, lines[:s]...), lines[e:]...), "\n")
+	var out []string
+	seen := map[string]bool{}
+	for _, m := range regexp.MustCompile(`&([A-Za-z0-9_-]+)`).FindAllStringSubmatch(block, -1) {
+		name := m[1]
+		if seen[name] {
+			continue
+		}
+		if regexp.MustCompile(`\*` + regexp.QuoteMeta(name) + `\b`).MatchString(rest) {
+			seen[name] = true
+			out = append(out, name)
+		}
+	}
+	return out
+}
+
 func DeletePart(src, id string) (string, bool) {
 	s, e, ok := findPartItemRange(src, id)
 	if !ok {
@@ -982,21 +1133,7 @@ func AddPart(src string) (string, bool) {
 	if partsLine < 0 {
 		return src, false
 	}
-	itemIndent := partsIndent + 2
-	end := len(lines)
-	for i := partsLine + 1; i < len(lines); i++ {
-		if strings.TrimSpace(lines[i]) == "" {
-			continue
-		}
-		if indentOf(lines[i]) <= partsIndent {
-			end = i
-			break
-		}
-		if strings.HasPrefix(strings.TrimSpace(lines[i]), "- ") {
-			itemIndent = indentOf(lines[i])
-		}
-		end = i + 1
-	}
+	itemIndent, end := seqBlockEnd(lines, partsLine, partsIndent)
 	newID := uniquePartID(src, "node")
 	nl := strings.Repeat(" ", itemIndent) +
 		fmt.Sprintf(`- { id: %s, shape: rectangle, geom: { w: 80, d: 80, h: 30 }, label: "New" }`, newID)
@@ -1186,9 +1323,20 @@ func DuplicatePart(src, id string, ox, oy float64) (string, bool) {
 	newID := uniquePartID(src, id+"_copy")
 	clone := append([]string{}, lines[s:e]...)
 	cloneStr := strings.Join(clone, "\n")
-	// rename only the item's own id (first id: occurrence in the block)
-	cloneStr = regexp.MustCompile(`id:\s*"?`+regexp.QuoteMeta(id)+`"?`).
-		ReplaceAllString(cloneStr, "id: "+newID)
+	// Rename only the item's own id key — the FIRST structural `id:` occurrence.
+	// The anchor (line-start indent, or after `-`/`{`/`,`) keeps a matching value
+	// inside a quoted string (e.g. label: "user id: a") from being rewritten,
+	// which produced unparseable YAML.
+	idRe := regexp.MustCompile(`(?m)(^\s*|[-{,]\s*)id:\s*"?` + regexp.QuoteMeta(id) + `"?`)
+	renamed := false
+	cloneStr = idRe.ReplaceAllStringFunc(cloneStr, func(m string) string {
+		if renamed {
+			return m
+		}
+		renamed = true
+		prefix := m[:strings.Index(m, "id:")]
+		return prefix + "id: " + newID
+	})
 	out := strings.Join(append(append(append([]string{}, lines[:e]...), strings.Split(cloneStr, "\n")...), lines[e:]...), "\n")
 	out, _ = UpsertInlineKey(out, FindPartIDLine(out, newID), "offset", ox, oy, 0)
 	return out, true
@@ -1224,19 +1372,11 @@ func AddConnector(src, from, to, fromAnchor, toAnchor string) (string, bool) {
 	var itemIndent string
 
 	if connLine >= 0 {
-		// Walk to end of connectors block to find the insertion point.
-		itemIndent = strings.Repeat(" ", connIndent+2)
-		end := len(lines)
-		for i := connLine + 1; i < len(lines); i++ {
-			if strings.TrimSpace(lines[i]) == "" {
-				continue
-			}
-			if indentOf(lines[i]) <= connIndent {
-				end = i
-				break
-			}
-			end = i + 1
-		}
+		// Find the block end + the existing items' column (handles items at the
+		// same column as the key — see seqBlockEnd). Aligning the new item with
+		// that column avoids mixed-indent, unparseable YAML.
+		ind, end := seqBlockEnd(lines, connLine, connIndent)
+		itemIndent = strings.Repeat(" ", ind)
 		itemLine = end - 1
 	} else {
 		// No connectors: key yet — find the shallowest `parts:` key and insert

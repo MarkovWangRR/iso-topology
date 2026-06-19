@@ -75,7 +75,22 @@ func replaceAttr(tag, name, val string) string {
 	return tag[:i] + val + tag[i+j:]
 }
 
+// stripXMLCtrl drops characters XML 1.0 forbids (control chars except tab, LF,
+// CR), which would otherwise make labels/attributes non-well-formed.
+func stripXMLCtrl(s string) string {
+	return strings.Map(func(r rune) rune {
+		if r == '\t' || r == '\n' || r == '\r' {
+			return r
+		}
+		if r < 0x20 {
+			return -1
+		}
+		return r
+	}, s)
+}
+
 func escapeXML(s string) string {
+	s = stripXMLCtrl(s)
 	s = strings.ReplaceAll(s, "&", "&amp;")
 	s = strings.ReplaceAll(s, "<", "&lt;")
 	s = strings.ReplaceAll(s, ">", "&gt;")
@@ -213,6 +228,15 @@ func ceilOuterDims(svg string) string {
 	var x, y, w, h float64
 	if _, err := fmt.Sscanf(vb, "%f %f %f %f", &x, &y, &w, &h); err != nil {
 		return svg
+	}
+	// Defence in depth: a non-finite or astronomically large viewBox overflows
+	// the int() conversions below into width=0 / int64-max garbage. Validate
+	// already errors on such geometry; if it still reaches here, leave the frame
+	// as-is rather than emit a corrupt one.
+	for _, v := range []float64{x, y, w, h} {
+		if math.IsNaN(v) || math.IsInf(v, 0) || math.Abs(v) > 1e15 {
+			return svg
+		}
 	}
 	nx, ny := math.Floor(x), math.Floor(y)
 	nw, nh := math.Ceil(x+w)-nx, math.Ceil(y+h)-ny
