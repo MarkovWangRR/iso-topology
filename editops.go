@@ -551,12 +551,90 @@ func applyDuplicate(format string, src []byte, op EditOp) ([]byte, error) {
 	return []byte(out), nil
 }
 
+// resolveLowered runs the renderer's own lowering pass and returns a map from
+// part id to its lowered form — whose Offset is the part's absolute WORLD
+// position and whose Geom carries the resolved (slab) height. Because this is
+// the SAME function the renderer uses (lowerCompositeParts), any coordinate it
+// reports is exactly what gets drawn — there is no second, divergent position
+// model. (applyLayout first solves place/layout into concrete offsets.)
+func resolveLowered(doc *Document) map[string]*CompositePart {
+	if doc == nil {
+		return nil
+	}
+	scene := doc.Scene()
+	if scene == nil {
+		return nil
+	}
+	applyLayout(scene, doc.Canvas)
+	m := map[string]*CompositePart{}
+	for _, p := range lowerCompositeParts(scene.Parts, 0, 0, 0) {
+		if p != nil && p.ID != "" {
+			if _, exists := m[p.ID]; !exists {
+				m[p.ID] = p // first wins: the group substrate, not its label part
+			}
+		}
+	}
+	return m
+}
+
+func worldXYZ(p *CompositePart) (x, y, z float64) {
+	if p != nil && p.Offset != nil {
+		return p.Offset.WX, p.Offset.WY, p.Offset.WZ
+	}
+	return 0, 0, 0
+}
+
+// childOrigin returns the absolute world position at which a child of targetID
+// has its local (0,0,0). It is measured EMPIRICALLY from an existing child:
+// since the renderer composes child_world = childOrigin + child_offset, any
+// existing child C gives childOrigin = world(C) − authoredOffset(C). This is
+// correct for every container kind — authored, layout-solved, and autosize
+// (whose ±sx/sy normalisation cancels out of child world positions) — without
+// special-casing any of them. Falls back to the container's lowered position +
+// slab height when it has no measurable child yet. Scene root → world origin.
+func childOrigin(doc *Document, lowered map[string]*CompositePart, src, targetID string) (x, y, z float64) {
+	if targetID == "" {
+		return 0, 0, 0
+	}
+	if tp := findPart(doc, targetID); tp != nil {
+		for _, c := range tp.Parts {
+			if c == nil || c.ID == "" {
+				continue
+			}
+			cw := lowered[c.ID]
+			if cw == nil {
+				continue
+			}
+			if ox, oy, oz, ok := yamledit.ReadInlineOffset(src, yamledit.FindPartIDLine(src, c.ID)); ok {
+				wx, wy, wz := worldXYZ(cw)
+				return wx - ox, wy - oy, wz - oz
+			}
+		}
+	}
+	// Fallback: no measurable existing child — derive from the container's own
+	// lowered world position plus its slab height (children sit on the slab).
+	tp := lowered[targetID]
+	if tp == nil {
+		return 0, 0, 0
+	}
+	x, y, z = worldXYZ(tp)
+	authoredZ := 0.0
+	if op := findPart(doc, targetID); op != nil && op.Offset != nil {
+		authoredZ = op.Offset.WZ
+	}
+	slabH := 8.0
+	if tp.Geom != nil && tp.Geom.H > 0 {
+		slabH = tp.Geom.H
+	}
+	return x, y, z - authoredZ + slabH
+}
+
 // applyReparent moves a node into another group (op.Target) or to the scene
 // root (op.Target == ""). It's the engine half of Studio's drag-into / drag-out
-// of a group. Into a LAYOUT-driven destination the part's offset is dropped so
-// the new parent arranges it; otherwise the part's pre-move world position is
-// re-homed as an explicit offset so it stays exactly where the user dropped it
-// instead of snapping back to the connectivity-driven auto-layout spot.
+// of a group. It is POSITION-PRESERVING into ANY container: the node keeps its
+// exact on-screen position, computed from the renderer's own world-coordinate
+// resolver (resolveLowered), so the result can't drift from what's drawn and the
+// scene bbox/viewBox — hence every other node — is unaffected.
 func applyReparent(format string, src []byte, op EditOp) ([]byte, error) {
 	doc, derr := LoadInput(context.Background(), format, src, LayoutDagre)
 	if derr == nil {
@@ -582,34 +660,18 @@ func applyReparent(format string, src []byte, op EditOp) ([]byte, error) {
 	}
 
 	// Position-preserving reparent. MovePart strips the node's inline offset;
-	// in a non-layout destination that drops the node back onto the
-	// connectivity-driven auto-layout position, so it visibly "flies" away
-	// from where the user released it. Re-home it by writing an explicit
-	// offset equal to its pre-move WORLD position minus the new parent's world
-	// origin, so it stays put on screen. A LAYOUT-driven destination is left
-	// alone — there the group is meant to arrange the node, and an explicit
-	// offset would only be a fine-tune delta the solver double-counts.
+	// re-home it at the SAME world position the renderer currently draws it, so
+	// it stays exactly where it was regardless of the destination's layout/
+	// autosize behaviour. New offset = node world − the world origin the new
+	// parent gives its children. World position is unchanged ⇒ scene bbox is
+	// unchanged ⇒ no other node moves.
 	if doc != nil {
-		destHasLayout := (op.Target != "" && GroupHasLayout(doc, op.Target)) ||
-			(op.Target == "" && SceneNeedsFreeze(doc))
-		if !destHasLayout {
-			if wx, wy, wz, found := ResolvePartOffset(doc, op.ID); found {
-				px, py, pz := 0.0, 0.0, 0.0
-				if op.Target != "" {
-					if a, b, c, ok2 := ResolvePartOffset(doc, op.Target); ok2 {
-						px, py, pz = a, b, c
-					}
-				}
-				// ResolvePartOffset carries authored offsets only; the renderer
-				// also lifts a child onto each ancestor group's slab (its
-				// geom.h). Leaving a group drops the node by that slab height,
-				// entering one raises it — counter the chain difference so the
-				// node holds its exact on-screen z too.
-				nz := wz - pz + sumAncestorSlabH(doc, parentOf(doc, op.ID)) - sumAncestorSlabH(doc, op.Target)
-				if line := yamledit.FindPartIDLine(out, op.ID); line >= 0 {
-					if o2, ok2 := yamledit.UpsertInlineKey(out, line, "offset", wx-px, wy-py, nz); ok2 {
-						out = o2
-					}
+		if lowered := resolveLowered(doc); lowered[op.ID] != nil {
+			wx, wy, wz := worldXYZ(lowered[op.ID])
+			cox, coy, coz := childOrigin(doc, lowered, string(src), op.Target)
+			if line := yamledit.FindPartIDLine(out, op.ID); line >= 0 {
+				if o2, ok2 := yamledit.UpsertInlineKey(out, line, "offset", wx-cox, wy-coy, wz-coz); ok2 {
+					out = o2
 				}
 			}
 		}
@@ -645,19 +707,6 @@ func parentOf(doc *Document, id string) string {
 	return found
 }
 
-// sumAncestorSlabH sums the slab height (geom.h) of the container chain starting
-// at startID and walking up to the scene root. Used by position-preserving
-// reparent to counter the render-time lift a child gets from each ancestor
-// group's slab. startID == "" (scene root) sums to 0.
-func sumAncestorSlabH(doc *Document, startID string) float64 {
-	h := 0.0
-	for id := startID; id != ""; id = parentOf(doc, id) {
-		if p := findPart(doc, id); p != nil && p.Geom != nil {
-			h += p.Geom.H
-		}
-	}
-	return h
-}
 
 // partContains reports whether want is p or anywhere in p's subtree.
 func partContains(p *CompositePart, want string) bool {
