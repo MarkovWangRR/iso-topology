@@ -1322,6 +1322,66 @@ func dropEmptyGroupParts(lines []string, srcIndent int) []string {
 	return lines
 }
 
+// ExpandInlineParts rewrites a single-line inline parts list
+//
+//	<ind>parts: [ {…}, {…} ]
+//
+// into block form
+//
+//	<ind>parts:
+//	<ind+2>- {…}
+//	<ind+2>- {…}
+//
+// so the per-child line locators (FindPartIDLine / findPartItemRange) can address
+// each nested child individually. Without this, an edit (delete/duplicate/set-
+// field) of a child inside an inline list resolves to the OUTER group. Items keep
+// their flow-map form (one per line, addressable). No-op when no inline list is
+// present. Bracket matching is comma/brace/quote aware via splitTopCommas.
+var rePartsInline = regexp.MustCompile(`^(\s*)parts:\s*\[(.*)\]\s*$`)
+
+func ExpandInlineParts(src string) string {
+	// Fixed-point: first a flow-form GROUP item (`- { … parts: [ … ] }`) is
+	// expanded to block form (which puts its `parts:` on its own line), then that
+	// own-line inline list is expanded to block items. Iterating handles both in
+	// either order until stable.
+	for {
+		next := expandInlinePartsOnce(src)
+		if next == src {
+			return src
+		}
+		src = next
+	}
+}
+
+func expandInlinePartsOnce(src string) string {
+	lines := strings.Split(src, "\n")
+	out := make([]string, 0, len(lines))
+	for _, l := range lines {
+		t := strings.TrimSpace(l)
+		// A single-line flow item carrying a nested parts list — expand the whole
+		// item to block form so the `parts:` lands on its own line.
+		if strings.HasPrefix(t, "- {") && strings.Contains(t, "parts:") && strings.Contains(t, "[") {
+			if exp := expandFlowItem(l); exp != nil {
+				out = append(out, exp...)
+				continue
+			}
+		}
+		// An own-line inline parts list — expand to block items (kept as flow maps,
+		// one per line, so they're individually addressable).
+		if m := rePartsInline.FindStringSubmatch(l); m != nil {
+			out = append(out, m[1]+"parts:")
+			for _, it := range splitTopCommas(strings.TrimSpace(m[2])) {
+				if it = strings.TrimSpace(it); it != "" {
+					out = append(out, m[1]+"  - "+it)
+				}
+			}
+			continue
+		}
+		out = append(out, l)
+	}
+	return strings.Join(out, "\n")
+}
+
 func MovePart(src, id, targetParentID string) (string, bool) {
 	if id == targetParentID {
 		return src, false

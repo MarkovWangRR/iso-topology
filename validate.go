@@ -183,9 +183,11 @@ func Validate(doc *Document) []Issue {
 		valid := []string{"iso", "top"}
 		if !contains(valid, strings.ToLower(doc.Canvas.Projection)) {
 			issues = append(issues, Issue{
-				Severity: SeverityError,
+				// Warning, not Error: render falls back to iso, so a typo
+				// shouldn't blank the whole diagram.
+				Severity: SeverityWarning,
 				Path:     "canvas.projection",
-				Message:  fmt.Sprintf("unknown projection %q", doc.Canvas.Projection),
+				Message:  fmt.Sprintf("unknown projection %q (using iso)", doc.Canvas.Projection),
 				Suggest:  nearest(doc.Canvas.Projection, valid),
 			})
 		}
@@ -196,9 +198,10 @@ func Validate(doc *Document) []Issue {
 		valid := []string{"iso", "dots", "hatch", "solid", "none"}
 		if !contains(valid, strings.ToLower(doc.Canvas.Grid)) {
 			issues = append(issues, Issue{
-				Severity: SeverityError,
+				// Warning, not Error: render falls back to the default grid.
+				Severity: SeverityWarning,
 				Path:     "canvas.grid",
-				Message:  fmt.Sprintf("unknown grid mode %q", doc.Canvas.Grid),
+				Message:  fmt.Sprintf("unknown grid mode %q (using default)", doc.Canvas.Grid),
 				Suggest:  nearest(doc.Canvas.Grid, valid),
 			})
 		}

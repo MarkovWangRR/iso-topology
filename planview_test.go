@@ -73,7 +73,9 @@ func TestValidate_UnknownProjection(t *testing.T) {
 	}
 	var found bool
 	for _, i := range Validate(doc) {
-		if i.Path == "canvas.projection" && i.Severity == SeverityError {
+		// Unknown projection is a Warning now (render falls back to iso) rather
+		// than an Error that would blank the whole diagram.
+		if i.Path == "canvas.projection" && i.Severity == SeverityWarning {
 			found = true
 		}
 	}

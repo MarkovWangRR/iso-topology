@@ -405,6 +405,68 @@ func TestValidate_TypoEnumIsWarningNotBlank(t *testing.T) {
 	}
 }
 
+// TestEdit_InlineFlowNestedChild: edits targeting a child inside an inline
+// `parts: [ {…} ]` (a fully one-line flow group) must hit the CHILD, not the
+// outer group — delete removes only the child, set-field lands on the child.
+func TestEdit_InlineFlowNestedChild(t *testing.T) {
+	src := "nodes:\n  scene:\n    shape: composite\n    parts:\n" +
+		"      - { id: fg, shape: group, geom: {w:300,d:200,h:6}, parts: [ { id: fc, shape: rectangle, geom: {w:80,d:60,h:30} }, { id: fy, shape: rectangle, geom: {w:80,d:60,h:30}, offset: {wx:120,wy:0} } ] }\n"
+	// delete the first child — fg and fy must survive
+	del, err := ApplyOpText("yaml", []byte(src), EditOp{Kind: "delete", Target: "node", ID: "fc"})
+	if err != nil {
+		t.Fatalf("delete: %v", err)
+	}
+	doc, derr := LoadInput(context.Background(), "yaml", del, LayoutDagre)
+	if derr != nil {
+		t.Fatalf("reparse after delete: %v\n%s", derr, del)
+	}
+	var fg *CompositePart
+	for _, p := range doc.Scene().Parts {
+		if p != nil && p.ID == "fg" {
+			fg = p
+		}
+	}
+	if fg == nil {
+		t.Fatalf("deleting a nested child wiped the outer group:\n%s", del)
+	}
+	if len(fg.Parts) != 1 || fg.Parts[0].ID != "fy" {
+		t.Fatalf("wrong child removed: %+v", fg.Parts)
+	}
+	// set-field on the other child must land on it, not the group
+	sf, _ := ApplyOpText("yaml", []byte(src), EditOp{Kind: "set-field", Target: "node", ID: "fc", Fields: map[string]string{"label": "RENAMED"}})
+	d2, _ := LoadInput(context.Background(), "yaml", sf, LayoutDagre)
+	for _, p := range d2.Scene().Parts {
+		if p != nil && p.ID == "fg" {
+			if p.Label == "RENAMED" {
+				t.Fatalf("set-field landed on the outer group, not the child:\n%s", sf)
+			}
+		}
+	}
+}
+
+// TestEdit_GhostTargetErrors: set-field id-rename and reparent on a nonexistent
+// node must error (not silently no-op), like every other op.
+func TestEdit_GhostTargetErrors(t *testing.T) {
+	src := "nodes:\n  scene:\n    shape: composite\n    parts:\n      - { id: a, shape: rectangle, geom: {w:80,d:60,h:30} }\n"
+	if _, err := ApplyOpText("yaml", []byte(src), EditOp{Kind: "set-field", Target: "node", ID: "ghost", Fields: map[string]string{"id": "x"}}); err == nil {
+		t.Error("set-field on a ghost node should error")
+	}
+	if _, err := ApplyOpText("yaml", []byte(src), EditOp{Kind: "reparent", ID: "ghost", Target: ""}); err == nil {
+		t.Error("reparent of a ghost node should error")
+	}
+}
+
+// TestValidate_CanvasEnumTypoIsWarning: a typo'd canvas grid/projection renders
+// (Warning + fallback), not an empty SVG.
+func TestValidate_CanvasEnumTypoIsWarning(t *testing.T) {
+	for _, kv := range []string{"grid: dots2", "projection: weird"} {
+		src := "canvas:\n  " + kv + "\nnodes:\n  scene:\n    shape: composite\n    parts:\n      - { id: a, shape: rectangle, geom: {w:80,d:60,h:30} }\n"
+		if svg, issues, _ := RenderSource("yaml", []byte(src)); svg == "" {
+			t.Errorf("canvas %q blanked the render:\n%s", kv, errMsgs(issues))
+		}
+	}
+}
+
 // TestValidate_DefaultFillNoFalseContrast: an unstyled part must not trip the
 // contrast lint, which had hard-coded the wrong default top fill.
 func TestValidate_DefaultFillNoFalseContrast(t *testing.T) {

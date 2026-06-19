@@ -109,6 +109,16 @@ func ApplyOpText(format string, src []byte, op EditOp) ([]byte, error) {
 }
 
 func applyOpText(format string, src []byte, op EditOp) ([]byte, error) {
+	// Ops that LOCATE a nested child by line can't address children hidden in a
+	// single-line inline `parts: [ {…} ]`; expand those to block form first so
+	// the edit hits the right node (not the outer group). No-op without inline
+	// lists; d2 is left alone.
+	if format != "d2" {
+		switch op.Kind {
+		case "move", "set-field", "delete", "duplicate", "reparent":
+			src = []byte(yamledit.ExpandInlineParts(string(src)))
+		}
+	}
 	switch op.Kind {
 	case "move":
 		return applyMove(format, src, op)
@@ -490,6 +500,13 @@ func applySetField(src []byte, op EditOp) ([]byte, error) {
 		fields[k] = v
 	}
 
+	// Guard: the node target must exist (an id-only rename otherwise no-ops
+	// silently, unlike every other op which reports "not found").
+	if op.Target == "node" {
+		if doc, err := Parse(src); err == nil && findPart(doc, op.ID) == nil {
+			return src, fmt.Errorf("set-field: target %q not found", op.ID)
+		}
+	}
 	// Guard: an id must be a clean identifier. Empty, whitespace, a dot (the
 	// partID.anchor separator), or flow punctuation would dangle references or
 	// produce an unrenderable/unparseable doc. Reserved words like "null" are
@@ -731,6 +748,9 @@ func applyReparent(format string, src []byte, op EditOp) ([]byte, error) {
 	oldHasLayout, targetHasLayout := false, false
 	var referrers []string // nodes whose place: references op.ID
 	if derr == nil {
+		if findPart(doc, op.ID) == nil {
+			return src, fmt.Errorf("reparent: node %q not found", op.ID)
+		}
 		oldParent = parentOf(doc, op.ID)
 		oldHasLayout = oldParent != "" && GroupHasLayout(doc, oldParent)
 		targetHasLayout = op.Target != "" && GroupHasLayout(doc, op.Target)
