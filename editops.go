@@ -637,10 +637,17 @@ func childOrigin(doc *Document, lowered map[string]*CompositePart, src, targetID
 // scene bbox/viewBox — hence every other node — is unaffected.
 func applyReparent(format string, src []byte, op EditOp) ([]byte, error) {
 	doc, derr := LoadInput(context.Background(), format, src, LayoutDagre)
+	// Capture layout-ness of the source/target groups NOW, before resolveLowered
+	// runs applyLayout (which solves and clears the Layout field on the doc).
+	oldParent := ""
+	oldHasLayout, targetHasLayout := false, false
 	if derr == nil {
+		oldParent = parentOf(doc, op.ID)
+		oldHasLayout = oldParent != "" && GroupHasLayout(doc, oldParent)
+		targetHasLayout = op.Target != "" && GroupHasLayout(doc, op.Target)
 		// No-op when the parent doesn't actually change, so an in-group drag
 		// (which also fires a reparent to the same group) keeps its offset.
-		if parentOf(doc, op.ID) == op.Target {
+		if oldParent == op.Target {
 			return src, nil
 		}
 		if op.Target != "" {
@@ -669,6 +676,27 @@ func applyReparent(format string, src []byte, op EditOp) ([]byte, error) {
 		if lowered := resolveLowered(doc); lowered[op.ID] != nil {
 			wx, wy, wz := worldXYZ(lowered[op.ID])
 			cox, coy, coz := childOrigin(doc, lowered, string(src), op.Target)
+
+			// A layout-mode group (row/col/grid) on EITHER end re-arranges its
+			// children when membership changes, which would move every sibling.
+			// Freeze each such group's CURRENT solved positions into explicit
+			// offsets so the move is local: the siblings stay put and the
+			// preserving offset written below is honoured (no solver to override
+			// it). Mirrors applyMove's layout-group handling.
+			ident := func(v float64) float64 { return v }
+			if oldHasLayout {
+				offs := ResolveChildOffsets(doc, oldParent)
+				delete(offs, op.ID) // it's leaving; its offset is set below
+				out = yamledit.FreezeGroupLayoutText(out, oldParent)
+				out = freezeOffsets(out, offs, "", 0, 0, ident)
+			}
+			if targetHasLayout {
+				out = yamledit.FreezeGroupLayoutText(out, op.Target)
+				out = freezeOffsets(out, ResolveChildOffsets(doc, op.Target), "", 0, 0, ident)
+			}
+
+			// Write the moved node's preserving offset LAST so it wins over any
+			// stale value a freeze pass may have written for it.
 			if line := yamledit.FindPartIDLine(out, op.ID); line >= 0 {
 				if o2, ok2 := yamledit.UpsertInlineKey(out, line, "offset", wx-cox, wy-coy, wz-coz); ok2 {
 					out = o2

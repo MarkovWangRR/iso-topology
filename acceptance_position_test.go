@@ -189,6 +189,33 @@ func TestAccept_ReparentPreserves(t *testing.T) {
         parts:
           - { id: other, shape: rectangle, geom: {w:80,d:60,h:30}, offset: {wx:30,wy:30} }`),
 			"n", "gb", []string{"n", "other"}},
+		{"2g_into_layout_row_group",
+			scene(`- id: ga
+        shape: group
+        geom: { w: 300, d: 200, h: 6 }
+        offset: { wx: 30, wy: 30 }
+        parts:
+          - { id: n, shape: rectangle, geom: {w:80,d:60,h:30}, offset: {wx:30,wy:30} }
+      - id: gb
+        shape: group
+        geom: { w: 320, d: 160, h: 6 }
+        offset: { wx: 400, wy: 60 }
+        layout: { mode: row, gap: 24 }
+        parts:
+          - { id: o1, shape: rectangle, geom: {w:80,d:60,h:30} }
+          - { id: o2, shape: rectangle, geom: {w:80,d:60,h:30} }`),
+			"n", "gb", []string{"n", "o1", "o2"}},
+		{"2h_out_of_layout_row_group",
+			scene(`- id: ga
+        shape: group
+        geom: { w: 320, d: 160, h: 6 }
+        offset: { wx: 40, wy: 40 }
+        layout: { mode: row, gap: 24 }
+        parts:
+          - { id: n, shape: rectangle, geom: {w:80,d:60,h:30} }
+          - { id: sib, shape: rectangle, geom: {w:80,d:60,h:30} }
+      - { id: keep, shape: rectangle, geom: {w:90,d:70,h:30}, offset: {wx:60,wy:400} }`),
+			"n", "", []string{"n", "sib", "keep"}},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
