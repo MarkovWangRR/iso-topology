@@ -1164,6 +1164,51 @@ func AddPart(src string) (string, bool) {
 // stripInlineOffset removes an inline `offset: { ... }` (and a dangling comma)
 // from a part's flow/line text, so a reparented node is positioned by its new
 // parent instead of a stale offset in the old frame.
+// RemovePartKey removes a direct-child key (e.g. "place") from the part block
+// with the given id — handling both the inline flow form (`- { … place: {…} }`)
+// and the block form (a `place:` line at the item's child indent, with any
+// deeper sub-lines). Used by reparent to drop a now-dangling place reference.
+func RemovePartKey(src, id, key string) string {
+	line := FindPartIDLine(src, id)
+	if line < 0 {
+		return src
+	}
+	lines := strings.Split(src, "\n")
+	itemIndent := indentOf(lines[line])
+	childIndent := itemIndent + 2
+	// Inline flow item: strip `key: {…}` or `key: scalar` from the single line.
+	if strings.Contains(lines[line], "{") && strings.Contains(lines[line], "}") {
+		l := lines[line]
+		l = regexp.MustCompile(`,?\s*`+regexp.QuoteMeta(key)+`:\s*\{[^}]*\}`).ReplaceAllString(l, "")
+		l = regexp.MustCompile(`,?\s*`+regexp.QuoteMeta(key)+`:\s*[^,}]+`).ReplaceAllString(l, "")
+		l = regexp.MustCompile(`\{\s*,`).ReplaceAllString(l, "{ ")
+		lines[line] = l
+		return strings.Join(lines, "\n")
+	}
+	// Block item: drop the `key:` line at child indent plus its nested body.
+	blockEnd := len(lines)
+	for i := line + 1; i < len(lines); i++ {
+		if strings.TrimSpace(lines[i]) == "" {
+			continue
+		}
+		if indentOf(lines[i]) <= itemIndent {
+			blockEnd = i
+			break
+		}
+	}
+	keyRe := regexp.MustCompile(`^\s*` + regexp.QuoteMeta(key) + `:`)
+	for i := line + 1; i < blockEnd; i++ {
+		if indentOf(lines[i]) == childIndent && keyRe.MatchString(lines[i]) {
+			j := i + 1
+			for j < blockEnd && (strings.TrimSpace(lines[j]) == "" || indentOf(lines[j]) > childIndent) {
+				j++
+			}
+			return strings.Join(append(append([]string{}, lines[:i]...), lines[j:]...), "\n")
+		}
+	}
+	return src
+}
+
 func stripInlineOffset(s string) string {
 	s = regexp.MustCompile(`offset:\s*\{[^}]*\}\s*,?\s*`).ReplaceAllString(s, "")
 	s = regexp.MustCompile(`,\s*offset:\s*\{[^}]*\}`).ReplaceAllString(s, "")
@@ -1226,6 +1271,51 @@ func expandFlowItem(line string) []string {
 	return out
 }
 
+// dropEmptyGroupParts removes a `parts:` key (at indent srcIndent-2) that has no
+// remaining child items — but ONLY when it belongs to a GROUP list item, never
+// the scene's own parts: (which must stay). Called after MovePart removes an
+// item, to clean up the source group it may have emptied.
+func dropEmptyGroupParts(lines []string, srcIndent int) []string {
+	pIndent := srcIndent - 2
+	if pIndent < 0 {
+		return lines
+	}
+	for i := 0; i < len(lines); i++ {
+		if indentOf(lines[i]) != pIndent || strings.TrimSpace(lines[i]) != "parts:" {
+			continue
+		}
+		empty := true
+		for j := i + 1; j < len(lines); j++ {
+			if strings.TrimSpace(lines[j]) == "" {
+				continue
+			}
+			empty = indentOf(lines[j]) <= pIndent
+			break
+		}
+		if !empty {
+			continue
+		}
+		// Owned by a group only if the nearest line at pIndent-2 is a list item.
+		isGroup := false
+		for k := i - 1; k >= 0; k-- {
+			if strings.TrimSpace(lines[k]) == "" {
+				continue
+			}
+			if indentOf(lines[k]) == pIndent-2 {
+				isGroup = strings.HasPrefix(strings.TrimLeft(lines[k], " "), "-")
+				break
+			}
+			if indentOf(lines[k]) < pIndent-2 {
+				break
+			}
+		}
+		if isGroup {
+			return append(append([]string{}, lines[:i]...), lines[i+1:]...)
+		}
+	}
+	return lines
+}
+
 func MovePart(src, id, targetParentID string) (string, bool) {
 	if id == targetParentID {
 		return src, false
@@ -1240,6 +1330,9 @@ func MovePart(src, id, targetParentID string) (string, bool) {
 
 	// Remove the item from its current location first.
 	without := append(append([]string{}, lines[:s]...), lines[e:]...)
+	// If that emptied the source GROUP's parts: block, drop the now-dangling
+	// `parts:` key (cosmetic, and it can mis-indent compact-style re-inserts).
+	without = dropEmptyGroupParts(without, srcIndent)
 
 	// Find the destination parts: block and the indent its items sit at.
 	partsLine, partsIndent := -1, 0

@@ -285,6 +285,51 @@ func TestMove_OffsetlessIdempotentInBoundary(t *testing.T) {
 	}
 }
 
+// TestReparent_ReconcilesPlaceRefs: reparenting a node that another node's
+// place: refers to must reconcile that reference (freeze the referrer to an
+// explicit offset + drop the dangling place) instead of leaving a render error.
+func TestReparent_ReconcilesPlaceRefs(t *testing.T) {
+	src := "nodes:\n  scene:\n    shape: composite\n    parts:\n" +
+		"      - { id: gateway, shape: rectangle, geom: {w:80,d:60,h:30} }\n" +
+		"      - id: zone\n        shape: group\n        geom: {w:300,d:200,h:6}\n        place: { behind: gateway }\n        parts:\n" +
+		"          - { id: inner, shape: rectangle, geom: {w:60,d:40,h:20}, offset:{wx:20,wy:20} }\n"
+	out, err := ApplyOpText("yaml", []byte(src), EditOp{Kind: "reparent", ID: "gateway", Target: "zone"})
+	if err != nil {
+		t.Fatalf("reparent: %v", err)
+	}
+	if _, issues, _ := RenderSource("yaml", out); hasErr(issues) {
+		t.Fatalf("dangling place ref not reconciled:\n%s\n%s", errMsgs(issues), out)
+	}
+	if strings.Contains(string(out), "behind: gateway") {
+		t.Fatalf("stale place ref to the moved node remains:\n%s", out)
+	}
+}
+
+// TestReparent_DropsEmptiedGroupParts: moving the last child out of a group to
+// the scene root removes the now-empty group `parts:` (but keeps scene parts:).
+func TestReparent_DropsEmptiedGroupParts(t *testing.T) {
+	src := "nodes:\n  scene:\n    shape: composite\n    parts:\n" +
+		"      - id: gb\n        shape: group\n        geom: {w:300,d:200,h:6}\n        parts:\n" +
+		"          - { id: only, shape: rectangle, geom: {w:80,d:60,h:30}, offset:{wx:30,wy:30} }\n"
+	out, err := ApplyOpText("yaml", []byte(src), EditOp{Kind: "reparent", ID: "only", Target: ""})
+	if err != nil {
+		t.Fatalf("reparent: %v", err)
+	}
+	if _, issues, _ := RenderSource("yaml", out); hasErr(issues) {
+		t.Fatalf("doc broken after reparent-to-root:\n%s\n%s", errMsgs(issues), out)
+	}
+	// gb must no longer carry a parts: key; the scene's parts: must remain.
+	if !strings.Contains(string(out), "\n    parts:") {
+		t.Fatalf("scene parts: should remain:\n%s", out)
+	}
+	doc, _ := LoadInput(context.Background(), "yaml", out, LayoutDagre)
+	for _, p := range doc.Scene().Parts {
+		if p != nil && p.ID == "gb" && len(p.Parts) != 0 {
+			t.Fatalf("gb should have no children after the move")
+		}
+	}
+}
+
 // TestValidate_DefaultFillNoFalseContrast: an unstyled part must not trip the
 // contrast lint, which had hard-coded the wrong default top fill.
 func TestValidate_DefaultFillNoFalseContrast(t *testing.T) {

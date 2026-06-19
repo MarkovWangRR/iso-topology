@@ -687,10 +687,12 @@ func applyReparent(format string, src []byte, op EditOp) ([]byte, error) {
 	// runs applyLayout (which solves and clears the Layout field on the doc).
 	oldParent := ""
 	oldHasLayout, targetHasLayout := false, false
+	var referrers []string // nodes whose place: references op.ID
 	if derr == nil {
 		oldParent = parentOf(doc, op.ID)
 		oldHasLayout = oldParent != "" && GroupHasLayout(doc, oldParent)
 		targetHasLayout = op.Target != "" && GroupHasLayout(doc, op.Target)
+		referrers = placeReferrers(doc, op.ID) // capture before applyLayout clears Place
 		// No-op when the parent doesn't actually change, so an in-group drag
 		// (which also fires a reparent to the same group) keeps its offset.
 		if oldParent == op.Target {
@@ -741,6 +743,31 @@ func applyReparent(format string, src []byte, op EditOp) ([]byte, error) {
 				out = freezeOffsets(out, ResolveChildOffsets(doc, op.Target), "", 0, 0, ident)
 			}
 
+			// Reconcile place: references. The moved node may carry a place ref to
+			// a former sibling (now dangling), and OTHER nodes may reference the
+			// moved node and no longer be its siblings. For each such node freeze
+			// its current position into an explicit offset and drop the place key,
+			// so the reference can't error and the node stays put. (The moved
+			// node's own offset is written below; just drop its place here.)
+			out = yamledit.RemovePartKey(out, op.ID, "place")
+			for _, ref := range referrers {
+				if ref == op.ID || parentOf(doc, ref) == op.Target {
+					continue // still a sibling of the moved node — ref stays valid
+				}
+				lw := lowered[ref]
+				if lw == nil {
+					continue
+				}
+				rx, ry, rz := worldXYZ(lw)
+				rcox, rcoy, rcoz := childOrigin(doc, lowered, string(src), parentOf(doc, ref))
+				out = yamledit.RemovePartKey(out, ref, "place")
+				if line := yamledit.FindPartIDLine(out, ref); line >= 0 {
+					if o2, ok2 := yamledit.UpsertInlineKey(out, line, "offset", rx-rcox, ry-rcoy, rz-rcoz); ok2 {
+						out = o2
+					}
+				}
+			}
+
 			// Write the moved node's preserving offset LAST so it wins over any
 			// stale value a freeze pass may have written for it.
 			if line := yamledit.FindPartIDLine(out, op.ID); line >= 0 {
@@ -751,6 +778,33 @@ func applyReparent(format string, src []byte, op EditOp) ([]byte, error) {
 		}
 	}
 	return []byte(out), nil
+}
+
+// placeReferrers returns the ids of parts whose place: relation references the
+// given id (rightOf/leftOf/above/behind/inFrontOf). Captured before applyLayout
+// so reparent can reconcile refs that a scope change would dangle.
+func placeReferrers(doc *Document, id string) []string {
+	if doc == nil || id == "" {
+		return nil
+	}
+	var out []string
+	var walk func(ps []*CompositePart)
+	walk = func(ps []*CompositePart) {
+		for _, p := range ps {
+			if p == nil {
+				continue
+			}
+			if pl := p.Place; pl != nil && p.ID != "" &&
+				(pl.RightOf == id || pl.LeftOf == id || pl.Above == id || pl.Behind == id || pl.InFrontOf == id) {
+				out = append(out, p.ID)
+			}
+			walk(p.Parts)
+		}
+	}
+	if sc := doc.Scene(); sc != nil {
+		walk(sc.Parts)
+	}
+	return out
 }
 
 // parentOf returns the id of the container holding the given part, or "" if it
