@@ -61,14 +61,17 @@ func (ar *anchorResolver) world(ref string) (wx, wy, wz float64, ok bool) {
 	}
 	wx, wy, wz = p.offWX+p.w/2, p.offWY+p.d/2, p.offWZ+p.h
 	switch anchor {
+	// 2.5D ground routing: side anchors sit at the face's BOTTOM edge (z=offWZ)
+	// so connectors run along the ground plane and read as physical links rather
+	// than bridges flying over the tops. Horizontal position stays the face mid.
 	case "left-mid", "left":
-		wx, wy = p.offWX, p.offWY+p.d/2
+		wx, wy, wz = p.offWX, p.offWY+p.d/2, p.offWZ
 	case "right-mid", "right":
-		wx, wy = p.offWX+p.w, p.offWY+p.d/2
+		wx, wy, wz = p.offWX+p.w, p.offWY+p.d/2, p.offWZ
 	case "back-mid", "back":
-		wx, wy = p.offWX+p.w/2, p.offWY
+		wx, wy, wz = p.offWX+p.w/2, p.offWY, p.offWZ
 	case "front-mid", "front":
-		wx, wy = p.offWX+p.w/2, p.offWY+p.d
+		wx, wy, wz = p.offWX+p.w/2, p.offWY+p.d, p.offWZ
 	case "top-mid", "top", "center":
 		// keep defaults
 	case "bottom-mid", "bottom":
@@ -94,19 +97,16 @@ func (ar *anchorResolver) exit(ref string) (dx, dy float64) {
 	}
 	return 1, 0
 }
-
-// faceMidZ returns the vertical middle (in world z) of the referenced part's
-// side face. Used by the orthogonal router to pick a routing height that lies
-// inside BOTH endpoints' side faces, so every segment of the path lies on a
-// single horizontal world plane and projects to pure ±tan30° iso-axis slopes —
-// i.e. it aligns with the TopoDSL grid lattice with zero off-axis tilt.
-func (ar *anchorResolver) faceMidZ(ref string) float64 {
+// baseZ returns the part's ground level (world z of its bottom face) — the
+// height the ground-plane router walks so connectors hug the floor and read as
+// links lying on the ground, occluded by the bodies they pass behind.
+func (ar *anchorResolver) baseZ(ref string) float64 {
 	id, _ := ar.parse(ref)
 	p, found := ar.byID[id]
 	if !found {
 		return 0
 	}
-	return p.offWZ + p.h/2
+	return p.offWZ
 }
 
 // refineSilhouette adjusts a bbox-based side anchor (wx, wy) onto the actual

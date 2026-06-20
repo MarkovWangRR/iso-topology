@@ -194,6 +194,11 @@ func mergeEffects(b, o *Effects) *Effects {
 	} else {
 		out.Wireframe = b.Wireframe
 	}
+	if o.FaceSplit != nil {
+		out.FaceSplit = o.FaceSplit
+	} else {
+		out.FaceSplit = b.FaceSplit
+	}
 	if o.Grain != nil {
 		out.Grain = o.Grain
 	} else {

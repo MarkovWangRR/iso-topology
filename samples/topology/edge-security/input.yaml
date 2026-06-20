@@ -135,7 +135,7 @@ nodes:
 
       # ── Policy decision point (diamond, amber) ───────────────────
       - id: policy
-        shape: diamond
+        shape: octprism
         geom: { w: 142, d: 142, h: 36 }
         icon: "iso://glyph/etl/451A03"
         label: "Policy?"

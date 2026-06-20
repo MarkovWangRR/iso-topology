@@ -2,6 +2,7 @@ package isotopo
 
 import (
 	"context"
+	"math"
 	"strings"
 	"testing"
 )
@@ -94,6 +95,66 @@ func TestBuildInteractionModel_Anchors(t *testing.T) {
 				a.WY < pm.Y-tol || a.WY > pm.Y+pm.D+tol {
 				t.Errorf("part %q anchor %q (%g,%g) outside AABB (%g,%g)+(%g,%g)",
 					pm.ID, a.Name, a.WX, a.WY, pm.X, pm.Y, pm.W, pm.D)
+			}
+		}
+	}
+}
+
+// TestBuildInteractionModel_AnchorProjection locks the contract Studio relies
+// on to put connection handles ON the node: every anchor's iso projection must
+// fall inside the node's projected bounding box, which is only true if the
+// anchor carries the right WZ (projectIso subtracts wz). The old model dropped
+// wz, pushing the top handle a full node-height above the roof — the bug this
+// guards against. It also pins the height semantics: top rides the roof,
+// bottom the floor, and the top handle never projects below the bottom one.
+func TestBuildInteractionModel_AnchorProjection(t *testing.T) {
+	doc, err := LoadInput(context.Background(), "yaml", []byte(subgraphFixture), LayoutDagre)
+	if err != nil {
+		t.Fatalf("load: %v", err)
+	}
+	model := BuildInteractionModel(doc)
+	if len(model) == 0 {
+		t.Fatal("expected non-empty model")
+	}
+	const tol = 0.01
+	for _, pm := range model {
+		// Projected bbox of the part's 8 world corners.
+		minX, minY := math.Inf(1), math.Inf(1)
+		maxX, maxY := math.Inf(-1), math.Inf(-1)
+		for _, cx := range []float64{pm.X, pm.X + pm.W} {
+			for _, cy := range []float64{pm.Y, pm.Y + pm.D} {
+				for _, cz := range []float64{pm.Z, pm.Z + pm.H} {
+					px, py := projectIso(cx, cy, cz)
+					minX, maxX = math.Min(minX, px), math.Max(maxX, px)
+					minY, maxY = math.Min(minY, py), math.Max(maxY, py)
+				}
+			}
+		}
+		byName := map[string]AnchorPoint{}
+		for _, a := range pm.Anchors {
+			byName[a.Name] = a
+			if a.WZ < pm.Z-tol || a.WZ > pm.Z+pm.H+tol {
+				t.Errorf("%s/%s: wz %g outside [%g,%g]", pm.ID, a.Name, a.WZ, pm.Z, pm.Z+pm.H)
+			}
+			px, py := projectIso(a.WX, a.WY, a.WZ)
+			if px < minX-tol || px > maxX+tol || py < minY-tol || py > maxY+tol {
+				t.Errorf("%s/%s: projection (%g,%g) outside bbox x[%g,%g] y[%g,%g] — handle off the node",
+					pm.ID, a.Name, px, py, minX, maxX, minY, maxY)
+			}
+		}
+		if top, ok := byName["top"]; ok && math.Abs(top.WZ-(pm.Z+pm.H)) > tol {
+			t.Errorf("%s top.wz=%g want roof %g", pm.ID, top.WZ, pm.Z+pm.H)
+		}
+		if bot, ok := byName["bottom"]; ok && math.Abs(bot.WZ-pm.Z) > tol {
+			t.Errorf("%s bottom.wz=%g want floor %g", pm.ID, bot.WZ, pm.Z)
+		}
+		if top, ok := byName["top"]; ok {
+			if bot, ok2 := byName["bottom"]; ok2 {
+				_, topPy := projectIso(top.WX, top.WY, top.WZ)
+				_, botPy := projectIso(bot.WX, bot.WY, bot.WZ)
+				if topPy > botPy+tol {
+					t.Errorf("%s: top handle projects below bottom (top py=%g > bottom py=%g)", pm.ID, topPy, botPy)
+				}
 			}
 		}
 	}

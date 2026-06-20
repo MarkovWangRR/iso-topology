@@ -32,11 +32,15 @@ type PartModel struct {
 
 // AnchorPoint is one named connection point on a part's surface.
 // Name matches the anchor suffix used in connector from/to (e.g. "top",
-// "left", "right", "bottom"). WX/WY are world coordinates.
+// "left", "right", "bottom"). WX/WY/WZ are world coordinates — the full
+// triple is needed so the client can apply the SAME iso projection the
+// renderer uses (projectIso subtracts wz), keeping the displayed handle
+// exactly on the node's surface instead of dropping the height term.
 type AnchorPoint struct {
 	Name string  `json:"name"`
 	WX   float64 `json:"wx"`
 	WY   float64 `json:"wy"`
+	WZ   float64 `json:"wz"`
 }
 
 // BuildInteractionModel returns the world-space geometry for every part in the
@@ -82,18 +86,23 @@ func BuildInteractionModel(doc *Document) []PartModel {
 // doesn't need to touch the DOM at all for anchor display.
 //
 // Convention (matches iso projection orientation):
-//   top    — centre of the top (roof) face: (cx, y)        world
-//   right  — centre of the right face:       (x+w, cy)
-//   bottom — nadir (lowest visible point):   (cx, y+d)
-//   left   — centre of the left face:         (x, cy)
+//   top    — centre of the top (roof) face: (cx, y,   z+h)   world
+//   right  — centre of the right face:       (x+w, cy, z+h/2)
+//   bottom — nadir (lowest visible point):   (cx, y+d, z)
+//   left   — centre of the left face:         (x, cy,  z+h/2)
+//
+// The z term is what puts each dot on the right face: the roof handle rides
+// the top at z+h, the side handles sit at mid-height, the nadir is on the
+// ground at z. projectIso subtracts z, so omitting it (as the old model did)
+// dropped every handle by a full node height.
 func faceAnchors(r planRect) []AnchorPoint {
 	cx := r.x + r.w/2
 	cy := r.y + r.d/2
 	return []AnchorPoint{
-		{Name: "top",    WX: cx,      WY: r.y},
-		{Name: "right",  WX: r.x + r.w, WY: cy},
-		{Name: "bottom", WX: cx,      WY: r.y + r.d},
-		{Name: "left",   WX: r.x,     WY: cy},
+		{Name: "top",    WX: cx,        WY: r.y,       WZ: r.z + r.h},
+		{Name: "right",  WX: r.x + r.w, WY: cy,        WZ: r.z + r.h/2},
+		{Name: "bottom", WX: cx,        WY: r.y + r.d, WZ: r.z},
+		{Name: "left",   WX: r.x,       WY: cy,        WZ: r.z + r.h/2},
 	}
 }
 

@@ -24,40 +24,42 @@
     </svg>
     <div class="word">
       <h1>iso-topology</h1>
-      <span class="sub">isometric diagrams as code</span>
+      <span class="sub" data-i18n="brand_sub">isometric diagrams as code</span>
     </div>
   </div>
   <span class="studio">STUDIO</span>
   <span class="spacer"></span>
+  <button id="langtoggle" class="langbtn" onclick="toggleLang()" data-i18n-title="lang_title" title="Language · 语言">EN</button>
   <span id="live">checking renderer…</span>
 </header>
 <div class="grid" id="grid">
   <div class="stage-wrap" id="stage">
     <div id="viewport"><div id="zoomer">{{SVG}}</div></div>
-    <div id="stale" class="stale" hidden>showing last good render</div>
+    <div id="stale" class="stale" hidden data-i18n="stale">showing last good render</div>
     <div class="exportctl">
-      <button onclick="exportSVG()" title="download exactly what the canvas shows (last good render if the source is broken)">&#8595; SVG</button>
-      <button onclick="exportPNG()" title="download the current render as PNG (2x)">&#8595; PNG</button>
-      <button onclick="downloadCopy()" title="download the current YAML source">&#8595; YAML</button>
+      <button onclick="exportSVG()" data-i18n="exp_svg" data-i18n-title="t_exp_svg" title="download exactly what the canvas shows (last good render if the source is broken)">&#8595; SVG</button>
+      <button onclick="exportPNG()" data-i18n="exp_png" data-i18n-title="t_exp_png" title="download the current render as PNG (2x)">&#8595; PNG</button>
+      <button onclick="downloadCopy()" data-i18n="exp_yaml" data-i18n-title="t_exp_yaml" title="download the current YAML source">&#8595; YAML</button>
+      <button id="overwrite" onclick="overwriteFile()" data-i18n="overwrite" data-i18n-title="t_overwrite" title="OVERWRITE the original file on disk with the current editor content">&#8593; Overwrite</button>
     </div>
     <div class="zoomctl">
-      <button onclick="zoomBy(1.25)" title="zoom in (⌘+)">+</button>
-      <button onclick="zoomBy(0.8)" title="zoom out (⌘−)">−</button>
-      <button id="zfit" onclick="fitView()" title="fit to window (⌘0)">⤢</button>
-      <button id="zpct" onclick="resetView()" title="reset to 100%">100%</button>
+      <button onclick="zoomBy(1.25)" data-i18n-title="t_zoom_in" title="zoom in (⌘+)">+</button>
+      <button onclick="zoomBy(0.8)" data-i18n-title="t_zoom_out" title="zoom out (⌘−)">−</button>
+      <button id="zfit" onclick="fitView()" data-i18n-title="t_zoom_fit" title="fit to window (⌘0)">⤢</button>
+      <button id="zpct" onclick="resetView()" data-i18n-title="t_zoom_reset" title="reset to 100%">100%</button>
     </div>
     <button id="paneltoggle" onclick="togglePanel()" title="show / hide editor (⌘E)"></button>
   </div>
-  <div class="splitter" id="split" title="drag to resize the editor"></div>
+  <div class="splitter" id="split" data-i18n-title="t_splitter" title="drag to resize the editor"></div>
   <div class="side">
     <div class="toolbar">
-      <button id="render" onclick="rerender()" title="Cmd/Ctrl+Enter">Render</button>
-      <button id="viewtoggle" onclick="toggleView()" title="switch between 2.5D isometric and flat top-down plan view (preview only — does not change the source)">◳ Iso</button>
-      <label class="auto"><input type="checkbox" id="auto" checked>Auto</label>
-      <label class="auto" title="snap dragged nodes to the grid"><input type="checkbox" id="snap">Snap</label>
+      <button id="render" onclick="rerender()" data-i18n="render" data-i18n-title="t_render" title="Cmd/Ctrl+Enter">Render</button>
+      <button id="viewtoggle" onclick="toggleView()" data-i18n-title="t_viewtoggle" title="switch between 2.5D isometric and flat top-down plan view (preview only — does not change the source)">◳ Iso</button>
+      <label class="auto"><input type="checkbox" id="auto" checked><span data-i18n="auto">Auto</span></label>
+      <label class="auto" data-i18n-title="t_snap" title="snap dragged nodes to the grid"><input type="checkbox" id="snap"><span data-i18n="snap">Snap</span></label>
       <span class="spacer" style="flex:1"></span>
     </div>
-    <div class="filetab"><span class="path" id="fpath"></span><b>{{FILE}}</b><button class="iconbtn" id="cppath" onclick="copyPath()" title="copy full path"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button><span class="spacer" style="flex:1"></span><a id="discard" hidden onclick="discardDraft()">revert</a></div>
+    <div class="filetab"><span class="path" id="fpath"></span><b>{{FILE}}</b><button class="iconbtn" id="cppath" onclick="copyPath()" data-i18n-title="t_copypath" title="copy full path"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button><span class="spacer" style="flex:1"></span><a id="restore" hidden onclick="restoreDraft()" data-i18n="restore_draft" title="load the unsaved draft from your last session">restore draft</a><a id="discard" hidden onclick="discardDraft()" data-i18n="revert">revert</a></div>
     <div class="editor">
       <div class="hl" id="hl"></div>
       <div class="gutter" id="gut"></div>
@@ -68,36 +70,37 @@
 </div>
 <div id="help" hidden>
   <div class="help-card">
-    <h2>Keyboard shortcuts</h2>
-    <div class="hrow"><span>Re-render</span><span><kbd>⌘</kbd>+<kbd>↵</kbd></span></div>
-    <div class="hrow"><span>Fit to window</span><span><kbd>⌘</kbd>+<kbd>0</kbd></span></div>
-    <div class="hrow"><span>Zoom in / out</span><span><kbd>⌘</kbd>+<kbd>+</kbd> / <kbd>⌘</kbd>+<kbd>−</kbd></span></div>
-    <div class="hrow"><span>Indent</span><span><kbd>Tab</kbd></span></div>
-    <div class="hrow"><span>Show / hide editor</span><span><kbd>⌘</kbd>+<kbd>E</kbd></span></div>
-    <div class="hrow"><span>This panel</span><span><kbd>?</kbd></span></div>
-    <div class="hrow"><span>Pin a node</span><span>click it on the canvas</span></div>
-    <div class="hrow"><span>Jump to an error</span><span>click it in the issues panel</span></div>
+    <h2 data-i18n="help_title">Keyboard shortcuts</h2>
+    <div class="hrow"><span data-i18n="hk_rerender">Re-render</span><span><kbd>⌘</kbd>+<kbd>↵</kbd></span></div>
+    <div class="hrow"><span data-i18n="hk_fit">Fit to window</span><span><kbd>⌘</kbd>+<kbd>0</kbd></span></div>
+    <div class="hrow"><span data-i18n="hk_zoom">Zoom in / out</span><span><kbd>⌘</kbd>+<kbd>+</kbd> / <kbd>⌘</kbd>+<kbd>−</kbd></span></div>
+    <div class="hrow"><span data-i18n="hk_indent">Indent</span><span><kbd>Tab</kbd></span></div>
+    <div class="hrow"><span data-i18n="hk_panel">Show / hide editor</span><span><kbd>⌘</kbd>+<kbd>E</kbd></span></div>
+    <div class="hrow"><span data-i18n="hk_help">This panel</span><span><kbd>?</kbd></span></div>
+    <div class="hrow"><span data-i18n="hk_pin">Pin a node</span><span data-i18n="hk_pin_v">click it on the canvas</span></div>
+    <div class="hrow"><span data-i18n="hk_jump">Jump to an error</span><span data-i18n="hk_jump_v">click it in the issues panel</span></div>
+    <div class="hrow"><span data-i18n="hk_delete">Delete selected</span><span><kbd>Del</kbd> / <kbd>⌫</kbd></span></div>
   </div>
 </div>
-<div id="ctxmenu" hidden><button id="ctxadd" type="button">＋ Add node</button><button id="ctxedit" type="button">✎ Edit details</button><button id="ctxdup" type="button">⧉ Duplicate</button><button id="ctxdel" type="button">✕ Delete</button></div>
+<div id="ctxmenu" hidden><button id="ctxadd" type="button" data-i18n="ctx_add">＋ Add node</button><button id="ctxedit" type="button" data-i18n="ctx_edit">✎ Edit details</button><button id="ctxdup" type="button" data-i18n="ctx_dup">⧉ Duplicate</button><button id="ctxdel" type="button" data-i18n="ctx_del">✕ Delete</button></div>
 <div id="detailModal" hidden>
   <div class="detail-card">
-    <div class="detail-head"><b id="detailTitle">Edit details</b><span class="detail-x" onclick="closeDetail()">✕</span></div>
+    <div class="detail-head"><b id="detailTitle" data-i18n="detail_title">Edit details</b><span class="detail-x" onclick="closeDetail()">✕</span></div>
     <div id="detailFields" class="detail-fields"></div>
     <div class="detail-foot">
-      <button type="button" class="btn-ghost" onclick="closeDetail()">Cancel</button>
-      <button type="button" id="detailApply" onclick="applyDetail()">Update</button>
+      <button type="button" class="btn-ghost" onclick="closeDetail()" data-i18n="detail_cancel">Cancel</button>
+      <button type="button" id="detailApply" onclick="applyDetail()" data-i18n="detail_apply">Update</button>
     </div>
   </div>
 </div>
 <footer>
-  <span>Hover a node to jump to its source &middot; click to pin &middot; double-click or right-click to edit</span>
-  <span>Scroll to zoom · drag to pan · double-click empty canvas to reset</span>
-  <span><kbd>⌘</kbd>+<kbd>↵</kbd> render &middot; <a onclick="toggleHelp()" style="cursor:pointer">all shortcuts</a></span>
+  <span data-i18n="foot_hover">Hover a node to jump to its source &middot; click to pin &middot; double-click or right-click to edit</span>
+  <span data-i18n="foot_zoom">Scroll to zoom · drag to pan · double-click empty canvas to reset</span>
+  <span><kbd>⌘</kbd>+<kbd>↵</kbd> <span data-i18n="foot_render">render</span> &middot; <a onclick="toggleHelp()" style="cursor:pointer" data-i18n="foot_shortcuts">all shortcuts</a></span>
   <span class="spacer" style="flex:1"></span>
-  <a href="./topology.svg" target="_blank">Original SVG</a>
-  <a href="./nodes/_index.html">Browse nodes</a>
-  <a href="https://github.com/MarkovWangRR/iso-topology/blob/main/docs/guides/studio.md" target="_blank">About Studio</a>
+  <a href="./topology.svg" target="_blank" data-i18n="foot_origsvg">Original SVG</a>
+  <a href="./nodes/_index.html" data-i18n="foot_browse">Browse nodes</a>
+  <a href="https://github.com/MarkovWangRR/iso-topology/blob/main/docs/guides/studio.md" target="_blank" data-i18n="foot_about">About Studio</a>
 </footer>
 <script>{{JS}}</script>
 </body></html>

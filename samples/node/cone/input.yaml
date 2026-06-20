@@ -1,8 +1,0 @@
-nodes:
-  traffic:
-    shape: cone
-    geom: { w: 140, d: 140, h: 100 }
-    label: "Load\nBalancer"
-    style:
-      palette: { top: "#FDE68A", left: "#D97706", right: "#F59E0B" }
-      stroke: { color: "#92400E", width: 1.5 }

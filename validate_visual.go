@@ -91,12 +91,39 @@ func lumOf(hex string) (float64, bool) {
 // topFillColor returns the effective top-face fill colour for a part or its
 // defaults.
 func topFillColor(st *Style) string {
-	if st != nil && st.Palette != nil && st.Palette.Top != "" {
-		return st.Palette.Top
+	if st != nil && st.Palette != nil {
+		if st.Palette.Top != "" {
+			return st.Palette.Top
+		}
+		// A gradient top has no single colour; the "from" stop is the
+		// representative the eye reads at the lit corner. Without this the
+		// check fell through to the default box fill and false-flagged every
+		// gradient-topped part (heroes, glows) as low-contrast.
+		if st.Palette.TopGradient != nil && st.Palette.TopGradient.From != "" {
+			return st.Palette.TopGradient.From
+		}
 	}
 	// Single source of truth: the same default the renderer paints. Hard-coding a
 	// different value here made every unstyled part false-fail the contrast check.
 	return iso25d.DefaultIsoBox().TopFill
+}
+
+// visuallySeparated reports whether a part carries its own separation from the
+// canvas — a drop shadow, a silhouette outline, or a stroke. Such a part never
+// "vanishes into the background" even when its top fill nearly matches the
+// canvas (the intentional white-card-on-light-grey design language), so the
+// background-contrast heuristic must not fire on it.
+func visuallySeparated(st *Style) bool {
+	if st == nil {
+		return false
+	}
+	if st.Stroke != nil && st.Stroke.Color != "" {
+		return true
+	}
+	if st.Effects != nil && (st.Effects.DropShadow != nil || st.Effects.Outline != nil) {
+		return true
+	}
+	return false
 }
 
 func textColor(st *Style) string {
@@ -104,6 +131,53 @@ func textColor(st *Style) string {
 		return st.Text.Color
 	}
 	return "#1E293B"
+}
+
+// faceSplitIssues warns when effects.faceSplit is enabled but cannot take
+// effect, so the flag is never a silent no-op. It applies only to the rounded
+// box family (needs cornerRadius>0): on a sharp box the faces already shade
+// independently, and a non-box shape ignores it entirely.
+func faceSplitIssues(doc *Document) []Issue {
+	if doc == nil {
+		return nil
+	}
+	var issues []Issue
+	for nodeID, n := range doc.Nodes {
+		prefix := fmt.Sprintf("nodes.%s", nodeID)
+		var walk func(parts []*CompositePart, path string)
+		walk = func(parts []*CompositePart, path string) {
+			for _, p := range parts {
+				if p == nil {
+					continue
+				}
+				pPath := fmt.Sprintf("%s.parts[%s]", path, p.ID)
+				eff := ResolveStyle(doc.Theme, p.Shape, p.Preset, p.Style)
+				if eff != nil && eff.Effects != nil && eff.Effects.FaceSplit != nil && *eff.Effects.FaceSplit {
+					cr := 0.0
+					if eff.Effects.CornerRadius != nil {
+						cr = *eff.Effects.CornerRadius
+					}
+					switch {
+					case !boxFamilyShape(p.Shape):
+						issues = append(issues, Issue{
+							Severity: SeverityWarning,
+							Path:     pPath + ".style.effects.faceSplit",
+							Message:  fmt.Sprintf("faceSplit applies only to the rounded box family; shape %q ignores it", p.Shape),
+						})
+					case cr <= 0:
+						issues = append(issues, Issue{
+							Severity: SeverityWarning,
+							Path:     pPath + ".style.effects.faceSplit",
+							Message:  "faceSplit has no effect without cornerRadius>0 — a sharp box already shades its left/right faces independently",
+						})
+					}
+				}
+				walk(p.Parts, pPath)
+			}
+		}
+		walk(n.Parts, prefix)
+	}
+	return issues
 }
 
 // ── 1. VisualContrastIssues ───────────────────────────────────────────────────
@@ -139,13 +213,19 @@ func VisualContrastIssues(doc *Document) []Issue {
 					pPath = pathPrefix + ".parts[?]"
 				}
 
-				fill := topFillColor(p.Style)
+				// Resolve the EFFECTIVE style the renderer actually paints
+				// (theme → per-shape → preset → node overrides) before reading
+				// colours — otherwise preset-/gradient-sourced fills are invisible
+				// here and the check false-flags them against the default box fill.
+				eff := ResolveStyle(doc.Theme, p.Shape, p.Preset, p.Style)
+				fill := topFillColor(eff)
 				fillLum, fillOK := lumOf(fill)
 
 				if fillOK {
-					// a) top fill vs label text
-					txt := textColor(p.Style)
-					if txtLum, ok := lumOf(txt); ok {
+					// a) top fill vs label text — only meaningful when the part
+					// actually carries a label on its face.
+					txt := textColor(eff)
+					if txtLum, ok := lumOf(txt); ok && p.Label != "" {
 						cr := contrastRatio(fillLum, txtLum)
 						if cr < 3.0 {
 							issues = append(issues, Issue{
@@ -156,8 +236,9 @@ func VisualContrastIssues(doc *Document) []Issue {
 						}
 					}
 
-					// b) top fill vs canvas background
-					if bgOK {
+					// b) top fill vs canvas background — skipped when the part
+					// separates itself from the canvas via shadow/outline/stroke.
+					if bgOK && !visuallySeparated(eff) {
 						cr := contrastRatio(fillLum, bgLum)
 						if cr < 1.5 {
 							issues = append(issues, Issue{
@@ -175,7 +256,7 @@ func VisualContrastIssues(doc *Document) []Issue {
 						if child == nil {
 							continue
 						}
-						childFill := topFillColor(child.Style)
+						childFill := topFillColor(ResolveStyle(doc.Theme, child.Shape, child.Preset, child.Style))
 						if childLum, ok := lumOf(childFill); ok {
 							cr := contrastRatio(fillLum, childLum)
 							if cr < 1.3 {

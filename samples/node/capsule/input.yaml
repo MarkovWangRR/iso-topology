@@ -1,9 +1,0 @@
-nodes:
-  pod:
-    shape: capsule
-    geom: { w: 120, d: 120, h: 120 }
-    label: "Pod"
-    icon: "iso://glyph/box"
-    style:
-      palette: { top: "#F0FDF4", left: "#15803D", right: "#16A34A" }
-      stroke: { color: "#14532D", width: 1.5 }

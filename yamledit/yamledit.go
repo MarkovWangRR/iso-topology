@@ -572,16 +572,27 @@ func FindConnectors(root map[string]interface{}) []interface{} {
 
 // buildChain renders a nested inline map "{ k1: { k2: … : v } }" for a
 // dotted path that doesn't yet exist in the source.
-func buildChain(keys []string, v string) string {
-	if len(keys) == 1 {
-		return "{ " + keys[0] + ": " + yamlScalar(v) + " }"
+// scalarOf renders a scalar for write-back: quoted via yamlScalar normally, or
+// VERBATIM when bare — used for typed booleans the field schema knows are NOT
+// strings, so `faceSplit: true` is written as the bool true, not the string
+// "true" (which yamlScalar would quote and break *bool parsing).
+func scalarOf(v string, bare bool) string {
+	if bare {
+		return v
 	}
-	return "{ " + keys[0] + ": " + buildChain(keys[1:], v) + " }"
+	return yamlScalar(v)
+}
+
+func buildChain(keys []string, v string, bare bool) string {
+	if len(keys) == 1 {
+		return "{ " + keys[0] + ": " + scalarOf(v, bare) + " }"
+	}
+	return "{ " + keys[0] + ": " + buildChain(keys[1:], v, bare) + " }"
 }
 
 // setInInlineMap sets a (possibly nested) path inside a YAML flow map string
 // "{ … }", creating intermediate maps as needed; empty value removes the leaf.
-func setInInlineMap(s string, path []string, value string) string {
+func setInInlineMap(s string, path []string, value string, bare bool) string {
 	open := strings.Index(s, "{")
 	close := strings.LastIndex(s, "}")
 	if open < 0 || close <= open {
@@ -603,21 +614,21 @@ func setInInlineMap(s string, path []string, value string) string {
 			if value == "" {
 				entries = append(entries[:idx], entries[idx+1:]...)
 			} else {
-				entries[idx] = path[0] + ": " + yamlScalar(value)
+				entries[idx] = path[0] + ": " + scalarOf(value, bare)
 			}
 		} else {
 			cur := strings.TrimSpace(strings.SplitN(entries[idx], ":", 2)[1])
 			if strings.HasPrefix(cur, "{") {
-				entries[idx] = path[0] + ": " + setInInlineMap(cur, path[1:], value)
+				entries[idx] = path[0] + ": " + setInInlineMap(cur, path[1:], value, bare)
 			} else {
-				entries[idx] = path[0] + ": " + buildChain(path[1:], value)
+				entries[idx] = path[0] + ": " + buildChain(path[1:], value, bare)
 			}
 		}
 	} else if value != "" {
 		if len(path) == 1 {
-			entries = append(entries, path[0]+": "+yamlScalar(value))
+			entries = append(entries, path[0]+": "+scalarOf(value, bare))
 		} else {
-			entries = append(entries, path[0]+": "+buildChain(path[1:], value))
+			entries = append(entries, path[0]+": "+buildChain(path[1:], value, bare))
 		}
 	}
 	// trim blanks
@@ -638,6 +649,18 @@ func setInInlineMap(s string, path []string, value string) string {
 // items recurse into inline child maps or deeper blocks, creating inline maps
 // for missing intermediates. Empty value removes a scalar leaf.
 func SetField(src string, startLine int, path []string, value string) (string, bool) {
+	return setFieldImpl(src, startLine, path, value, false)
+}
+
+// SetFieldRaw is SetField for a value the caller KNOWS is a non-string scalar
+// (typed boolean such as effects.faceSplit / wireframe): the value is written
+// verbatim, so `faceSplit: true` lands as the bool true rather than the quoted
+// string "true" yamlScalar would emit for a reserved word.
+func SetFieldRaw(src string, startLine int, path []string, value string) (string, bool) {
+	return setFieldImpl(src, startLine, path, value, true)
+}
+
+func setFieldImpl(src string, startLine int, path []string, value string, bare bool) (string, bool) {
 	lines := strings.Split(src, "\n")
 	if startLine < 0 || startLine >= len(lines) {
 		return src, false
@@ -649,7 +672,7 @@ func SetField(src string, startLine int, path []string, value string) (string, b
 	if open := strings.Index(line, "{"); open >= 0 {
 		if close := strings.LastIndex(line, "}"); close > open {
 			// Single-line flow map.
-			lines[startLine] = line[:open] + setInInlineMap(line[open:close+1], path, value) + line[close+1:]
+			lines[startLine] = line[:open] + setInInlineMap(line[open:close+1], path, value, bare) + line[close+1:]
 			return strings.Join(lines, "\n"), true
 		}
 		// Multi-line flow map: { on startLine, } on a later line.
@@ -657,7 +680,7 @@ func SetField(src string, startLine int, path []string, value string) (string, b
 			co := strings.Index(collapsed, "{")
 			cc := strings.LastIndex(collapsed, "}")
 			if co >= 0 && cc > co {
-				edited := collapsed[:co] + setInInlineMap(collapsed[co:cc+1], path, value) + collapsed[cc+1:]
+				edited := collapsed[:co] + setInInlineMap(collapsed[co:cc+1], path, value, bare) + collapsed[cc+1:]
 				out := append([]string{}, lines[:startLine]...)
 				out = append(out, edited)
 				out = append(out, lines[lastLine+1:]...)
@@ -666,7 +689,7 @@ func SetField(src string, startLine int, path []string, value string) (string, b
 		}
 	}
 	if len(path) == 1 {
-		return upsertScalar(src, startLine, path[0], value)
+		return upsertScalar(src, startLine, path[0], value, bare)
 	}
 	// Block-form item: descend into path[0].
 	itemIndent := indentOf(line)
@@ -691,20 +714,20 @@ func SetField(src string, startLine int, path []string, value string) (string, b
 		case strings.HasPrefix(rest, "{"):
 			open := strings.Index(lines[k], "{")
 			close := strings.LastIndex(lines[k], "}")
-			lines[k] = lines[k][:open] + setInInlineMap(lines[k][open:close+1], path[1:], value) + lines[k][close+1:]
+			lines[k] = lines[k][:open] + setInInlineMap(lines[k][open:close+1], path[1:], value, bare) + lines[k][close+1:]
 			return strings.Join(lines, "\n"), true
 		case rest == "" || strings.HasPrefix(rest, "&"):
-			return SetField(strings.Join(lines, "\n"), k, path[1:], value) // recurse into sub-block
+			return setFieldImpl(strings.Join(lines, "\n"), k, path[1:], value, bare) // recurse into sub-block
 		default:
 			pre := lines[k][:strings.Index(lines[k], ":")+1]
-			lines[k] = pre + " " + buildChain(path[1:], value)
+			lines[k] = pre + " " + buildChain(path[1:], value, bare)
 			return strings.Join(lines, "\n"), true
 		}
 	}
 	if value == "" {
 		return strings.Join(lines, "\n"), true
 	}
-	newLine := strings.Repeat(" ", childIndent) + path[0] + ": " + buildChain(path[1:], value)
+	newLine := strings.Repeat(" ", childIndent) + path[0] + ": " + buildChain(path[1:], value, bare)
 	out := append([]string{}, lines[:startLine+1]...)
 	out = append(out, newLine)
 	out = append(out, lines[startLine+1:]...)
@@ -746,7 +769,7 @@ func yamlScalar(v string) string {
 // upsertScalar sets `key: value` inside the node/edge block at startLine
 // (flow or block form), preserving comments/formatting. An empty value
 // removes the key. Mirrors UpsertInlineKey's surgery for scalar values.
-func upsertScalar(src string, startLine int, key, value string) (string, bool) {
+func upsertScalar(src string, startLine int, key, value string, bare bool) (string, bool) {
 	lines := strings.Split(src, "\n")
 	if startLine < 0 || startLine >= len(lines) {
 		return src, false
@@ -758,7 +781,7 @@ func upsertScalar(src string, startLine int, key, value string) (string, bool) {
 	editFlowMap := func(l string) string {
 		l = regexp.MustCompile(`,?\s*`+regexp.QuoteMeta(key)+`:\s*("(?:[^"\\]|\\.)*"|[^,}]*)`).ReplaceAllString(l, "")
 		if !remove {
-			val := fmt.Sprintf("%s: %s, ", key, yamlScalar(value))
+			val := fmt.Sprintf("%s: %s, ", key, scalarOf(value, bare))
 			if i := strings.Index(l, "{"); i >= 0 {
 				l = l[:i+1] + " " + val + strings.TrimLeft(l[i+1:], " ")
 			}
@@ -784,7 +807,7 @@ func upsertScalar(src string, startLine int, key, value string) (string, bool) {
 	// in place; never removed (it holds the item together).
 	if m := regexp.MustCompile(`^(\s*-\s*)` + regexp.QuoteMeta(key) + `:`).FindStringSubmatch(lines[startLine]); m != nil {
 		if !remove {
-			lines[startLine] = m[1] + key + ": " + yamlScalar(value)
+			lines[startLine] = m[1] + key + ": " + scalarOf(value, bare)
 		}
 		return strings.Join(lines, "\n"), true
 	}
@@ -799,7 +822,7 @@ func upsertScalar(src string, startLine int, key, value string) (string, bool) {
 		}
 	}
 	keyRe := regexp.MustCompile(`^\s*` + regexp.QuoteMeta(key) + `:`)
-	newLine := strings.Repeat(" ", childIndent) + key + ": " + yamlScalar(value)
+	newLine := strings.Repeat(" ", childIndent) + key + ": " + scalarOf(value, bare)
 	for i := startLine + 1; i < blockEnd; i++ {
 		if indentOf(lines[i]) == childIndent && keyRe.MatchString(lines[i]) {
 			out := append([]string{}, lines[:i]...)

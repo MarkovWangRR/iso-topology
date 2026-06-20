@@ -151,6 +151,8 @@ isotopo.RenderWithCanvas(n, theme, canvas, anns) string                // scene 
                                                                        //   (canvas.Projection == "top" → flat plan view)
 isotopo.RenderDocument(doc *Document) map[string]string                // every node → SVG
 isotopo.RenderParts(doc *Document) map[string]string                   // atomic per-part SVGs
+isotopo.NodeHTML(id, svg, yamlFragment string) string                  // self-contained viewer page for ONE node (svg + source)
+isotopo.NodesIndexHTML(ids []string) string                            // gallery index page linking every per-node view
 isotopo.RenderPlan(n, theme, canvas, anns) string                      // flat top-down plan view directly
 ```
 

@@ -24,7 +24,7 @@ import (
 var containerKinds = []string{"plain", "offset", "autosize", "layout-row", "layout-col", "layout-grid", "boundary", "nested"}
 
 // leafShapes: a spread across renderers (box/path/ellipse families).
-var leafShapes = []string{"rectangle", "cylinder", "cloud", "person", "hexprism", "diamond", "sphere"}
+var leafShapes = []string{"rectangle", "cylinder", "cloud", "person", "hexprism", "octprism", "circle"}
 
 // hostileValues: value classes that historically broke escaping / parsing.
 var hostileValues = []string{

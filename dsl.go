@@ -282,6 +282,10 @@ type Stroke struct {
 	Color string   `yaml:"color,omitempty" json:"color,omitempty"`
 	Width *float64 `yaml:"width,omitempty" json:"width,omitempty"`
 	Dash  string   `yaml:"dash,omitempty" json:"dash,omitempty"`
+	// Gradient, when set on a connector, fills the line with a linear gradient
+	// from the SOURCE end to the TARGET end. Direction follows the route, so
+	// FaceGradient.Dir is ignored here; only From/To colours are used.
+	Gradient *FaceGradient `yaml:"gradient,omitempty" json:"gradient,omitempty"`
 }
 
 // Text controls the label rendered on the top face. Orient picks how
@@ -353,6 +357,12 @@ type Effects struct {
 
 	// v2.6 — line-art mode: faces render unfilled, strokes only.
 	Wireframe *bool `yaml:"wireframe,omitempty" json:"wireframe,omitempty"`
+	// faceSplit (rounded boxes only): split the single continuous side band at
+	// the front vertical edge into independent left (LeftFill) and right
+	// (RightFill) faces, so a rounded cube shades per-face like a sharp one —
+	// real per-face lighting. Default off keeps the classic wrap-around side
+	// gradient (no change to existing diagrams).
+	FaceSplit *bool `yaml:"faceSplit,omitempty" json:"faceSplit,omitempty"`
 	// v2.6 — film-grain noise overlay on the faces.
 	Grain *Grain `yaml:"grain,omitempty" json:"grain,omitempty"`
 	// v3.8 (M4) — accent stroke traced along the part's full silhouette,

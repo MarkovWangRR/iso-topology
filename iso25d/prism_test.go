@@ -74,7 +74,7 @@ func TestPrismFaceInvariants(t *testing.T) {
 // TestPrismRenderSmoke renders every family member and checks the
 // output parses as well-formed SVG with the expected face count.
 func TestPrismRenderSmoke(t *testing.T) {
-	for name, n := range map[string]int{"diamond": 4, "triprism": 3, "hexprism": 6, "octprism": 8} {
+	for name, n := range map[string]int{"triprism": 3, "hexprism": 6, "octprism": 8} {
 		o := ConvertOpts{Width: 140, Depth: 140, Height: 44, Label: "Test", Margin: 24}
 		svg := Convert2DTo25D(name, o)
 		if !regexpMustCount(svg, `data-face="top"`, 1) {

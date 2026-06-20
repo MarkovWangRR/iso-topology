@@ -1,8 +1,0 @@
-nodes:
-  storage:
-    shape: frustum
-    geom: { w: 140, d: 140, h: 90 }
-    label: "Object\nStorage"
-    style:
-      palette: { top: "#D1FAE5", left: "#065F46", right: "#059669" }
-      stroke: { color: "#064E3B", width: 1.5 }

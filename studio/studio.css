@@ -21,6 +21,9 @@ header{display:flex;align-items:center;gap:12px;padding:11px 20px;
 .brand .sub{font-size:10.5px;color:var(--muted);}
 header .studio{margin-left:6px;}
 header .spacer{flex:1;}
+.langbtn{font:11px Inter,sans-serif;font-weight:650;color:var(--accent-deep);background:var(--accent-soft);
+  border:1px solid var(--border);border-radius:7px;padding:4px 10px;cursor:pointer;letter-spacing:.02em;min-width:42px;text-align:center;}
+.langbtn:hover{background:var(--accent);color:#fff;border-color:var(--accent);}
 #live{display:flex;align-items:center;gap:6px;font:11.5px Inter,sans-serif;font-weight:550;color:var(--muted);}
 #live::before{content:"";width:7px;height:7px;border-radius:50%;background:#CBD5E1;flex:none;}
 #live.ok{color:var(--accent-deep);}
@@ -42,6 +45,10 @@ header .spacer{flex:1;}
   color:#334155;padding:7px 12px;}
 .exportctl button:hover{background:var(--accent-soft);color:var(--accent-deep);}
 .exportctl button+button{border-left:1px solid var(--border);}
+/* the write-to-disk action reads as primary, distinct from the download exports */
+.exportctl #overwrite{background:var(--accent,#2596A6);color:#fff;font-weight:650;}
+.exportctl #overwrite:hover{background:var(--accent-deep,#1d7a87);color:#fff;}
+.exportctl #overwrite:disabled{background:#cbd5e1;color:#eef2f6;cursor:not-allowed;}
 .zoomctl{position:absolute;right:16px;bottom:16px;display:flex;flex-direction:column;gap:1px;
   background:white;border:1px solid var(--border);border-radius:8px;overflow:hidden;box-shadow:var(--shadow);}
 .zoomctl button{width:34px;height:32px;border:0;border-radius:0;background:white;font-size:14px;color:#334155;}
@@ -133,8 +140,9 @@ kbd{font:10px ui-monospace,Menlo,monospace;border:1px solid var(--border);border
 .hrow{display:flex;justify-content:space-between;gap:40px;font:12px Inter,sans-serif;
   color:#475569;padding:6px 0;border-top:1px solid var(--border);}
 #render{min-width:78px;}
-.filetab #discard{color:var(--accent-deep);cursor:pointer;font-family:Inter,sans-serif;font-size:10.5px;white-space:nowrap;}
-.filetab #discard:hover{text-decoration:underline;}
+.filetab #discard,.filetab #restore{color:var(--accent-deep);cursor:pointer;font-family:Inter,sans-serif;font-size:10.5px;white-space:nowrap;}
+.filetab #discard:hover,.filetab #restore:hover{text-decoration:underline;}
+.filetab #restore{color:#B45309;}
 .stale{position:absolute;top:14px;left:50%;transform:translateX(-50%);z-index:4;
   background:#FFF7ED;border:1px solid #FDBA74;color:#9A3412;
   font:11px Inter,sans-serif;padding:5px 13px;border-radius:999px;box-shadow:var(--shadow);}

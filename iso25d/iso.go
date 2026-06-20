@@ -56,6 +56,12 @@ type IsoBoxOpts struct {
 	Margin float64
 	// Rounded-corner radius for the top face (v1.2).
 	CornerRadius float64
+	// FaceSplit (opt-in): on a rounded box, split the single continuous side
+	// band at the front vertical edge into a left wall (LeftFill) and a right
+	// wall (RightFill), so the two iso faces shade independently — true
+	// per-face lighting on a rounded silhouette. Default false keeps the
+	// classic single wrap-around side gradient.
+	FaceSplit bool
 	// Drop shadow filter (v1.2). Zero color = disabled.
 	ShadowDx, ShadowDy, ShadowBlur float64
 	ShadowColor                    string

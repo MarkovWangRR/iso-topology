@@ -119,10 +119,9 @@ func buildShapeCaps() []ShapeCap {
 	}
 	// Add native iso names that aren't in the d2 catalog.
 	for _, iso := range []string{"rectangle", "cylinder", "circle", "cloud", "person", "iso_text", "composite", "group",
-		"prism", "diamond", "triprism", "hexprism", "octprism", "boundary",
-		"cone", "pyramid", "frustum", "dome", "torus", "capsule",
+		"triprism", "hexprism", "octprism", "boundary",
 		"wedge", "custom_path",
-		"array1d", "array2d", "array3d", "screen", "browser-panel", "rack"} {
+		"array1d", "array2d", "array3d", "rack"} {
 		if _, ok := by[iso]; !ok {
 			by[iso] = &bucket{isoName: iso, hMul: 1.0, acceptedAs: map[string]struct{}{iso: {}}}
 		}
@@ -153,28 +152,33 @@ func buildShapeCaps() []ShapeCap {
 		"boundary":  "v3.5 — a group whose substrate is a dashed OUTLINE-ONLY flat region (VPC / subnet / trust zone). Same nesting/layout/autosize as group; style.stroke restyles the dashes",
 		"iso_text":  "flat text panel (low extrusion)",
 		"cloud":     "free-form rounded outline; no per-face palette overrides",
-		"prism":     "v3.2 — regular n-gon base x vertical extrude; geom.sides picks the base (default 6). Side walls shade left/right palette by facing. Prisms take gradients/patterns/strokes via style.faces (v3.3) and backglow (v3.3.1); Full effects parity with the box family as of v3.4 (dropShadow, grain, backglow). Connectors anchor on the true polygon edge.",
-		"diamond":   "v3.2 — 4-gon prism, base rotated 22.5 deg so the projection is a real lozenge with two shaded walls: decision / routing semantics",
 		"triprism":  "v3.2 — 3-gon prism: alert / one-way fan-out semantics",
 		"hexprism":  "v3.2 — 6-gon prism: API gateway / middleware semantics",
-		"octprism":  "v3.2 — 8-gon prism: firewall (stop-sign) semantics",
-		"cone":     "v3.5 — smooth circular cone (topScale=0, sides=32 default). geom.sides and geom.topScale override. Semantic: traffic convergence, load balancer, flow aggregation.",
-		"pyramid":  "v3.5 — square pyramid (topScale=0, sides=4). Any regular polygon apex via geom.sides. Semantic: data pyramid, layered architecture.",
-		"frustum":  "v3.5 — truncated cone / frustum (topScale=0.5 default). Adjust with geom.topScale and geom.sides. Semantic: object storage bucket (S3/GCS), distribution funnel.",
-		"dome":     "v3.6 — hemispherical revolution body (quarter-circle profile). Semantic: security zone, protective enclosure, isolation region.",
-		"torus":    "v3.6 — donut-shaped revolution body. Semantic: consistent-hashing ring, replication ring, circular cache topology.",
-		"capsule":     "v3.6 — cylinder with rounded (hemispherical) end caps. Semantic: container pod, process instance, encapsulated service.",
+		"octprism":  "v3.2 — 8-gon prism: firewall (stop-sign) / decision-gate semantics",
 		"wedge":       "v3.10 — sloped prism: back edge raised to full height, front edge at z=0. Semantic: ramp, data ingestion pipeline, traffic escalation.",
 		"custom_path": "v3.10 — arbitrary polygon base extruded vertically. Provide path: in geom.params (M/L/Z SVG commands). Semantic: any brand or domain-specific shape.",
 		"array1d":       "v3.11 — linear row of N identical cells. params: countX (default 3), gap (default 6). Semantic: pipeline stages, replica group.",
 		"array2d":       "v3.11 — N×M grid of cells on the ground plane. params: countX, countY (default 3×3), gap. Semantic: shard matrix, node pool, partition table.",
 		"array3d":       "v3.11 — N×M×K volumetric grid. params: countX, countY, countZ (default 3×3×3), gap. Semantic: GPU cluster, tensor, embedding matrix.",
-		"screen":        "v3.11 — upright thin panel; label and icon anchor on the front (right) face. Default geom: w=100 d=14 h=160. Semantic: mobile app, display, monitor.",
-		"browser-panel": "v3.11 — alias for screen. Semantic: web frontend, browser window, dashboard.",
 		"rack":          "v3.11 — server rack with slot shelves. params: slots (default 4). Semantic: physical server rack, blade chassis, equipment cabinet.",
+	}
+	// retiredShapes are removed from the public palette (v0.11): rendered broken
+	// or unrecognisable (sphere→box, the capsule/dome/torus revolution bodies), or
+	// visually indistinct from rectangle so their semantic was never conveyed
+	// (diamond, screen), or redundant (prism overlaps hexprism; cone/pyramid/
+	// frustum are geometric with weak architecture meaning). Filtering here drops
+	// both the native iso name AND its d2 aliases, so the DSL reports them as an
+	// unknown shape. Subtraction over fixing: a smaller, sharper palette.
+	retiredShapes := map[string]bool{
+		"sphere": true, "capsule": true, "dome": true, "torus": true,
+		"diamond": true, "screen": true, "browser-panel": true,
+		"prism": true, "cone": true, "pyramid": true, "frustum": true,
 	}
 	out := make([]ShapeCap, 0, len(by))
 	for _, b := range by {
+		if retiredShapes[b.isoName] {
+			continue
+		}
 		ids := make([]string, 0, len(b.acceptedAs))
 		for k := range b.acceptedAs {
 			ids = append(ids, k)
@@ -337,6 +341,7 @@ func buildStyleKeyGroups() []StyleKeyGroup {
 			"pattern {kind: hatch|dots, color, spacing, angle}",
 			"wireframe (bool — line-art: strokes only, no fills; ghost parts are exempt from overlap warnings)",
 			"grain {intensity 0..1, scale} (film-grain noise on the faces)",
+			"faceSplit (bool — rounded boxes only: split the single wrap-around side band into independent left/right faces so a rounded cube shades per-face like a sharp one; needs cornerRadius>0, no-op otherwise)",
 		}},
 	}
 }

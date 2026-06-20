@@ -3,22 +3,154 @@
 const LANG={{LANGQ}}, PATH={{PATHQ}};
 const FILENAME=PATH.split('/').pop();
 const srcEl=document.getElementById('src'), hlEl=document.getElementById('hl'), gutEl=document.getElementById('gut');
-const ORIGINAL=srcEl.value, DRAFTKEY='isotopo-draft:'+PATH;
+let ORIGINAL=srcEl.value; const DRAFTKEY='isotopo-draft:'+PATH;
 const staleEl=document.getElementById('stale');
 let dirty=false;
+// A divergent draft from a previous session, kept for one-click recovery. The
+// page DEFAULTS to the disk version (ORIGINAL) — the draft is not auto-applied,
+// so external edits to the file are visible on reload instead of being shadowed.
+let pendingDraft=null;
 function setDirty(d){
   dirty=d;
   document.getElementById('discard').hidden=!d;
+  // any dirty-state change makes a leftover pending draft moot (a fresh edit
+  // overwrote it; a revert/save resolved it) — drop the restore affordance.
+  const r=document.getElementById('restore'); if(r) r.hidden=true;
 }
 function discardDraft(){
   try{localStorage.removeItem(DRAFTKEY);}catch(_){}
   if(location.hash.indexOf('#src=')===0){
     try{history.replaceState(null,'',location.pathname+location.search);}catch(_){}
   }
+  pendingDraft=null;
   srcEl.value=ORIGINAL; setDirty(false);
   buildMap(); paint(null);
   if(serverOK) rerender();
 }
+// Recover the previous-session draft the page chose NOT to auto-apply.
+function restoreDraft(){
+  if(pendingDraft==null) return;
+  srcEl.value=pendingDraft; pendingDraft=null;
+  setDirty(srcEl.value!==ORIGINAL);
+  buildMap(); paint(null);
+  if(serverOK) rerender();
+}
+
+/* ── UI language (i18n) ─────────────────────────────────────────────
+   Default English; the header toggle flips to Chinese and back. Every
+   visible UI string is keyed: static text via data-i18n / data-i18n-title
+   on the element, dynamic text via L('key') at the call site. The choice
+   persists in localStorage so it survives reloads. The DSL source the user
+   edits is never touched — this is chrome only. */
+const I18N={
+  en:{
+    brand_sub:"isometric diagrams as code", lang_title:"Language · 语言",
+    stale:"showing last good render",
+    exp_svg:"↓ SVG", t_exp_svg:"download exactly what the canvas shows (last good render if the source is broken)",
+    exp_png:"↓ PNG", t_exp_png:"download the current render as PNG (2x)",
+    exp_yaml:"↓ YAML", t_exp_yaml:"download the current YAML source",
+    overwrite:"↑ Overwrite", t_overwrite:"OVERWRITE the original file on disk with the current editor content",
+    t_zoom_in:"zoom in (⌘+)", t_zoom_out:"zoom out (⌘−)", t_zoom_fit:"fit to window (⌘0)", t_zoom_reset:"reset to 100%",
+    t_splitter:"drag to resize the editor",
+    render:"Render", t_render:"Cmd/Ctrl+Enter",
+    t_viewtoggle:"switch between 2.5D isometric and flat top-down plan view (preview only — does not change the source)",
+    auto:"Auto", snap:"Snap", t_snap:"snap dragged nodes to the grid",
+    t_copypath:"copy full path", revert:"revert", restore_draft:"restore draft",
+    help_title:"Keyboard shortcuts",
+    hk_rerender:"Re-render", hk_fit:"Fit to window", hk_zoom:"Zoom in / out", hk_indent:"Indent",
+    hk_panel:"Show / hide editor", hk_help:"This panel",
+    hk_pin:"Pin a node", hk_pin_v:"click it on the canvas",
+    hk_jump:"Jump to an error", hk_jump_v:"click it in the issues panel", hk_delete:"Delete selected",
+    ctx_add:"＋ Add node", ctx_edit:"✎ Edit details", ctx_dup:"⧉ Duplicate", ctx_del:"✕ Delete",
+    detail_title:"Edit details", detail_cancel:"Cancel", detail_apply:"Update",
+    foot_hover:"Hover a node to jump to its source · click to pin · double-click or right-click to edit",
+    foot_zoom:"Scroll to zoom · drag to pan · double-click empty canvas to reset",
+    foot_render:"render", foot_shortcuts:"all shortcuts",
+    foot_origsvg:"Original SVG", foot_browse:"Browse nodes", foot_about:"About Studio",
+    // dynamic
+    rendered:"Rendered", t_insync:"canvas is in sync with the code as of this time",
+    static_file:"Static file", t_static:'run "isotopo serve <input>" for live re-render',
+    offline:"Offline", t_offline:'renderer unreachable — is "isotopo serve" still running?',
+    t_offline_write:'cannot write file — is "isotopo serve" still running?',
+    rendering:"Rendering…", render_failed:"Render failed", t_render_failed:"the source has errors — see the issues panel",
+    view_iso:"◳ Iso", view_plan:"◰ Plan",
+    saving:"Saving…", not_saved:"Not saved", saved:"Saved", wrote:"wrote", save_failed:"Save failed",
+    t_autosaved:"auto-saved to the source file", updated_from_file:"Updated from file",
+    no_fields:"No editable fields.", edit_node:"Edit node — ", edit_canvas:"Edit canvas & background", edit_edge:"Edit edge — ",
+    t_jump:"click to jump to this line", panel_hide:"hide editor (⌘E)", panel_show:"show editor (⌘E)",
+    eff_auto:"auto", eff_inherits:"inherits", eff_default:"default", df_unset:"unset",
+    opt_solid:"Solid", opt_dashed:"Dashed", opt_dotted:"Dotted", opt_none:"(none)",
+    df_embedded:"Embedded image", df_replace:"Replace…", df_icon_ph:"iso://… or pick a file",
+    df_clear:"Clear", df_browse:"Browse…"
+  },
+  zh:{
+    brand_sub:"代码即等距架构图", lang_title:"Language · 语言",
+    stale:"显示上一次成功的渲染",
+    exp_svg:"↓ SVG", t_exp_svg:"下载画布当前所见(源码出错时为上次成功的渲染)",
+    exp_png:"↓ PNG", t_exp_png:"以 PNG 下载当前渲染(2 倍)",
+    exp_yaml:"↓ YAML", t_exp_yaml:"下载当前 YAML 源码",
+    overwrite:"↑ 覆盖写入", t_overwrite:"用当前编辑内容覆盖写入磁盘上的原始文件",
+    t_zoom_in:"放大 (⌘+)", t_zoom_out:"缩小 (⌘−)", t_zoom_fit:"适应窗口 (⌘0)", t_zoom_reset:"重置为 100%",
+    t_splitter:"拖动以调整编辑器宽度",
+    render:"渲染", t_render:"Cmd/Ctrl+Enter",
+    t_viewtoggle:"在 2.5D 等距视图与俯视平面视图间切换(仅预览,不改源码)",
+    auto:"自动", snap:"吸附", t_snap:"拖动节点时吸附到网格",
+    t_copypath:"复制完整路径", revert:"还原", restore_draft:"恢复草稿",
+    help_title:"键盘快捷键",
+    hk_rerender:"重新渲染", hk_fit:"适应窗口", hk_zoom:"放大 / 缩小", hk_indent:"缩进",
+    hk_panel:"显示 / 隐藏编辑器", hk_help:"本面板",
+    hk_pin:"固定节点", hk_pin_v:"在画布上点击它",
+    hk_jump:"跳转到错误", hk_jump_v:"在问题面板中点击它", hk_delete:"删除选中对象",
+    ctx_add:"＋ 添加节点", ctx_edit:"✎ 编辑详情", ctx_dup:"⧉ 复制", ctx_del:"✕ 删除",
+    detail_title:"编辑详情", detail_cancel:"取消", detail_apply:"更新",
+    foot_hover:"悬停节点跳转到源码 · 点击固定 · 双击或右键编辑",
+    foot_zoom:"滚轮缩放 · 拖动平移 · 双击空白画布重置",
+    foot_render:"渲染", foot_shortcuts:"全部快捷键",
+    foot_origsvg:"原始 SVG", foot_browse:"浏览节点", foot_about:"关于 Studio",
+    // dynamic
+    rendered:"已渲染", t_insync:"画布与代码同步于此刻",
+    static_file:"静态文件", t_static:'运行 "isotopo serve <输入文件>" 以实时重渲染',
+    offline:"离线", t_offline:'渲染器不可达 —— "isotopo serve" 还在运行吗?',
+    t_offline_write:'无法写入文件 —— "isotopo serve" 还在运行吗?',
+    rendering:"渲染中…", render_failed:"渲染失败", t_render_failed:"源码有错误 —— 见问题面板",
+    view_iso:"◳ 等距", view_plan:"◰ 平面",
+    saving:"保存中…", not_saved:"未保存", saved:"已保存", wrote:"已写入", save_failed:"保存失败",
+    t_autosaved:"已自动保存到源文件", updated_from_file:"已从文件更新",
+    no_fields:"无可编辑字段。", edit_node:"编辑节点 — ", edit_canvas:"编辑画布与背景", edit_edge:"编辑连线 — ",
+    t_jump:"点击跳转到该行", panel_hide:"隐藏编辑器 (⌘E)", panel_show:"显示编辑器 (⌘E)",
+    eff_auto:"自动", eff_inherits:"继承", eff_default:"默认", df_unset:"未设置",
+    opt_solid:"实线", opt_dashed:"虚线", opt_dotted:"点线", opt_none:"(无)",
+    df_embedded:"内嵌图片", df_replace:"替换…", df_icon_ph:"iso://… 或选择文件",
+    df_clear:"清除", df_browse:"浏览…"
+  }
+};
+let UILANG=(function(){try{return localStorage.getItem('isotopo-uilang')==='zh'?'zh':'en';}catch(_){return 'en';}})();
+function L(k){const d=I18N[UILANG]||I18N.en; return (d&&d[k]!=null)?d[k]:(I18N.en[k]!=null?I18N.en[k]:k);}
+function refreshStatusText(){
+  if(typeof serverOK==='undefined') return;
+  if(!location.protocol.startsWith('http')){ setStatus('',L('static_file'),L('t_static')); return; }
+  if(!serverOK){ setStatus('err',L('offline'),L('t_offline')); return; }
+  markRendered();
+}
+function applyI18n(){
+  document.querySelectorAll('[data-i18n]').forEach(el=>{el.textContent=L(el.getAttribute('data-i18n'));});
+  document.querySelectorAll('[data-i18n-title]').forEach(el=>{el.title=L(el.getAttribute('data-i18n-title'));});
+  document.documentElement.lang = UILANG==='zh'?'zh':'en';
+  const lb=document.getElementById('langtoggle'); if(lb) lb.textContent = UILANG==='zh'?'中文':'EN';
+  // state-dependent labels the static pass can't set on its own:
+  const vt=document.getElementById('viewtoggle'); if(vt&&typeof VIEWMODE!=='undefined') vt.textContent = VIEWMODE==='top'?L('view_plan'):L('view_iso');
+  const pt=document.getElementById('paneltoggle'); if(pt&&typeof panelOpen!=='undefined') pt.title = panelOpen?L('panel_hide'):L('panel_show');
+  refreshStatusText();
+}
+function toggleLang(){
+  UILANG = UILANG==='zh'?'en':'zh';
+  try{localStorage.setItem('isotopo-uilang',UILANG);}catch(_){ }
+  applyI18n();
+  // the detail modal's field labels are localized server-side at fetch time;
+  // if it's open, re-fetch so they switch language too.
+  if(typeof detailModal!=='undefined' && detailModal && !detailModal.hidden && detailTarget) openDetail(detailTarget);
+}
+
 const zoomer=document.getElementById('zoomer'), viewport=document.getElementById('viewport');
 
 /* ── editor backdrop + SVG↔source hover map ────────────────────── */
@@ -148,121 +280,147 @@ function updateModel(data){ if(data&&data.model) window.interactionModel=data.mo
 
 const HANDLE_R=5, HANDLE_COL='#2563EB', HANDLE_HOV='#1D4ED8';
 
-// Overlay SVG that lives on top of zoomer for handle dots + rubber-band line
-let connOverlay=null;
-function ensureOverlay(){
-  if(connOverlay) return;
-  connOverlay=document.createElementNS('http://www.w3.org/2000/svg','svg');
-  connOverlay.setAttribute('id','conn-overlay');
-  connOverlay.style.cssText='position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;overflow:visible;';
-  document.getElementById('zoomer').parentElement.appendChild(connOverlay);
+// Connection handles live INSIDE the rendered SVG, in the SAME coordinate
+// system as the nodes. The zoomer's pan/zoom transform therefore moves
+// handles and nodes together — a handle can never drift off its node, and no
+// per-frame re-projection is needed. handleLayer() is a <g> appended to the
+// root <svg>; it's recreated lazily after each re-render replaces the SVG.
+function handleLayer(){
+  const svg=zoomer.querySelector('svg'); if(!svg) return null;
+  let g=svg.querySelector('#conn-handles');
+  if(!g){ g=document.createElementNS('http://www.w3.org/2000/svg','g'); g.setAttribute('id','conn-handles'); svg.appendChild(g); }
+  return g;
 }
 let _clearTimer=null;
 function clearHandles(immediate){
-  if(immediate){
-    if(_clearTimer){clearTimeout(_clearTimer);_clearTimer=null;}
-    connOverlay&&connOverlay.querySelectorAll('.conn-handle').forEach(h=>h.remove());
-  }else{
-    if(_clearTimer) return;
-    _clearTimer=setTimeout(()=>{_clearTimer=null;connOverlay&&connOverlay.querySelectorAll('.conn-handle').forEach(h=>h.remove());},120);
-  }
+  const wipe=()=>{ const l=zoomer.querySelector('#conn-handles'); l&&l.querySelectorAll('.conn-handle').forEach(h=>h.remove()); };
+  if(immediate){ if(_clearTimer){clearTimeout(_clearTimer);_clearTimer=null;} wipe(); }
+  else{ if(_clearTimer) return; _clearTimer=setTimeout(()=>{_clearTimer=null;wipe();},120); }
 }
 function cancelClear(){ if(_clearTimer){clearTimeout(_clearTimer);_clearTimer=null;} }
 
-// Convert a polygon's centroid from SVG user-units → overlay-relative px.
-// Kept as fallback for shapes without interaction model data.
-function polyFaceCentroid(polygon, stageRect){
+// ── world ↔ SVG-user coordinate helpers ──────────────────────────────────
+// data-scene-tx/ty (emitted by the renderer on the root <svg>) records where
+// world (0,0,0) lands in SVG user space.
+function sceneOrigin(){
+  const svg=zoomer.querySelector('svg');
+  return svg?[parseFloat(svg.dataset.sceneTx||'0'),parseFloat(svg.dataset.sceneTy||'0')]:[0,0];
+}
+// world → SVG-user, applying the SAME projection the renderer uses
+// (projectIso subtracts wz, so a handle rides the correct face height).
+function worldToSvgUser(wx,wy,wz){
+  const [tx,ty]=sceneOrigin();
+  return [(wx-wy)*C30+tx,(wx+wy)*S30-(wz||0)+ty];
+}
+// client (screen) px → SVG-user via the live CTM (covers viewBox, flex, and
+// the zoomer's pan/zoom). Used for drag endpoints + nearest-anchor tests.
+function clientToSvgUser(clientX,clientY){
+  const svg=zoomer.querySelector('svg'); if(!svg) return [0,0];
+  const m=svg.getScreenCTM(); if(!m) return [0,0];
+  const p=svg.createSVGPoint(); p.x=clientX; p.y=clientY;
+  const u=p.matrixTransform(m.inverse());
+  return [u.x,u.y];
+}
+// SVG-user units per screen pixel — handles multiply by this to keep a
+// constant on-screen size regardless of zoom.
+function userPxScale(){
+  const svg=zoomer.querySelector('svg'); const m=svg&&svg.getScreenCTM();
+  return (m&&m.a)?1/m.a:1;
+}
+// Re-size existing handles after a zoom changes the user→px ratio (pan leaves
+// it unchanged, so this is a cheap no-op then).
+function rescaleHandles(){
+  const l=zoomer.querySelector('#conn-handles'); if(!l) return;
+  const s=userPxScale();
+  l.querySelectorAll('.conn-handle').forEach(c=>{ c.setAttribute('r',HANDLE_R*s); c.setAttribute('stroke-width',1.5*s); });
+  const rb=l.querySelector('#conn-rubber'); if(rb) rb.setAttribute('stroke-width',1.8*s);
+}
+
+// Polygon centroid / nadir in SVG-user coords (fallback for shapes with no
+// interaction model, e.g. .d2 files). getCTM maps the polygon's local points
+// into SVG-user space (includes the node <g>'s translate, excludes zoomer).
+function polyCentroidUser(polygon){
   if(!polygon) return null;
   const pts=polygon.points;
   if(!pts||pts.numberOfItems===0) return null;
   let ux=0, uy=0;
   for(let i=0;i<pts.numberOfItems;i++){ ux+=pts.getItem(i).x; uy+=pts.getItem(i).y; }
   ux/=pts.numberOfItems; uy/=pts.numberOfItems;
-  const svgPt=polygon.ownerSVGElement.createSVGPoint();
-  svgPt.x=ux; svgPt.y=uy;
-  const screen=svgPt.matrixTransform(polygon.getScreenCTM());
-  return [screen.x-stageRect.left, screen.y-stageRect.top];
+  const m=polygon.getCTM(); if(!m) return [ux,uy];
+  const p=polygon.ownerSVGElement.createSVGPoint(); p.x=ux; p.y=uy;
+  const u=p.matrixTransform(m); return [u.x,u.y];
 }
 
-// Return the nadir (lowest screen point) across all face polygons.
-function nadirPoint(g, stageRect){
+// Return the nadir (lowest point in SVG-user space) across all face polygons.
+function nadirUser(g){
   let best=null;
   g.querySelectorAll('polygon[data-face]').forEach(poly=>{
-    const pts=poly.points;
-    const ctm=poly.getScreenCTM();
-    const svg=poly.ownerSVGElement;
+    const pts=poly.points, m=poly.getCTM(), svg=poly.ownerSVGElement;
     for(let i=0;i<pts.numberOfItems;i++){
       const p=svg.createSVGPoint();
       p.x=pts.getItem(i).x; p.y=pts.getItem(i).y;
-      const sc=p.matrixTransform(ctm);
-      if(!best||sc.y>best[1]) best=[sc.x-stageRect.left, sc.y-stageRect.top];
+      const u=m?p.matrixTransform(m):p;
+      if(!best||u.y>best[1]) best=[u.x,u.y];
     }
   });
   return best;
 }
 
-// Convert a world-space anchor point to overlay-relative screen px.
-// Iso projection: sx=(wx-wy)*C30, sy=(wx+wy)*S30, then zoomer transform.
-// C30/S30 are declared below alongside screenToWorldDelta.
-function worldToScreen(wx, wy, stageRect){
-  const sx=(wx-wy)*C30, sy=(wx+wy)*S30;
-  // Apply zoomer's current pan/scale (same variables used by liveTranslate).
-  return [sx*scale+panX+stageRect.left-stageRect.left, sy*scale+panY];
-}
-
-// nearestAnchorScreen finds the anchor on partId closest to the cursor
-// (scx, scy in overlay-relative px) and returns {name, cx, cy}.
-// Returns null if interactionModel has no entry for partId.
-function nearestAnchorScreen(partId, scx, scy, stageRect){
+// nearestAnchor finds the anchor on partId nearest the cursor and returns
+// {name, cx, cy} in SVG-user coords. Returns null if the part has no model.
+function nearestAnchor(partId, clientX, clientY){
   if(!window.interactionModel) return null;
   const pm=window.interactionModel.find(p=>p.id===partId);
   if(!pm||!pm.anchors||!pm.anchors.length) return null;
+  const [ux,uy]=clientToSvgUser(clientX,clientY);
   let best=null, bestD=Infinity;
   for(const a of pm.anchors){
-    const [cx,cy]=worldToScreen(a.wx,a.wy,stageRect);
-    const d=Math.hypot(scx-cx,scy-cy);
+    const [cx,cy]=worldToSvgUser(a.wx,a.wy,a.wz);
+    const d=Math.hypot(ux-cx,uy-cy);
     if(d<bestD){bestD=d;best={name:a.name,cx,cy};}
   }
   return best;
 }
 
-// showHandles renders anchor dots for the hovered node.
-// When interactionModel is available the positions come from world-space
-// AABB face centres (accurate for all shapes). Falls back to the polygon
-// vertex method for shapes not in the model (e.g. d2 files).
+// showHandles renders anchor dots for the hovered node, INSIDE the rendered
+// SVG so they share the node's coordinate system (pan/zoom move them in
+// lockstep). Positions come from the interaction model's world anchors
+// projected to SVG-user space; falls back to polygon geometry for shapes not
+// in the model (e.g. d2 files). Dots are sized in SVG-user units scaled by
+// 1/CTM so they read as a constant on-screen size.
 function showHandles(g){
-  ensureOverlay();
-  clearHandles();
-  const stage=document.getElementById('zoomer').parentElement.getBoundingClientRect();
+  const layer=handleLayer(); if(!layer) return;
+  clearHandles(true);
   const partId=g.getAttribute('data-part-id').replace(/~\d+$/,'');
 
-  // Build the list of {name, cx, cy} anchor points to display.
+  // Build the list of {name, cx, cy} anchor points in SVG-user coords.
   let anchors=[];
   const pm=window.interactionModel&&window.interactionModel.find(p=>p.id===partId);
   if(pm&&pm.anchors&&pm.anchors.length){
     for(const a of pm.anchors){
-      const [cx,cy]=worldToScreen(a.wx,a.wy,stage);
+      const [cx,cy]=worldToSvgUser(a.wx,a.wy,a.wz);
       anchors.push({name:a.name,cx,cy});
     }
   }else{
     // Polygon fallback: top/right/bottom(nadir)/left
     const fallback=[
-      {name:'top',    pt:polyFaceCentroid(g.querySelector('polygon[data-face="top"]'),   stage)},
-      {name:'right',  pt:polyFaceCentroid(g.querySelector('polygon[data-face="right"]'),  stage)},
-      {name:'bottom', pt:nadirPoint(g,stage)},
-      {name:'left',   pt:polyFaceCentroid(g.querySelector('polygon[data-face="left"]'),   stage)},
+      {name:'top',    pt:polyCentroidUser(g.querySelector('polygon[data-face="top"]'))},
+      {name:'right',  pt:polyCentroidUser(g.querySelector('polygon[data-face="right"]'))},
+      {name:'bottom', pt:nadirUser(g)},
+      {name:'left',   pt:polyCentroidUser(g.querySelector('polygon[data-face="left"]'))},
     ];
     for(const f of fallback){
       if(f.pt) anchors.push({name:f.name,cx:f.pt[0],cy:f.pt[1]});
     }
   }
 
+  const s=userPxScale();
   anchors.forEach(({name,cx,cy})=>{
     const c=document.createElementNS('http://www.w3.org/2000/svg','circle');
     c.setAttribute('cx',cx); c.setAttribute('cy',cy);
-    c.setAttribute('r',HANDLE_R);
+    c.setAttribute('r',HANDLE_R*s);
     c.setAttribute('fill',HANDLE_COL);
-    c.setAttribute('stroke','#fff'); c.setAttribute('stroke-width','1.5');
+    c.setAttribute('stroke','#fff'); c.setAttribute('stroke-width',1.5*s);
     c.setAttribute('class','conn-handle');
     c.style.cssText='pointer-events:all;cursor:crosshair;';
     c.dataset.name=name;
@@ -274,46 +432,48 @@ function showHandles(g){
       ev.preventDefault(); ev.stopPropagation();
       const line=document.createElementNS('http://www.w3.org/2000/svg','polyline');
       line.setAttribute('points',cx+','+cy+' '+cx+','+cy);
-      line.setAttribute('stroke',HANDLE_COL); line.setAttribute('stroke-width','1.8');
+      line.setAttribute('stroke',HANDLE_COL); line.setAttribute('stroke-width',1.8*userPxScale());
       line.setAttribute('fill','none'); line.setAttribute('stroke-dasharray','5,3');
       line.setAttribute('id','conn-rubber');
-      connOverlay.appendChild(line);
-      // Record which anchor the drag started from.
+      layer.appendChild(line);
+      // Record which anchor the drag started from (SVG-user coords).
       connDrag={fromId:partId, fromAnchor:name, startX:cx, startY:cy, line};
       document.body.style.cursor='crosshair';
     });
-    connOverlay.appendChild(c);
+    layer.appendChild(c);
   });
 }
 
-// highlightNearestHandle highlights the anchor dot closest to (scx, scy)
-// in overlay-relative coords. Called on mousemove during hover (not drag).
-function highlightNearestHandle(scx, scy){
-  const handles=[...connOverlay.querySelectorAll('.conn-handle')];
+// highlightNearestHandle highlights the anchor dot nearest the cursor.
+// Cursor (clientX, clientY) and dots are compared in SVG-user space.
+function highlightNearestHandle(clientX, clientY){
+  const layer=zoomer.querySelector('#conn-handles'); if(!layer) return;
+  const handles=[...layer.querySelectorAll('.conn-handle')];
   if(!handles.length) return;
+  const [ux,uy]=clientToSvgUser(clientX,clientY);
   let bestEl=null, bestD=Infinity;
   for(const h of handles){
     const hx=parseFloat(h.getAttribute('cx')), hy=parseFloat(h.getAttribute('cy'));
-    const d=Math.hypot(scx-hx,scy-hy);
+    const d=Math.hypot(ux-hx,uy-hy);
     if(d<bestD){bestD=d;bestEl=h;}
   }
   for(const h of handles) h.setAttribute('fill',h===bestEl?HANDLE_HOV:HANDLE_COL);
 }
 
 window.addEventListener('mousemove',ev=>{
-  const stage=document.getElementById('zoomer').parentElement.getBoundingClientRect();
-  const ex=ev.clientX-stage.left, ey=ev.clientY-stage.top;
   if(connDrag){
-    connDrag.line.setAttribute('points',connDrag.startX+','+connDrag.startY+' '+ex+','+ey);
-  }else if(connOverlay){
-    const overHandle=ev.target&&ev.target.classList&&ev.target.classList.contains('conn-handle');
-    const overNode=ev.target&&ev.target.closest&&ev.target.closest('g[data-part-id]');
-    if(overHandle||overNode){
-      cancelClear();
-      if(connOverlay.querySelector('.conn-handle')) highlightNearestHandle(ex,ey);
-    }else if(connOverlay.querySelector('.conn-handle')){
-      clearHandles(); // debounced 120ms
-    }
+    const [ux,uy]=clientToSvgUser(ev.clientX,ev.clientY);
+    connDrag.line.setAttribute('points',connDrag.startX+','+connDrag.startY+' '+ux+','+uy);
+    return;
+  }
+  const layer=zoomer.querySelector('#conn-handles'); if(!layer) return;
+  const overHandle=ev.target&&ev.target.classList&&ev.target.classList.contains('conn-handle');
+  const overNode=ev.target&&ev.target.closest&&ev.target.closest('g[data-part-id]');
+  if(overHandle||overNode){
+    cancelClear();
+    if(layer.querySelector('.conn-handle')) highlightNearestHandle(ev.clientX,ev.clientY);
+  }else if(layer.querySelector('.conn-handle')){
+    clearHandles(); // debounced 120ms
   }
 },true);
 
@@ -328,9 +488,7 @@ window.addEventListener('mouseup',async ev=>{
   pushUndo();
   try{
     // Find the anchor on the target node nearest to where the drag was released.
-    const stage=document.getElementById('zoomer').parentElement.getBoundingClientRect();
-    const dropX=ev.clientX-stage.left, dropY=ev.clientY-stage.top;
-    const toAnchorInfo=nearestAnchorScreen(toId, dropX, dropY, stage);
+    const toAnchorInfo=nearestAnchor(toId, ev.clientX, ev.clientY);
     const toAnchor=toAnchorInfo?toAnchorInfo.name:'';
     const fromAnchor=drag.fromAnchor||'';
     let url='/api/op?op=add-edge&from='+encodeURIComponent(drag.fromId)+'&to='+encodeURIComponent(toId)+'&format='+encodeURIComponent(LANG);
@@ -590,6 +748,26 @@ async function opCommit(op,t){
     showIssues(data.issues||[]);
   }catch(_){}
 }
+// deletePinned removes the currently pinned node/edge via the same op as the
+// right-click Delete. Containers (group/boundary lanes) are protected, matching
+// showCtx + the server-side guard. Returns true if a delete was issued. The pin
+// is cleared first since the object is about to disappear.
+function deletePinned(){
+  if(!serverOK) return false;
+  let t=null;
+  if(pinId){ if(isContainerId(pinId)) return false; t={kind:'node',key:pinId}; }
+  else if(pinCi!=null){ t={kind:'edge',key:pinCi}; }
+  if(!t) return false;
+  pinId=null; pinCi=null;
+  opCommit('delete',t);
+  return true;
+}
+// true when keyboard focus is in a text field (editor, detail inputs) — there
+// Backspace/Delete must edit text, never delete the selected object.
+function inEditable(){
+  const a=document.activeElement; if(!a) return false;
+  return a.tagName==='INPUT'||a.tagName==='TEXTAREA'||a.isContentEditable;
+}
 /* ── undo / redo of STRUCTURAL edits (drag, detail, delete, duplicate).
    Each commit snapshots the pre-change YAML; ⌘Z/⌘⇧Z restore it. Plain
    typing in the editor keeps the textarea's own native undo. ────────────── */
@@ -654,6 +832,7 @@ function fieldInput(f,id){
   if(f.type==='choice') return choiceHTML(f,key,orig);
   if(f.type==='color')  return colorHTML(f,id,key,orig);
   if(f.type==='icon')   return iconHTML(f,id,key,orig);
+  if(f.type==='bool')   return boolHTML(f,id,key,orig);
   const t=f.type==='number'?'number':'text';
   // Empty field → muted placeholder of what blank means: the resolved value
   // (effWord+eff) when there is one, else the field's default/off state (empty).
@@ -677,11 +856,11 @@ function choiceHTML(f,key,orig){
 // ("auto"), style cascades from shape/preset/theme ("inherits"), and the rest
 // (edge routing/stroke) fall back to a fixed render default ("default").
 function effWord(key){
-  if(key.indexOf('geom.')===0) return 'auto';
+  if(key.indexOf('geom.')===0) return L('eff_auto');
   // built-in render defaults (no cascade source) read as "default"
-  if(key==='style.text.orient'||key==='style.effects.opacity') return 'default';
-  if(key.indexOf('style.')===0) return 'inherits';
-  return 'default';
+  if(key==='style.text.orient'||key==='style.effects.opacity') return L('eff_default');
+  if(key.indexOf('style.')===0) return L('eff_inherits');
+  return L('eff_default');
 }
 function colorHTML(f,id,key,orig){
   // When the field has no own value, the colour is inherited (preset/theme) or
@@ -690,29 +869,30 @@ function colorHTML(f,id,key,orig){
   // so an untouched field keeps inheriting.
   const eff=/^#[0-9a-fA-F]{6}$/.test(f.eff||'')?f.eff:'';
   const hex=/^#[0-9a-fA-F]{6}$/.test(f.value)?f.value:(eff||'#cccccc');
-  const ph=f.eff?(effWord(f.key)+' '+f.eff):(f.empty||'unset');
+  const ph=f.eff?(effWord(f.key)+' '+f.eff):(f.empty||L('df_unset'));
   return '<span class="df-color"><input type="color" data-sync="'+id+'" value="'+hex+'">'+
     '<input type="text" id="'+id+'" data-key="'+key+'" data-orig="'+orig+'" value="'+escAttr(f.value)+'" placeholder="'+escAttr(ph)+'"></span>';
 }
 function iconHTML(f,id,key,orig){
   const FILE=' accept="image/svg+xml,image/png,image/jpeg,image/gif,image/webp,.svg,.png,.jpg,.jpeg,.gif,.webp"';
   if(/^data:/.test(f.value)){
-    return '<span class="df-icon"><span class="df-chip">Embedded image</span>'+
+    return '<span class="df-icon"><span class="df-chip">'+esc(L('df_embedded'))+'</span>'+
       '<input type="hidden" id="'+id+'" data-key="'+key+'" data-orig="'+orig+'" value="'+escAttr(f.value)+'">'+
-      '<button type="button" class="df-browse" data-pick="'+id+'">Replace…</button>'+
-      '<button type="button" class="df-clear" data-clear="'+id+'">Clear</button>'+
+      '<button type="button" class="df-browse" data-pick="'+id+'">'+esc(L('df_replace'))+'</button>'+
+      '<button type="button" class="df-clear" data-clear="'+id+'">'+esc(L('df_clear'))+'</button>'+
       '<input type="file" class="df-file" data-pick="'+id+'"'+FILE+' hidden></span>';
   }
-  return '<span class="df-icon"><input type="text" id="'+id+'" data-key="'+key+'" data-orig="'+orig+'" value="'+escAttr(f.value)+'" placeholder="iso://… or pick a file">'+
-    '<button type="button" class="df-browse" data-pick="'+id+'">Browse…</button>'+
+  return '<span class="df-icon"><input type="text" id="'+id+'" data-key="'+key+'" data-orig="'+orig+'" value="'+escAttr(f.value)+'" placeholder="'+escAttr(L('df_icon_ph'))+'">'+
+    '<button type="button" class="df-browse" data-pick="'+id+'">'+esc(L('df_browse'))+'</button>'+
     '<input type="file" class="df-file" data-pick="'+id+'"'+FILE+' hidden></span>';
 }
 // optGlyph returns a small inline SVG illustrating an enum value, so the
 // choice tiles read at a glance instead of being bare words.
 function optLabel(key,val){
-  const L={'stroke.dash:':'Solid','stroke.dash:6 4':'Dashed','stroke.dash:1 5':'Dotted'};
-  if(key.endsWith('.dir')&&val==='') return 'default';
-  return L[key+':'+val] || (val||'(none)');
+  const DASH={'stroke.dash:':'opt_solid','stroke.dash:6 4':'opt_dashed','stroke.dash:1 5':'opt_dotted'};
+  if(key.endsWith('.dir')&&val==='') return L('eff_default');
+  const dk=DASH[key+':'+val]; if(dk) return L(dk);
+  return val || L('opt_none');
 }
 function optGlyph(key,val){
   const G={
@@ -808,27 +988,39 @@ function wireDetailInputs(){
   });
 }
 // a choice tile-group exposes its value via data-val; everything else via .value
-function fieldVal(el){ return el.classList&&el.classList.contains('df-choice') ? el.getAttribute('data-val') : el.value; }
+// a checkbox carries its bool as checked→"true"/unchecked→"" (empty removes the
+// key); a choice tile-group via data-val; everything else via .value
+function fieldVal(el){
+  if(el.type==='checkbox') return el.checked?'true':'';
+  return el.classList&&el.classList.contains('df-choice') ? el.getAttribute('data-val') : el.value;
+}
+// boolHTML renders an on/off checkbox. data-orig holds the original value so
+// applyDetail only sends it when toggled; checked → value "true", unchecked →
+// "" (empty removes the key, reverting to the default).
+function boolHTML(f,id,key,orig){
+  const on=/^(true|yes|on)$/i.test(f.value||'')?' checked':'';
+  return '<input class="df-bool" type="checkbox" id="'+id+'" data-key="'+key+'" data-orig="'+orig+'"'+on+'>';
+}
 async function openDetail(t){
   hideCtx();
   if(!serverOK) return;
   const qp = qpFor(t);
   try{
-    const r=await fetch('/api/fields?'+qp+'&format='+encodeURIComponent(LANG),{method:'POST',body:srcEl.value});
+    const r=await fetch('/api/fields?'+qp+'&format='+encodeURIComponent(LANG)+'&uilang='+encodeURIComponent(UILANG),{method:'POST',body:srcEl.value});
     if(!r.ok) return;
     const data=await r.json();
     detailTarget=t;
     const fields=data.fields||[];
     if(t.kind==='node'){
-      detailTitle.textContent='Edit node — '+t.key;
+      detailTitle.textContent=L('edit_node')+t.key;
     }else if(t.kind==='canvas'){
-      detailTitle.textContent='Edit canvas & background';
+      detailTitle.textContent=L('edit_canvas');
     }else{
       const fv=k=>{const f=fields.find(x=>x.key===k);return f?f.value:'';};
-      detailTitle.textContent='Edit edge — '+(fv('from')||'?')+' → '+(fv('to')||'?');
+      detailTitle.textContent=L('edit_edge')+(fv('from')||'?')+' → '+(fv('to')||'?');
     }
     if(!fields.length){
-      detailFields.innerHTML='<div class="df-desc" style="padding:8px 0">No editable fields.</div>';
+      detailFields.innerHTML='<div class="df-desc" style="padding:8px 0">'+L('no_fields')+'</div>';
     }else{
       detailFields.innerHTML=renderFields(fields);
       wireDetailInputs();
@@ -1151,6 +1343,9 @@ function apply(){
   zoomer.style.transform='translate('+panX+'px,'+panY+'px) scale('+scale+')';
   const z=document.getElementById('zpct');
   if(z) z.textContent=Math.round(scale*100)+'%';
+  // Handles live inside the SVG, so pan/zoom moves them with the nodes for
+  // free; only their on-screen SIZE needs correcting after a zoom.
+  rescaleHandles();
 }
 function zoomBy(f){
   const r=viewport.getBoundingClientRect();
@@ -1275,20 +1470,21 @@ let serverOK=false, timer=null;
 // current the canvas is (auto-render is on by default).
 function nowTime(){const d=new Date(),p=n=>String(n).padStart(2,'0');return p(d.getHours())+':'+p(d.getMinutes())+':'+p(d.getSeconds());}
 function setStatus(cls,text,title){liveEl.className=cls;liveEl.textContent=text;liveEl.title=title||'';}
-function markRendered(){setStatus('ok','Rendered '+nowTime(),'canvas is in sync with the code as of this time');}
+function markRendered(){setStatus('ok',L('rendered')+' '+nowTime(),L('t_insync'));}
 async function probe(){
+  const ovBtn=document.getElementById('overwrite');
   if(!location.protocol.startsWith('http')){
-    setStatus('','Static file','run "isotopo serve <input>" for live re-render');
-    renderBtn.disabled=true; return;
+    setStatus('',L('static_file'),L('t_static'));
+    renderBtn.disabled=true; if(ovBtn) ovBtn.disabled=true; return;
   }
   const was=serverOK;
   try{
     const r=await fetch('/api/ping');
     serverOK=r.ok;
   }catch(_){serverOK=false;}
-  renderBtn.disabled=!serverOK;
+  renderBtn.disabled=!serverOK; if(ovBtn) ovBtn.disabled=!serverOK;
   if(!serverOK){
-    setStatus('err','Offline','renderer unreachable — is "isotopo serve" still running?');
+    setStatus('err',L('offline'),L('t_offline'));
   }else if(!was){
     markRendered(); // recovered (or first probe): the shown canvas is current
   }
@@ -1301,13 +1497,13 @@ function projQS(){ return VIEWMODE==='top' ? '&projection=top' : ''; }
 function toggleView(){
   VIEWMODE = VIEWMODE==='top' ? 'iso' : 'top';
   const b=document.getElementById('viewtoggle');
-  if(b){ b.textContent = VIEWMODE==='top' ? '◰ Plan' : '◳ Iso'; b.classList.toggle('on', VIEWMODE==='top'); }
+  if(b){ b.textContent = VIEWMODE==='top' ? L('view_plan') : L('view_iso'); b.classList.toggle('on', VIEWMODE==='top'); }
   if(serverOK) rerender();
 }
 async function rerender(){
   if(!serverOK) return;
-  renderBtn.textContent='Rendering…';
-  setStatus('','Rendering…','');
+  renderBtn.textContent=L('rendering');
+  setStatus('',L('rendering'),'');
   try{
     const r=await fetch('/api/render?format='+encodeURIComponent(LANG)+projQS(),{method:'POST',body:srcEl.value});
     const data=await r.json();
@@ -1320,20 +1516,20 @@ async function rerender(){
       markRendered();
     }else{
       staleEl.hidden=false;
-      setStatus('err','Render failed','the source has errors — see the issues panel');
+      setStatus('err',L('render_failed'),L('t_render_failed'));
     }
   }catch(e){
     showIssues([{severity:'error',path:'$',message:String(e)}]);
     staleEl.hidden=false;
     probe();
   }
-  renderBtn.textContent='Render';
+  renderBtn.textContent=L('render');
 }
 function showIssues(list){
   const el=document.getElementById('issues');
   if(!list.length){el.classList.remove('show');el.innerHTML='';return;}
   el.classList.add('show');
-  el.innerHTML=list.map(i=>'<div class="'+(i.severity==='error'?'err':'warn')+'" data-path="'+esc(i.path||'')+'" title="click to jump to this line">'+
+  el.innerHTML=list.map(i=>'<div class="'+(i.severity==='error'?'err':'warn')+'" data-path="'+esc(i.path||'')+'" title="'+esc(L('t_jump'))+'">'+
     esc(i.severity+' '+(i.path||'')+' — '+i.message+(i.suggest?' (did you mean '+i.suggest+'?)':''))+'</div>').join('');
   el.querySelectorAll('[data-path]').forEach(d=>{
     d.addEventListener('click',()=>jumpToIssue(d.getAttribute('data-path')));
@@ -1341,6 +1537,7 @@ function showIssues(list){
 }
 srcEl.addEventListener('input',()=>{
   buildMap(); paint(null);
+  lastTypeTime=Date.now();   // debounce autosave while keystrokes are in flight
   const edited=srcEl.value!==ORIGINAL;
   setDirty(edited);
   try{
@@ -1351,6 +1548,45 @@ srcEl.addEventListener('input',()=>{
     clearTimeout(timer); timer=setTimeout(()=>{if(document.getElementById('auto').checked)rerender();},600);
   }
 });
+
+/* ── live file binding ──────────────────────────────────────────────
+   Studio is bound to the source file on disk: edits in the UI auto-save to
+   it, and external edits to the file are pulled back into the UI. One loop
+   does both — push when the editor diverges from disk, else pull when disk
+   diverges from the editor. `lastSynced` is the content we believe is on disk;
+   comparing against it makes our own saves not read as external changes. */
+let lastSynced=ORIGINAL, lastTypeTime=0, syncing=false;
+async function syncTick(){
+  if(syncing || !serverOK || !location.protocol.startsWith('http')) return;
+  const cur=srcEl.value;
+  syncing=true;
+  try{
+    if(cur!==lastSynced){
+      // local edits → write to disk, but wait out an in-flight burst of typing
+      if(Date.now()-lastTypeTime < 600) return;
+      const r=await fetch('/api/save?format='+encodeURIComponent(LANG),{method:'POST',body:cur});
+      if(r.ok){
+        lastSynced=cur; ORIGINAL=cur; setDirty(false);
+        try{localStorage.removeItem(DRAFTKEY);}catch(_){}
+        setStatus('ok',L('saved')+' '+nowTime(),L('t_autosaved'));
+      } // parse error (!ok) → leave the file untouched; the issues panel shows why
+      return;
+    }
+    // editor matches disk-as-we-know-it → poll the file for external changes
+    const r=await fetch('/api/source'); if(!r.ok) return;
+    const disk=await r.text();
+    if(disk!==lastSynced){
+      lastSynced=disk; ORIGINAL=disk; srcEl.value=disk; setDirty(false);
+      pendingDraft=null; try{localStorage.removeItem(DRAFTKEY);}catch(_){}
+      const r2=document.getElementById('restore'); if(r2) r2.hidden=true;
+      buildMap(); paint(pinnedRange());
+      if(serverOK) rerender();
+      setStatus('',L('updated_from_file')+' '+nowTime(),PATH);
+    }
+  }catch(_){}
+  finally{ syncing=false; }
+}
+setInterval(syncTick,1000);
 window.addEventListener('keydown',e=>{
   // ⌘Z / ⌘⇧Z undo-redo of structural edits — only when not typing in the
   // editor (the textarea keeps its own native text undo).
@@ -1362,6 +1598,11 @@ window.addEventListener('keydown',e=>{
   if((e.metaKey||e.ctrlKey)&&(e.key==='='||e.key==='+')){e.preventDefault();zoomBy(1.25);return;}
   if((e.metaKey||e.ctrlKey)&&e.key==='-'){e.preventDefault();zoomBy(0.8);return;}
   if(e.key==='Escape'){document.getElementById('help').hidden=true;hideCtx();closeDetail();return;}
+  // Delete / Backspace removes the pinned object — but only when not typing in a
+  // text field and no modal is open, so it never eats a backspace mid-edit.
+  if((e.key==='Delete'||e.key==='Backspace')&&!inEditable()&&detailModal.hidden&&(pinId||pinCi!=null)){
+    if(deletePinned()){ e.preventDefault(); return; }
+  }
   if(e.key==='?'&&document.activeElement!==srcEl){toggleHelp();}
 });
 function toggleHelp(){
@@ -1406,7 +1647,7 @@ const toggleBtn=document.getElementById('paneltoggle');
 let panelOpen=false;
 function updateToggleIcon(){
   toggleBtn.textContent=panelOpen?'◀':'▶';
-  toggleBtn.title=panelOpen?'hide editor (⌘E)':'show editor (⌘E)';
+  toggleBtn.title=panelOpen?L('panel_hide'):L('panel_show');
 }
 function setPanel(open,save){
   panelOpen=open;
@@ -1512,6 +1753,24 @@ function downloadCopy(){
   a.download=FILENAME.replace(/(\.[a-z0-9]+)$/i,'.edited$1');
   a.click();
 }
+// Persist the editor's current content back to the original file on disk —
+// the only write path in Studio. On success the saved content becomes the new
+// baseline (so the dirty flag clears and "revert" reverts to it) and the local
+// draft is dropped. The server parse-guards, so a broken doc never clobbers.
+async function overwriteFile(){
+  if(!serverOK){ setStatus('err',L('offline'),L('t_offline_write')); return; }
+  const btn=document.getElementById('overwrite'); const prev=btn?btn.textContent:'';
+  if(btn){ btn.disabled=true; btn.textContent=L('saving'); }
+  try{
+    const r=await fetch('/api/save?format='+encodeURIComponent(LANG),{method:'POST',body:srcEl.value});
+    if(!r.ok){ setStatus('err',L('not_saved'),(await r.text()).trim()); return; }
+    ORIGINAL=srcEl.value;                       // the file now matches the editor
+    setDirty(false);
+    try{localStorage.removeItem(DRAFTKEY);}catch(_){}
+    setStatus('ok',L('saved')+' '+nowTime(),L('wrote')+' '+PATH);
+  }catch(e){ setStatus('err',L('save_failed'),String(e)); }
+  finally{ if(btn){ btn.disabled=false; btn.textContent=prev||L('overwrite'); } }
+}
 /* ── #src= permalink decode (kept so older shared links still load) ─ */
 async function pipeThrough(stream,bytes){
   const w=stream.writable.getWriter();
@@ -1532,8 +1791,11 @@ async function inflateText(b64){
   return new TextDecoder().decode(out);
 }
 try{
+  // DEFAULT: show the disk version. If a divergent draft from a prior session
+  // exists, keep it and offer one-click "restore" — don't auto-apply it (that
+  // used to hide external file changes and read as "no change on reload").
   const d=localStorage.getItem(DRAFTKEY);
-  if(d&&d!==ORIGINAL){srcEl.value=d;setDirty(true);}
+  if(d&&d!==ORIGINAL){ pendingDraft=d; const r=document.getElementById('restore'); if(r) r.hidden=false; }
 }catch(_){}
 /* a #src= permalink outranks the draft — explicit intent wins */
 if(location.hash.indexOf('#src=')===0){
@@ -1544,5 +1806,6 @@ if(location.hash.indexOf('#src=')===0){
   }).catch(()=>{});
 }
 buildMap(); paint(null); wireHover(); wireDrag(); renderPath(); adaptStage();
+applyI18n();
 probe().then(()=>{if(serverOK)rerender();});
 if(location.protocol.startsWith('http')) setInterval(probe,5000);

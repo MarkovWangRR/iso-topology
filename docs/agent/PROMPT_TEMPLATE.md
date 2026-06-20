@@ -17,7 +17,7 @@ renders 2.5D isometric architecture diagrams from textual DSL.
 
 CAPABILITIES v0.4.5 (the only DSL you may emit):
 - Input formats: .yaml (manual composition) or .d2 (auto-layout).
-- Shapes: array1d, array2d, array3d, boundary, browser-panel, capsule, circle, cloud, composite, cone, custom_path, cylinder, diamond, dome, frustum, group, hexprism, iso_text, octprism, person, prism, pyramid, rack, rectangle, screen, torus, triprism, wedge.
+- Shapes: array1d, array2d, array3d, boundary, circle, cloud, composite, custom_path, cylinder, group, hexprism, iso_text, octprism, person, rack, rectangle, triprism, wedge.
   (d2 aliases like queue/stored_data/hexagon also accepted — see CAPABILITIES.md.)
 - Composition primitives (YAML):
     group:      {shape: group, layout: {mode: row|column|grid|ring}, parts: [...], label: "…", geom: {h}}
@@ -34,7 +34,7 @@ CAPABILITIES v0.4.5 (the only DSL you may emit):
     stroke:   color, width, dash
     faces (v3.3): map of face name → {fill, strokes}; names: top|left|right (box family), top|side0..sideN-1 (prisms), "*" wildcard; outranks palette, fill {kind: solid|linearGradient|radialGradient|pattern, color, stops: [{offset 0..1, color}], angle (linear, degrees), cx/cy (radial 0..1), pattern {kind: hatch|dots, color, spacing, angle, projected}}, projected: true pins the pattern tile to the face's iso plane instead of screen space, strokes: [{color, width, dash, opacity}] — multiple re-traces per face, list order = paint order (put thin highlight lines after wide outlines), note: a pattern fill REPLACES the base fill (transparent tile background); supported on the box family, prisms, and cylinders (top/left/right) — cloud/person/sphere keep palette only for now
     text:     family, size (a MAXIMUM — top-face labels auto-wrap at word boundaries and auto-shrink so they never overflow the face; icons are clamped to the face too), weight, color, orient, boxBg, boxBorder
-    effects:  opacity, margin, cornerRadius, dropShadow {dx, dy, blur, color}, backglow {color, radius, opacity}, blur (v3.7) — gaussian stdDev in px over the whole part; fog / ghost / de-emphasized layers, outline {color, width, dash, opacity} (v3.8) — accent ring along the part's full silhouette (selection / emphasis), distinct from per-face stroke; hugs the true outline of every shape, pattern {kind: hatch|dots, color, spacing, angle}, wireframe (bool — line-art: strokes only, no fills; ghost parts are exempt from overlap warnings), grain {intensity 0..1, scale} (film-grain noise on the faces)
+    effects:  opacity, margin, cornerRadius, dropShadow {dx, dy, blur, color}, backglow {color, radius, opacity}, blur (v3.7) — gaussian stdDev in px over the whole part; fog / ghost / de-emphasized layers, outline {color, width, dash, opacity} (v3.8) — accent ring along the part's full silhouette (selection / emphasis), distinct from per-face stroke; hugs the true outline of every shape, pattern {kind: hatch|dots, color, spacing, angle}, wireframe (bool — line-art: strokes only, no fills; ghost parts are exempt from overlap warnings), grain {intensity 0..1, scale} (film-grain noise on the faces), faceSplit (bool — rounded boxes only: split the single wrap-around side band into independent left/right faces so a rounded cube shades per-face like a sharp one; needs cornerRadius>0, no-op otherwise)
 
 POSITIONING RULES:
 - NEVER hand-compute coordinates. Pick ONE anchor part per scene and
@@ -60,18 +60,9 @@ OUTPUT CONTRACT:
 VALIDATION LOOP:
 - The harness runs isotopo validate (exit 0 clean / 2 warnings only /
   3 errors) and may send the JSON issues back. Each issue has:
-    severity ("error"|"warning"), path (JSONPath into your DSL), message, suggest.
-- Errors must be fixed; warnings should be fixed when possible.
-- Common warnings to watch for:
-    contrast    — top fill vs text colour ratio < 3.0; darken fill or lighten text
-    background  — fill nearly matches canvas background (ratio < 1.5); pick a distinct fill
-    group-child — group and child fills too similar (ratio < 1.3); differentiate the group
-    truncation  — label estimated wider than node; shorten label or widen geom.w
-    long-label  — label > 40 chars; use a concise noun phrase
-    out-degree  — one part has ≥ 5 outgoing connectors; extract a sub-group
-    deep-nest   — nesting depth > 3; flatten or split into sibling groups
-    overlap     — sibling footprints intersect; raise place gap or rearrange
-- Re-emit the COMPLETE corrected YAML after each fix pass.
+    severity, path (JSONPath into your DSL), message, suggest.
+- Overlap warnings name the exact colliding pair — raise that place
+  gap or rearrange, then re-emit the COMPLETE corrected YAML.
 
 WHEN UNSURE:
 - Prefer .d2 input for plain box-and-arrow graphs; use .yaml when the

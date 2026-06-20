@@ -549,6 +549,19 @@ func serveFile(in string) error {
 	mux.HandleFunc("GET /api/ping", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("ok"))
 	})
+	// GET /api/source — the CURRENT on-disk content of the edited file. Studio
+	// polls this so the UI stays bound to the live file: external edits (another
+	// editor, or this same file rewritten) are pulled back into the canvas.
+	mux.HandleFunc("GET /api/source", func(w http.ResponseWriter, r *http.Request) {
+		data, err := os.ReadFile(in)
+		if err != nil {
+			http.Error(w, err.Error(), 500)
+			return
+		}
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		w.Header().Set("Cache-Control", "no-store")
+		w.Write(data)
+	})
 	mux.HandleFunc("POST /api/render", func(w http.ResponseWriter, r *http.Request) {
 		body, err := io.ReadAll(io.LimitReader(r.Body, 4<<20))
 		if err != nil {
@@ -566,6 +579,36 @@ func serveFile(in string) error {
 		}
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]any{"svg": res.svg, "issues": res.issues, "model": res.model})
+	})
+	// POST /api/save — the ONE write-back path. Studio edits live in the
+	// browser copy; this is the explicit "Overwrite" action that persists the
+	// editor's current content to the original source file on disk. Guarded so
+	// a blank or unparseable document can never clobber the file (warnings are
+	// fine — only a hard load error blocks the write).
+	mux.HandleFunc("POST /api/save", func(w http.ResponseWriter, r *http.Request) {
+		body, err := io.ReadAll(io.LimitReader(r.Body, 4<<20))
+		if err != nil {
+			http.Error(w, err.Error(), 400)
+			return
+		}
+		if strings.TrimSpace(string(body)) == "" {
+			http.Error(w, "refusing to overwrite the file with empty content", 422)
+			return
+		}
+		lang := r.URL.Query().Get("format")
+		if lang == "" {
+			lang = sourceLang
+		}
+		if _, err := loadDocument(lang, body); err != nil {
+			http.Error(w, "not saved — document does not parse: "+err.Error(), 422)
+			return
+		}
+		if err := os.WriteFile(absIn, body, 0o644); err != nil {
+			http.Error(w, err.Error(), 500)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]any{"ok": true, "path": absIn, "bytes": len(body)})
 	})
 	// v4.4 — drag-to-edit: the editor copy + a move op come in, the
 	// server text-edits the YAML (preserving comments/formatting), then
@@ -625,6 +668,7 @@ func serveFile(in string) error {
 			http.Error(w, ferr.Error(), 422)
 			return
 		}
+		fields = isotopo.LocalizeFields(fields, q.Get("uilang"))
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]any{"fields": fields})
 	})
@@ -791,6 +835,6 @@ func serveFile(in string) error {
 		w.Write([]byte(isotopo.TopologyHTML(svg, string(data), sourceLang, absIn)))
 	})
 
-	fmt.Printf("isotopo Studio · %s\nopen:  http://localhost:%s\nedits in the browser are a copy — %s is never written\n", in, port, in)
+	fmt.Printf("isotopo Studio · %s\nopen:  http://localhost:%s\nlive editing — UI changes auto-save to %s, and external edits to it reload in the UI\n", in, port, in)
 	return http.ListenAndServe("localhost:"+port, mux)
 }

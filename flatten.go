@@ -31,14 +31,29 @@ func Flatten(n *Node, theme *Theme) (string, iso25d.ConvertOpts) {
 			o.TopFill, o.LeftFill, o.RightFill = p.Top, p.Left, p.Right
 			// v2.1 — per-face gradient overrides solid fill (mirrors
 			// iso25d.IsoBoxOpts behavior).
-			if g := p.TopGradient; g != nil {
-				o.TopGradient = &iso25d.FaceGradient{From: g.From, To: g.To, Dir: g.Dir}
+			// A gradient with only `to` set uses the face's solid fill as its
+			// start, so the editor can offer one "base colour + gradient to"
+			// model per face instead of separate solid/gradient blocks.
+			if g := p.TopGradient; g != nil && (g.From != "" || g.To != "") {
+				from := g.From
+				if from == "" {
+					from = p.Top
+				}
+				o.TopGradient = &iso25d.FaceGradient{From: from, To: g.To, Dir: g.Dir}
 			}
-			if g := p.LeftGradient; g != nil {
-				o.LeftGradient = &iso25d.FaceGradient{From: g.From, To: g.To, Dir: g.Dir}
+			if g := p.LeftGradient; g != nil && (g.From != "" || g.To != "") {
+				from := g.From
+				if from == "" {
+					from = p.Left
+				}
+				o.LeftGradient = &iso25d.FaceGradient{From: from, To: g.To, Dir: g.Dir}
 			}
-			if g := p.RightGradient; g != nil {
-				o.RightGradient = &iso25d.FaceGradient{From: g.From, To: g.To, Dir: g.Dir}
+			if g := p.RightGradient; g != nil && (g.From != "" || g.To != "") {
+				from := g.From
+				if from == "" {
+					from = p.Right
+				}
+				o.RightGradient = &iso25d.FaceGradient{From: from, To: g.To, Dir: g.Dir}
 			}
 		}
 		if merged.Faces != nil {
@@ -179,6 +194,9 @@ func Flatten(n *Node, theme *Theme) (string, iso25d.ConvertOpts) {
 			// v2.6 — wireframe line-art + film-grain texture.
 			if e.Wireframe != nil {
 				o.Wireframe = *e.Wireframe
+			}
+			if e.FaceSplit != nil {
+				o.FaceSplit = *e.FaceSplit
 			}
 			if g := e.Grain; g != nil {
 				o.GrainIntensity, o.GrainScale = g.Intensity, g.Scale

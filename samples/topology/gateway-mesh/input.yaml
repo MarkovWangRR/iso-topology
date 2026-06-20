@@ -25,7 +25,7 @@ nodes:
         place: { rightOf: client, gap: 1.4 }
         style: { palette: { top: "#EDE9FE", left: "#6D28D9", right: "#8B5CF6" }, stroke: { color: "#4C1D95", width: 1.6 } }
       - id: router
-        shape: diamond
+        shape: octprism
         geom: { w: 130, d: 130, h: 30 }
         icon: "iso://glyph/etl"
         label: "Route?"

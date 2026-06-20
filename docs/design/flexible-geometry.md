@@ -571,8 +571,8 @@ func (p *PrismShapeProvider) Faces(w, d, h float64, _ map[string]any) []Face {
 DSL：
 
 ```yaml
-shape: prism
-geom: { w: 120, d: 120, h: 80, sides: 6 }
+shape: hexprism
+geom: { w: 120, d: 120, h: 80 }
 ```
 
 ### 5.4 自定义轮廓拉伸（CustomPathShape）

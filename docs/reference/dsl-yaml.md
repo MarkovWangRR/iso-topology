@@ -151,9 +151,9 @@ Native iso shapes (see `isotopo capabilities`):
 |---|---|
 | `rectangle` | iso box with top/left/right faces |
 | `cylinder` | iso cylinder; also covers `queue`, `stored_data` |
-| `circle` | sphere |
+| `circle` | round disc with depth |
 | `cloud` | rounded blob; flat top with depth |
-| `person` | cylinder + sphere head |
+| `person` | cylinder body + round head |
 | `iso_text` | low-extrusion label panel |
 | `composite` | container; needs `parts` |
 | `group` | composition primitive — see below |

@@ -491,6 +491,15 @@ func isCleanID(s string) bool {
 	return true
 }
 
+// boolFieldPaths are the detail-editor fields whose YAML value is a typed
+// boolean (effects bools). They're written bare via SetFieldRaw so the value
+// round-trips as a bool, not the quoted string "true". Keep in sync with the
+// "bool"-typed fields declared in fields.go.
+var boolFieldPaths = map[string]bool{
+	"style.effects.faceSplit": true,
+	"style.effects.wireframe": true,
+}
+
 func applySetField(src []byte, op EditOp) ([]byte, error) {
 	out := string(src)
 	// Work on a private copy — foldIconColor may return op.Fields itself, and we
@@ -560,7 +569,13 @@ func applySetField(src []byte, op EditOp) ([]byte, error) {
 			return src, fmt.Errorf("set-field: target %q not found in source", op.ID)
 		}
 		// Re-find the target each write: a write can shift line numbers.
-		out, _ = yamledit.SetField(out, line, strings.Split(key, "."), fields[key])
+		// Boolean-typed fields are written BARE (faceSplit: true, not "true"),
+		// since a quoted reserved word would fail to parse back into *bool.
+		if boolFieldPaths[key] {
+			out, _ = yamledit.SetFieldRaw(out, line, strings.Split(key, "."), fields[key])
+		} else {
+			out, _ = yamledit.SetField(out, line, strings.Split(key, "."), fields[key])
+		}
 	}
 	if renameID {
 		out = yamledit.RenamePart(out, op.ID, newID)

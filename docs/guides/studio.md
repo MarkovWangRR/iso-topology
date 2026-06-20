@@ -141,8 +141,8 @@ friendly field stays anchored to the source). Highlights:
   a no-op for image-URL / local-file icons, which carry their own
   colors.
 - **Illustrated choices** — enums render as tiles with a glyph, not bare
-  words: node **shape** (cube / cylinder / sphere / cloud / person /
-  prism / hexprism / …), canvas **grid** (iso / dots / hatch / solid),
+  words: node **shape** (cube / cylinder / circle / cloud / person /
+  hexprism / octprism / …), canvas **grid** (iso / dots / hatch / solid),
   edge **arrowhead**, **routing** (orthogonal / straight / bezier), and
   edge **line style** (solid / dashed / dotted).
 - **Colors** get a native picker plus a free-text field (any CSS color).

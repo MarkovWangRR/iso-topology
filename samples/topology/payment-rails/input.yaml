@@ -74,7 +74,7 @@ nodes:
       # ink step of the ladder, tonal 2-stop gradient on the top +
       # layered strokes so the silhouette stays crisp on white.
       - id: risk
-        shape: diamond
+        shape: octprism
         geom: { w: 150, d: 150, h: 38 }
         label: "Risk Decision"
         icon: "iso://glyph/shield/light"

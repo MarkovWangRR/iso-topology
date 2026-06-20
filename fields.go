@@ -3,9 +3,11 @@ package isotopo
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 
+	"github.com/MarkovWangRR/iso-topology/iso25d"
 	"github.com/MarkovWangRR/iso-topology/yamledit"
 	"gopkg.in/yaml.v3"
 )
@@ -84,9 +86,9 @@ func shapeClass(s string) string {
 		return "outline"
 	case "text", "iso_text", "title":
 		return "text"
-	case "circle", "oval", "cloud", "person", "c4-person", "c4_person", "sphere":
+	case "circle", "cloud", "person", "c4-person", "c4_person":
 		return "fill"
-	default: // rectangle/box/square, prism family, hexprism, cylinder, group, …
+	default: // rectangle/box/square, triprism/hexprism/octprism, cylinder, group, …
 		return "faces"
 	}
 }
@@ -156,33 +158,34 @@ func nodeSchema(shape string) []Field {
 	class := shapeClass(shape)
 	var f []Field
 
-	// ── Content (open) ────────────────────────────────────────────────
-	content := []Field{
+	// Shape & Size (open): the node's form, preset, and footprint together.
+	f = append(f, grp("ShapeSize", false,
+		Field{Path: "shape", Label: "Shape", Desc: "Geometric form of the node", Type: "choice", Options: shapeOptions()},
+		Field{Path: "preset", Label: "Style preset", Desc: "Named style from theme.presets", Type: "text"},
+		Field{Path: "geom.w", Label: "Width", Type: "number", Inline: true},
+		Field{Path: "geom.d", Label: "Depth", Type: "number", Inline: true},
+		Field{Path: "geom.h", Label: "Height", Type: "number", Inline: true},
+	)...)
+
+	// Icon & Text (open): label text, icon, and caption typography together.
+	iconText := []Field{
 		{Path: "label", Label: "Label", Desc: "Text rendered on the node", Type: "text"},
-		{Path: "shape", Label: "Shape", Desc: "Geometric form of the node", Type: "choice", Options: shapeOptions()},
-		{Path: "preset", Label: "Style preset", Desc: "Named style from theme.presets", Type: "text"},
 	}
-	// Cloud is an outline silhouette (not a flat slab): a pasted icon floats on
-	// it, so the renderer ignores it — don't offer the field. Other "fill"
-	// shapes (circle/person) keep icons.
+	// Cloud ignores a pasted icon (outline silhouette), so skip the field there.
 	if !strings.EqualFold(strings.TrimSpace(shape), "cloud") {
-		content = append(content,
-			Field{Path: "icon", Label: "Icon", Desc: "iso://… ref, image URL, or pick a local file", Type: "icon"},
+		iconText = append(iconText,
+			Field{Path: "icon", Label: "Icon", Desc: "iso ref, image URL, or pick a local file", Type: "icon"},
 			Field{Path: "@iconColor", Label: "Icon color", Desc: "Tint for iso:// glyph/logo icons (blank = default ink)", Type: "color"},
 		)
 	}
-	f = append(f, grp("Content", false, content...)...)
-
-	// ── Size (open) ───────────────────────────────────────────────────
-	size := []Field{
-		{Path: "geom.w", Label: "Width", Type: "number", Inline: true},
-		{Path: "geom.d", Label: "Depth", Type: "number", Inline: true},
-		{Path: "geom.h", Label: "Height", Type: "number", Inline: true},
-	}
-	if strings.EqualFold(strings.TrimSpace(shape), "prism") {
-		size = append(size, Field{Path: "geom.sides", Label: "Sides", Desc: "Polygon base sides", Type: "number", Inline: true})
-	}
-	f = append(f, grp("Size", false, size...)...)
+	iconText = append(iconText,
+		Field{Path: "style.text.color", Label: "Text color", Desc: "Caption color (CSS color)", Type: "color", Inline: true},
+		Field{Path: "style.text.size", Label: "Font size", Desc: "Caption size in px", Type: "number", Inline: true},
+		Field{Path: "style.text.weight", Label: "Weight", Desc: "Font weight", Type: "choice", Options: weightOpts, Inline: true},
+		Field{Path: "style.text.family", Label: "Font family", Desc: "CSS font stack", Type: "text"},
+		Field{Path: "style.text.orient", Label: "Orientation", Desc: "iso (on-face) or screen (flat below)", Type: "choice", Options: []string{"", "iso", "screen"}},
+	)
+	f = append(f, grp("IconText", false, iconText...)...)
 
 	// ── Position (collapsed) — relative placement, fine offset, replicas.
 	// Mostly driven by drag, but exposed for precise/declarative control.
@@ -231,45 +234,34 @@ func nodeSchema(shape string) []Field {
 			Field{Path: "style.stroke.dash", Label: "Dash", Type: "choice", Options: dashOpts, Inline: true},
 		)...)
 	default: // faces — box family, prisms, cylinder, group
+		// Fill is organised BY FACE, not split into solid-vs-gradient blocks:
+		// each face has a base colour plus an optional "gradient to" (blank =
+		// solid) and direction. The base colour doubles as the gradient start,
+		// so there is one mental model per face instead of two overlapping ones.
 		f = append(f, grp("Fill", false,
-			Field{Path: "style.palette.top", Label: "Top", Type: "color", Inline: true},
-			Field{Path: "style.palette.left", Label: "Left", Type: "color", Inline: true},
-			Field{Path: "style.palette.right", Label: "Right", Type: "color", Inline: true},
-		)...)
-		f = append(f, grp("Gradients", true,
-			Field{Path: "style.palette.topGradient.from", Label: "Top from", Type: "color", Inline: true},
-			Field{Path: "style.palette.topGradient.to", Label: "Top to", Type: "color", Inline: true},
+			Field{Path: "style.palette.top", Label: "Top", Desc: "Base color (also gradient start)", Type: "color", Inline: true},
+			Field{Path: "style.palette.topGradient.to", Label: "Top grad to", Desc: "Gradient end; blank = solid", Type: "color", Inline: true},
 			Field{Path: "style.palette.topGradient.dir", Label: "Top dir", Type: "choice", Options: dirOpts, Inline: true},
-			Field{Path: "style.palette.leftGradient.from", Label: "Left from", Type: "color", Inline: true},
-			Field{Path: "style.palette.leftGradient.to", Label: "Left to", Type: "color", Inline: true},
+			Field{Path: "style.palette.left", Label: "Left", Desc: "Base color (also gradient start)", Type: "color", Inline: true},
+			Field{Path: "style.palette.leftGradient.to", Label: "Left grad to", Desc: "Gradient end; blank = solid", Type: "color", Inline: true},
 			Field{Path: "style.palette.leftGradient.dir", Label: "Left dir", Type: "choice", Options: dirOpts, Inline: true},
-			Field{Path: "style.palette.rightGradient.from", Label: "Right from", Type: "color", Inline: true},
-			Field{Path: "style.palette.rightGradient.to", Label: "Right to", Type: "color", Inline: true},
+			Field{Path: "style.palette.right", Label: "Right", Desc: "Base color (also gradient start)", Type: "color", Inline: true},
+			Field{Path: "style.palette.rightGradient.to", Label: "Right grad to", Desc: "Gradient end; blank = solid", Type: "color", Inline: true},
 			Field{Path: "style.palette.rightGradient.dir", Label: "Right dir", Type: "choice", Options: dirOpts, Inline: true},
+			Field{Path: "style.effects.faceSplit", Label: "Split faces", Desc: "Shade left/right faces independently (needs corner radius)", Type: "bool", Inline: true},
 		)...)
 		f = append(f, grp("Border", true,
 			Field{Path: "style.stroke.color", Label: "Color", Type: "color", Inline: true},
 			Field{Path: "style.stroke.width", Label: "Width", Type: "number", Inline: true},
 			Field{Path: "style.stroke.dash", Label: "Dash", Type: "choice", Options: dashOpts, Inline: true},
+			Field{Path: "style.effects.cornerRadius", Label: "Corner radius", Desc: "Rounds vertical edges", Type: "number", Inline: true},
 		)...)
 	}
-
-	// ── Label (open) — the caption every shape paints on its face. ─────
-	f = append(f, grp("Label", false,
-		Field{Path: "style.text.color", Label: "Text color", Desc: "Caption color (CSS color)", Type: "color", Inline: true},
-		Field{Path: "style.text.size", Label: "Font size", Desc: "Caption size in px", Type: "number", Inline: true},
-		Field{Path: "style.text.weight", Label: "Weight", Desc: "Font weight", Type: "choice", Options: weightOpts, Inline: true},
-		Field{Path: "style.text.family", Label: "Font family", Desc: "CSS font stack", Type: "text"},
-		Field{Path: "style.text.orient", Label: "Orientation", Desc: "iso (on-face) or screen (flat below)", Type: "choice", Options: []string{"", "iso", "screen"}},
-	)...)
 
 	// ── Effects (collapsed) — lighting, texture, transparency. Solids
 	// only; text/outline have no volume to glow, shadow or texture. ─────
 	if class == "faces" || class == "fill" {
 		eff := []Field{}
-		if class == "faces" {
-			eff = append(eff, Field{Path: "style.effects.cornerRadius", Label: "Corner radius", Desc: "Rounds vertical edges", Type: "number", Inline: true})
-		}
 		eff = append(eff,
 			Field{Path: "style.effects.opacity", Label: "Opacity", Desc: "0–1 whole-part transparency", Type: "number", Inline: true},
 			Field{Path: "style.effects.blur", Label: "Blur", Desc: "Gaussian blur px — fog/ghost", Type: "number", Inline: true},
@@ -287,6 +279,16 @@ func nodeSchema(shape string) []Field {
 		)
 		f = append(f, grp("Effects", true, eff...)...)
 	}
+	// Group order: most-used Fill / Border up front (right after Content), then
+	// geometry, label, and advanced Effects last. Stable so each group's own
+	// field order is preserved.
+	nodeGroupOrder := map[string]int{
+		"ShapeSize": 0, "IconText": 1, "Fill": 2, "Border": 3,
+		"Position": 4, "Layout": 5, "Effects": 6,
+	}
+	sort.SliceStable(f, func(i, j int) bool {
+		return nodeGroupOrder[f[i].Group] < nodeGroupOrder[f[j].Group]
+	})
 	return f
 }
 
@@ -317,6 +319,8 @@ func edgeSchema() []Field {
 		Field{Path: "stroke.color", Label: "Color", Desc: "Stroke color (CSS color)", Type: "color", Inline: true},
 		Field{Path: "stroke.width", Label: "Width", Type: "number", Inline: true},
 		Field{Path: "stroke.dash", Label: "Dash", Desc: "Solid, dashed, or dotted", Type: "choice", Options: dashOpts, Inline: true},
+		Field{Path: "stroke.gradient.from", Label: "Gradient from", Desc: "Source-end color; set both ends for a line gradient", Type: "color", Inline: true},
+		Field{Path: "stroke.gradient.to", Label: "Gradient to", Desc: "Target-end color", Type: "color", Inline: true},
 	)...)
 	out = append(out, grp("Label", true,
 		Field{Path: "label", Label: "Text", Desc: "Text rendered mid-route", Type: "text"},
@@ -381,11 +385,18 @@ func Fields(format string, src []byte, kind, id string, ci int) ([]Field, error)
 	if kind == "node" {
 		if doc, err := LoadInput(context.Background(), format, src, LayoutDagre); err == nil {
 			if eff := ResolvePartStyle(doc, id); eff != nil {
+				shape := yamledit.ReadPath(subtree, "shape")
 				for i := range fields {
 					if fields[i].Value != "" || !strings.HasPrefix(fields[i].Path, "style.") {
 						continue
 					}
 					fields[i].Eff = effValue(eff, fields[i].Path)
+					// An unset solid face on a box-family part is NOT blank on the
+					// canvas — the renderer paints iso25d.DefaultIsoBox's fill. Surface
+					// that so the swatch matches the canvas instead of reading "unset".
+					if fields[i].Eff == "" && boxFamilyShape(shape) {
+						fields[i].Eff = defaultFaceEff(fields[i].Path)
+					}
 				}
 			}
 			// Auto-sized containers (a group with no authored geom.w/d) get their
@@ -463,6 +474,38 @@ func fnum(v float64) string { return strconv.FormatFloat(v, 'f', -1, 64) }
 // to its start colour for the solid swatch. The form shows this as the
 // "inherits …" hint on inherited fields so EVERY tab reflects what the canvas
 // paints, not just the colour fields. Returns "" when nothing is set.
+// boxFamilyShape reports whether a shape renders as the box / slab family —
+// the shapes whose UNSET side faces fall back to iso25d.DefaultIsoBox's fills
+// (rectangle and its aliases, plus the group/boundary substrates, which draw
+// through the same rounded-box path). Only these get a default-face eff hint;
+// cylinders, prisms, clouds, persons etc. resolve their faces differently, so a
+// box-default hint would be wrong for them.
+func boxFamilyShape(shape string) bool {
+	switch shape {
+	case "rectangle", "square", "group", "boundary", "callout", "class", "code",
+		"document", "hierarchy", "image", "package", "page", "step",
+		"sql-table", "sql_table", "sequence-diagram", "sequence_diagram":
+		return true
+	}
+	return false
+}
+
+// defaultFaceEff returns the built-in fill the box family paints for an unset
+// solid palette face (from iso25d.DefaultIsoBox), so the editor's swatch matches
+// what the canvas actually shows instead of a grey "unset".
+func defaultFaceEff(path string) string {
+	d := iso25d.DefaultIsoBox()
+	switch path {
+	case "style.palette.top":
+		return d.TopFill
+	case "style.palette.left":
+		return d.LeftFill
+	case "style.palette.right":
+		return d.RightFill
+	}
+	return ""
+}
+
 func effValue(st *Style, path string) string {
 	if st == nil {
 		return ""

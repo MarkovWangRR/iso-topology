@@ -223,10 +223,10 @@ crawlers.
 
 ### Zero-trust edge (dark · prism family + per-face gradients)
 
-![Dark isometric zero-trust diagram — octprism firewalls, diamond policy decision, projected-hatch service deck](docs/assets/edge-security.png)
+![Dark isometric zero-trust diagram — octprism firewalls, octprism policy decision, projected-hatch service deck](docs/assets/edge-security.png)
 
 Dual octprism firewalls with per-side gradient ladders guard the
-deny/allow split: an amber diamond decides, denials sink into a
+deny/allow split: an amber octprism gate decides, denials sink into a
 triprism SIEM, allows land on a projected-hatch deck of service chips.
 Every wall color is one `style.faces` entry.
 [Source](samples/topology/edge-security/input.yaml).
@@ -240,12 +240,12 @@ the tile follows the iso plane, not the screen — under a hexprism
 scheduler and a grid of gradient-top GPU dies.
 [Source](samples/topology/inference-board/input.yaml).
 
-### Payment rails (print · diamond routing)
+### Payment rails (print · octprism routing)
 
-![Swiss-print isometric payment flow with diamond routing and hexprism gateway, one emerald gradient accent](docs/assets/payment-rails.png)
+![Swiss-print isometric payment flow with octprism routing and hexprism gateway, one emerald gradient accent](docs/assets/payment-rails.png)
 
 White canvas, ink tonal ladder, exactly one emerald 3-stop gradient —
-and the flow semantics carried by shapes: hexprism gateway, diamond
+and the flow semantics carried by shapes: hexprism gateway, octprism
 router. [Source](samples/topology/payment-rails/input.yaml).
 
 ### LLM serving platform (dark · layered flow)
@@ -339,8 +339,8 @@ Both converge on the same document model and output structure. See
 
 ## Capabilities
 
-- **23 d2 input shapes** → **14 iso primitives** (rectangle, cylinder,
-  cloud, person, hexprism, diamond, prism, …) — the iso set is what
+- **23 d2 input shapes** → **iso primitives** (rectangle, cylinder,
+  cloud, person, hexprism, octprism, …) — the iso set is what
   `capabilities.shapes` enumerates; the 23 are the d2 source names
   that map onto it
 - **Declarative positioning**: `layout: {mode: row|column|grid|ring}`
@@ -450,7 +450,7 @@ Organized by purpose — full index at [docs/README.md](docs/README.md).
 
 ## Roadmap
 
-- Pattern textures on curved shapes (cylinder / sphere sides)
+- Pattern textures on curved shapes (cylinder / circle sides)
 - Per-axis `place` gaps; `ring` layout mode
 - More domain glyph packs
 - Render-time visual lint (overlap/clipping diagnostics as JSON)

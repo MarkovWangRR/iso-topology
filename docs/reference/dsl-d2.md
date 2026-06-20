@@ -55,13 +55,12 @@ Highlights:
 | `rectangle`, `square`, `package`, `sequence_diagram`, `hierarchy` | `rectangle` | 1.0 |
 | `cylinder`, `queue`, `stored_data` | `cylinder` | 1.0 |
 | `circle` | `circle` | 1.0 |
-| `oval` | `circle` | 0.8 (flatter) |
 | `person`, `c4-person` | `person` | 1.2 (taller) |
 | `cloud` | `cloud` | 0.8 |
 | `class`, `sql_table` | `rectangle` | 1.4 (taller — shows rows on side face) |
 | `text`, `code`, `image` | low rectangle / iso_text | 0.3 |
 | `document`, `page` | flat rectangle | 0.4–0.5 |
-| `diamond`, `hexagon`, `parallelogram`, `step` | rectangle (no native polygon yet) | 0.6–0.7 |
+| `hexagon`, `step` | rectangle (no native polygon yet) | 0.6–0.7 |
 | `callout` | flat rectangle | 0.5 |
 
 Unknown d2 shape names fall back to `rectangle` with the default

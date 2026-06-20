@@ -17,7 +17,7 @@ import (
 type PrismShapeProvider struct{}
 
 func (PrismShapeProvider) Names() []string {
-	return []string{"prism", "diamond", "triprism", "hexprism", "octprism"}
+	return []string{"triprism", "hexprism", "octprism"}
 }
 
 // prismSides resolves the side count from params (set by the renderer

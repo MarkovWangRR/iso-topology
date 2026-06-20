@@ -52,6 +52,7 @@ type ConvertOpts struct {
 
 	Margin       float64
 	CornerRadius float64 // box family: clipped corner radius in local units
+	FaceSplit    bool    // rounded box: split the side band into independent left/right faces
 
 	// Drop shadow filter (v1.2). Zero color = disabled.
 	ShadowDx, ShadowDy, ShadowBlur float64
@@ -157,46 +158,12 @@ func Convert2DTo25D(shapeType string, o ConvertOpts) string {
 		}
 		return RenderIsoCustomPath(b, pathStr)
 
-	// v3.6 (C-category) — revolution bodies: dome, torus, capsule.
-	case "dome", "torus", "capsule":
-		b := DefaultIsoBox()
-		applyBox(o, &b)
-		return RenderIsoRevolve(b, shapeType)
-
-	// v3.5 (D-category) — tapered prism family: uniform top-scale.
-	case "cone", "pyramid", "frustum":
-		b := DefaultIsoBox()
-		applyBox(o, &b)
-		sides, topScale := o.Sides, o.TopScale
-		switch shapeType {
-		case "cone":
-			if sides < 3 {
-				sides = 32
-			}
-			// topScale stays 0 (apex) unless user set it explicitly.
-		case "pyramid":
-			if sides < 3 {
-				sides = 4
-			}
-			// topScale stays 0 (apex).
-		case "frustum":
-			if sides < 3 {
-				sides = 32
-			}
-			if topScale <= 0 {
-				topScale = 0.5
-			}
-		}
-		return RenderIsoTaperedPrism(b, sides, topScale)
-
 	// v3.2 (M2) — prism family: regular n-gon base × vertical extrude.
-	case "prism", "diamond", "triprism", "hexprism", "octprism":
+	case "triprism", "hexprism", "octprism":
 		b := DefaultIsoBox()
 		applyBox(o, &b)
 		sides := o.Sides
 		switch shapeType {
-		case "diamond":
-			sides = 4
 		case "triprism":
 			sides = 3
 		case "hexprism":
@@ -214,15 +181,6 @@ func Convert2DTo25D(shapeType string, o ConvertOpts) string {
 		b := DefaultIsoBox()
 		applyBox(o, &b)
 		return RenderIsoArray(b, shapeType)
-
-	// v3.11 — screen / browser-panel: upright thin panel.
-	case "screen", "browser-panel":
-		b := DefaultIsoBox()
-		applyBox(o, &b)
-		if b.Depth <= 0 {
-			b.Depth = 14
-		}
-		return RenderIsoScreen(b)
 
 	// v3.11 — rack: server rack with slot shelves.
 	case "rack":
@@ -340,6 +298,7 @@ func applyBox(o ConvertOpts, b *IsoBoxOpts) {
 	b.IconOffX = o.IconOffX
 	b.IconOffY = o.IconOffY
 	b.CornerRadius = o.CornerRadius
+	b.FaceSplit = o.FaceSplit
 	b.FaceSurfaces = o.FaceSurfaces
 	b.Blur = o.Blur
 	b.OutlineColor, b.OutlineWidth = o.OutlineColor, o.OutlineWidth

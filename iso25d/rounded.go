@@ -277,13 +277,61 @@ func RenderIsoBoxRounded(o IsoBoxOpts) string {
 			// Bottom front-arc.
 			fmt.Fprintf(&sb, `<path data-face="bot-front-wire" d="%s" fill="none" stroke="%s" stroke-width="%.2f" stroke-linejoin="round"/>`,
 				botFrontPath(p, frontIdx), escapeAttr(stroke), sw)
+			// faceSplit: the front vertical edge is a real corner in line-art too.
+			if k := frontCornerSplit(p, frontIdx); o.FaceSplit && k > 0 && k < len(frontIdx)-1 {
+				fc := frontIdx[k]
+				fmt.Fprintf(&sb, `<line data-face="front-edge-wire" x1="%.2f" y1="%.2f" x2="%.2f" y2="%.2f" stroke="%s" stroke-width="%.2f" stroke-linecap="round"/>`,
+					p[fc].topX, p[fc].topY, p[fc].botX, p[fc].botY, escapeAttr(stroke), sw)
+			}
 		}
 	} else {
 		// 1. Side wall fill (top-front-arc + right vertical + reverse bot-front-arc + left vertical).
 		if len(frontIdx) >= 2 {
-			fmt.Fprintf(&sb, `<path data-face="side" d="%s" fill="%s" stroke="none"/>`,
-				sideWallPath(p, frontIdx), escapeAttr(sideFill),
-			)
+			k := frontCornerSplit(p, frontIdx)
+			if o.FaceSplit && k > 0 && k < len(frontIdx)-1 {
+				// Opt-in per-face lighting: split the continuous band at the
+				// front vertical edge into two walls, each filled independently
+				// (LeftFill / RightFill) so the rounded cube shades like a sharp
+				// one. The wall sitting further screen-left is the left face.
+				lFill, rFill := o.LeftFill, o.RightFill
+				if lFill == "" {
+					lFill = sideFill
+				}
+				if rFill == "" {
+					rFill = sideFill
+				}
+				// Per-face GRADIENTS win over solids, mirroring the sharp box —
+				// so a gradient-lit cube (e.g. light-top→shadow-bottom walls)
+				// still splits correctly instead of falling back to a flat fill.
+				var gdefs strings.Builder
+				if g := o.LeftGradient; g != nil && strings.TrimSpace(g.From) != "" {
+					emitLinearGradient(&gdefs, "grad-left-split", g)
+					lFill = "url(#grad-left-split)"
+				}
+				if g := o.RightGradient; g != nil && strings.TrimSpace(g.From) != "" {
+					emitLinearGradient(&gdefs, "grad-right-split", g)
+					rFill = "url(#grad-right-split)"
+				}
+				if gdefs.Len() > 0 {
+					fmt.Fprintf(&sb, `<defs>%s</defs>`, gdefs.String())
+				}
+				segL := sideSubPath(p, frontIdx, 0, k)
+				segR := sideSubPath(p, frontIdx, k, len(frontIdx)-1)
+				if avgTopX(p, frontIdx, 0, k) > avgTopX(p, frontIdx, k, len(frontIdx)-1) {
+					segL, segR = segR, segL // segL is now the screen-left wall
+				}
+				fmt.Fprintf(&sb, `<path data-face="left" d="%s" fill="%s" stroke="none"/>`, segL, escapeAttr(lFill))
+				fmt.Fprintf(&sb, `<path data-face="right" d="%s" fill="%s" stroke="none"/>`, segR, escapeAttr(rFill))
+				// Front vertical edge — the seam where the two walls meet gives
+				// the cube a real corner instead of a smooth colour blend.
+				fc := frontIdx[k]
+				fmt.Fprintf(&sb, `<line data-face="front-edge" x1="%.2f" y1="%.2f" x2="%.2f" y2="%.2f" stroke="%s" stroke-width="%.2f" stroke-linecap="round"/>`,
+					p[fc].topX, p[fc].topY, p[fc].botX, p[fc].botY, escapeAttr(stroke), sw)
+			} else {
+				fmt.Fprintf(&sb, `<path data-face="side" d="%s" fill="%s" stroke="none"/>`,
+					sideWallPath(p, frontIdx), escapeAttr(sideFill),
+				)
+			}
 		}
 		// 2. Top face filled + stroked (full rounded perimeter at z=h).
 		fmt.Fprintf(&sb, `<path data-face="top" d="%s" fill="%s" stroke="%s" stroke-width="%.2f" stroke-linejoin="round"/>`,
@@ -433,6 +481,51 @@ func sideWallPath(p []roundedPr, frontIdx []int) string {
 	}
 	sb.WriteString(" Z")
 	return sb.String()
+}
+
+// frontCornerSplit returns the index within frontIdx of the front-most vertical
+// edge — the nearest corner to the viewer, where the left and right walls meet.
+// In the iso projection that's the perimeter vertex with the largest screen Y.
+func frontCornerSplit(p []roundedPr, frontIdx []int) int {
+	k := 0
+	maxY := math.Inf(-1)
+	for j, idx := range frontIdx {
+		if p[idx].topY > maxY {
+			maxY = p[idx].topY
+			k = j
+		}
+	}
+	return k
+}
+
+// sideSubPath builds a closed side-band quad over frontIdx[a..b] (inclusive):
+// top edge a→b, drop to the base at b, back along the base b→a, then close.
+func sideSubPath(p []roundedPr, frontIdx []int, a, b int) string {
+	var sb strings.Builder
+	fmt.Fprintf(&sb, "M %.2f,%.2f", p[frontIdx[a]].topX, p[frontIdx[a]].topY)
+	for j := a + 1; j <= b; j++ {
+		fmt.Fprintf(&sb, " L %.2f,%.2f", p[frontIdx[j]].topX, p[frontIdx[j]].topY)
+	}
+	fmt.Fprintf(&sb, " L %.2f,%.2f", p[frontIdx[b]].botX, p[frontIdx[b]].botY)
+	for j := b - 1; j >= a; j-- {
+		fmt.Fprintf(&sb, " L %.2f,%.2f", p[frontIdx[j]].botX, p[frontIdx[j]].botY)
+	}
+	sb.WriteString(" Z")
+	return sb.String()
+}
+
+// avgTopX is the mean screen X of the top-edge vertices over frontIdx[a..b],
+// used to decide which split wall faces screen-left.
+func avgTopX(p []roundedPr, frontIdx []int, a, b int) float64 {
+	sum, n := 0.0, 0
+	for j := a; j <= b; j++ {
+		sum += p[frontIdx[j]].topX
+		n++
+	}
+	if n == 0 {
+		return 0
+	}
+	return sum / float64(n)
 }
 
 func silhouetteSkirtPath(p []roundedPr, frontIdx []int) string {

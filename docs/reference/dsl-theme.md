@@ -32,7 +32,7 @@ A clean palette uses three values on a single hue at different
 lightness. Skip the fields you don't want to set; the theme defaults
 fill in.
 
-For shapes without three distinct faces (cylinder, sphere, cloud,
+For shapes without three distinct faces (cylinder, circle, cloud,
 person), `top` and `left`/`right` cover the lit and shadowed sides
 respectively.
 
@@ -108,7 +108,7 @@ effects:
 - `backglow` — a blurred halo behind the silhouette. ONE per scene:
   it marks "the" central element.
 - `pattern` — `hatch` or `dots` texture overlaid on box top faces,
-  cylinder top ellipses, and sphere discs.
+  cylinder top ellipses, and circle discs.
 - `wireframe: true` — line-art mode: strokes only, no fills. Pair
   with a dashed stroke for ghost volumes and floating frames;
   wireframe/none-filled parts are exempt from overlap warnings.

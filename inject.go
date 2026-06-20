@@ -11,12 +11,39 @@ package isotopo
 import (
 	"fmt"
 	"math"
-	"os"
 
 	"github.com/MarkovWangRR/iso-topology/iso25d"
 	"sort"
+	"strconv"
 	"strings"
 )
+
+// scaleDashForWidth keeps a dashed/dotted connector legible at thick strokes.
+// SVG dash lengths are absolute, so an authored "6 4" smears into a near-solid
+// band once the line is wider than its gaps. At or below a baseline width (2px —
+// where authored hairline patterns already read fine) the pattern is returned
+// byte-identical; above it, every length scales with the width so the on/off
+// rhythm survives (e.g. "6 4" at width 14 → "42 28"). Non-numeric patterns are
+// left untouched.
+func scaleDashForWidth(dash string, width float64) string {
+	factor := width / 2.0
+	if factor <= 1 {
+		return dash
+	}
+	parts := strings.Fields(dash)
+	out := make([]string, 0, len(parts))
+	for _, p := range parts {
+		v, err := strconv.ParseFloat(p, 64)
+		if err != nil {
+			return dash
+		}
+		out = append(out, strconv.FormatFloat(v*factor, 'f', -1, 64))
+	}
+	if len(out) == 0 {
+		return dash
+	}
+	return strings.Join(out, " ")
+}
 
 // partsScreenOrigin returns the (tx, ty) translation that maps world-projected
 // coords into the composite's screen space. It derives from the SAME
@@ -400,7 +427,7 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo,
 		}
 		sdx, sdy := ar.exit(effFrom[i])
 		tdx, tdy := ar.exit(effTo[i])
-		routeZ := math.Min(ar.faceMidZ(effFrom[i]), ar.faceMidZ(effTo[i]))
+		routeZ := math.Min(ar.baseZ(effFrom[i]), ar.baseZ(effTo[i]))
 		sWX, sWY = ar.refineSilhouette(effFrom[i], sWX, sWY, routeZ)
 		tWX, tWY = ar.refineSilhouette(effTo[i], tWX, tWY, routeZ)
 
@@ -459,6 +486,7 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo,
 	}
 	var segRects []screenRect
 	var placedPills []screenRect
+	var drawnLines []drawnLine
 	for ci, c := range conns {
 		stroke, width, dash := "#7A8390", 1.4, ""
 		if c.Stroke != nil {
@@ -472,7 +500,7 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo,
 		}
 		dashAttr := ""
 		if dash != "" {
-			dashAttr = fmt.Sprintf(` stroke-dasharray="%s"`, escAttr(dash))
+			dashAttr = fmt.Sprintf(` stroke-dasharray="%s"`, escAttr(scaleDashForWidth(dash, width)))
 		}
 
 		// Build the polyline waypoints in screen coords.
@@ -509,7 +537,7 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo,
 			}
 			sdx, sdy := ar.exit(effFrom[ci])
 			tdx, tdy := ar.exit(effTo[ci])
-			routeZ := math.Min(ar.faceMidZ(effFrom[ci]), ar.faceMidZ(effTo[ci]))
+			routeZ := math.Min(ar.baseZ(effFrom[ci]), ar.baseZ(effTo[ci]))
 
 			// v1.6.3 shape-aware anchor refinement: sphere/cloud
 			// silhouettes don't reach their bbox edges, so the bbox
@@ -792,25 +820,43 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo,
 		// disconnected on the top face. Trim both ends at the silhouette
 		// boundary so line + arrow terminate visibly on the entry edge.
 		if len(pts) >= 2 {
-			if tp, ok := byID[func() string { id, _ := ar.parse(effTo[ci]); return id }()]; ok && !tp.isSubstrate {
-				sil := partSilhouette(tp, tx, ty)
-				if os.Getenv("ISOTOPO_DEBUG_CLIP") != "" {
-					last := pts[len(pts)-1]
-					fmt.Fprintf(os.Stderr, "CLIP to=%s tip=(%.1f,%.1f) inside=%v sil0=(%.1f,%.1f) silN=%d\n",
-						effTo[ci], last[0], last[1], pointInConvex(last, sil), sil[0][0], sil[0][1], len(sil))
-				}
-				pts = clipRouteEnd(pts, sil, 2)
-				if os.Getenv("ISOTOPO_DEBUG_CLIP") != "" {
-					last := pts[len(pts)-1]
-					fmt.Fprintf(os.Stderr, "  after=(%.1f,%.1f)\n", last[0], last[1])
-				}
+			toID, _ := ar.parse(effTo[ci])
+			fromID, _ := ar.parse(effFrom[ci])
+			// Ground-routed connectors run UNDER the bodies, so every endpoint
+			// clips to the part's silhouette edge: the line emerges at the
+			// boundary and is occluded where it passes behind a body — that
+			// occlusion IS the 2.5D depth cue. Both ends clip (substrates too)
+			// so a line never invades a face.
+			if tp, ok := byID[toID]; ok {
+				pts = clipRouteEnd(pts, partSilhouette(tp, tx, ty), 2)
 			}
-			if sp, ok := byID[func() string { id, _ := ar.parse(effFrom[ci]); return id }()]; ok && !sp.isSubstrate {
+			if sp, ok := byID[fromID]; ok {
 				pts = clipRouteStart(pts, partSilhouette(sp, tx, ty), 1)
 			}
 		}
 		if len(pts) < 2 {
 			continue
+		}
+
+		// Coincident-line de-dup: if an earlier connector with the SAME style key
+		// traces the same polyline (every vertex within eps), reuse its exact
+		// coordinates so the two render perfectly on top of each other instead of
+		// a few px apart (which reads as one fat line). Path elements stay
+		// separate, so data-connector / Studio hit-testing is unaffected.
+		styleKey := stroke + "|" + fmt.Sprintf("%.2f", width) + "|" + dash
+		if c.Stroke != nil && c.Stroke.Gradient != nil {
+			styleKey += "|grad:" + c.Stroke.Gradient.From + ">" + c.Stroke.Gradient.To
+		}
+		matched := false
+		for _, dl := range drawnLines {
+			if dl.key == styleKey && coincidentFwd(pts, dl.pts, 4.0) {
+				pts = dl.pts
+				matched = true
+				break
+			}
+		}
+		if !matched {
+			drawnLines = append(drawnLines, drawnLine{styleKey, pts})
 		}
 
 		for _, p := range pts {
@@ -854,6 +900,18 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo,
 		// during the drag (intermediate consistency), not just on drop.
 		fromID, _ := ar.parse(c.From)
 		toID, _ := ar.parse(c.To)
+		// Connector gradient: a userSpaceOnUse linear gradient laid along the
+		// route (source endpoint -> target endpoint). Stroke then references it,
+		// so the line (and its dash segments + arrowhead) fade source->target.
+		if c.Stroke != nil && c.Stroke.Gradient != nil && c.Stroke.Gradient.From != "" && c.Stroke.Gradient.To != "" {
+			gradID := fmt.Sprintf("conn-grad-%d", ci)
+			fmt.Fprintf(&sb,
+				`<linearGradient id="%s" gradientUnits="userSpaceOnUse" x1="%.2f" y1="%.2f" x2="%.2f" y2="%.2f"><stop offset="0" stop-color="%s"/><stop offset="1" stop-color="%s"/></linearGradient>`,
+				gradID, pts[0][0], pts[0][1], pts[len(pts)-1][0], pts[len(pts)-1][1],
+				escAttr(c.Stroke.Gradient.From), escAttr(c.Stroke.Gradient.To),
+			)
+			stroke = "url(#" + gradID + ")"
+		}
 		fmt.Fprintf(&sb,
 			`<path data-connector="%d" data-from="%s" data-to="%s"%s d="%s" fill="none" stroke="%s" stroke-width="%.2f" stroke-linecap="round" stroke-linejoin="round"%s/>`,
 			ci, escAttr(fromID), escAttr(toID), routeAttr, d.String(), escAttr(stroke), width, dashAttr,
@@ -1346,6 +1404,25 @@ func segPolyEntry(a, b [2]float64, poly [][2]float64) ([2]float64, bool) {
 // final point, so the visible line (and its arrowhead) terminate ON the
 // part's silhouette instead of underneath the body. The inset pulls the
 // tip slightly outside so the triangle stays fully visible.
+type drawnLine struct {
+	key string
+	pts [][2]float64
+}
+
+// coincidentFwd reports whether two equal-length polylines are within eps at
+// every vertex, in the same direction.
+func coincidentFwd(a, b [][2]float64, eps float64) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if math.Abs(a[i][0]-b[i][0]) > eps || math.Abs(a[i][1]-b[i][1]) > eps {
+			return false
+		}
+	}
+	return true
+}
+
 func clipRouteEnd(pts [][2]float64, poly [][2]float64, inset float64) [][2]float64 {
 	if len(pts) < 2 || !pointInConvex(pts[len(pts)-1], poly) {
 		return pts

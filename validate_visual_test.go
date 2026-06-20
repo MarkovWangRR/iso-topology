@@ -30,6 +30,7 @@ func TestVisualContrast_TextLowContrast(t *testing.T) {
 					{
 						ID:    "box",
 						Shape: "rectangle",
+						Label: "Hi", // fill-vs-text contrast only applies to a labelled face
 						Style: &Style{
 							Palette: &Palette{Top: "#E0E0E0"},
 							Text:    &Text{Color: "#D0D0D0"},
