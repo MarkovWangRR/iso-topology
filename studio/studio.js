@@ -77,6 +77,7 @@ const I18N={
     saving:"Saving…", not_saved:"Not saved", saved:"Saved", wrote:"wrote", save_failed:"Save failed",
     t_autosaved:"auto-saved to the source file", updated_from_file:"Updated from file",
     no_fields:"No editable fields.", edit_node:"Edit node — ", edit_canvas:"Edit canvas & background", edit_edge:"Edit edge — ",
+    copy_from:"Copy style from", copy_pick:"Pick a node…", dd_none:"(none)", code:"Code",
     t_jump:"click to jump to this line", panel_hide:"hide editor (⌘E)", panel_show:"show editor (⌘E)",
     eff_auto:"auto", eff_inherits:"inherits", eff_default:"default", df_unset:"unset",
     opt_solid:"Solid", opt_dashed:"Dashed", opt_dotted:"Dotted", opt_none:"(none)",
@@ -117,6 +118,7 @@ const I18N={
     saving:"保存中…", not_saved:"未保存", saved:"已保存", wrote:"已写入", save_failed:"保存失败",
     t_autosaved:"已自动保存到源文件", updated_from_file:"已从文件更新",
     no_fields:"无可编辑字段。", edit_node:"编辑节点 — ", edit_canvas:"编辑画布与背景", edit_edge:"编辑连线 — ",
+    copy_from:"复制样式自", copy_pick:"选择节点…", dd_none:"(无)", code:"代码",
     t_jump:"点击跳转到该行", panel_hide:"隐藏编辑器 (⌘E)", panel_show:"显示编辑器 (⌘E)",
     eff_auto:"自动", eff_inherits:"继承", eff_default:"默认", df_unset:"未设置",
     opt_solid:"实线", opt_dashed:"虚线", opt_dotted:"点线", opt_none:"(无)",
@@ -809,6 +811,23 @@ function renderFields(fields){
   return '<div class="df-tabs"><div class="df-rail">'+tabs+'</div><div class="df-panes">'+panes+'</div></div>';
 }
 function groupBody(items){
+  // Second-level cards: consecutive fields sharing `sub` become one titled,
+  // collapsible card. Fields with no sub sit at the top of the tab, no chrome.
+  const blocks=[]; let cur=null;
+  items.forEach(f=>{
+    const sub=f.sub||'';
+    if(!cur || cur.sub!==sub){ cur={sub, collapsed:!!f.collapsed, items:[]}; blocks.push(cur); }
+    cur.items.push(f);
+  });
+  return blocks.map(b=>{
+    const body=cardInner(b.items);
+    if(!b.sub) return body;
+    return '<details class="df-card"'+(b.collapsed?'':' open')+'>'+
+      '<summary class="df-cardhead">'+esc(b.sub)+'</summary>'+
+      '<div class="df-cardbody">'+body+'</div></details>';
+  }).join('');
+}
+function cardInner(items){
   let html='', inlineBuf=[];
   const flush=()=>{ if(inlineBuf.length){ html+='<div class="df-inline">'+inlineBuf.join('')+'</div>'; inlineBuf=[]; } };
   items.forEach(f=>{
@@ -818,27 +837,107 @@ function groupBody(items){
   flush();
   return html;
 }
+function showWhenAttr(f){ return f.showWhen?' data-showwhen="'+escAttr(f.showWhen)+'"':''; }
 function rowHTML(f,id){
-  return '<div class="df-row">'+
+  return '<div class="df-row"'+showWhenAttr(f)+'>'+
     '<div class="df-labelline"><label class="df-k" for="'+id+'">'+esc(f.label)+'</label><code class="df-path">'+esc(f.key)+'</code></div>'+
     (f.desc?'<div class="df-desc">'+esc(f.desc)+'</div>':'')+
     fieldInput(f,id)+'</div>';
 }
 function cellHTML(f,id){
-  return '<div class="df-cell"><label class="df-ck" for="'+id+'" title="'+escAttr(f.key)+'">'+esc(f.label)+'</label>'+fieldInput(f,id)+'</div>';
+  return '<div class="df-cell"'+showWhenAttr(f)+'><label class="df-ck" for="'+id+'" title="'+escAttr(f.key)+'">'+esc(f.label)+'</label>'+fieldInput(f,id)+'</div>';
 }
 function fieldInput(f,id){
   const key=escAttr(f.key), orig=escAttr(f.value);
+  if(f.control==='select') return selectHTML(f,id,key,orig);
   if(f.type==='choice') return choiceHTML(f,key,orig);
   if(f.type==='color')  return colorHTML(f,id,key,orig);
   if(f.type==='icon')   return iconHTML(f,id,key,orig);
   if(f.type==='bool')   return boolHTML(f,id,key,orig);
+  if(f.control==='slider') return sliderHTML(f,id,key,orig);
   const t=f.type==='number'?'number':'text';
   // Empty field → muted placeholder of what blank means: the resolved value
   // (effWord+eff) when there is one, else the field's default/off state (empty).
   // Editable value stays empty so an untouched field keeps deferring.
   const ph=f.value?'':(f.eff?effWord(f.key)+' '+f.eff:(f.empty||''));
   return '<input type="'+t+'" id="'+id+'" data-key="'+key+'" data-orig="'+orig+'" value="'+escAttr(f.value)+'" placeholder="'+escAttr(ph)+'">';
+}
+function sliderHTML(f,id,key,orig){
+  const min=(f.min!=null?f.min:0), max=(f.max||100), step=(f.step||1);
+  const mid=(Number(min)+Number(max))/2;
+  const rv=(f.value!==''&&f.value!=null)?escAttr(f.value):mid;
+  const ph=f.value?'':(f.eff?effWord(f.key)+' '+f.eff:(f.empty||''));
+  return '<span class="df-slider">'+
+    '<input type="range" min="'+min+'" max="'+max+'" step="'+step+'" value="'+rv+'" data-slider="'+id+'">'+
+    '<input type="number" min="'+min+'" max="'+max+'" step="'+step+'" id="'+id+'" data-key="'+key+'" data-orig="'+orig+'" value="'+escAttr(f.value)+'" placeholder="'+escAttr(ph)+'" class="df-snum">'+
+    (f.unit?'<span class="df-unit">'+esc(f.unit)+'</span>':'')+
+    '</span>';
+}
+function nodeIds(){ return window.interactionModel?window.interactionModel.map(p=>p.id):[]; }
+// prependCopyFrom adds a "copy style from another node" picker at the top of the
+// node detail form. Copies shape/size + fill/border/effects (not text, icon,
+// or placement) from the chosen node into the current form.
+function prependCopyFrom(selfId){
+  const ids=nodeIds().filter(n=>n!==selfId);
+  if(!ids.length) return;
+  const bar=document.createElement('div');
+  bar.className='df-copybar';
+  bar.innerHTML='<span class="df-copylbl">'+esc(L('copy_from'))+'</span>'+ddHTML(ids,'','',null,'',L('copy_pick'));
+  bar.querySelector('.df-dd').classList.add('df-copyfrom');
+  detailFields.insertBefore(bar, detailFields.firstChild);
+}
+// insertEdgeArrow drops a "→" between the From and To dropdowns so the
+// direction (source → target) is unmistakable.
+function insertEdgeArrow(){
+  const pane=detailFields.querySelector('.df-pane');
+  if(!pane) return;
+  const inline=pane.querySelector('.df-inline');
+  if(!inline||inline.children.length<2) return;
+  const arrow=document.createElement('div');
+  arrow.className='df-arrow';
+  arrow.textContent='→';
+  inline.insertBefore(arrow, inline.children[1]);
+}
+function copyStyleFrom(srcId){
+  fetch('/api/fields?kind=node&id='+encodeURIComponent(srcId)+'&format='+encodeURIComponent(LANG)+'&uilang='+encodeURIComponent(UILANG),{method:'POST',body:srcEl.value})
+    .then(r=>r.ok?r.json():null).then(data=>{
+      if(!data) return;
+      (data.fields||[]).forEach(f=>{
+        const p=f.key;
+        const copyable=(p==='shape'||p==='preset'||p.indexOf('geom.')===0||(p.indexOf('style.')===0&&p.indexOf('style.text.')!==0));
+        if(!copyable) return;
+        const ctrl=detailFields.querySelector('[data-key="'+p+'"]');
+        if(ctrl) setCtrlVal(ctrl,f.value||'');
+      });
+    }).catch(()=>{});
+}
+function setCtrlVal(ctrl,val){
+  if(ctrl.classList&&ctrl.classList.contains('df-choice')){
+    ctrl.setAttribute('data-val',val);
+    ctrl.querySelectorAll('.df-tile').forEach(t=>t.classList.toggle('on',t.getAttribute('data-val')===val));
+  } else if(ctrl.type==='checkbox'){ ctrl.checked=(val==='true'); }
+  else {
+    ctrl.value=val;
+    // keep a paired colour swatch / range thumb in sync
+    const wrap=ctrl.closest('.df-color,.df-slider');
+    if(wrap){ const m=wrap.querySelector('input[type=color],input[type=range]'); if(m&&val) m.value=val; }
+  }
+  ctrl.dispatchEvent(new Event('input',{bubbles:true}));
+}
+// Custom dropdown — NO native <select> chrome. Renders a trigger + an absolutely
+// positioned option list, both fully CSS-styled. Value lives on data-val.
+function ddHTML(idsOrOpts, id, key, orig, cur, placeholder){
+  let opts='<div class="df-dd-opt'+(!cur?' on':'')+'" data-val="">'+esc(placeholder||'')+'</div>';
+  idsOrOpts.forEach(n=>{ opts+='<div class="df-dd-opt'+(n===cur?' on':'')+'" data-val="'+escAttr(n)+'">'+esc(n)+'</div>'; });
+  const curLabel=cur||(placeholder||'');
+  return '<div class="df-dd"'+(id?' id="'+id+'"':'')+(key?' data-key="'+key+'"':'')+(orig!=null?' data-orig="'+orig+'"':'')+' data-val="'+escAttr(cur||'')+'">'+
+    '<button type="button" class="df-dd-cur">'+esc(curLabel)+'<span class="df-dd-caret"></span></button>'+
+    '<div class="df-dd-pop">'+opts+'</div></div>';
+}
+function selectHTML(f,id,key,orig){
+  const ids=(f.options&&f.options.length)?f.options:nodeIds();
+  const cur=(f.value||'').split('.')[0]; // node part; drop any .face suffix
+  return ddHTML(ids, id, key, orig, cur, L('dd_none'));
 }
 function choiceHTML(f,key,orig){
   const opts=(f.options||[]).slice(), cur=f.value||'';
@@ -871,7 +970,7 @@ function colorHTML(f,id,key,orig){
   const hex=/^#[0-9a-fA-F]{6}$/.test(f.value)?f.value:(eff||'#cccccc');
   const ph=f.eff?(effWord(f.key)+' '+f.eff):(f.empty||L('df_unset'));
   return '<span class="df-color"><input type="color" data-sync="'+id+'" value="'+hex+'">'+
-    '<input type="text" id="'+id+'" data-key="'+key+'" data-orig="'+orig+'" value="'+escAttr(f.value)+'" placeholder="'+escAttr(ph)+'"></span>';
+    '<input type="text" id="'+id+'" data-key="'+key+'" data-eff="'+escAttr(f.eff||'')+'" data-orig="'+orig+'" value="'+escAttr(f.value)+'" placeholder="'+escAttr(ph)+'"></span>';
 }
 function iconHTML(f,id,key,orig){
   const FILE=' accept="image/svg+xml,image/png,image/jpeg,image/gif,image/webp,.svg,.png,.jpg,.jpeg,.gif,.webp"';
@@ -986,13 +1085,82 @@ function wireDetailInputs(){
   detailFields.querySelectorAll('.df-clear[data-clear]').forEach(b=>{
     b.addEventListener('click',()=>{const t=document.getElementById(b.getAttribute('data-clear')); if(t)t.value='';});
   });
+  // Sliders: drag the range, the number box follows (and vice-versa).
+  detailFields.querySelectorAll('input[type="range"][data-slider]').forEach(rg=>{
+    const t=document.getElementById(rg.getAttribute('data-slider')); if(!t) return;
+    rg.addEventListener('input',()=>{ t.value=rg.value; });
+    t.addEventListener('input',()=>{ if(t.value!=='') rg.value=t.value; });
+  });
+  // Conditional rows: show one only when its data-showwhen dependency holds
+  // ("path" has any value, or "path=val" matches exactly).
+  const cssEsc=(s)=>(window.CSS&&CSS.escape)?CSS.escape(s):s.replace(/["\\]/g,'\\$&');
+  const applyShowWhen=()=>{
+    detailFields.querySelectorAll('[data-showwhen]').forEach(el=>{
+      const cond=el.getAttribute('data-showwhen'); const eq=cond.indexOf('=');
+      const path=eq>=0?cond.slice(0,eq):cond; const want=eq>=0?cond.slice(eq+1):null;
+      const ctrl=detailFields.querySelector('[data-key="'+cssEsc(path)+'"]');
+      let v=ctrl?fieldVal(ctrl):'';
+      // presence-gated rows also count an INHERITED value (data-eff), so e.g. a
+      // face that gets its gradient from a preset still shows the direction row.
+      if(!v && ctrl && want==null) v=ctrl.getAttribute('data-eff')||'';
+      const show=want==null?(v!==''&&v!=null):(v===want);
+      el.style.display=show?'':'none';
+    });
+  };
+  detailFields.addEventListener('input',applyShowWhen);
+  detailFields.addEventListener('click',applyShowWhen);
+  applyShowWhen();
+  // Custom dropdowns (no native <select>).
+  detailFields.querySelectorAll('.df-dd').forEach(wireDropdown);
+  if(!detailFields._ddClose){
+    detailFields._ddClose=true;
+    document.addEventListener('click',e=>{ if(!(e.target.closest&&e.target.closest('.df-dd'))) detailFields.querySelectorAll('.df-dd.open').forEach(d=>d.classList.remove('open')); });
+  }
+  // copy-from dropdown: copy on pick, then reset its label.
+  const cf=detailFields.querySelector('.df-dd.df-copyfrom');
+  if(cf) cf.addEventListener('input',()=>{ const v=cf.getAttribute('data-val'); if(v){ copyStyleFrom(v); setDDVal(cf,''); } });
+  // Edge from/to must differ: grey out the option the other side picked.
+  const fromDD=detailFields.querySelector('.df-dd[data-key="from"]');
+  const toDD=detailFields.querySelector('.df-dd[data-key="to"]');
+  if(fromDD&&toDD){
+    const dv=dd=>dd.getAttribute('data-val');
+    const syncFromTo=()=>{
+      toDD.querySelectorAll('.df-dd-opt').forEach(o=>{const v=o.getAttribute('data-val'); o.classList.toggle('off', v!==''&&v===dv(fromDD));});
+      fromDD.querySelectorAll('.df-dd-opt').forEach(o=>{const v=o.getAttribute('data-val'); o.classList.toggle('off', v!==''&&v===dv(toDD));});
+    };
+    fromDD.addEventListener('input',()=>{ if(dv(toDD)&&dv(toDD)===dv(fromDD)) setDDVal(toDD,''); syncFromTo(); });
+    toDD.addEventListener('input',()=>{ if(dv(fromDD)&&dv(fromDD)===dv(toDD)) setDDVal(fromDD,''); syncFromTo(); });
+    syncFromTo();
+  }
+}
+// wireDropdown gives a custom .df-dd open/close + option-select behavior.
+function wireDropdown(dd){
+  const cur=dd.querySelector('.df-dd-cur');
+  cur.addEventListener('click',e=>{ e.stopPropagation(); const open=dd.classList.contains('open');
+    detailFields.querySelectorAll('.df-dd.open').forEach(d=>d.classList.remove('open')); if(!open) dd.classList.add('open'); });
+  dd.querySelectorAll('.df-dd-opt').forEach(o=>{
+    o.addEventListener('click',e=>{ e.stopPropagation();
+      if(o.classList.contains('off')) return; // disabled (e.g. equals the other endpoint)
+      setDDVal(dd, o.getAttribute('data-val'), o.textContent);
+      dd.classList.remove('open');
+    });
+  });
+}
+// setDDVal sets a custom dropdown's value, label, selected state, and fires input.
+function setDDVal(dd, val, label){
+  dd.setAttribute('data-val', val);
+  if(label==null){ const m=dd.querySelector('.df-dd-opt[data-val="'+(window.CSS&&CSS.escape?CSS.escape(val):val)+'"]'); label=m?m.textContent:''; }
+  const cur=dd.querySelector('.df-dd-cur'); if(cur&&cur.firstChild) cur.firstChild.nodeValue=label||'';
+  dd.querySelectorAll('.df-dd-opt').forEach(o=>o.classList.toggle('on', o.getAttribute('data-val')===val));
+  dd.dispatchEvent(new Event('input',{bubbles:true}));
 }
 // a choice tile-group exposes its value via data-val; everything else via .value
 // a checkbox carries its bool as checked→"true"/unchecked→"" (empty removes the
 // key); a choice tile-group via data-val; everything else via .value
 function fieldVal(el){
   if(el.type==='checkbox') return el.checked?'true':'';
-  return el.classList&&el.classList.contains('df-choice') ? el.getAttribute('data-val') : el.value;
+  if(el.classList&&(el.classList.contains('df-choice')||el.classList.contains('df-dd'))) return el.getAttribute('data-val');
+  return el.value;
 }
 // boolHTML renders an on/off checkbox. data-orig holds the original value so
 // applyDetail only sends it when toggled; checked → value "true", unchecked →
@@ -1023,6 +1191,8 @@ async function openDetail(t){
       detailFields.innerHTML='<div class="df-desc" style="padding:8px 0">'+L('no_fields')+'</div>';
     }else{
       detailFields.innerHTML=renderFields(fields);
+      if(t.kind==='node') prependCopyFrom(t.key);
+      if(t.kind==='edge') insertEdgeArrow();
       wireDetailInputs();
     }
     detailModal.hidden=false;
@@ -1646,7 +1816,10 @@ const sideEl=document.querySelector('.side'), splitEl=document.getElementById('s
 const toggleBtn=document.getElementById('paneltoggle');
 let panelOpen=false;
 function updateToggleIcon(){
-  toggleBtn.textContent=panelOpen?'◀':'▶';
+  // A labeled toggle, not a bare arrow: shows what it controls (the code editor)
+  // and whether it's on. "</>" glyph + word + a chevron that reflects state.
+  toggleBtn.innerHTML='<span class="pt-ico">&lt;/&gt;</span><span class="pt-txt">'+esc(L('code'))+'</span><span class="pt-chev">'+(panelOpen?'▸':'◂')+'</span>';
+  toggleBtn.classList.toggle('on',panelOpen);
   toggleBtn.title=panelOpen?L('panel_hide'):L('panel_show');
 }
 function setPanel(open,save){

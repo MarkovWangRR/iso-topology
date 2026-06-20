@@ -39,16 +39,19 @@ header .spacer{flex:1;}
 #viewport.panning{cursor:grabbing;}
 #zoomer{transform-origin:0 0;filter:drop-shadow(0 18px 30px rgba(15,23,42,.10));}
 #zoomer svg{display:block;max-width:none;}
-.exportctl{position:absolute;right:16px;top:14px;display:flex;gap:1px;
-  background:white;border:1px solid var(--border);border-radius:8px;overflow:hidden;box-shadow:var(--shadow);}
+/* top-right cluster: a download group + a clearly separated Overwrite button */
+.topctl{position:absolute;right:16px;top:14px;z-index:7;display:flex;gap:10px;align-items:center;}
+.exportctl{display:flex;gap:1px;background:white;border:1px solid var(--border);border-radius:8px;overflow:hidden;box-shadow:var(--shadow);}
 .exportctl button{border:0;border-radius:0;background:white;font:11px Inter,sans-serif;font-weight:550;
   color:#334155;padding:7px 12px;}
 .exportctl button:hover{background:var(--accent-soft);color:var(--accent-deep);}
 .exportctl button+button{border-left:1px solid var(--border);}
-/* the write-to-disk action reads as primary, distinct from the download exports */
-.exportctl #overwrite{background:var(--accent,#2596A6);color:#fff;font-weight:650;}
-.exportctl #overwrite:hover{background:var(--accent-deep,#1d7a87);color:#fff;}
-.exportctl #overwrite:disabled{background:#cbd5e1;color:#eef2f6;cursor:not-allowed;}
+/* the write-to-disk action is a standalone PRIMARY button, set apart from the
+   safe download exports so it can't be fat-fingered. */
+#overwrite{background:var(--accent,#2596A6);color:#fff;font:11px Inter,sans-serif;font-weight:650;
+  padding:7px 14px;border:0;border-radius:8px;box-shadow:var(--shadow);}
+#overwrite:hover{background:var(--accent-deep,#1d7a87);color:#fff;}
+#overwrite:disabled{background:#cbd5e1;color:#eef2f6;cursor:not-allowed;}
 .zoomctl{position:absolute;right:16px;bottom:16px;display:flex;flex-direction:column;gap:1px;
   background:white;border:1px solid var(--border);border-radius:8px;overflow:hidden;box-shadow:var(--shadow);}
 .zoomctl button{width:34px;height:32px;border:0;border-radius:0;background:white;font-size:14px;color:#334155;}
@@ -63,10 +66,13 @@ header .spacer{flex:1;}
   transition:flex-basis .2s,min-width .2s,opacity .15s;}
 .side.collapsed{flex:0 0 0!important;min-width:0!important;max-width:0!important;opacity:0;overflow:hidden;border-left:0;}
 .grid.collapsed .splitter{display:none;}
-#paneltoggle{position:absolute;right:16px;bottom:56px;z-index:7;width:28px;height:28px;padding:0;
-  border-radius:6px;display:flex;align-items:center;justify-content:center;
-  background:white;border:1px solid var(--border);box-shadow:var(--shadow);color:#475569;font-size:13px;}
+#paneltoggle{height:30px;padding:0 11px;gap:6px;
+  border-radius:7px;display:flex;align-items:center;justify-content:center;
+  background:white;border:1px solid var(--border);box-shadow:var(--shadow);color:#475569;font:600 11.5px Inter,sans-serif;}
 #paneltoggle:hover{background:var(--accent-soft);color:var(--accent-deep);border-color:var(--accent);}
+#paneltoggle.on{background:var(--accent);color:#fff;border-color:var(--accent);}
+#paneltoggle .pt-ico{font:700 11px ui-monospace,Menlo,monospace;opacity:.8;}
+#paneltoggle .pt-chev{font-size:9px;opacity:.7;}
 .toolbar{display:flex;gap:8px;align-items:center;padding:10px 14px;border-bottom:1px solid var(--border);flex-wrap:wrap;}
 button{font:12px Inter,sans-serif;font-weight:550;border:1px solid var(--border);background:white;
   color:#334155;padding:7px 13px;border-radius:6px;cursor:pointer;
@@ -206,6 +212,43 @@ circle.seg-handle:hover{r:7;opacity:1;}
 .df-color input[type=text]{flex:1;min-width:0;}
 .df-icon{display:flex;gap:7px;align-items:center;}
 .df-icon input[type=text]{flex:1;min-width:0;}
+/* second-level cards within a tab */
+.df-card{border:1px solid var(--border);border-radius:9px;background:#FCFDFE;}
+.df-card>.df-cardhead{font:600 11.5px Inter,sans-serif;color:#334155;padding:8px 11px;cursor:pointer;list-style:none;display:flex;align-items:center;gap:6px;user-select:none;}
+.df-card>.df-cardhead::-webkit-details-marker{display:none;}
+.df-card>.df-cardhead::before{content:"\25B8";font-size:9px;color:#94A3B8;transition:transform .15s;}
+.df-card[open]>.df-cardhead::before{transform:rotate(90deg);}
+.df-card>.df-cardhead:hover{color:var(--accent-deep);}
+.df-cardbody{display:flex;flex-direction:column;gap:11px;padding:2px 11px 11px;}
+/* slider control: range + compact number + unit */
+.df-slider{display:flex;gap:8px;align-items:center;min-width:0;}
+/* a slider gets 2 of the 3 inline columns: wide enough to drag, but not the
+   full-row sprawl that made it look endless. Two sliders then wrap to a row
+   each (2-col span can't share a 3-col row), so they never overlap. */
+.df-inline>.df-cell:has(.df-slider){grid-column:span 2;}
+.df-slider input[type=range]{flex:1;min-width:0;accent-color:var(--accent);}
+/* the number box is a narrow fixed companion; the id-specific rule below beats
+   the generic #detailFields input{width:100%} that was stretching it. */
+#detailFields input.df-snum{width:52px;flex:0 0 52px;text-align:right;padding-left:6px;padding-right:6px;}
+.df-unit{font:600 10px Inter,sans-serif;color:#94A3B8;flex:none;}
+.df-select{width:100%;font:13px Inter,sans-serif;padding:7px 9px;border:1px solid var(--border);border-radius:7px;background:#fff;color:#1F2433;cursor:pointer;}
+.df-select option:disabled{color:#CBD5E1;}
+.df-copybar{display:flex;align-items:center;gap:9px;padding:11px 18px;border-bottom:1px solid var(--border);background:#FAFBFC;}
+.df-copylbl{font:600 11.5px Inter,sans-serif;color:#64748B;flex:none;}
+.df-copybar .df-select,.df-copybar .df-dd{flex:1;min-width:0;}
+/* custom dropdown — replaces native <select>, fully styled */
+.df-dd{position:relative;width:100%;}
+.df-dd-cur{width:100%;display:flex;align-items:center;justify-content:space-between;gap:6px;font:13px Inter,sans-serif;padding:7px 9px;border:1px solid var(--border);border-radius:7px;background:#fff;color:#1F2433;cursor:pointer;text-align:left;}
+.df-dd-cur:hover{border-color:var(--accent);}
+.df-dd-caret{width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-top:5px solid #94A3B8;flex:none;}
+.df-dd-pop{display:none;position:absolute;z-index:30;top:calc(100% + 3px);left:0;right:0;max-height:240px;overflow-y:auto;background:#fff;border:1px solid var(--border);border-radius:8px;box-shadow:0 8px 24px rgba(15,23,42,.14);padding:4px;}
+.df-dd.open .df-dd-pop{display:block;}
+.df-dd-opt{font:13px Inter,sans-serif;padding:7px 9px;border-radius:6px;cursor:pointer;color:#1F2433;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.df-dd-opt:hover{background:var(--accent-soft);}
+.df-dd-opt.on{background:var(--accent);color:#fff;}
+.df-dd-opt.off{color:#CBD5E1;cursor:not-allowed;pointer-events:none;}
+/* direction arrow between edge From / To dropdowns */
+.df-arrow{display:flex;align-items:flex-end;justify-content:center;font-size:18px;font-weight:700;color:var(--accent);padding-bottom:6px;}
 .df-browse,.df-clear{font:600 11px Inter,sans-serif;border:1px solid var(--border);background:white;color:#475569;border-radius:7px;padding:7px 11px;cursor:pointer;white-space:nowrap;flex:none;}
 .df-browse:hover,.df-clear:hover{background:var(--accent-soft);color:var(--accent-deep);border-color:var(--accent);}
 .df-chip{font:12px ui-monospace,Menlo,monospace;color:var(--accent-deep);background:var(--accent-soft);border-radius:7px;padding:7px 10px;flex:1;}

@@ -903,12 +903,19 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo,
 		// Connector gradient: a userSpaceOnUse linear gradient laid along the
 		// route (source endpoint -> target endpoint). Stroke then references it,
 		// so the line (and its dash segments + arrowhead) fade source->target.
-		if c.Stroke != nil && c.Stroke.Gradient != nil && c.Stroke.Gradient.From != "" && c.Stroke.Gradient.To != "" {
+		if c.Stroke != nil && c.Stroke.Gradient != nil && c.Stroke.Gradient.To != "" {
+			// Gradient "to" alone is enough: the stroke color doubles as the
+			// start, so the editor offers one "stroke color + optional gradient
+			// to" model (matching node faces).
+			gfrom := c.Stroke.Gradient.From
+			if gfrom == "" {
+				gfrom = stroke
+			}
 			gradID := fmt.Sprintf("conn-grad-%d", ci)
 			fmt.Fprintf(&sb,
 				`<linearGradient id="%s" gradientUnits="userSpaceOnUse" x1="%.2f" y1="%.2f" x2="%.2f" y2="%.2f"><stop offset="0" stop-color="%s"/><stop offset="1" stop-color="%s"/></linearGradient>`,
 				gradID, pts[0][0], pts[0][1], pts[len(pts)-1][0], pts[len(pts)-1][1],
-				escAttr(c.Stroke.Gradient.From), escAttr(c.Stroke.Gradient.To),
+				escAttr(gfrom), escAttr(c.Stroke.Gradient.To),
 			)
 			stroke = "url(#" + gradID + ")"
 		}

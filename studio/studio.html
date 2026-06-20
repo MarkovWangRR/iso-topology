@@ -36,10 +36,13 @@
   <div class="stage-wrap" id="stage">
     <div id="viewport"><div id="zoomer">{{SVG}}</div></div>
     <div id="stale" class="stale" hidden data-i18n="stale">showing last good render</div>
-    <div class="exportctl">
-      <button onclick="exportSVG()" data-i18n="exp_svg" data-i18n-title="t_exp_svg" title="download exactly what the canvas shows (last good render if the source is broken)">&#8595; SVG</button>
-      <button onclick="exportPNG()" data-i18n="exp_png" data-i18n-title="t_exp_png" title="download the current render as PNG (2x)">&#8595; PNG</button>
-      <button onclick="downloadCopy()" data-i18n="exp_yaml" data-i18n-title="t_exp_yaml" title="download the current YAML source">&#8595; YAML</button>
+    <div class="topctl">
+      <button id="paneltoggle" onclick="togglePanel()" title="show / hide editor (⌘E)"></button>
+      <div class="exportctl">
+        <button onclick="exportSVG()" data-i18n="exp_svg" data-i18n-title="t_exp_svg" title="download exactly what the canvas shows (last good render if the source is broken)">&#8595; SVG</button>
+        <button onclick="exportPNG()" data-i18n="exp_png" data-i18n-title="t_exp_png" title="download the current render as PNG (2x)">&#8595; PNG</button>
+        <button onclick="downloadCopy()" data-i18n="exp_yaml" data-i18n-title="t_exp_yaml" title="download the current YAML source">&#8595; YAML</button>
+      </div>
       <button id="overwrite" onclick="overwriteFile()" data-i18n="overwrite" data-i18n-title="t_overwrite" title="OVERWRITE the original file on disk with the current editor content">&#8593; Overwrite</button>
     </div>
     <div class="zoomctl">
@@ -48,7 +51,6 @@
       <button id="zfit" onclick="fitView()" data-i18n-title="t_zoom_fit" title="fit to window (⌘0)">⤢</button>
       <button id="zpct" onclick="resetView()" data-i18n-title="t_zoom_reset" title="reset to 100%">100%</button>
     </div>
-    <button id="paneltoggle" onclick="togglePanel()" title="show / hide editor (⌘E)"></button>
   </div>
   <div class="splitter" id="split" data-i18n-title="t_splitter" title="drag to resize the editor"></div>
   <div class="side">

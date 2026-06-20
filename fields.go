@@ -50,6 +50,22 @@ type Field struct {
 	// blank means ("0", "1", "none", "auto"), so no field is ever a mystery
 	// blank box.
 	Empty string `json:"empty,omitempty"`
+	// Sub is a second-level section title WITHIN a tab (group). Fields sharing a
+	// Sub render as one titled card, so a compound object (a shadow, one face)
+	// reads as a unit instead of loose siblings. Blank = top level of the tab.
+	Sub string `json:"sub,omitempty"`
+	// ShowWhen gates visibility on another field: "path" shows this field only
+	// when that path has a non-empty value; "path=val" requires an exact value.
+	// Lets secondary params (gradient direction, shadow offset) and conditional
+	// ones (grid columns) appear only when they matter.
+	ShowWhen string `json:"showWhen,omitempty"`
+	// Control overrides the default widget for the Type: "slider" (numeric
+	// 0..max with a unit) or "segmented" (a choice rendered as a button row).
+	Control string  `json:"control,omitempty"`
+	Unit    string  `json:"unit,omitempty"`
+	Min     float64 `json:"min,omitempty"`
+	Max     float64 `json:"max,omitempty"`
+	Step    float64 `json:"step,omitempty"`
 }
 
 // nodeSchema / edgeSchema declare the editable, visually-impactful fields.
@@ -104,6 +120,36 @@ func grp(group string, collapsed bool, fs ...Field) []Field {
 	return fs
 }
 
+// sect stamps a Group + Sub (second-level card title) onto a run of fields. The
+// card renders expanded.
+func sect(group, sub string, fs ...Field) []Field {
+	for i := range fs {
+		fs[i].Group = group
+		fs[i].Sub = sub
+	}
+	return fs
+}
+
+// sectc is sect for a card that should render collapsed by default (advanced /
+// rarely-touched: effects, precise offset, repeat).
+func sectc(group, sub string, fs ...Field) []Field {
+	fs = sect(group, sub, fs...)
+	for i := range fs {
+		fs[i].Collapsed = true
+	}
+	return fs
+}
+
+// faceFill builds one face's Fill card: a base colour, an optional gradient
+// end, and a direction that only appears once a gradient end is set.
+func faceFill(sub, base, gradTo, gradDir string) []Field {
+	return sect("Fill", sub,
+		Field{Path: base, Label: "Base", Desc: "Base color (also the gradient start)", Type: "color", Inline: true},
+		Field{Path: gradTo, Label: "Gradient to", Desc: "Leave blank for a solid fill", Type: "color", Inline: true},
+		Field{Path: gradDir, Label: "Direction", Type: "choice", Options: dirOpts, ShowWhen: gradTo, Inline: true},
+	)
+}
+
 // reusable option sets for choice fields.
 var (
 	dashOpts   = []string{"", "6 4", "1 5"}                   // solid | dashed | dotted
@@ -156,135 +202,130 @@ func formLayoutContainer(s string) bool {
 // tune a knob that does nothing.
 func nodeSchema(shape string) []Field {
 	class := shapeClass(shape)
+	isCloud := strings.EqualFold(strings.TrimSpace(shape), "cloud")
 	var f []Field
 
-	// Shape & Size (open): the node's form, preset, and footprint together.
-	f = append(f, grp("ShapeSize", false,
+	// ===== Tab: Shape & Size =====
+	f = append(f, sect("ShapeSize", "",
 		Field{Path: "shape", Label: "Shape", Desc: "Geometric form of the node", Type: "choice", Options: shapeOptions()},
 		Field{Path: "preset", Label: "Style preset", Desc: "Named style from theme.presets", Type: "text"},
-		Field{Path: "geom.w", Label: "Width", Type: "number", Inline: true},
-		Field{Path: "geom.d", Label: "Depth", Type: "number", Inline: true},
-		Field{Path: "geom.h", Label: "Height", Type: "number", Inline: true},
+	)...)
+	f = append(f, sect("ShapeSize", "Size",
+		Field{Path: "geom.w", Label: "Width", Type: "number", Unit: "px", Inline: true},
+		Field{Path: "geom.d", Label: "Depth", Type: "number", Unit: "px", Inline: true},
+		Field{Path: "geom.h", Label: "Height", Type: "number", Unit: "px", Inline: true},
 	)...)
 
-	// Icon & Text (open): label text, icon, and caption typography together.
-	iconText := []Field{
-		{Path: "label", Label: "Label", Desc: "Text rendered on the node", Type: "text"},
+	// ===== Tab: Icon & Text =====
+	// Label text lives with its typography in one card; icon is its own card.
+	f = append(f, sect("IconText", "Typography",
+		Field{Path: "label", Label: "Label text", Desc: "Text rendered on the node", Type: "text"},
+		Field{Path: "style.text.color", Label: "Color", Type: "color", Inline: true},
+		Field{Path: "style.text.size", Label: "Font size", Type: "number", Unit: "px", Inline: true},
+		Field{Path: "style.text.weight", Label: "Weight", Type: "choice", Options: weightOpts, Inline: true},
+		Field{Path: "style.text.family", Label: "Font family", Type: "text"},
+		Field{Path: "style.text.orient", Label: "Placement", Desc: "On the face, or flat below", Type: "choice", Control: "segmented", Options: []string{"", "iso", "screen"}},
+	)...)
+	if !isCloud {
+		f = append(f, sect("IconText", "Icon",
+			Field{Path: "icon", Label: "Icon", Desc: "iso ref, image URL, or a local file", Type: "icon"},
+			Field{Path: "@iconColor", Label: "Icon color", Desc: "Tint for iso:// glyph/logo icons", Type: "color", Inline: true},
+		)...)
 	}
-	// Cloud ignores a pasted icon (outline silhouette), so skip the field there.
-	if !strings.EqualFold(strings.TrimSpace(shape), "cloud") {
-		iconText = append(iconText,
-			Field{Path: "icon", Label: "Icon", Desc: "iso ref, image URL, or pick a local file", Type: "icon"},
-			Field{Path: "@iconColor", Label: "Icon color", Desc: "Tint for iso:// glyph/logo icons (blank = default ink)", Type: "color"},
-		)
-	}
-	iconText = append(iconText,
-		Field{Path: "style.text.color", Label: "Text color", Desc: "Caption color (CSS color)", Type: "color", Inline: true},
-		Field{Path: "style.text.size", Label: "Font size", Desc: "Caption size in px", Type: "number", Inline: true},
-		Field{Path: "style.text.weight", Label: "Weight", Desc: "Font weight", Type: "choice", Options: weightOpts, Inline: true},
-		Field{Path: "style.text.family", Label: "Font family", Desc: "CSS font stack", Type: "text"},
-		Field{Path: "style.text.orient", Label: "Orientation", Desc: "iso (on-face) or screen (flat below)", Type: "choice", Options: []string{"", "iso", "screen"}},
-	)
-	f = append(f, grp("IconText", false, iconText...)...)
 
-	// ── Position (collapsed) — relative placement, fine offset, replicas.
-	// Mostly driven by drag, but exposed for precise/declarative control.
-	f = append(f, grp("Position", true,
+	// ===== Tabs: Fill + Border (shape-class dependent) =====
+	switch class {
+	case "outline": // boundary
+		f = append(f, sect("Border", "",
+			Field{Path: "style.stroke.color", Label: "Color", Desc: "Outline color (CSS color)", Type: "color", Inline: true},
+			Field{Path: "style.stroke.width", Label: "Width", Type: "number", Unit: "px", Inline: true},
+			Field{Path: "style.stroke.dash", Label: "Style", Type: "choice", Options: dashOpts, Inline: true},
+		)...)
+	case "text":
+		// label IS the element; styled in Icon & Text
+	case "fill": // circle / cloud / person
+		f = append(f, sect("Fill", "",
+			Field{Path: "style.palette.top", Label: "Fill color", Desc: "Surface fill (CSS color)", Type: "color"},
+		)...)
+		f = append(f, sect("Border", "",
+			Field{Path: "style.stroke.color", Label: "Color", Type: "color", Inline: true},
+			Field{Path: "style.stroke.width", Label: "Width", Type: "number", Unit: "px", Inline: true},
+			Field{Path: "style.stroke.dash", Label: "Style", Type: "choice", Options: dashOpts, Inline: true},
+		)...)
+	default: // faces — one card per visible face, in the Fill tab
+		f = append(f, faceFill("Top face", "style.palette.top", "style.palette.topGradient.to", "style.palette.topGradient.dir")...)
+		f = append(f, faceFill("Left face", "style.palette.left", "style.palette.leftGradient.to", "style.palette.leftGradient.dir")...)
+		f = append(f, faceFill("Right face", "style.palette.right", "style.palette.rightGradient.to", "style.palette.rightGradient.dir")...)
+		f = append(f, sect("Fill", "",
+			Field{Path: "style.effects.faceSplit", Label: "Split left / right faces", Desc: "Shade the two side faces independently (needs corner radius)", Type: "bool", ShowWhen: "style.effects.cornerRadius"},
+		)...)
+		f = append(f, sect("Border", "",
+			Field{Path: "style.stroke.color", Label: "Color", Type: "color", Inline: true},
+			Field{Path: "style.stroke.width", Label: "Width", Type: "number", Unit: "px", Inline: true},
+			Field{Path: "style.stroke.dash", Label: "Style", Type: "choice", Options: dashOpts, Inline: true},
+			Field{Path: "style.effects.cornerRadius", Label: "Corner radius", Desc: "Rounds the vertical edges", Type: "number", Control: "slider", Unit: "px", Min: 0, Max: 40, Step: 1, Inline: true},
+		)...)
+	}
+
+	// ===== Tab: Effects (shadow & texture) =====
+	if class == "faces" || class == "fill" {
+		f = append(f, sect("Effects", "Light & blur",
+			Field{Path: "style.effects.opacity", Label: "Opacity", Type: "number", Control: "slider", Min: 0, Max: 1, Step: 0.05, Inline: true},
+			Field{Path: "style.effects.blur", Label: "Blur", Desc: "Fog / ghost", Type: "number", Control: "slider", Unit: "px", Min: 0, Max: 20, Step: 1, Inline: true},
+		)...)
+		f = append(f, sectc("Effects", "Drop shadow",
+			Field{Path: "style.effects.dropShadow.color", Label: "Color", Desc: "Drop shadow under the silhouette", Type: "color", Inline: true},
+			Field{Path: "style.effects.dropShadow.dx", Label: "X", Type: "number", Unit: "px", ShowWhen: "style.effects.dropShadow.color", Inline: true},
+			Field{Path: "style.effects.dropShadow.dy", Label: "Y", Type: "number", Unit: "px", ShowWhen: "style.effects.dropShadow.color", Inline: true},
+			Field{Path: "style.effects.dropShadow.blur", Label: "Blur", Type: "number", Unit: "px", ShowWhen: "style.effects.dropShadow.color", Inline: true},
+		)...)
+		f = append(f, sectc("Effects", "Glow",
+			Field{Path: "style.effects.backglow.color", Label: "Color", Desc: "Soft halo behind the part", Type: "color", Inline: true},
+			Field{Path: "style.effects.backglow.radius", Label: "Radius", Type: "number", Unit: "px", ShowWhen: "style.effects.backglow.color", Inline: true},
+			Field{Path: "style.effects.backglow.opacity", Label: "Opacity", Type: "number", Control: "slider", Min: 0, Max: 1, Step: 0.05, ShowWhen: "style.effects.backglow.color", Inline: true},
+		)...)
+		f = append(f, sectc("Effects", "Texture",
+			Field{Path: "style.effects.pattern.kind", Label: "Texture", Desc: "Top-face texture", Type: "choice", Options: []string{"", "hatch", "dots", "grid"}, Inline: true},
+			Field{Path: "style.effects.pattern.color", Label: "Color", Type: "color", ShowWhen: "style.effects.pattern.kind", Inline: true},
+			Field{Path: "style.effects.pattern.spacing", Label: "Spacing", Type: "number", Unit: "px", ShowWhen: "style.effects.pattern.kind", Inline: true},
+			Field{Path: "style.effects.pattern.angle", Label: "Angle", Desc: "Degrees (hatch)", Type: "number", Unit: "deg", ShowWhen: "style.effects.pattern.kind", Inline: true},
+		)...)
+	}
+
+	// ===== Tab: Position =====
+	f = append(f, sect("Position", "Relative placement",
 		Field{Path: "place.rightOf", Label: "Right of", Desc: "Sibling id to sit to the right of", Type: "text", Inline: true},
 		Field{Path: "place.leftOf", Label: "Left of", Type: "text", Inline: true},
 		Field{Path: "place.above", Label: "Above", Type: "text", Inline: true},
 		Field{Path: "place.behind", Label: "Behind", Type: "text", Inline: true},
 		Field{Path: "place.inFrontOf", Label: "In front of", Type: "text", Inline: true},
-		Field{Path: "place.gap", Label: "Place gap", Desc: "Gap in cells", Type: "number", Inline: true},
-		Field{Path: "offset.wx", Label: "Offset X", Desc: "World-space fine-tune", Type: "number", Inline: true},
-		Field{Path: "offset.wy", Label: "Offset Y", Type: "number", Inline: true},
-		Field{Path: "offset.wz", Label: "Offset Z", Desc: "Lift (the axis the solver never sets)", Type: "number", Inline: true},
-		Field{Path: "stack.count", Label: "Stack count", Desc: "Replica layers (1 = none)", Type: "number", Inline: true},
-		Field{Path: "stack.gap", Label: "Stack gap", Desc: "Z-step between replicas", Type: "number", Inline: true},
+		Field{Path: "place.gap", Label: "Gap", Desc: "Gap in cells", Type: "number", Inline: true},
+	)...)
+	f = append(f, sectc("Position", "Precise offset",
+		Field{Path: "offset.wx", Label: "X", Desc: "World-space fine-tune", Type: "number", Inline: true},
+		Field{Path: "offset.wy", Label: "Y", Type: "number", Inline: true},
+		Field{Path: "offset.wz", Label: "Z lift", Desc: "Lift off the ground plane", Type: "number", Inline: true},
+	)...)
+	f = append(f, sectc("Position", "Repeat",
+		Field{Path: "stack.count", Label: "Copies", Desc: "Replica layers (1 = none)", Type: "number", Inline: true},
+		Field{Path: "stack.gap", Label: "Gap", Desc: "Z-step between replicas", Type: "number", Inline: true},
 	)...)
 
-	// ── Layout (collapsed) — only for containers that arrange children. ─
+	// ===== Tab: Layout (containers only) =====
 	if formLayoutContainer(shape) {
-		f = append(f, grp("Layout", true,
-			Field{Path: "layout.mode", Label: "Mode", Desc: "Auto-arrange children", Type: "choice",
-				Options: []string{"", "row", "column", "grid", "ring", "auto"}},
-			Field{Path: "layout.gap", Label: "Gap", Desc: "Spacing between children, cells", Type: "number", Inline: true},
-			Field{Path: "layout.cols", Label: "Columns", Desc: "Grid mode only", Type: "number", Inline: true},
-			Field{Path: "layout.padding", Label: "Padding", Desc: "Inner margin, cells", Type: "number", Inline: true},
-			Field{Path: "layout.align", Label: "Align", Desc: "Cross-axis alignment", Type: "choice", Options: alignOpts},
+		f = append(f, sect("Layout", "",
+			Field{Path: "layout.mode", Label: "Mode", Desc: "Auto-arrange children", Type: "choice", Options: []string{"", "row", "column", "grid", "ring", "auto"}},
+			Field{Path: "layout.gap", Label: "Child gap", Desc: "Spacing between children, cells", Type: "number", ShowWhen: "layout.mode", Inline: true},
+			Field{Path: "layout.cols", Label: "Columns", Desc: "Grid mode only", Type: "number", ShowWhen: "layout.mode=grid", Inline: true},
+			Field{Path: "layout.padding", Label: "Padding", Desc: "Inner margin, cells", Type: "number", ShowWhen: "layout.mode", Inline: true},
+			Field{Path: "layout.align", Label: "Align", Desc: "Cross-axis alignment", Type: "choice", Options: alignOpts, ShowWhen: "layout.mode", Inline: true},
 		)...)
 	}
 
-	// ── Fill / Gradients / Border — shape-class dependent ──────────────
-	switch class {
-	case "outline": // boundary — dashed region, border only
-		f = append(f, grp("Border", false,
-			Field{Path: "style.stroke.color", Label: "Border color", Desc: "Outline color (CSS color)", Type: "color"},
-			Field{Path: "style.stroke.width", Label: "Border width", Type: "number", Inline: true},
-			Field{Path: "style.stroke.dash", Label: "Border style", Desc: "Solid, dashed, or dotted", Type: "choice", Options: dashOpts, Inline: true},
-		)...)
-	case "text": // iso_text — no body; label IS the element (handled in Label below)
-	case "fill": // circle / cloud / person — single surface colour
-		f = append(f, grp("Fill", false,
-			Field{Path: "style.palette.top", Label: "Fill color", Desc: "Surface fill (CSS color)", Type: "color"},
-		)...)
-		f = append(f, grp("Border", true,
-			Field{Path: "style.stroke.color", Label: "Color", Type: "color", Inline: true},
-			Field{Path: "style.stroke.width", Label: "Width", Type: "number", Inline: true},
-			Field{Path: "style.stroke.dash", Label: "Dash", Type: "choice", Options: dashOpts, Inline: true},
-		)...)
-	default: // faces — box family, prisms, cylinder, group
-		// Fill is organised BY FACE, not split into solid-vs-gradient blocks:
-		// each face has a base colour plus an optional "gradient to" (blank =
-		// solid) and direction. The base colour doubles as the gradient start,
-		// so there is one mental model per face instead of two overlapping ones.
-		f = append(f, grp("Fill", false,
-			Field{Path: "style.palette.top", Label: "Top", Desc: "Base color (also gradient start)", Type: "color", Inline: true},
-			Field{Path: "style.palette.topGradient.to", Label: "Top grad to", Desc: "Gradient end; blank = solid", Type: "color", Inline: true},
-			Field{Path: "style.palette.topGradient.dir", Label: "Top dir", Type: "choice", Options: dirOpts, Inline: true},
-			Field{Path: "style.palette.left", Label: "Left", Desc: "Base color (also gradient start)", Type: "color", Inline: true},
-			Field{Path: "style.palette.leftGradient.to", Label: "Left grad to", Desc: "Gradient end; blank = solid", Type: "color", Inline: true},
-			Field{Path: "style.palette.leftGradient.dir", Label: "Left dir", Type: "choice", Options: dirOpts, Inline: true},
-			Field{Path: "style.palette.right", Label: "Right", Desc: "Base color (also gradient start)", Type: "color", Inline: true},
-			Field{Path: "style.palette.rightGradient.to", Label: "Right grad to", Desc: "Gradient end; blank = solid", Type: "color", Inline: true},
-			Field{Path: "style.palette.rightGradient.dir", Label: "Right dir", Type: "choice", Options: dirOpts, Inline: true},
-			Field{Path: "style.effects.faceSplit", Label: "Split faces", Desc: "Shade left/right faces independently (needs corner radius)", Type: "bool", Inline: true},
-		)...)
-		f = append(f, grp("Border", true,
-			Field{Path: "style.stroke.color", Label: "Color", Type: "color", Inline: true},
-			Field{Path: "style.stroke.width", Label: "Width", Type: "number", Inline: true},
-			Field{Path: "style.stroke.dash", Label: "Dash", Type: "choice", Options: dashOpts, Inline: true},
-			Field{Path: "style.effects.cornerRadius", Label: "Corner radius", Desc: "Rounds vertical edges", Type: "number", Inline: true},
-		)...)
-	}
-
-	// ── Effects (collapsed) — lighting, texture, transparency. Solids
-	// only; text/outline have no volume to glow, shadow or texture. ─────
-	if class == "faces" || class == "fill" {
-		eff := []Field{}
-		eff = append(eff,
-			Field{Path: "style.effects.opacity", Label: "Opacity", Desc: "0–1 whole-part transparency", Type: "number", Inline: true},
-			Field{Path: "style.effects.blur", Label: "Blur", Desc: "Gaussian blur px — fog/ghost", Type: "number", Inline: true},
-			Field{Path: "style.effects.dropShadow.color", Label: "Shadow color", Desc: "Drop shadow under the silhouette", Type: "color", Inline: true},
-			Field{Path: "style.effects.dropShadow.dx", Label: "Shadow dx", Type: "number", Inline: true},
-			Field{Path: "style.effects.dropShadow.dy", Label: "Shadow dy", Type: "number", Inline: true},
-			Field{Path: "style.effects.dropShadow.blur", Label: "Shadow blur", Type: "number", Inline: true},
-			Field{Path: "style.effects.backglow.color", Label: "Glow color", Desc: "Soft halo behind the part", Type: "color", Inline: true},
-			Field{Path: "style.effects.backglow.radius", Label: "Glow radius", Type: "number", Inline: true},
-			Field{Path: "style.effects.backglow.opacity", Label: "Glow opacity", Type: "number", Inline: true},
-			Field{Path: "style.effects.pattern.kind", Label: "Pattern", Desc: "Top-face texture", Type: "choice", Options: []string{"", "hatch", "dots", "grid"}, Inline: true},
-			Field{Path: "style.effects.pattern.color", Label: "Pattern color", Type: "color", Inline: true},
-			Field{Path: "style.effects.pattern.spacing", Label: "Pattern spacing", Type: "number", Inline: true},
-			Field{Path: "style.effects.pattern.angle", Label: "Pattern angle", Desc: "Degrees (hatch)", Type: "number", Inline: true},
-		)
-		f = append(f, grp("Effects", true, eff...)...)
-	}
-	// Group order: most-used Fill / Border up front (right after Content), then
-	// geometry, label, and advanced Effects last. Stable so each group's own
-	// field order is preserved.
+	// Tab order.
 	nodeGroupOrder := map[string]int{
 		"ShapeSize": 0, "IconText": 1, "Fill": 2, "Border": 3,
-		"Position": 4, "Layout": 5, "Effects": 6,
+		"Effects": 4, "Position": 5, "Layout": 6,
 	}
 	sort.SliceStable(f, func(i, j int) bool {
 		return nodeGroupOrder[f[i].Group] < nodeGroupOrder[f[j].Group]
@@ -306,35 +347,34 @@ func canvasSchema() []Field {
 }
 
 func edgeSchema() []Field {
-	out := grp("Connection", false,
-		Field{Path: "from", Label: "From", Desc: "Source anchor — node id or node.face", Type: "text"},
-		Field{Path: "to", Label: "To", Desc: "Target anchor — node id or node.face", Type: "text"},
+	// Two tabs only — an edge has little to configure, so cards (not tabs) carry
+	// the second level. Connection = who + how it routes; Style = how it looks.
+	out := sect("Connection", "Endpoints",
+		Field{Path: "from", Label: "From", Desc: "Source node", Type: "choice", Control: "select", Inline: true},
+		Field{Path: "to", Label: "To", Desc: "Target node", Type: "choice", Control: "select", Inline: true},
 	)
-	out = append(out, grp("Routing", false,
+	out = append(out, sect("Connection", "Routing",
 		Field{Path: "routing", Label: "Routing", Desc: "Path style between endpoints", Type: "choice", Options: []string{"orthogonal", "straight", "bezier"}},
 		Field{Path: "arrow", Label: "Arrowhead", Desc: "Marker at the target end", Type: "choice", Options: []string{"none", "triangle"}, Inline: true},
-		Field{Path: "elbow", Label: "Elbow bias", Desc: "Orthogonal turn order", Type: "choice", Options: []string{"", "xFirst", "yFirst"}, Inline: true},
+		Field{Path: "elbow", Label: "Elbow bias", Desc: "Turn order (right-angle routes only)", Type: "choice", Options: []string{"", "xFirst", "yFirst"}, Inline: true, ShowWhen: "routing=orthogonal"},
 	)...)
-	out = append(out, grp("Line", false,
+	out = append(out, sect("Style", "Stroke",
 		Field{Path: "stroke.color", Label: "Color", Desc: "Stroke color (CSS color)", Type: "color", Inline: true},
-		Field{Path: "stroke.width", Label: "Width", Type: "number", Inline: true},
-		Field{Path: "stroke.dash", Label: "Dash", Desc: "Solid, dashed, or dotted", Type: "choice", Options: dashOpts, Inline: true},
-		Field{Path: "stroke.gradient.from", Label: "Gradient from", Desc: "Source-end color; set both ends for a line gradient", Type: "color", Inline: true},
-		Field{Path: "stroke.gradient.to", Label: "Gradient to", Desc: "Target-end color", Type: "color", Inline: true},
+		Field{Path: "stroke.width", Label: "Width", Type: "number", Control: "slider", Unit: "px", Min: 0, Max: 12, Step: 0.5, Inline: true},
+		Field{Path: "stroke.dash", Label: "Style", Desc: "Solid, dashed, or dotted", Type: "choice", Options: dashOpts},
 	)...)
-	out = append(out, grp("Label", true,
+	out = append(out, sectc("Style", "Gradient",
+		Field{Path: "stroke.gradient.to", Label: "Gradient to", Desc: "Optional; fades from the stroke color to this", Type: "color", Inline: true},
+	)...)
+	out = append(out, sectc("Style", "Text",
 		Field{Path: "label", Label: "Text", Desc: "Text rendered mid-route", Type: "text"},
 		Field{Path: "labelColor", Label: "Text color", Type: "color", Inline: true},
 		Field{Path: "labelBg", Label: "Background", Type: "color", Inline: true},
-		Field{Path: "labelFontSize", Label: "Font size", Type: "number", Inline: true},
+		Field{Path: "labelFontSize", Label: "Font size", Type: "number", Unit: "px", Inline: true},
 	)...)
 	return out
 }
 
-// Fields returns the editable schema for one element (kind ∈ node|edge|canvas)
-// with each field's current value, effective-value hint, and empty placeholder
-// filled from the DSL. It is the contract behind Studio's /api/fields, lifted
-// into the public library so a render service or a WASM build can produce the
 // same detail form. Stateless: a pure function of (format, src, kind, id, ci).
 func Fields(format string, src []byte, kind, id string, ci int) ([]Field, error) {
 	var root map[string]interface{}

@@ -13,6 +13,8 @@ var fieldGroupZH = map[string]string{
 	"Content":    "内容",
 	"ShapeSize":  "形状与大小",
 	"IconText":   "图标与文字",
+	"Appearance": "外观",
+	"Arrange":    "排布",
 	"Size":       "尺寸",
 	"Position":   "位置",
 	"Layout":     "布局",
@@ -23,11 +25,54 @@ var fieldGroupZH = map[string]string{
 	"Effects":    "阴影和纹理",
 	"Background": "背景",
 	"Connection": "连接",
+	"Style":      "样式",
 	"Routing":    "走线",
 	"Line":       "线条",
 }
 
+// Second-level card titles (Field.Sub).
+var fieldSubZH = map[string]string{
+	"Size":               "尺寸",
+	"Label":              "标签",
+	"Icon":               "图标",
+	"Typography":         "文字",
+	"Fill":               "填充",
+	"Endpoints":          "端点",
+	"Routing":            "走线",
+	"Text":               "文字",
+	"Stroke":             "描边",
+	"Gradient":           "渐变",
+	"Top face":           "顶面",
+	"Left face":          "左面",
+	"Right face":         "右面",
+	"Border":             "边框",
+	"Shape detail":       "形态细化",
+	"Light & blur":       "透明与模糊",
+	"Drop shadow":        "投影",
+	"Glow":               "辉光",
+	"Texture":            "纹理",
+	"Relative placement": "相对放置",
+	"Precise offset":     "精确偏移",
+	"Repeat":             "重复",
+	"Container layout":   "容器布局",
+}
+
 var fieldLabelZH = map[string]string{
+	"Base":                     "底色",
+	"Direction":                "方向(可选)",
+	"Label text":               "标签文字",
+	"Placement":                "贴面方式",
+	"Style":                    "样式",
+	"Split left / right faces": "左右面分离着色",
+	"X":                        "X",
+	"Y":                        "Y",
+	"Z lift":                   "Z 抬升",
+	"Radius":                   "半径",
+	"Spacing":                  "间距",
+	"Angle":                    "角度",
+	"Texture":                  "纹理",
+	"Copies":                   "副本数",
+	"Child gap":                "子项间距",
 	"Label":         "标签",
 	"Shape":         "形状",
 	"Style preset":  "样式预设",
@@ -75,7 +120,7 @@ var fieldLabelZH = map[string]string{
 	"Right grad to": "右面 渐变到",
 	"Split faces":   "拆分面",
 	"Gradient from": "渐变 起点",
-	"Gradient to":   "渐变 终点",
+	"Gradient to":   "渐变终点(可选)",
 	"Text color":    "文字颜色",
 	"Font size":     "字号",
 	"Weight":        "字重",
@@ -98,8 +143,8 @@ var fieldLabelZH = map[string]string{
 	"Grid pattern":  "网格图案",
 	"Grid color":    "网格颜色",
 	"Grid step":     "网格步长",
-	"From":          "起点",
-	"To":            "终点",
+	"From":          "起点(源)",
+	"To":            "终点(目标)",
 	"Routing":       "走线方式",
 	"Arrowhead":     "箭头",
 	"Elbow bias":    "折线方向",
@@ -158,15 +203,30 @@ var fieldDescZH = map[string]string{
 	"Text rendered mid-route":                         "显示在连线中部的文字",
 }
 
-// LocalizeFields returns a copy of fs with Group/Label/Desc translated for the
-// given Studio UI language. lang=="zh" translates; any other value (incl. "en"
-// and "") returns fs unchanged. The input slice and its Fields are not mutated.
+// fieldGroupEN tidies camelCase group keys into friendly English titles, so the
+// English UI never shows a raw key like "ShapeSize". Keys that are already
+// human-readable (Appearance, Arrange) need no entry.
+var fieldGroupEN = map[string]string{
+	"ShapeSize": "Shape & Size",
+	"IconText":  "Icon & Text",
+}
+
+// LocalizeFields returns a copy of fs with the visible copy localized for the
+// Studio UI language. lang=="zh" translates everything; otherwise the English
+// group keys are tidied into friendly titles. The input is not mutated.
 func LocalizeFields(fs []Field, lang string) []Field {
-	if lang != "zh" || len(fs) == 0 {
+	if len(fs) == 0 {
 		return fs
 	}
 	out := make([]Field, len(fs))
 	for i, f := range fs { // f is a copy — safe to edit
+		if lang != "zh" {
+			if v, ok := fieldGroupEN[f.Group]; ok {
+				f.Group = v
+			}
+			out[i] = f
+			continue
+		}
 		if v, ok := fieldGroupZH[f.Group]; ok {
 			f.Group = v
 		}
@@ -175,6 +235,9 @@ func LocalizeFields(fs []Field, lang string) []Field {
 		}
 		if v, ok := fieldDescZH[f.Desc]; ok {
 			f.Desc = v
+		}
+		if v, ok := fieldSubZH[f.Sub]; ok {
+			f.Sub = v
 		}
 		out[i] = f
 	}
