@@ -106,6 +106,13 @@ and `ghost` or `pedestal`.
 
 ## Depth tricks
 
+> These tricks are for **decorative** elements — ghosts, texture
+> panels, pedestals, backdrops — that carry **no connectors**.
+> Functional nodes that are wired together must share one ground
+> plane (tier): give a whole tier a single `wz`, never scatter peer
+> nodes at different heights, or their orthogonal connectors will
+> sprout vertical drop segments. Elevate by tier, not per node.
+
 - **Texture panel**: a large thin tile with
   `pattern: {kind: dots}` floating `behind` the hero adds depth for
   one part's worth of YAML (see llm-serving's mesh panel).

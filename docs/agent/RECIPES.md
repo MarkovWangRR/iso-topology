@@ -229,6 +229,29 @@ isotopo render --layout elk scene.d2 ./out
 
 ## Annotations & connectors
 
+> **Connectors + elevation:** `above` / `wz` is for decorative parts
+> with no wiring. If a stacked part needs a connector, the rule below
+> (tiers) applies — keep it coplanar with what it links to.
+
+### I want a multi-tier architecture (gateway → service → data)
+
+Group each tier and give the whole tier ONE `wz`, so connectors
+inside a tier stay flat 2D and only tier→tier links cross planes —
+that vertical drop then reads as a deliberate cross-layer call:
+
+```yaml
+parts:
+  - {id: edge,    shape: group, offset: {wz: 160}, parts: [ ... ]}   # all L7 nodes share wz 160
+  - {id: service, shape: group, offset: {wz: 80},  parts: [ ... ]}   # all service nodes share wz 80
+  - {id: data,    shape: group, offset: {wz: 0},   parts: [ ... ]}   # data tier on the ground
+connectors:
+  - {from: edge.gw, to: service.api, routing: orthogonal}   # cross-tier: shows a riser, intentional
+  - {from: service.api, to: service.cache, routing: orthogonal}  # intra-tier: flat L
+```
+
+Never give two peer nodes in the SAME tier different `wz` — that
+produces a riser with no semantic meaning.
+
 ### I want a labeled callout pinned to a part
 
 Document-level `annotations:` block:
@@ -264,6 +287,13 @@ connectors:
 Orthogonal paths ride the iso ground axes — every segment projects to
 exactly ±30°, in register with `canvas.grid: iso`. **Use this for
 architecture flows**; the default `straight` cuts across the grid.
+
+**Golden rule for picking endpoints: connect nodes at the SAME height
+(wz/tier).** Same-height pairs route as flat, clean 2D L-shapes. When
+several nodes could be the source or target, prefer the coplanar one.
+Only span heights for a deliberate cross-tier link — that renders a
+vertical drop segment, which should be intentional, never an accident
+of mismatched `wz`.
 
 ### I want an async / replication link
 

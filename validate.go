@@ -497,6 +497,7 @@ func Validate(doc *Document) []Issue {
 	issues = append(issues, VisualContrastIssues(doc)...)
 	issues = append(issues, labelIssues(doc)...)
 	issues = append(issues, outDegreeIssues(doc)...)
+	issues = append(issues, connectorTierIssues(doc)...)
 	issues = append(issues, nestingIssues(doc)...)
 	issues = append(issues, faceSplitIssues(doc)...)
 

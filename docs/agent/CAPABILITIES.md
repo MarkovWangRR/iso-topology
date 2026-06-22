@@ -117,19 +117,19 @@ Screen-space callout pinned to a composite part. Multi-line text is supported vi
 
 **Syntax:** `{from: <part-id>, to: <part-id>, routing: straight|orthogonal|bezier, arrow: none|triangle, label: "…"}`
 
-Directed line between two parts, optionally labeled and orthogonal-routed.
+Directed line between two parts, optionally labeled and orthogonal-routed. Coplanarity contract: the two endpoints should share the same base height (wz / tier) — orthogonal connectors hug the ground plane, so same-tier links render as clean 2D L-shapes. Connecting endpoints at DIFFERENT heights forces a vertical drop segment (riser); do that only to express a deliberate cross-tier call (e.g. gateway layer → data layer), never as a side effect of giving peer nodes different wz.
 
 | Field | Meaning |
 |---|---|
 | `arrow` | none = no head; triangle = filled arrowhead at the dst |
 | `bend` | v4.4 — {wx, wy} world offset on the route's interior so a Studio edge-drag shifts the line while both endpoints stay docked |
 | `elbow` | v3.1 — orthogonal elbow bias: xFirst | yFirst (default: the axis the source face exits along) |
-| `from` | source part id; "id.anchor" picks a specific face-centre (e.g. central.right-mid). Bare ids auto-pick the face FACING the other endpoint. |
+| `from` | source part id; "id.anchor" picks a specific face-centre (e.g. central.right-mid). Bare ids auto-pick the face FACING the other endpoint. STRONGLY PREFER a target at the SAME height (wz/tier) as this source — same-height pairs route as clean flat 2D lines; pick the coplanar candidate when several would work. |
 | `labelBg` | pill background (default #FFFFFFEE) |
 | `labelColor` | v3.1 — pill ink (default #1F2433); dim it for dark scenes |
 | `labelFontSize` | v3.1 — pill font size (default 11) |
-| `routing` | ALWAYS use orthogonal — every segment rides the iso ground axes, flush with the 2.5D grid (collinear endpoints collapse to one on-axis segment). straight/bezier cut across the grid and are reserved for non-iso freeform sketches. |
-| `to` | destination part id (same anchor syntax) |
+| `routing` | ALWAYS use orthogonal — every segment rides the iso ground axes, flush with the 2.5D grid (collinear endpoints collapse to one on-axis segment). straight/bezier cut across the grid and are reserved for non-iso freeform sketches. Endpoints should be coplanar (same wz); see Purpose for cross-tier risers. |
+| `to` | destination part id (same anchor syntax). Choose an endpoint coplanar with `from` (same wz/tier) whenever possible; only span heights for an intentional cross-tier link, which renders a vertical drop segment. |
 | `waypoints` | v4.6 — explicit interior corner list [{wx, wy}, …] (world coords, source→target) the route threads through, so a Studio edge-drag can move ONE segment independently. Supersedes bend + the auto route; endpoints stay docked. Auto-kept iso-axis-aligned. |
 
 ### `layout`
@@ -154,7 +154,7 @@ Auto-arrange a container's parts along the iso ground axes — the preferred way
 
 **Syntax:** `place: {rightOf: <sibling-id>, inFrontOf: <sibling-id>, above: <sibling-id>, gap: 1, gapX: 2, gapY: 0, align: start|center|end}`
 
-Position a part relative to a SIBLING — the preferred way to compose free-standing scenes. One constraint per axis: rightOf/leftOf pins world x, inFrontOf/behind pins world y (front = toward viewer), above pins world z (the part sits flush ON TOP of the sibling, centred on its footprint — stacked plinths, ghost volumes, toppers). Unpinned ground axes align to the referenced sibling per align. Chains are solved topologically (a stair = each tile rightOf+inFrontOf its predecessor). offset degrades to a fine-tune delta.
+Position a part relative to a SIBLING — the preferred way to compose free-standing scenes. One constraint per axis: rightOf/leftOf pins world x, inFrontOf/behind pins world y (front = toward viewer), above pins world z. `above` is for DECORATIVE stacking — plinths, ghost volumes, toppers (the part sits flush ON TOP of the sibling, centred on its footprint). If an elevated part also needs a connector, keep it on the same tier (wz) as what it connects to, or the link will hang in a vertical drop; reserve `above` for parts with no connectors. Unpinned ground axes align to the referenced sibling per align. Chains are solved topologically (a stair = each tile rightOf+inFrontOf its predecessor). offset degrades to a fine-tune delta.
 
 | Field | Meaning |
 |---|---|

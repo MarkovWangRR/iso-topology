@@ -431,3 +431,60 @@ func nestingIssues(doc *Document) []Issue {
 	}
 	return issues
 }
+
+// ── connectorTierIssues ────────────────────────────────────────────────────────
+
+// connectorTierIssues warns when a connector's two endpoints sit at
+// different base heights (wz / tier). Orthogonal connectors hug the
+// ground plane, so a height mismatch forces a vertical drop segment
+// (riser): fine when it expresses a deliberate cross-tier call, but
+// usually it's an accident — peer nodes were given different wz, or one
+// endpoint is inside a group whose substrate height lifted it.
+func connectorTierIssues(doc *Document) []Issue {
+	if doc == nil {
+		return nil
+	}
+	scene := doc.Scene()
+	if scene == nil || len(scene.Connectors) == 0 {
+		return nil
+	}
+
+	flat := lowerCompositeParts(scene.Parts, 0, 0, 0)
+	wzByID := make(map[string]float64, len(flat))
+	for _, p := range flat {
+		if p == nil || p.ID == "" {
+			continue
+		}
+		if p.Offset != nil {
+			wzByID[p.ID] = p.Offset.WZ
+		} else {
+			wzByID[p.ID] = 0
+		}
+	}
+
+	const eps = 0.5
+	var issues []Issue
+	for i, c := range scene.Connectors {
+		if c.From == "" || c.To == "" {
+			continue
+		}
+		fromID := connectorTarget(c.From)
+		toID := connectorTarget(c.To)
+		fz, ok1 := wzByID[fromID]
+		tz, ok2 := wzByID[toID]
+		if !ok1 || !ok2 {
+			continue
+		}
+		if math.Abs(fz-tz) > eps {
+			issues = append(issues, Issue{
+				Severity: SeverityWarning,
+				Path:     fmt.Sprintf("nodes.scene.connectors[%d]", i),
+				Message: fmt.Sprintf(
+					"connector endpoints %q (wz %.0f) and %q (wz %.0f) sit on different tiers; the orthogonal route will sprout a vertical drop segment. Put both on the same wz unless this is a deliberate cross-tier call.",
+					fromID, fz, toID, tz),
+			})
+		}
+	}
+	return issues
+}
+

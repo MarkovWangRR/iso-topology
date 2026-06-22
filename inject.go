@@ -427,9 +427,9 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo,
 		}
 		sdx, sdy := ar.exit(effFrom[i])
 		tdx, tdy := ar.exit(effTo[i])
-		routeZ := math.Min(ar.baseZ(effFrom[i]), ar.baseZ(effTo[i]))
-		sWX, sWY = ar.refineSilhouette(effFrom[i], sWX, sWY, routeZ)
-		tWX, tWY = ar.refineSilhouette(effTo[i], tWX, tWY, routeZ)
+		srcZi, tgtZi := ar.baseZ(effFrom[i]), ar.baseZ(effTo[i])
+		sWX, sWY = ar.refineSilhouette(effFrom[i], sWX, sWY, srcZi)
+		tWX, tWY = ar.refineSilhouette(effTo[i], tWX, tWY, tgtZi)
 
 		// Collinear iff face normals oppose AND perpendicular distance
 		// is zero (within a small tolerance — refinement and fan-out
@@ -537,15 +537,15 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo,
 			}
 			sdx, sdy := ar.exit(effFrom[ci])
 			tdx, tdy := ar.exit(effTo[ci])
-			routeZ := math.Min(ar.baseZ(effFrom[ci]), ar.baseZ(effTo[ci]))
+			srcZ := ar.baseZ(effFrom[ci])
+			tgtZ := ar.baseZ(effTo[ci])
+			routeZ := math.Min(srcZ, tgtZ)
 
-			// v1.6.3 shape-aware anchor refinement: sphere/cloud
-			// silhouettes don't reach their bbox edges, so the bbox
-			// anchor would render the line ending in empty space. Slide
-			// the (wx, wy) along the face normal onto the real silhouette
-			// at the chosen routing z.
-			sWX, sWY = ar.refineSilhouette(effFrom[ci], sWX, sWY, routeZ)
-			tWX, tWY = ar.refineSilhouette(effTo[ci], tWX, tWY, routeZ)
+			// v1.6.3 / ground-hugging: use each endpoint's own base z
+			// for silhouette refinement so sphere/cloud/prism anchors
+			// are queried at the height where the face actually exists.
+			sWX, sWY = ar.refineSilhouette(effFrom[ci], sWX, sWY, srcZ)
+			tWX, tWY = ar.refineSilhouette(effTo[ci], tWX, tWY, tgtZ)
 
 			// v1.6.2 fan-out: when N>1 connectors share a side, slide
 			// each endpoint along the face's tangent (perpendicular to
@@ -581,10 +581,10 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo,
 			// Re-refine so the stagger becomes an angular spread along
 			// the part's real outline.
 			if sStagger != 0 {
-				sWX, sWY = ar.refineSilhouette(effFrom[ci], sWX, sWY, routeZ)
+				sWX, sWY = ar.refineSilhouette(effFrom[ci], sWX, sWY, srcZ)
 			}
 			if tStagger != 0 {
-				tWX, tWY = ar.refineSilhouette(effTo[ci], tWX, tWY, routeZ)
+				tWX, tWY = ar.refineSilhouette(effTo[ci], tWX, tWY, tgtZ)
 			}
 
 			// v3.1 — the v1.6.6 arrow-gap pullback is gone: arrowheads now
@@ -640,24 +640,44 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo,
 					}
 				}
 			}
+			// Riser helpers: when an endpoint sits ABOVE the flat routing
+			// plane (routeZ = min of both), insert a vertical segment at
+			// the stub so the connector drops from the elevated face to
+			// the ground plane, then runs flat. A z-only change projects
+			// to a pure-vertical screen segment — the iso "up" direction.
+			appendRiserSrc := func(pts [][3]float64) [][3]float64 {
+				if srcZ > routeZ {
+					pts = append(pts, [3]float64{sStubX, sStubY, routeZ})
+				}
+				return pts
+			}
+			appendRiserTgt := func(pts [][3]float64) [][3]float64 {
+				if tgtZ > routeZ {
+					pts = append(pts, [3]float64{tStubX, tStubY, routeZ})
+				}
+				return pts
+			}
+
 			if xFirst {
 				// Source exits along world x → walk x then y.
-				worldPts = [][3]float64{
-					{sWX, sWY, routeZ},
-					{sStubX, sStubY, routeZ},
-					{tStubX, sStubY, routeZ},
-					{tStubX, tStubY, routeZ},
-					{tWX, tWY, routeZ},
-				}
+				worldPts = [][3]float64{{sWX, sWY, srcZ}, {sStubX, sStubY, srcZ}}
+				worldPts = appendRiserSrc(worldPts)
+				worldPts = append(worldPts,
+					[3]float64{tStubX, sStubY, routeZ},
+					[3]float64{tStubX, tStubY, routeZ},
+				)
+				worldPts = appendRiserTgt(worldPts)
+				worldPts = append(worldPts, [3]float64{tWX, tWY, tgtZ})
 			} else {
 				// Source exits along world y → walk y then x.
-				worldPts = [][3]float64{
-					{sWX, sWY, routeZ},
-					{sStubX, sStubY, routeZ},
-					{sStubX, tStubY, routeZ},
-					{tStubX, tStubY, routeZ},
-					{tWX, tWY, routeZ},
-				}
+				worldPts = [][3]float64{{sWX, sWY, srcZ}, {sStubX, sStubY, srcZ}}
+				worldPts = appendRiserSrc(worldPts)
+				worldPts = append(worldPts,
+					[3]float64{sStubX, tStubY, routeZ},
+					[3]float64{tStubX, tStubY, routeZ},
+				)
+				worldPts = appendRiserTgt(worldPts)
+				worldPts = append(worldPts, [3]float64{tWX, tWY, tgtZ})
 			}
 			// v4.5 — bend: an edge-drag relocates the route's CORNER by a
 			// world delta. Rebuild an orthogonal (iso-axis-aligned) path
@@ -675,7 +695,10 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo,
 				cx, cy := baseCX+c.Bend.WX, baseCY+c.Bend.WY
 				sAxisX := math.Abs(sdx) >= math.Abs(sdy)
 				tAxisX := math.Abs(tdx) >= math.Abs(tdy)
-				np := [][3]float64{{sWX, sWY, routeZ}}
+				np := [][3]float64{{sWX, sWY, srcZ}}
+				if srcZ > routeZ {
+					np = append(np, [3]float64{sWX, sWY, routeZ})
+				}
 				if sAxisX { // source exits along world x → x-leg then y-leg
 					np = append(np, [3]float64{cx, sWY, routeZ})
 				} else {
@@ -687,7 +710,10 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo,
 				} else {
 					np = append(np, [3]float64{tWX, cy, routeZ})
 				}
-				np = append(np, [3]float64{tWX, tWY, routeZ})
+				if tgtZ > routeZ {
+					np = append(np, [3]float64{tWX, tWY, routeZ})
+				}
+				np = append(np, [3]float64{tWX, tWY, tgtZ})
 				worldPts = np
 			}
 			// v4.6 — explicit waypoints supersede the auto route + bend:
@@ -696,19 +722,24 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo,
 			// not axis-aligned (e.g. after a connected node moved) so every
 			// segment stays iso-clean.
 			if len(c.Waypoints) > 0 {
-				np := [][3]float64{{sWX, sWY, routeZ}}
+				np := [][3]float64{{sWX, sWY, srcZ}}
+				if srcZ > routeZ {
+					np = append(np, [3]float64{sWX, sWY, routeZ})
+				}
 				for _, wp := range c.Waypoints {
 					np = append(np, [3]float64{wp.WX, wp.WY, routeZ})
 				}
-				np = append(np, [3]float64{tWX, tWY, routeZ})
+				if tgtZ > routeZ {
+					np = append(np, [3]float64{tWX, tWY, routeZ})
+				}
+				np = append(np, [3]float64{tWX, tWY, tgtZ})
 				worldPts = orthoThread(np)
 			}
 			// v1.6 — if every waypoint shares the same world x OR the same
-			// world y, the L-shape has degenerated to a single iso-axis line.
-			// Emit just (source, target) so the path doesn't render multiple
-			// collinear bends (which look like a thicker line at line joints).
+			// world y (and same z), the L-shape has degenerated to a single
+			// iso-axis line. Guard allSameZ: a z-only riser is not degenerate.
 			const eps = 0.01
-			allSameX, allSameY := true, true
+			allSameX, allSameY, allSameZ := true, true, true
 			for _, p := range worldPts[1:] {
 				if math.Abs(p[0]-worldPts[0][0]) > eps {
 					allSameX = false
@@ -716,8 +747,11 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo,
 				if math.Abs(p[1]-worldPts[0][1]) > eps {
 					allSameY = false
 				}
+				if math.Abs(p[2]-worldPts[0][2]) > eps {
+					allSameZ = false
+				}
 			}
-			if allSameX || allSameY {
+			if (allSameX || allSameY) && allSameZ {
 				x1, y1 := project(worldPts[0][0], worldPts[0][1], worldPts[0][2])
 				last := worldPts[len(worldPts)-1]
 				x2, y2 := project(last[0], last[1], last[2])
