@@ -87,8 +87,28 @@ everything. A composed, styled scene → write `.yaml` (rest of this skill).
   `queue`, `cpu`, `gpu`, `model`, `agent`, `shield`, `chart`, `cloud`, …).
 - `iso://brand/<name>` — a few engine-built brand marks (`spark`, `kafka`).
 - Suffix `/light` for dark top faces, `/RRGGBB` to tint. Full index:
-  `docs/agent/ICONS.md`. **Never invent a glyph name** — an unknown icon is a
-  hard fail; if nothing fits, omit the icon.
+  `docs/agent/ICONS.md`. **Never invent a glyph name** — unknown names are
+  validation errors.
+
+**Icon fallback ladder** — follow in order, stop at the first success:
+
+1. **Built-in catalog** (`isotopo capabilities` → `icons[]`): pick the entry
+   whose `description` best matches the node's role. Prefer `iso://si/<slug>`
+   for named products/brands; `iso://glyph/<name>` for generic concepts.
+2. **Semantic glyph approximation**: if no slug matches the brand but a glyph
+   fits conceptually (e.g. "queue" for any message broker, "database" for any
+   store), use that glyph. A semantically close built-in beats an external fetch.
+3. **icon-search** (requires `icon-search` on PATH — install once per session
+   with `npm install -g icon-search` if missing):
+   ```bash
+   # save SVG to a temp file; isotopo inlines it at render time
+   icon-search "<node label or product name>" --best > /tmp/icon-<id>.svg
+   ```
+   Then set `icon: "/tmp/icon-<id>.svg"` on the part. The renderer reads and
+   inlines local paths as data URIs so the output SVG stays self-contained.
+   If `icon-search` exits 2 (no match), proceed to step 4.
+4. **Omit the icon** — leave the `icon:` field out entirely. The label alone
+   is always valid; a missing icon is far better than a broken or invented one.
 
 **Connectors:** `routing: orthogonal` (rides the iso grid — the default you
 want) | `straight` | `bezier`; arrow `triangle` | `none`. Async links differ by
@@ -200,9 +220,9 @@ file write.
   ugliness.
 - **More than 3 hues**, or a new hue per node. Same role → same hue, shades for
   sub-tiers, one accent for the hero.
-- **Inventing an icon glyph name** (or expecting a `custom:`/web-search icon
-  flow — there is none). Icons are only `iso://si|glyph|brand/<name>` from the
-  index; unknown = hard fail.
+- **Inventing an icon glyph name.** Icons are only `iso://si|glyph|brand/<name>`
+  from the built-in catalog; unknown names are validation errors. If nothing
+  fits, follow the fallback ladder in §2 (semantic glyph → icon-search → omit).
 - **Referencing a non-existent id** in `place`/`connector`, or giving one node
   **two `place` relations** / duplicate `place`.
 - **An illegal arrow/routing** (only `triangle`/`none`; `orthogonal`/`straight`/
