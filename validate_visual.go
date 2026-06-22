@@ -8,6 +8,26 @@ import (
 	"github.com/MarkovWangRR/iso-topology/iso25d"
 )
 
+// iconHasColorSuffix returns true when the iso:// URI ends with a 6-hex-digit
+// color override (e.g. "iso://glyph/database/4B5563"). These always have the
+// form "…/<6 hex chars>" at the end.
+func iconHasColorSuffix(uri string) bool {
+	parts := strings.Split(uri, "/")
+	if len(parts) == 0 {
+		return false
+	}
+	last := parts[len(parts)-1]
+	if len(last) != 6 {
+		return false
+	}
+	for _, c := range last {
+		if !((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')) {
+			return false
+		}
+	}
+	return true
+}
+
 // ── colour helpers ────────────────────────────────────────────────────────────
 
 // parseHex parses #RRGGBB or #RGB; returns (r,g,b,true) or (0,0,0,false).
@@ -187,6 +207,7 @@ func faceSplitIssues(doc *Document) []Issue {
 //   - top face fill vs label text colour (< 3.0 → warning)
 //   - top face fill vs canvas background (< 1.5 → warning)
 //   - group/boundary top fill vs direct child top fill (< 1.3 → warning)
+//   - iso:// icon with default ink on a dark top fill (luminance < 0.18, no /light or /RRGGBB suffix → warning)
 func VisualContrastIssues(doc *Document) []Issue {
 	if doc == nil {
 		return nil
@@ -245,6 +266,25 @@ func VisualContrastIssues(doc *Document) []Issue {
 								Severity: SeverityWarning,
 								Path:     pPath + ".style.fill",
 								Message:  fmt.Sprintf("top fill %s is nearly indistinguishable from canvas background %s (ratio %.2f < 1.5)", fill, canvasBg, cr),
+							})
+						}
+					}
+
+					// c) icon vs top fill — the default ink color (#1F2937) is used
+					// when no /light or /RRGGBB suffix is present. On a dark top face
+					// that ink is invisible. Warn so authors add /light (or /RRGGBB).
+					if p.Icon != "" && fillLum < 0.18 {
+						uri := p.Icon
+						hasSuffix := strings.Contains(uri, "/light") ||
+							iconHasColorSuffix(uri)
+						isBuiltin := strings.HasPrefix(uri, "iso://glyph/") ||
+							strings.HasPrefix(uri, "iso://si/") ||
+							strings.HasPrefix(uri, "iso://brand/")
+						if isBuiltin && !hasSuffix {
+							issues = append(issues, Issue{
+								Severity: SeverityWarning,
+								Path:     pPath + ".icon",
+								Message:  fmt.Sprintf("icon %q uses default ink color on a dark top fill %s — add /light or /RRGGBB suffix (e.g. %s/light) so the icon is visible", uri, fill, uri),
 							})
 						}
 					}
