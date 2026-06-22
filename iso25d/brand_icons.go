@@ -278,7 +278,7 @@ func IconCatalog() []IconInfo {
 		out = append(out, IconInfo{
 			Kind: "si", Name: n,
 			URI:         "iso://si/" + n,
-			Description: siTitle(n) + " logo (Simple Icons, CC0)",
+			Description: siDescription(n),
 			SVG:         siSVG(n, "#1F2937"),
 		})
 	}

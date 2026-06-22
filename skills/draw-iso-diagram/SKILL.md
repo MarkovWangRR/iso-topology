@@ -110,6 +110,13 @@ everything. A composed, styled scene → write `.yaml` (rest of this skill).
 4. **Omit the icon** — leave the `icon:` field out entirely. The label alone
    is always valid; a missing icon is far better than a broken or invented one.
 
+**Dark top faces require a light icon variant.** When a node's top fill is dark (luminance < ~18%, e.g. `#0A0A0A`–`#1F2937`), the default icon ink (`#1F2937`) becomes invisible. Always add `/light` for white icons or `/RRGGBB` for a custom tint:
+```
+icon: "iso://si/snowflake/light"    # white on dark top
+icon: "iso://glyph/database/29B5E8" # tinted on dark top
+```
+`isotopo validate` will warn if you forget this on a built-in icon.
+
 **Connectors:** `routing: orthogonal` (rides the iso grid — the default you
 want) | `straight` | `bezier`; arrow `triangle` | `none`. Async links differ by
 `stroke.dash`, not by routing. Hairline widths (1–2) beat thick pipes.
@@ -119,7 +126,7 @@ want) | `straight` | `bezier`; arrow `triangle` | `none`. Async links differ by
 `*Gradient`). Reusable swatches (top/left/right triples):
 blue `#60A5FA/#3B82F6/#2563EB` · green `#4ADE80/#22C55E/#16A34A` ·
 purple `#C084FC/#A855F7/#9333EA` · orange `#FDBA74/#FB923C/#EA580C` ·
-amber `#FCD34D/#F59E0B/#D97706` · teal `#5EEAD4/#14B8A6/#0D9488`.
+amber `#FCD34D/#F59E0B/#D97706` · teal `#5EEAD4/#14B8A6/#0D9488`. On dark tops, use `iso://…/light` icons (white ink) or `iso://…/RRGGBB` for a custom tint — the default ink is near-black and invisible on dark faces.
 
 **Contrast is non-negotiable: the TOP-FACE FILL must never be close in
 lightness to the top-face TEXT + ICON colour** — the caption and glyph sit on

@@ -285,6 +285,13 @@ func VisualContrastIssues(doc *Document) []Issue {
 								Severity: SeverityWarning,
 								Path:     pPath + ".icon",
 								Message:  fmt.Sprintf("icon %q uses default ink color on a dark top fill %s — add /light or /RRGGBB suffix (e.g. %s/light) so the icon is visible", uri, fill, uri),
+								Suggest:  uri + "/light",
+							})
+						} else if !isBuiltin && fillLum < 0.18 {
+							issues = append(issues, Issue{
+								Severity: SeverityWarning,
+								Path:     pPath + ".icon",
+								Message:  fmt.Sprintf("external icon on dark top fill %s — verify the icon has a light-colored or transparent background so it is visible (isotopo cannot check external icon colors)", fill),
 							})
 						}
 					}
