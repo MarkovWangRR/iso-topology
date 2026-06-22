@@ -437,6 +437,10 @@ function showHandles(g){
       line.setAttribute('stroke',HANDLE_COL); line.setAttribute('stroke-width',1.8*userPxScale());
       line.setAttribute('fill','none'); line.setAttribute('stroke-dasharray','5,3');
       line.setAttribute('id','conn-rubber');
+      // The rubber-band follows the cursor, so its endpoint sits right under the
+      // pointer. Without this it would intercept the hit-test and swallow the
+      // target node's mouseenter — leaving connTarget null and the drop a no-op.
+      line.style.pointerEvents='none';
       layer.appendChild(line);
       // Record which anchor the drag started from (SVG-user coords).
       connDrag={fromId:partId, fromAnchor:name, startX:cx, startY:cy, line};
@@ -468,14 +472,18 @@ window.addEventListener('mousemove',ev=>{
     connDrag.line.setAttribute('points',connDrag.startX+','+connDrag.startY+' '+ux+','+uy);
     return;
   }
-  const layer=zoomer.querySelector('#conn-handles'); if(!layer) return;
+  const layer=zoomer.querySelector('#conn-handles');
   const overHandle=ev.target&&ev.target.classList&&ev.target.classList.contains('conn-handle');
   const overNode=ev.target&&ev.target.closest&&ev.target.closest('g[data-part-id]');
   if(overHandle||overNode){
     cancelClear();
-    if(layer.querySelector('.conn-handle')) highlightNearestHandle(ev.clientX,ev.clientY);
-  }else if(layer.querySelector('.conn-handle')){
-    clearHandles(); // debounced 120ms
+    if(layer&&layer.querySelector('.conn-handle')) highlightNearestHandle(ev.clientX,ev.clientY);
+  }else{
+    if(layer&&layer.querySelector('.conn-handle')) clearHandles(); // debounced 120ms
+    // Sweep stray node highlight: a node keeps .hi when the pointer slips off it
+    // onto an in-SVG connection handle (which suppresses the node's mouseleave
+    // clear). On open canvas, clear any non-pinned highlight left behind.
+    zoomer.querySelectorAll('g[data-part-id].hi').forEach(g=>{ if(pinId!==g.getAttribute('data-part-id')) g.classList.remove('hi'); });
   }
 },true);
 
@@ -1231,11 +1239,14 @@ function wireDrag(){
     // canvas pan cursor (open-hand 'grab'), so a movable object reads as
     // movable the instant the pointer is over it.
     g.style.cursor='move';
-    // Container shapes (boundary/group) use fill:none so clicks miss the interior.
-    // bounding-box makes the whole rectangular envelope clickable.
+    // Container shapes (boundary/group): hit only the painted silhouette, NOT the
+    // rectangular bounding box. The iso diamond's bounding box is far larger than
+    // the visible shape and overlaps neighbours, so bounding-box made the pointer
+    // over "empty" canvas land inside a container's box and light it up. With
+    // visiblePainted only the drawn edges/faces respond.
     if(window.interactionModel){
       const pm=window.interactionModel.find(p=>p.id===g.getAttribute('data-part-id').replace(/~\d+$/,''));
-      if(pm&&pm.container) g.setAttribute('pointer-events','bounding-box');
+      if(pm&&pm.container) g.setAttribute('pointer-events','visiblePainted');
     }
     g.addEventListener('mousedown',e=>{
       if(e.button!==0) return;   // left-button drags only; right-click = context menu
