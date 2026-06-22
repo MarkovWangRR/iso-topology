@@ -1,0 +1,12 @@
+# Universal role ontology — the stable vocabulary agents author against.
+# A structural diagram tags each node with one of these; a style's manual maps
+# every role to a concrete look. Agents learn THIS once; styles are swappable.
+roles:
+  hero:    "the focal platform/engine — the single emphasized node"
+  surface: "a generic service / app card"
+  source:  "an upstream data / input source"
+  sink:    "a downstream consumer / output / app"
+  store:   "a storage / database node (often a cylinder)"
+  gateway: "an entry / routing / middleware node"
+  group:   "a container grouping related nodes (renders as a tray)"
+  accent:  "a small highlighted / secondary-emphasis node"

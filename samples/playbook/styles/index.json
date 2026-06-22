@@ -1,0 +1,70 @@
+{
+  "_comment": "Machine-readable node-style index. Agents/tools match a fuzzy request against `triggers`+`mood`+`use_cases` (case-insensitive substring or embedding), rank, and load `dsl_file`. Fallback family = solid-flat.",
+  "fallback": "solid-flat",
+  "families": [
+    {
+      "slug": "wireframe-lineart",
+      "triggers": ["wireframe", "line art", "lineart", "blueprint", "schematic", "outline", "technical drawing", "minimal", "skeleton", "engineering", "cad", "diagram-y", "no fill", "monochrome line"],
+      "mood": ["restrained", "technical", "precise", "clean", "serious"],
+      "use_cases": ["architecture blueprint", "technical explainer", "spec/whitepaper figure", "low-ink print"],
+      "signature": "hollow faces, thin ink stroke only, no fill/shadow/glow",
+      "dsl_file": "styles/wireframe-lineart.md"
+    },
+    {
+      "slug": "handdrawn-sketch",
+      "triggers": ["hand drawn", "handdrawn", "sketch", "pencil", "doodle", "whiteboard", "draft", "rough", "organic", "friendly", "human", "notebook", "crayon", "ink"],
+      "mood": ["warm", "approachable", "casual", "human", "low-fi"],
+      "use_cases": ["early concept", "explainer with a human touch", "education", "pitch sketch"],
+      "signature": "thin ink line + film grain, paper background, no glow",
+      "dsl_file": "styles/handdrawn-sketch.md"
+    },
+    {
+      "slug": "ascii-dot",
+      "triggers": ["ascii", "dot matrix", "halftone", "dotted", "retro terminal", "print", "risograph", "stipple", "pixel", "data texture", "grid texture", "8-bit"],
+      "mood": ["retro", "data", "technical", "textured"],
+      "use_cases": ["data-heavy schematic", "retro/terminal brand", "print poster", "sampling/raster metaphor"],
+      "signature": "dot/hatch pattern on faces, monochrome, thin dark stroke",
+      "dsl_file": "styles/ascii-dot.md"
+    },
+    {
+      "slug": "solid-flat",
+      "triggers": ["flat", "solid", "clean", "simple", "modern", "illustration", "two-tone", "corporate", "default", "professional", "vector", "crisp", "structuralism"],
+      "mood": ["clean", "assertive", "professional", "neutral"],
+      "use_cases": ["general architecture diagram", "icon set", "corporate deck", "the safe default"],
+      "signature": "two-tone solid faces + same-hue-darker thin border, small radius",
+      "dsl_file": "styles/solid-flat.md"
+    },
+    {
+      "slug": "gradient-face",
+      "triggers": ["gradient", "vibrant", "colorful", "colourful", "dynamic", "energetic", "bold", "hero", "landing page", "punchy", "saturated", "warm", "sunset"],
+      "mood": ["modern", "dynamic", "bold", "energetic"],
+      "use_cases": ["landing-page hero", "marketing key art", "layered slab tower", "attention-grabbing"],
+      "signature": "per-face linear gradient (light->dark), faint/no border",
+      "dsl_file": "styles/gradient-face.md"
+    },
+    {
+      "slug": "frosted-glass",
+      "triggers": ["frosted", "glass", "glassmorphism", "translucent", "transparent", "premium", "elegant", "airy", "light", "breathing", "soft", "minimal premium", "acrylic", "blur", "high-end"],
+      "mood": ["premium", "light", "elegant", "calm", "airy"],
+      "use_cases": ["high-end SaaS/AI landing", "premium hero", "calm minimal product"],
+      "signature": "translucent faces (opacity ~0.6) + soft backglow, no border",
+      "dsl_file": "styles/frosted-glass.md"
+    },
+    {
+      "slug": "neon-glow",
+      "triggers": ["neon", "glow", "glowing", "tech", "techy", "futuristic", "sci-fi", "scifi", "cyber", "dark", "dark mode", "ai", "compute", "gpu", "realtime", "high energy", "electric", "cyberpunk"],
+      "mood": ["futuristic", "high-energy", "dark", "bold"],
+      "use_cases": ["AI/compute platform", "dark-mode tech landing", "sci-fi/cyber brand", "energetic hero on dark"],
+      "signature": "dark bg + border brighter than face + strong backglow",
+      "dsl_file": "styles/neon-glow.md"
+    },
+    {
+      "slug": "soft-rounded-card",
+      "triggers": ["rounded", "card", "soft", "gentle", "friendly", "product ui", "pastel", "layered", "stack", "material", "cozy", "approachable", "app", "dashboard"],
+      "mood": ["gentle", "friendly", "contemporary", "soft"],
+      "use_cases": ["product UI diagram", "SaaS platform overview", "layered-stack narrative", "approachable brand"],
+      "signature": "large radius + soft drop shadow + faceSplit lighting",
+      "dsl_file": "styles/soft-rounded-card.md"
+    }
+  ]
+}

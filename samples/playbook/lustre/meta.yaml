@@ -1,0 +1,12 @@
+name: lustre
+title: Lustre
+tags: [glossy, noir, sheen, violet]
+domain: generic
+mood: [premium, sleek, nocturnal]
+palette: ["#0E1116", "#7C5CFC", "#34D399", "#5EEAD4"]
+provenance:
+  - source: handcrafted
+    license: CC0
+trust: blessed
+confidence: 1.0
+version: 1

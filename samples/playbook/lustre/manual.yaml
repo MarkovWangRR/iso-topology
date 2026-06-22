@@ -1,0 +1,54 @@
+# lustre — a glossy noir style: deep slate bases, top-face sheen, a violet hero
+# with a soft halo. Test fixture for the playbook apply/lint suite.
+name: lustre
+
+tokens:
+  bg:        "#0E1116"
+  grid:      "#1A2230"
+  ink:       "#E8EDF4"
+  inkDark:   "#0B0E12"
+  hero:      "#7C5CFC"
+  heroGlow:  "#A78BFA"
+  surface:   "#202A38"
+  store:     "#2A3445"
+  gatewayC:  "#243042"
+  tray:      "#151B24"
+  accent:    "#34D399"
+  edge:      "#5EEAD4"
+
+material:
+  space: hsl
+  light: topLeft
+  topDL: 0.07
+  litSideDL: -0.05
+  shadeSideDL: -0.13
+  aoDL: -0.04
+  faceSplitOnRounded: true
+  topSheen: 0.5
+  energy: balanced
+
+geometry:
+  radius: 14
+  shadow: { dx: 0, dy: 14, blur: 22, color: "#00000066" }
+
+roles:
+  hero:    { base: hero,     ink: ink,     glow: heroGlow, elevation: lg, sheen: true, ring: true }
+  surface: { base: surface,  ink: ink,     elevation: md }
+  source:  { base: surface,  ink: ink,     elevation: sm }
+  sink:    { base: surface,  ink: ink,     elevation: md }
+  store:   { base: store,    ink: ink,     elevation: md }
+  gateway: { base: gatewayC, ink: ink,     elevation: md }
+  group:   { base: tray,     ink: ink,     elevation: sm }
+  accent:  { base: accent,   ink: inkDark, elevation: sm, sheen: true }
+
+edge:
+  color: edge
+  width: 1.4
+
+canvas:
+  background: bg
+  grid: iso
+  gridColor: grid
+
+icon:
+  treatment: white

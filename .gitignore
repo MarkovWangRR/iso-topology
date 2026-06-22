@@ -24,3 +24,6 @@ test-results/
 # scratch playground (screenshots, experiments) — not repo content
 samples/playground/
 /visreg
+
+# playbook style-swatch render artifacts (regenerable)
+samples/playbook/styles/_swatch/out_*/

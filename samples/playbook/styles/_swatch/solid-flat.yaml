@@ -1,0 +1,45 @@
+canvas:
+  background: '#FFFFFF'
+  grid: ''
+  padding: 60
+theme:
+  presets:
+    s:
+      palette:
+        top: '#8C7DF2'
+        left: '#332A93'
+        right: '#5747CE'
+      stroke:
+        color: '#241C6E'
+        width: 1.1
+      effects:
+        cornerRadius: 3
+nodes:
+  scene:
+    shape: composite
+    layout:
+      mode: row
+      gap: 1.2
+    parts:
+    - id: a
+      shape: rectangle
+      preset: s
+      geom:
+        w: 90
+        d: 90
+        h: 34
+      label: solid-flat
+    - id: b
+      shape: rectangle
+      preset: s
+      geom:
+        w: 80
+        d: 80
+        h: 80
+    - id: c
+      shape: cylinder
+      preset: s
+      geom:
+        w: 80
+        d: 80
+        h: 44
