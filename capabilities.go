@@ -2,7 +2,11 @@ package isotopo
 
 //go:generate go run ./tools/gen-docs
 
-import "sort"
+import (
+	"sort"
+
+	"github.com/MarkovWangRR/iso-topology/iso25d"
+)
 
 // Capabilities is the agent-facing, structured description of what
 // this build of isotopo can express. Emitted by the `isotopo
@@ -24,6 +28,23 @@ type Capabilities struct {
 	// Surfaced so discovery and validation share one source: every value here
 	// is also what Validate() rejects deviations from.
 	Enums map[string][]string `json:"enums"`
+	// Icons is the complete, agent-facing icon catalog: every name an agent
+	// may write in the `icon:` field, with kind ("glyph"/"si"/"brand"),
+	// the exact URI to emit, and a semantic one-liner so the agent can pick
+	// the right icon without reading a separate Markdown file.
+	// Strategy: prefer iso://si/<slug> when the node IS a named brand/product;
+	// fall back to iso://glyph/<name> for generic concepts. Unknown names are
+	// validation errors — pick from this list, do not invent names.
+	Icons []IconCap `json:"icons"`
+}
+
+// IconCap is one entry in the agent-facing icon catalog (SVG body excluded —
+// too large for the capabilities payload; see docs/agent/ICONS.md for previews).
+type IconCap struct {
+	Kind        string `json:"kind"`        // "glyph" | "si" | "brand"
+	Name        string `json:"name"`        // bare name (e.g. "database", "postgresql")
+	URI         string `json:"uri"`         // exact string to write in `icon:` field
+	Description string `json:"description"` // semantic one-liner for agent decision-making
 }
 
 // InputFormat describes one file extension the CLI accepts.
@@ -96,7 +117,24 @@ func CapabilityReport() Capabilities {
 			"place_relation":    placeRelations,
 			"annotation_side":   annotationSides,
 		},
+		Icons: buildIconCaps(),
 	}
+}
+
+// buildIconCaps converts the live icon catalog into the lightweight
+// agent-facing representation (no SVG body).
+func buildIconCaps() []IconCap {
+	raw := iso25d.IconCatalog()
+	out := make([]IconCap, 0, len(raw))
+	for _, info := range raw {
+		out = append(out, IconCap{
+			Kind:        info.Kind,
+			Name:        info.Name,
+			URI:         info.URI,
+			Description: info.Description,
+		})
+	}
+	return out
 }
 
 // buildShapeCaps inverts d2ShapeCatalog (the canonical source of truth
