@@ -136,6 +136,63 @@ thumb: a light top (`#FFFFFF`, pastel) takes dark ink (`style.text.color` ~
 `#F1F5F9`, `icon: "iso://…/light"`). Aim for a clear lightness gap, not a subtle
 one. When in doubt, white-or-pastel top + dark ink, or deep top + white ink.
 
+## 2.5 · Style library — pick a visual language before touching palette
+
+**Do this before hand-crafting any colour.** The repo ships 28 reference styles
+(`samples/style_refer/`) — rendered swatches covering every mood from noir-neon
+to frosted-glass to chalk-monolith. Each style's `theme.presets` + `canvas`
+block is a drop-in visual language; copy it, then layer your topology on top.
+
+**Retrieval (run once per session, ~5 s):**
+
+```bash
+# 1. Load the index — one JSON, 28 entries
+cat samples/style_refer/index.json
+```
+
+Each entry has:
+- `essence` — one-sentence visual summary
+- `triggers` — keyword list for fuzzy matching
+- `mood` / `tone` (light|dark) / `use_cases` — semantic tags
+- `features` — texture tags (`glow`, `grain`, `gradient`, `wireframe`, …)
+- `dsl_file` — path to the reusable YAML preset block
+
+**Selection algorithm:**
+
+1. Extract tone from user request (dark / moody / noir → `tone: dark`; clean /
+   product / bright → `tone: light`; unspecified → no filter).
+2. Score each style: count keyword overlaps between the user's request and that
+   style's `triggers + mood + use_cases + essence` (case-insensitive).
+3. Pick the highest-scoring entry whose `tone` matches (or any if unspecified).
+4. Read its `dsl_file` → copy the `canvas:` block and the entire
+   `theme.presets:` block verbatim into your new YAML.
+5. Only hand-craft palette when no style scores above ~2 keyword matches.
+
+**Application:**
+
+```yaml
+# ① paste from dsl_file as-is:
+canvas: { background: "#050507", grid: none, padding: 80 }
+theme:
+  presets:
+    cubeA: { … }   # hero tile
+    cubeB: { … }   # secondary tile
+    cubeC: { … }   # muted tile
+
+# ② add your topology on top:
+nodes:
+  scene:
+    shape: composite
+    parts:
+      - { id: gateway, shape: hexprism, preset: cubeA, icon: "…", label: "…" }
+      - { id: db,      shape: cylinder, preset: cubeB, icon: "…", label: "…" }
+    connectors:
+      - { from: gateway, to: db, routing: orthogonal, arrow: triangle }
+```
+
+The preset names (`cubeA/B/C`) are internal to each style file — rename them
+to role-meaningful names (`hero`, `satellite`, `ghost`) when you apply them.
+
 ## 3 · Design FIRST, then build
 
 Decide these BEFORE writing any DSL — they are what separate "senior architect"
