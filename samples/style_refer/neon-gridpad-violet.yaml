@@ -1,0 +1,166 @@
+# neon-gridpad-violet — Blocknative dark-crypto look: near-black navy void,
+# saturated violet cubes with neon-purple rims + backglow, sitting on bright
+# cyan/teal dot-grid pads with radial underglow. (from h4)
+canvas: { background: "#070812", grid: "", padding: 56, aspectRatio: 1.4 }
+theme:
+  text: { family: "Inter, system-ui, sans-serif", size: 11, weight: "700", color: "#e8ecff" }
+  presets:
+    # saturated violet cube — neon-purple top rim + soft violet backglow
+    cubeA:
+      stroke: { color: "#7c5cff", width: 1 }
+      faces:
+        top:
+          fill:
+            kind: linearGradient
+            angle: 30
+            stops:
+              - { offset: 0, color: "#5a4aa6" }
+              - { offset: 1, color: "#2c2458" }
+          strokes:
+            - { color: "#7c5cff", width: 1.4, opacity: 0.9 }
+            - { color: "#e6ddff", width: 0.9, opacity: 0.95 }
+        left:
+          fill:
+            kind: linearGradient
+            angle: 90
+            stops:
+              - { offset: 0, color: "#352c66" }
+              - { offset: 1, color: "#1c1740" }
+          strokes:
+            - { color: "#a98cff", width: 0.9, opacity: 0.8 }
+        right:
+          fill:
+            kind: linearGradient
+            angle: 90
+            stops:
+              - { offset: 0, color: "#2c2458" }
+              - { offset: 1, color: "#161232" }
+          strokes:
+            - { color: "#a98cff", width: 0.9, opacity: 0.8 }
+      effects:
+        backglow: { color: "#7c5cff", radius: 30, opacity: 0.55 }
+    # cyan glass-leaning variant (echoes the wireframe block proposer cube)
+    cubeB:
+      stroke: { color: "#4fc8ff", width: 1 }
+      faces:
+        top:
+          fill:
+            kind: linearGradient
+            angle: 30
+            stops:
+              - { offset: 0, color: "#3f6fa6" }
+              - { offset: 1, color: "#1c3a58" }
+          strokes:
+            - { color: "#5cffff", width: 1.4, opacity: 0.9 }
+            - { color: "#d4f2ff", width: 0.9, opacity: 0.95 }
+        left:
+          fill:
+            kind: linearGradient
+            angle: 90
+            stops:
+              - { offset: 0, color: "#244a66" }
+              - { offset: 1, color: "#0f2840" }
+          strokes:
+            - { color: "#7fdcff", width: 0.9, opacity: 0.8 }
+        right:
+          fill:
+            kind: linearGradient
+            angle: 90
+            stops:
+              - { offset: 0, color: "#1c3a58" }
+              - { offset: 1, color: "#0c2032" }
+          strokes:
+            - { color: "#7fdcff", width: 0.9, opacity: 0.8 }
+      effects:
+        backglow: { color: "#4fc8ff", radius: 28, opacity: 0.5 }
+    # green-mint variant (echoes the validator green underglow)
+    cubeC:
+      stroke: { color: "#39e08a", width: 1 }
+      faces:
+        top:
+          fill:
+            kind: linearGradient
+            angle: 30
+            stops:
+              - { offset: 0, color: "#2f8a5a" }
+              - { offset: 1, color: "#15482e" }
+          strokes:
+            - { color: "#6dffb0", width: 1.4, opacity: 0.9 }
+            - { color: "#d4ffe6", width: 0.9, opacity: 0.95 }
+        left:
+          fill:
+            kind: linearGradient
+            angle: 90
+            stops:
+              - { offset: 0, color: "#1c4a30" }
+              - { offset: 1, color: "#0d2820" }
+          strokes:
+            - { color: "#7dffc0", width: 0.9, opacity: 0.8 }
+        right:
+          fill:
+            kind: linearGradient
+            angle: 90
+            stops:
+              - { offset: 0, color: "#143a26" }
+              - { offset: 1, color: "#091a18" }
+          strokes:
+            - { color: "#7dffc0", width: 0.9, opacity: 0.8 }
+      effects:
+        backglow: { color: "#37e08a", radius: 28, opacity: 0.5 }
+    # neon dot-grid pad — radial teal underglow, bright cyan dot pattern + rim
+    tray:
+      faces:
+        top:
+          fill:
+            kind: radialGradient
+            cx: 0.5
+            cy: 0.5
+            stops:
+              - { offset: 0,   color: "#1c4a66" }
+              - { offset: 0.6, color: "#11233e" }
+              - { offset: 1,   color: "#0d1530" }
+          strokes:
+            - { color: "#5cffff", width: 1.4, opacity: 0.8 }
+        left:  { fill: { kind: solid, color: "#0c1228" } }
+        right: { fill: { kind: solid, color: "#0a0f22" } }
+      text: { color: "#aee0ff", size: 12, weight: "700" }
+      effects:
+        cornerRadius: 6
+        backglow: { color: "#1fd6d6", radius: 72, opacity: 0.9 }
+        pattern:  { kind: dots, color: "#5cffff", spacing: 8 }
+  shapes: { rectangle: { } }
+nodes:
+  scene:
+    shape: composite
+    layout: { mode: grid, cols: 3, gap: 1.0, padding: 1 }
+    parts:
+      - id: padL
+        shape: group
+        preset: tray
+        layout: { mode: grid, cols: 2, gap: 0.6, padding: 1 }
+        geom: { h: 8 }
+        parts:
+          - { id: c0, shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 34 } }
+          - { id: c1, shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 70 } }
+          - { id: c2, shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 44 } }
+          - { id: c3, shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 88 } }
+      - id: padM
+        shape: group
+        preset: tray
+        layout: { mode: grid, cols: 2, gap: 0.6, padding: 1 }
+        geom: { h: 8 }
+        parts:
+          - { id: c4, shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 52 } }
+          - { id: c5, shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 34 } }
+          - { id: c6, shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 70 } }
+          - { id: c7, shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 40 } }
+      - id: padR
+        shape: group
+        preset: tray
+        layout: { mode: grid, cols: 2, gap: 0.6, padding: 1 }
+        geom: { h: 8 }
+        parts:
+          - { id: c8,  shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 60 } }
+          - { id: c9,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 46 } }
+          - { id: c10, shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 80 } }
+          - { id: c11, shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 36 } }

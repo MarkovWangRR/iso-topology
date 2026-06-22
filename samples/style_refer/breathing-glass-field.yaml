@@ -1,0 +1,89 @@
+# breathing-glass-field — airy pale blue-grey field, soft white frosted glass
+# panels with big rounded corners; cool gradient tops, gentle white rim, low relief.
+# (from tech-blue-breathing)
+canvas: { background: "#E3E9F4", grid: "", padding: 60, aspectRatio: 1.45 }
+theme:
+  presets:
+    # brightest frosted panel — soft, near-white, very faint edge
+    cubeA:
+      effects: { opacity: 0.9, cornerRadius: 14 }
+      stroke: { color: "#DCE4F0", width: 0.75 }
+      faces:
+        top:
+          fill:
+            kind: linearGradient
+            angle: 120
+            stops:
+              - { offset: 0, color: "#F6F9FD" }
+              - { offset: 1, color: "#EAEFF7" }
+          strokes:
+            - { color: "#FFFFFF", width: 1, opacity: 0.45 }
+        left:  { fill: { kind: solid, color: "#E4EAF4" } }
+        right: { fill: { kind: solid, color: "#EDF1F8" } }
+    # slightly cooler mid panel — a touch more recessive
+    cubeB:
+      effects: { opacity: 0.78, cornerRadius: 14 }
+      stroke: { color: "#D9E1EE", width: 0.75 }
+      faces:
+        top:
+          fill:
+            kind: linearGradient
+            angle: 120
+            stops:
+              - { offset: 0, color: "#EEF2FA" }
+              - { offset: 1, color: "#E1E8F3" }
+          strokes:
+            - { color: "#FFFFFF", width: 1, opacity: 0.35 }
+        left:  { fill: { kind: solid, color: "#DEE5F1" } }
+        right: { fill: { kind: solid, color: "#E7ECF6" } }
+    # glowing electric-blue hero — gradient top, blue halo, soft drop shadow
+    cubeC:
+      effects:
+        cornerRadius: 16
+        faceSplit: true
+        backglow: { color: "#5AA0FF", radius: 180, opacity: 0.8 }
+        outline: { color: "#A9CCFF", width: 2, opacity: 0.9 }
+        dropShadow: { dx: 0, dy: 14, blur: 32, color: "#1E50C880" }
+      stroke: { color: "#7FB0FF", width: 1.5 }
+      faces:
+        top:
+          fill:
+            kind: linearGradient
+            angle: 125
+            stops:
+              - { offset: 0, color: "#5E96FF" }
+              - { offset: 1, color: "#1E50C8" }
+          strokes:
+            - { color: "#BBD8FF", width: 1.5, opacity: 0.95 }
+        left:
+          fill:
+            kind: linearGradient
+            angle: 90
+            stops:
+              - { offset: 0, color: "#244CB0" }
+              - { offset: 1, color: "#15296E" }
+        right:
+          fill:
+            kind: linearGradient
+            angle: 90
+            stops:
+              - { offset: 0, color: "#3464D8" }
+              - { offset: 1, color: "#1B3690" }
+  shapes: { rectangle: { } }
+nodes:
+  scene:
+    shape: composite
+    layout: { mode: grid, cols: 4, gap: 0.6, padding: 1 }
+    parts:
+      - { id: b0,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 18 } }
+      - { id: b1,  shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 14 } }
+      - { id: b2,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 22 } }
+      - { id: b3,  shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 16 } }
+      - { id: b4,  shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 16 } }
+      - { id: b5,  shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 64 } }
+      - { id: b6,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 20 } }
+      - { id: b7,  shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 14 } }
+      - { id: b8,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 18 } }
+      - { id: b9,  shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 22 } }
+      - { id: b10, shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 16 } }
+      - { id: b11, shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 20 } }

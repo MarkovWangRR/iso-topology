@@ -1,0 +1,49 @@
+# matte-slate-strata — matte, opaque, strokeless masses on a cool neutral grey:
+# white-to-pale gradient tops over deep navy->slate side gradients, lifted by a
+# soft diffuse blue ground shadow. No glow, no grid — quiet and architectural.
+# (from h6)
+canvas: { background: "#EFF1F6", grid: "", padding: 80, aspectRatio: 1.4 }
+theme:
+  presets:
+    # matte navy mass — white top, deep navy side gradients, soft shadow
+    cubeA:
+      palette:
+        topGradient:   { from: "#FFFFFF", to: "#F4F7FC", dir: down }
+        leftGradient:  { from: "#3A5DA8", to: "#1B2F63", dir: up }
+        rightGradient: { from: "#7387B8", to: "#3A5DA8", dir: up }
+      stroke: { color: "#42619E", width: 0 }
+      effects: { cornerRadius: 0, dropShadow: { dx: 0, dy: 22, blur: 32, color: "#9FB0D433" } }
+    # paler slate variant — lighter side gradients
+    cubeB:
+      palette:
+        topGradient:   { from: "#FFFFFF", to: "#F4F8FF", dir: down }
+        leftGradient:  { from: "#6A82B8", to: "#3A4F86", dir: up }
+        rightGradient: { from: "#94A6CE", to: "#6A82B8", dir: up }
+      stroke: { color: "#6A82B8", width: 0 }
+      effects: { cornerRadius: 0, dropShadow: { dx: 0, dy: 22, blur: 32, color: "#9FB0D433" } }
+    # near-white topper variant — soft cool-grey side gradients
+    cubeC:
+      palette:
+        topGradient:   { from: "#FFFFFF", to: "#F4F8FF", dir: down }
+        leftGradient:  { from: "#CBD8EF", to: "#B0C3E6", dir: down }
+        rightGradient: { from: "#E0E9F8", to: "#CBD8EF", dir: down }
+      stroke: { color: "#D4E0F2", width: 0 }
+      effects: { cornerRadius: 0, dropShadow: { dx: 0, dy: 14, blur: 22, color: "#1B2F6322" } }
+  shapes: { rectangle: { } }
+nodes:
+  scene:
+    shape: composite
+    layout: { mode: grid, cols: 4, gap: 0.6, padding: 1 }
+    parts:
+      - { id: b0,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 34 } }
+      - { id: b1,  shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 70 } }
+      - { id: b2,  shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 22 } }
+      - { id: b3,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 54 } }
+      - { id: b4,  shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 40 } }
+      - { id: b5,  shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 88 } }
+      - { id: b6,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 28 } }
+      - { id: b7,  shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 60 } }
+      - { id: b8,  shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 44 } }
+      - { id: b9,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 76 } }
+      - { id: b10, shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 32 } }
+      - { id: b11, shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 50 } }

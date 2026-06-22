@@ -1,0 +1,47 @@
+# cobalt-wireframe — royal-blue field, white hollow wireframe cubes accented by
+# hot-pink dot-pattern tops with grain + magenta backglow. (from blue-bg-tech)
+canvas: { background: "#1A35E0", grid: iso, gridColor: "#2236DB", gridStep: 80, padding: 48, aspectRatio: 1.4 }
+theme:
+  presets:
+    # white wireframe volume — bright opaque edges, no fill
+    cubeA:
+      palette: { top: "#1A35E0", left: "#1A35E0", right: "#1A35E0" }
+      stroke: { color: "#FFFFFF", width: 2.6 }
+      effects: { wireframe: true, cornerRadius: 1 }
+    # thinner white wireframe variant
+    cubeB:
+      palette: { top: "#1A35E0", left: "#1A35E0", right: "#1A35E0" }
+      stroke: { color: "#FFFFFF", width: 2.2 }
+      effects: { wireframe: true, cornerRadius: 1 }
+    # pink dot-pattern "flora" top + grain + magenta backglow
+    cubeC:
+      palette: { top: "#1A35E0", left: "#1A35E0", right: "#1A35E0" }
+      stroke: { color: "#FFFFFF", width: 2.2 }
+      faces:
+        top:
+          fill: { kind: pattern, pattern: { kind: dots, color: "#FF2E9E", spacing: 4, angle: 0, projected: true } }
+          strokes: [ { color: "#FFFFFF", width: 2.2 } ]
+        left:  { fill: { kind: solid, color: "#1A35E0" }, strokes: [ { color: "#FFFFFF", width: 2.2 } ] }
+        right: { fill: { kind: solid, color: "#1A35E0" }, strokes: [ { color: "#FFFFFF", width: 2.2 } ] }
+      effects:
+        cornerRadius: 1
+        grain: { intensity: 0.5, scale: 2 }
+        backglow: { color: "#FF2E9E", radius: 14, opacity: 0.4 }
+  shapes: { rectangle: { } }
+nodes:
+  scene:
+    shape: composite
+    layout: { mode: grid, cols: 4, gap: 0.6, padding: 1 }
+    parts:
+      - { id: b0,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 40 } }
+      - { id: b1,  shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 92 } }
+      - { id: b2,  shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 22 } }
+      - { id: b3,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 64 } }
+      - { id: b4,  shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 30 } }
+      - { id: b5,  shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 18 } }
+      - { id: b6,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 100 } }
+      - { id: b7,  shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 46 } }
+      - { id: b8,  shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 16 } }
+      - { id: b9,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 54 } }
+      - { id: b10, shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 78 } }
+      - { id: b11, shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 24 } }

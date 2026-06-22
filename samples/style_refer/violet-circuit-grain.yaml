@@ -1,0 +1,59 @@
+# violet-circuit-grain — deep-violet tech: purple gradient faces, film grain,
+# violet backglow, soft dropShadow, rounded corners on a dotted dark canvas.
+canvas: { background: "#0E0A1E", grid: dots, gridColor: "#241844", padding: 56, aspectRatio: 1.4 }
+theme:
+  text: { color: "#EDE4FF", size: 10, weight: "600" }
+  presets:
+    cubeA:
+      palette:
+        topGradient:   { from: "#C4A4FF", to: "#7A4FE0", dir: down }
+        leftGradient:  { from: "#5C38C2", to: "#3A1E8C", dir: down }
+        rightGradient: { from: "#7E4FE8", to: "#4E2BB8", dir: down }
+      stroke: { color: "#CBB4FF", width: 1.4 }
+      effects:
+        cornerRadius: 10
+        faceSplit: true
+        grain: { intensity: 0.18, scale: 1.2 }
+        dropShadow: { dx: 0, dy: 14, blur: 26, color: "#0008" }
+        backglow: { color: "#9B6BFF", radius: 104, opacity: 0.72 }
+    cubeB:
+      palette:
+        topGradient:   { from: "#A98CFF", to: "#6B41D4", dir: down }
+        leftGradient:  { from: "#4A2BA6", to: "#2C1670", dir: down }
+        rightGradient: { from: "#6A3FD6", to: "#3F22A0", dir: down }
+      stroke: { color: "#B79CFF", width: 1.4 }
+      effects:
+        cornerRadius: 10
+        faceSplit: true
+        grain: { intensity: 0.18, scale: 1.2 }
+        dropShadow: { dx: 0, dy: 14, blur: 26, color: "#0008" }
+        backglow: { color: "#8757F0", radius: 98, opacity: 0.68 }
+    cubeC:
+      palette:
+        topGradient:   { from: "#D9C2FF", to: "#9061F0", dir: down }
+        leftGradient:  { from: "#6840D2", to: "#42239C", dir: down }
+        rightGradient: { from: "#8A56F2", to: "#5630C8", dir: down }
+      stroke: { color: "#DCC8FF", width: 1.4 }
+      effects:
+        cornerRadius: 10
+        faceSplit: true
+        grain: { intensity: 0.18, scale: 1.2 }
+        dropShadow: { dx: 0, dy: 14, blur: 26, color: "#0008" }
+        backglow: { color: "#AE82FF", radius: 110, opacity: 0.74 }
+nodes:
+  scene:
+    shape: composite
+    layout: { mode: grid, cols: 4, gap: 0.6, padding: 1 }
+    parts:
+      - { id: c0,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 30 } }
+      - { id: c1,  shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 64 } }
+      - { id: c2,  shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 44 } }
+      - { id: c3,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 88 } }
+      - { id: c4,  shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 52 } }
+      - { id: c5,  shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 34 } }
+      - { id: c6,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 70 } }
+      - { id: c7,  shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 40 } }
+      - { id: c8,  shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 60 } }
+      - { id: c9,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 46 } }
+      - { id: c10, shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 80 } }
+      - { id: c11, shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 36 } }

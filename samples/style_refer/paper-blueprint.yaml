@@ -1,0 +1,38 @@
+# paper-blueprint — white paper, flat-white cube tops, light-gray left face,
+# crisp 2px black outline. Clean engineering-print look. (from bw-ascii-lineart)
+canvas: { background: "#FFFFFF", grid: "", padding: 64, aspectRatio: 1.4 }
+theme:
+  presets:
+    # white top, light-gray left, near-white right, hard black outline
+    cubeA:
+      palette: { top: "#FFFFFF", left: "#ECECEC", right: "#FAFAFA" }
+      stroke: { color: "#111111", width: 2.0 }
+      effects: { cornerRadius: 0, faceSplit: false, wireframe: false }
+    # slightly deeper left shade for variety
+    cubeB:
+      palette: { top: "#FFFFFF", left: "#E2E2E2", right: "#F5F5F5" }
+      stroke: { color: "#111111", width: 2.0 }
+      effects: { cornerRadius: 0, faceSplit: false, wireframe: false }
+    # thinner-outline variant
+    cubeC:
+      palette: { top: "#FFFFFF", left: "#F2F2F2", right: "#FCFCFC" }
+      stroke: { color: "#111111", width: 1.6 }
+      effects: { cornerRadius: 0, faceSplit: false, wireframe: false }
+  shapes: { rectangle: { } }
+nodes:
+  scene:
+    shape: composite
+    layout: { mode: grid, cols: 4, gap: 0.6, padding: 1 }
+    parts:
+      - { id: b0,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 30 } }
+      - { id: b1,  shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 70 } }
+      - { id: b2,  shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 40 } }
+      - { id: b3,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 96 } }
+      - { id: b4,  shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 22 } }
+      - { id: b5,  shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 58 } }
+      - { id: b6,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 50 } }
+      - { id: b7,  shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 34 } }
+      - { id: b8,  shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 82 } }
+      - { id: b9,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 44 } }
+      - { id: b10, shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 64 } }
+      - { id: b11, shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 26 } }

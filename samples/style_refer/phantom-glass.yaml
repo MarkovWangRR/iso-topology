@@ -1,0 +1,129 @@
+# phantom-glass — ghostly translucent blue glass cubes floating in a near-black
+# navy void; faint blue gradient faces at low opacity, bright cyan/white edge
+# strokes, soft blue backglow. (from h3)
+canvas: { background: "#0a0e1a", grid: "", padding: 80, aspectRatio: 1.4 }
+theme:
+  presets:
+    # translucent glass cube — faint blue-grey gradient, luminous white-cyan rim
+    cubeA:
+      stroke: { color: "#dff1ff", width: 1 }
+      faces:
+        top:
+          fill:
+            kind: linearGradient
+            angle: 30
+            stops:
+              - { offset: 0.0, color: "#5f7fc0" }
+              - { offset: 1.0, color: "#22397e" }
+          strokes:
+            - { color: "#dff1ff", width: 1.5, opacity: 1.0 }
+        left:
+          fill:
+            kind: linearGradient
+            angle: 90
+            stops:
+              - { offset: 0.0, color: "#33508f" }
+              - { offset: 1.0, color: "#1b2c66" }
+          strokes:
+            - { color: "#bfe4ff", width: 1.2, opacity: 0.95 }
+        right:
+          fill:
+            kind: linearGradient
+            angle: 90
+            stops:
+              - { offset: 0.0, color: "#3a5ba0" }
+              - { offset: 1.0, color: "#1f3576" }
+          strokes:
+            - { color: "#bfe4ff", width: 1.2, opacity: 0.95 }
+      effects:
+        opacity: 0.30
+        backglow: { color: "#6fb8ff", radius: 40, opacity: 0.6 }
+        dropShadow: { dx: 0, dy: 16, blur: 30, color: "#02040988" }
+    # cooler ghost variant
+    cubeB:
+      stroke: { color: "#cfe8ff", width: 1 }
+      faces:
+        top:
+          fill:
+            kind: linearGradient
+            angle: 30
+            stops:
+              - { offset: 0.0, color: "#506ec0" }
+              - { offset: 1.0, color: "#1d3170" }
+          strokes:
+            - { color: "#dff1ff", width: 1.5, opacity: 1.0 }
+        left:
+          fill:
+            kind: linearGradient
+            angle: 90
+            stops:
+              - { offset: 0.0, color: "#2c4a8c" }
+              - { offset: 1.0, color: "#172860" }
+          strokes:
+            - { color: "#bfe4ff", width: 1.2, opacity: 0.95 }
+        right:
+          fill:
+            kind: linearGradient
+            angle: 90
+            stops:
+              - { offset: 0.0, color: "#33549c" }
+              - { offset: 1.0, color: "#1a306e" }
+          strokes:
+            - { color: "#bfe4ff", width: 1.2, opacity: 0.95 }
+      effects:
+        opacity: 0.28
+        backglow: { color: "#5fb0ff", radius: 40, opacity: 0.55 }
+        dropShadow: { dx: 0, dy: 16, blur: 30, color: "#02040988" }
+    # faintest, most-glass variant
+    cubeC:
+      stroke: { color: "#e8f4ff", width: 1 }
+      faces:
+        top:
+          fill:
+            kind: linearGradient
+            angle: 30
+            stops:
+              - { offset: 0.0, color: "#6a88c8" }
+              - { offset: 1.0, color: "#274088" }
+          strokes:
+            - { color: "#eff8ff", width: 1.5, opacity: 1.0 }
+        left:
+          fill:
+            kind: linearGradient
+            angle: 90
+            stops:
+              - { offset: 0.0, color: "#3a5896" }
+              - { offset: 1.0, color: "#1f326e" }
+          strokes:
+            - { color: "#cfeaff", width: 1.2, opacity: 0.95 }
+        right:
+          fill:
+            kind: linearGradient
+            angle: 90
+            stops:
+              - { offset: 0.0, color: "#4262a8" }
+              - { offset: 1.0, color: "#233a80" }
+          strokes:
+            - { color: "#cfeaff", width: 1.2, opacity: 0.95 }
+      effects:
+        opacity: 0.26
+        backglow: { color: "#7fc8ff", radius: 44, opacity: 0.6 }
+        dropShadow: { dx: 0, dy: 16, blur: 30, color: "#02040988" }
+  shapes: { rectangle: { } }
+nodes:
+  scene:
+    shape: composite
+    layout: { mode: grid, cols: 4, gap: 0.6, padding: 1 }
+    parts:
+      - { id: b0,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 34 } }
+      - { id: b1,  shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 70 } }
+      - { id: b2,  shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 22 } }
+      - { id: b3,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 54 } }
+      - { id: b4,  shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 40 } }
+      - { id: b5,  shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 88 } }
+      - { id: b6,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 28 } }
+      - { id: b7,  shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 60 } }
+      - { id: b8,  shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 44 } }
+      - { id: b9,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 76 } }
+      - { id: b10, shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 32 } }
+      - { id: b11, shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 50 } }

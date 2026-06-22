@@ -1,0 +1,138 @@
+# candy-slab-glow — bright pastel candy-glass slabs: diagonal sherbet tops,
+# saturated lit-right / shadowed-left sides, big rounded corners, translucent
+# bodies floating on a soft lavender wash with colored drop-glow. (from h7)
+canvas: { background: "#eef1fb", grid: "", padding: 80, aspectRatio: 1.4 }
+theme:
+  presets:
+    # cyan / blue candy glass — diagonal sky->blue top, bright lit right
+    cubeA:
+      stroke: { color: "#cdeeff", width: 1.2 }
+      faces:
+        top:
+          fill:
+            kind: linearGradient
+            angle: 120
+            stops:
+              - { offset: 0.0,  color: "#9fe4ff" }
+              - { offset: 0.25, color: "#e8fbff" }
+              - { offset: 0.45, color: "#4cb8ff" }
+              - { offset: 1.0,  color: "#2456e6" }
+          strokes:
+            - { color: "#dffaff", width: 2.4, opacity: 1.0 }
+        left:
+          fill:
+            kind: linearGradient
+            angle: 90
+            stops:
+              - { offset: 0.0, color: "#1f5fe0" }
+              - { offset: 1.0, color: "#1746b8" }
+          strokes:
+            - { color: "#9fd6ff", width: 1.0, opacity: 0.55 }
+        right:
+          fill:
+            kind: linearGradient
+            angle: 90
+            stops:
+              - { offset: 0.0, color: "#46c8ff" }
+              - { offset: 1.0, color: "#2a86f2" }
+          strokes:
+            - { color: "#eafaff", width: 2.4, opacity: 1.0 }
+      effects:
+        cornerRadius: 26
+        faceSplit: true
+        opacity: 0.7
+        dropShadow: { dx: -6, dy: 30, blur: 10, color: "#3a78d8" }
+    # violet candy glass — diagonal lilac->purple top
+    cubeB:
+      stroke: { color: "#e0c8ff", width: 1.2 }
+      faces:
+        top:
+          fill:
+            kind: linearGradient
+            angle: 120
+            stops:
+              - { offset: 0.0,  color: "#c79bff" }
+              - { offset: 0.25, color: "#f3e6ff" }
+              - { offset: 0.5,  color: "#7d3df0" }
+              - { offset: 1.0,  color: "#5a1fc8" }
+          strokes:
+            - { color: "#ecdcff", width: 2.4, opacity: 1.0 }
+        left:
+          fill:
+            kind: linearGradient
+            angle: 90
+            stops:
+              - { offset: 0.0, color: "#6a2fd0" }
+              - { offset: 1.0, color: "#4a1aa8" }
+          strokes:
+            - { color: "#c8a8ff", width: 1.0, opacity: 0.55 }
+        right:
+          fill:
+            kind: linearGradient
+            angle: 90
+            stops:
+              - { offset: 0.0, color: "#9a5cff" }
+              - { offset: 1.0, color: "#6c2fe8" }
+          strokes:
+            - { color: "#f0e4ff", width: 2.4, opacity: 1.0 }
+      effects:
+        cornerRadius: 26
+        faceSplit: true
+        opacity: 0.7
+        dropShadow: { dx: -5, dy: 28, blur: 10, color: "#6a3ad8" }
+    # amber candy glass — diagonal cream->orange top
+    cubeC:
+      stroke: { color: "#ffe6bf", width: 1.2 }
+      faces:
+        top:
+          fill:
+            kind: linearGradient
+            angle: 120
+            stops:
+              - { offset: 0.0,  color: "#ffe0a8" }
+              - { offset: 0.25, color: "#fff6e6" }
+              - { offset: 0.5,  color: "#ff9c2e" }
+              - { offset: 1.0,  color: "#e06a12" }
+          strokes:
+            - { color: "#fff4e0", width: 2.4, opacity: 1.0 }
+        left:
+          fill:
+            kind: linearGradient
+            angle: 90
+            stops:
+              - { offset: 0.0, color: "#e07a1a" }
+              - { offset: 1.0, color: "#c25c10" }
+          strokes:
+            - { color: "#ffd8a8", width: 1.0, opacity: 0.55 }
+        right:
+          fill:
+            kind: linearGradient
+            angle: 90
+            stops:
+              - { offset: 0.0, color: "#ffae42" }
+              - { offset: 1.0, color: "#f08a1e" }
+          strokes:
+            - { color: "#fff4e0", width: 2.4, opacity: 1.0 }
+      effects:
+        cornerRadius: 26
+        faceSplit: true
+        opacity: 0.72
+        dropShadow: { dx: -4, dy: 22, blur: 10, color: "#d08a3a" }
+  shapes: { rectangle: { } }
+nodes:
+  scene:
+    shape: composite
+    layout: { mode: grid, cols: 4, gap: 0.6, padding: 1 }
+    parts:
+      - { id: b0,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 34 } }
+      - { id: b1,  shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 70 } }
+      - { id: b2,  shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 22 } }
+      - { id: b3,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 54 } }
+      - { id: b4,  shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 40 } }
+      - { id: b5,  shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 88 } }
+      - { id: b6,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 28 } }
+      - { id: b7,  shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 60 } }
+      - { id: b8,  shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 44 } }
+      - { id: b9,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 76 } }
+      - { id: b10, shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 32 } }
+      - { id: b11, shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 50 } }

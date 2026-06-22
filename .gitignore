@@ -27,3 +27,6 @@ samples/playground/
 
 # playbook style-swatch render artifacts (regenerable)
 samples/playbook/styles/_swatch/out_*/
+
+# style_refer render artifacts (regenerable)
+samples/style_refer/_out/

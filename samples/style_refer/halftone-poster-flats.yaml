@@ -1,0 +1,39 @@
+# halftone-poster-flats — flat saturated poster infographic: pale grey halftone
+# dot field, bold solid-fill blocks in teal / crimson / cyan / navy, generous
+# rounded corners, no gradients, no strokes — pure flat color. (from h5)
+canvas: { background: "#F2F2F2", grid: dots, gridColor: "#E2E2E2", gridStep: 11, padding: 64, aspectRatio: 1.4 }
+theme:
+  presets:
+    # flat teal-blue block — solid faces, big rounding, no stroke
+    cubeA:
+      palette: { top: "#1E9FD0", left: "#1577A0", right: "#1888B8" }
+      stroke: { color: "#FFFFFF", width: 0 }
+      effects: { cornerRadius: 20 }
+    # flat hot-crimson block
+    cubeB:
+      palette: { top: "#EC1F5A", left: "#B01544", right: "#CC1A4F" }
+      stroke: { color: "#FFFFFF", width: 0 }
+      effects: { cornerRadius: 20 }
+    # flat deep-navy block
+    cubeC:
+      palette: { top: "#11468C", left: "#0B3068", right: "#0E3B7A" }
+      stroke: { color: "#FFFFFF", width: 0 }
+      effects: { cornerRadius: 20 }
+  shapes: { rectangle: { } }
+nodes:
+  scene:
+    shape: composite
+    layout: { mode: grid, cols: 4, gap: 0.6, padding: 1 }
+    parts:
+      - { id: b0,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 34 } }
+      - { id: b1,  shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 70 } }
+      - { id: b2,  shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 22 } }
+      - { id: b3,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 54 } }
+      - { id: b4,  shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 40 } }
+      - { id: b5,  shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 88 } }
+      - { id: b6,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 28 } }
+      - { id: b7,  shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 60 } }
+      - { id: b8,  shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 44 } }
+      - { id: b9,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 76 } }
+      - { id: b10, shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 32 } }
+      - { id: b11, shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 50 } }

@@ -1,0 +1,51 @@
+# periwinkle-frost — borderless frosted glass: white->periwinkle vertical
+# gradients, bright tops, near-invisible stroke, translucency + soft diffuse
+# grounding shadow on cool-neutral paper, no grid.
+canvas: { background: "#F1F1F3", grid: "", padding: 72, aspectRatio: 1.4 }
+theme:
+  text: { color: "#8390B5", size: 10 }
+  presets:
+    cubeA:                       # hero glass — white -> light periwinkle
+      palette:
+        topGradient:   { from: "#FFFFFF", to: "#F6F9FF", dir: vertical }
+        leftGradient:  { from: "#FBFCFF", to: "#C6D3F0", dir: vertical }
+        rightGradient: { from: "#F2F5FD", to: "#B4C5EA", dir: vertical }
+      stroke: { color: "#E7EDFA", width: 1 }   # blends into glass -> reads borderless
+      effects:
+        opacity: 0.97
+        dropShadow: { dx: 3, dy: 12, blur: 34, color: "#9AAAD02E" }
+    cubeB:                       # cooler/deeper periwinkle glass
+      palette:
+        topGradient:   { from: "#FFFFFF", to: "#EFF4FF", dir: vertical }
+        leftGradient:  { from: "#F4F7FF", to: "#B2C2EC", dir: vertical }
+        rightGradient: { from: "#EBF1FD", to: "#9FB5E4", dir: vertical }
+      stroke: { color: "#E2EAFA", width: 1 }
+      effects:
+        opacity: 0.96
+        dropShadow: { dx: 3, dy: 12, blur: 34, color: "#9AAAD030" }
+    cubeC:                       # softest/lightest glass
+      palette:
+        topGradient:   { from: "#FFFFFF", to: "#FAFCFF", dir: vertical }
+        leftGradient:  { from: "#FCFDFF", to: "#D0DBF4", dir: vertical }
+        rightGradient: { from: "#F6F9FE", to: "#C7D4F0", dir: vertical }
+      stroke: { color: "#ECF1FB", width: 1 }
+      effects:
+        opacity: 0.96
+        dropShadow: { dx: 3, dy: 10, blur: 28, color: "#9AAAD02C" }
+nodes:
+  scene:
+    shape: composite
+    layout: { mode: grid, cols: 4, gap: 0.6, padding: 1 }
+    parts:
+      - { id: c0,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 30 } }
+      - { id: c1,  shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 64 } }
+      - { id: c2,  shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 44 } }
+      - { id: c3,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 88 } }
+      - { id: c4,  shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 52 } }
+      - { id: c5,  shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 34 } }
+      - { id: c6,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 70 } }
+      - { id: c7,  shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 40 } }
+      - { id: c8,  shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 60 } }
+      - { id: c9,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 46 } }
+      - { id: c10, shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 80 } }
+      - { id: c11, shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 36 } }

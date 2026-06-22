@@ -1,0 +1,64 @@
+# slate-cage-blueprint — dark slate-navy ground, hollow white wireframe cube cages
+# (transparent faces, thin grey-white edges, grain) seated on soft frosted slab
+# trays; occasional cyan-ink accent cage. (from wireframe-handdrawn)
+canvas: { background: "#343F54", grid: "", padding: 70, aspectRatio: 1.45 }
+theme:
+  presets:
+    # soft frosted slab tray under each cage
+    tray:
+      faces:
+        "*": { fill: { kind: solid, color: "#CDD6E60A" } }
+      stroke: { color: "#CDD6E6", width: 1.0 }
+      effects: { cornerRadius: 1, opacity: 1, grain: { intensity: 0.85, scale: 1.2 } }
+    # hollow white wireframe cage — faint face tint, thin grey-white edges
+    cubeA:
+      faces:
+        "*": { fill: { kind: solid, color: "#CDD6E605" } }
+      stroke: { color: "#CDD6E6", width: 1.0 }
+      effects: { cornerRadius: 1, opacity: 1, wireframe: true, grain: { intensity: 0.85, scale: 1.2 } }
+    # brighter white wireframe variant
+    cubeB:
+      faces:
+        "*": { fill: { kind: solid, color: "#E4ECFA08" } }
+      stroke: { color: "#E4ECFA", width: 1.2 }
+      effects: { cornerRadius: 1, opacity: 1, wireframe: true, grain: { intensity: 0.85, scale: 1.2 } }
+    # cyan-ink accent cage — bright line-art edges, faint cyan tint
+    cubeC:
+      faces:
+        "*": { fill: { kind: solid, color: "#5CC8FF1A" } }
+      stroke: { color: "#5CC8FF", width: 2.0 }
+      effects: { cornerRadius: 1, opacity: 1, wireframe: true, grain: { intensity: 0.6, scale: 1.2 } }
+  shapes: { rectangle: { } }
+nodes:
+  scene:
+    shape: composite
+    layout: { mode: column, gap: 1.0, padding: 1 }
+    parts:
+      # 3 frosted slab trays, 4 wireframe cages each (<=3 groups; strict 4-wide grid per lane)
+      - id: laneA
+        shape: group
+        preset: tray
+        layout: { mode: grid, cols: 4, gap: 0.6, padding: 1 }
+        parts:
+          - { id: c0, shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 90 } }
+          - { id: c1, shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 130 } }
+          - { id: c2, shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 104 } }
+          - { id: c3, shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 120 } }
+      - id: laneB
+        shape: group
+        preset: tray
+        layout: { mode: grid, cols: 4, gap: 0.6, padding: 1 }
+        parts:
+          - { id: c4, shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 96 } }
+          - { id: c5, shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 140 } }
+          - { id: c6, shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 100 } }
+          - { id: c7, shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 116 } }
+      - id: laneC
+        shape: group
+        preset: tray
+        layout: { mode: grid, cols: 4, gap: 0.6, padding: 1 }
+        parts:
+          - { id: c8,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 88 } }
+          - { id: c9,  shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 128 } }
+          - { id: c10, shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 98 } }
+          - { id: c11, shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 112 } }

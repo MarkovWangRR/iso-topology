@@ -1,0 +1,44 @@
+# stipple-draft-ink — pure-white drafting sheet: hairline 0.7px black ink, white
+# faces, fine dot-screen (stipple) and cross-hatch tops, NO grid, NO shadows.
+# Crisp technical line-art object look. (from line-art)
+canvas: { background: "#FFFFFF", grid: none, padding: 64, aspectRatio: 1.4 }
+theme:
+  presets:
+    # fine even dot-screen stipple on the top face
+    cubeA:
+      palette: { top: "#FFFFFF", left: "#FFFFFF", right: "#FFFFFF" }
+      stroke: { color: "#141414", width: 0.7 }
+      faces:
+        "*":   { fill: { kind: solid, color: "#FFFFFF" }, strokes: [ { color: "#141414", width: 0.7 } ] }
+        "top": { fill: { kind: pattern, pattern: { kind: dots, color: "#8A8A8A", spacing: 3.6, projected: true } }, strokes: [ { color: "#141414", width: 0.7 } ] }
+    # 45-degree cross-hatch top for variety
+    cubeB:
+      palette: { top: "#FFFFFF", left: "#FFFFFF", right: "#FFFFFF" }
+      stroke: { color: "#141414", width: 0.7 }
+      faces:
+        "*":   { fill: { kind: solid, color: "#FFFFFF" }, strokes: [ { color: "#141414", width: 0.7 } ] }
+        "top": { fill: { kind: pattern, pattern: { kind: hatch, color: "#8A8A8A", spacing: 4.4, angle: 45, projected: true } }, strokes: [ { color: "#141414", width: 0.7 } ] }
+    # plain hollow white box — no top texture, thin-ink silhouette only
+    cubeC:
+      palette: { top: "#FFFFFF", left: "#FFFFFF", right: "#FFFFFF" }
+      stroke: { color: "#141414", width: 0.7 }
+      faces:
+        "*": { fill: { kind: solid, color: "#FFFFFF" }, strokes: [ { color: "#141414", width: 0.7 } ] }
+  shapes: { rectangle: { } }
+nodes:
+  scene:
+    shape: composite
+    layout: { mode: grid, cols: 4, gap: 0.6, padding: 1 }
+    parts:
+      - { id: b0,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 34 } }
+      - { id: b1,  shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 70 } }
+      - { id: b2,  shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 22 } }
+      - { id: b3,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 54 } }
+      - { id: b4,  shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 40 } }
+      - { id: b5,  shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 88 } }
+      - { id: b6,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 28 } }
+      - { id: b7,  shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 60 } }
+      - { id: b8,  shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 44 } }
+      - { id: b9,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 76 } }
+      - { id: b10, shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 32 } }
+      - { id: b11, shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 50 } }

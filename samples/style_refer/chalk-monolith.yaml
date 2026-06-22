@@ -1,0 +1,38 @@
+# chalk-monolith — solid chalk-white masses carved by crisp black edges on a
+# pure-black void; axonometric museum-model look. (from pure-black-lineart)
+canvas: { background: "#000000", grid: "", padding: 64, aspectRatio: 1.4 }
+theme:
+  presets:
+    # bright white face, thin black carved edges + faint chalk grain
+    cubeA:
+      palette: { top: "#FFFFFF", left: "#D6D6D6", right: "#C2C2C2" }
+      stroke: { color: "#0A0A0A", width: 1.1 }
+      effects: { grain: { intensity: 0.14, scale: 2.0 } }
+    # mid white, slightly heavier ink edge + chalk grain
+    cubeB:
+      palette: { top: "#FAFAFA", left: "#D0D0D0", right: "#BCBCBC" }
+      stroke: { color: "#0A0A0A", width: 1.3 }
+      effects: { grain: { intensity: 0.14, scale: 2.0 } }
+    # cool-white variant, thinnest ink + chalk grain
+    cubeC:
+      palette: { top: "#FFFFFF", left: "#DADADA", right: "#C8C8C8" }
+      stroke: { color: "#0A0A0A", width: 0.9 }
+      effects: { grain: { intensity: 0.14, scale: 2.0 } }
+  shapes: { rectangle: { } }
+nodes:
+  scene:
+    shape: composite
+    layout: { mode: grid, cols: 4, gap: 0.6, padding: 1 }
+    parts:
+      - { id: b0,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 34 } }
+      - { id: b1,  shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 88 } }
+      - { id: b2,  shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 24 } }
+      - { id: b3,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 60 } }
+      - { id: b4,  shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 42 } }
+      - { id: b5,  shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 16 } }
+      - { id: b6,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 96 } }
+      - { id: b7,  shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 50 } }
+      - { id: b8,  shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 28 } }
+      - { id: b9,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 72 } }
+      - { id: b10, shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 38 } }
+      - { id: b11, shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 20 } }

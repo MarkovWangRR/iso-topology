@@ -1,0 +1,1442 @@
+{
+  "_comment": "Machine-readable index of 28 isometric STYLE-REFERENCE cards (cube-grid swatches). To pick a style for a user request: fuzzy-match the request against each style's `triggers`+`mood`+`use_cases`+`essence` (case-insensitive substring or embedding) and/or FILTER by `features` (the depth/texture tags) and `tone` (light|dark). Then load `dsl_file` as the visual-language template — copy its theme.presets (canvas + node/group presets) onto your own topology; the card's own 12-cube grid is just a swatch. `preview` is a rendered PNG.",
+  "version": 1,
+  "count": 28,
+  "feature_tags": {
+    "shadow": "ground/contact dropShadow under blocks",
+    "glow": "backglow halo and/or outline rim (bloom)",
+    "grain": "film-grain / noise surface texture",
+    "dots": "dot / halftone pattern fill",
+    "hatch": "diagonal hatch / screen-door pattern fill",
+    "faceSplit": "split highlight across the top face",
+    "translucent": "opacity<1 or RRGGBBAA alpha (see-through glass)",
+    "gradient": "per-face linear/multi-stop gradient fills",
+    "flat": "solid two-tone faces, no gradient",
+    "rounded": "large corner radius (soft cards)",
+    "wireframe": "hollow stroke-only cages",
+    "groups": "uses 1-3 group trays/zones"
+  },
+  "all_features_present": [
+    "dots",
+    "faceSplit",
+    "flat",
+    "glow",
+    "gradient",
+    "grain",
+    "groups",
+    "hatch",
+    "rounded",
+    "shadow",
+    "translucent",
+    "wireframe"
+  ],
+  "tones": [
+    "light",
+    "dark"
+  ],
+  "styles": [
+    {
+      "slug": "aqua-slab-gradient",
+      "title": "Aqua Slab Gradient",
+      "source": "h2",
+      "essence": "Clean navy stage; cyan→blue face-split gradient cubes — bright SaaS-deck look.",
+      "tone": "dark",
+      "canvas": {
+        "background": "#102A4E",
+        "grid": "none"
+      },
+      "palette": [
+        "#EAF6FF",
+        "#7FE3E0",
+        "#5BC9D6",
+        "#3FB7C8",
+        "#2A93B0",
+        "#52C8D2"
+      ],
+      "features": [
+        "glow",
+        "faceSplit",
+        "translucent",
+        "gradient"
+      ],
+      "groups": 0,
+      "triggers": [
+        "saas",
+        "clean",
+        "gradient",
+        "cyan",
+        "blue",
+        "product deck",
+        "modern",
+        "bright",
+        "tech",
+        "crisp"
+      ],
+      "mood": [
+        "clean",
+        "modern",
+        "professional"
+      ],
+      "use_cases": [
+        "SaaS landing",
+        "product overview",
+        "bright tech hero"
+      ],
+      "dsl_file": "samples/style_refer/aqua-slab-gradient.yaml",
+      "preview": "samples/style_refer/_out/aqua-slab-gradient/shot.png"
+    },
+    {
+      "slug": "aurora-glass",
+      "title": "Aurora Glass",
+      "source": "dark-frosted-gradient",
+      "essence": "Near-black field; frosted translucent cubes with pink→blue diagonal tops, magenta glow rims, grain + bloom.",
+      "tone": "dark",
+      "canvas": {
+        "background": "#050507",
+        "grid": "none"
+      },
+      "palette": [
+        "#FF9ECF",
+        "#FFC2E0",
+        "#C77FB2",
+        "#6E5C9E",
+        "#6E86D6",
+        "#AFCBFF"
+      ],
+      "features": [
+        "shadow",
+        "glow",
+        "grain",
+        "faceSplit",
+        "translucent",
+        "gradient",
+        "rounded"
+      ],
+      "groups": 0,
+      "triggers": [
+        "frosted",
+        "glass",
+        "premium",
+        "aurora",
+        "iridescent",
+        "pink",
+        "blue",
+        "gradient",
+        "glow",
+        "dreamy",
+        "high-end",
+        "ai",
+        "glassmorphism"
+      ],
+      "mood": [
+        "premium",
+        "dreamy",
+        "futuristic",
+        "elegant"
+      ],
+      "use_cases": [
+        "premium AI/SaaS hero",
+        "high-end landing",
+        "glassmorphism key art"
+      ],
+      "dsl_file": "samples/style_refer/aurora-glass.yaml",
+      "preview": "samples/style_refer/_out/aurora-glass/shot.png"
+    },
+    {
+      "slug": "breathing-glass-field",
+      "title": "Breathing Glass Field",
+      "source": "tech-blue-breathing",
+      "essence": "Airy pale blue-grey field; soft white frosted panels + one glowing blue gradient hero with halo.",
+      "tone": "light",
+      "canvas": {
+        "background": "#E3E9F4",
+        "grid": "none"
+      },
+      "palette": [
+        "#DCE4F0",
+        "#F6F9FD",
+        "#EAEFF7",
+        "#FFFFFF",
+        "#E4EAF4",
+        "#EDF1F8"
+      ],
+      "features": [
+        "shadow",
+        "glow",
+        "faceSplit",
+        "translucent",
+        "gradient",
+        "rounded"
+      ],
+      "groups": 0,
+      "triggers": [
+        "airy",
+        "calm",
+        "breathing",
+        "soft",
+        "blue glow",
+        "light premium",
+        "minimal",
+        "serene",
+        "clean",
+        "wellness"
+      ],
+      "mood": [
+        "calm",
+        "airy",
+        "premium",
+        "serene"
+      ],
+      "use_cases": [
+        "calm minimal product",
+        "wellness/health tech",
+        "light premium hero"
+      ],
+      "dsl_file": "samples/style_refer/breathing-glass-field.yaml",
+      "preview": "samples/style_refer/_out/breathing-glass-field/shot.png"
+    },
+    {
+      "slug": "candy-slab-glow",
+      "title": "Candy Slab Glow",
+      "source": "h7",
+      "essence": "Candy-glass cubes: pastel sherbet diagonal tops, lit-right/shadow-left sides, rounded, translucent + colored drop-glow on lavender wash.",
+      "tone": "light",
+      "canvas": {
+        "background": "#eef1fb",
+        "grid": "none"
+      },
+      "palette": [
+        "#CDEEFF",
+        "#9FE4FF",
+        "#E8FBFF",
+        "#4CB8FF",
+        "#2456E6",
+        "#DFFAFF"
+      ],
+      "features": [
+        "shadow",
+        "faceSplit",
+        "translucent",
+        "gradient",
+        "rounded"
+      ],
+      "groups": 0,
+      "triggers": [
+        "candy",
+        "playful",
+        "pastel",
+        "vibrant",
+        "colorful",
+        "glossy",
+        "fun",
+        "sherbet",
+        "friendly",
+        "bright",
+        "gradient"
+      ],
+      "mood": [
+        "playful",
+        "vibrant",
+        "friendly"
+      ],
+      "use_cases": [
+        "playful product",
+        "consumer app",
+        "colorful hero"
+      ],
+      "dsl_file": "samples/style_refer/candy-slab-glow.yaml",
+      "preview": "samples/style_refer/_out/candy-slab-glow/shot.png"
+    },
+    {
+      "slug": "chalk-monolith",
+      "title": "Chalk Monolith",
+      "source": "pure-black-lineart",
+      "essence": "Solid chalk-white masses carved by crisp black edges, film grain, on a pure-black void.",
+      "tone": "dark",
+      "canvas": {
+        "background": "#000000",
+        "grid": "none"
+      },
+      "palette": [
+        "#FFFFFF",
+        "#D6D6D6",
+        "#C2C2C2",
+        "#0A0A0A",
+        "#FAFAFA",
+        "#D0D0D0"
+      ],
+      "features": [
+        "grain",
+        "flat"
+      ],
+      "groups": 0,
+      "triggers": [
+        "monochrome",
+        "black",
+        "white",
+        "museum",
+        "sculptural",
+        "bold",
+        "minimal",
+        "stark",
+        "gallery",
+        "monolith",
+        "mono"
+      ],
+      "mood": [
+        "stark",
+        "bold",
+        "sculptural"
+      ],
+      "use_cases": [
+        "bold statement",
+        "gallery/architecture",
+        "monochrome deck"
+      ],
+      "dsl_file": "samples/style_refer/chalk-monolith.yaml",
+      "preview": "samples/style_refer/_out/chalk-monolith/shot.png"
+    },
+    {
+      "slug": "cobalt-stack-glow",
+      "title": "Cobalt Stack Glow",
+      "source": "rounded-layers",
+      "essence": "Big-radius rounded cobalt cards on near-black navy w/ dot lattice, steep gradients, deep soft shadows + hero halo.",
+      "tone": "dark",
+      "canvas": {
+        "background": "#0B1322",
+        "grid": "dots"
+      },
+      "palette": [
+        "#2C4170",
+        "#8FD0FF",
+        "#3A82EE",
+        "#3A6FC0",
+        "#244A95",
+        "#4E92E8"
+      ],
+      "features": [
+        "shadow",
+        "glow",
+        "faceSplit",
+        "translucent",
+        "gradient",
+        "rounded"
+      ],
+      "groups": 0,
+      "triggers": [
+        "rounded",
+        "soft",
+        "card",
+        "stack",
+        "cobalt",
+        "blue",
+        "layered",
+        "app",
+        "ui",
+        "dashboard",
+        "friendly",
+        "material"
+      ],
+      "mood": [
+        "soft",
+        "contemporary",
+        "friendly"
+      ],
+      "use_cases": [
+        "product UI diagram",
+        "layered-stack narrative",
+        "app dashboard"
+      ],
+      "dsl_file": "samples/style_refer/cobalt-stack-glow.yaml",
+      "preview": "samples/style_refer/_out/cobalt-stack-glow/shot.png"
+    },
+    {
+      "slug": "cobalt-wireframe",
+      "title": "Cobalt Wireframe",
+      "source": "blue-bg-tech",
+      "essence": "Royal-blue field; white hollow wireframe cubes + hot-pink dot-pattern accent tops, grain, magenta backglow.",
+      "tone": "dark",
+      "canvas": {
+        "background": "#1A35E0",
+        "grid": "iso"
+      },
+      "palette": [
+        "#2236DB",
+        "#FFFFFF",
+        "#FF2E9E"
+      ],
+      "features": [
+        "glow",
+        "grain",
+        "dots",
+        "wireframe",
+        "translucent",
+        "flat"
+      ],
+      "groups": 0,
+      "triggers": [
+        "wireframe",
+        "blueprint",
+        "blue",
+        "royal",
+        "techy",
+        "schematic",
+        "outline",
+        "neon accent",
+        "crypto",
+        "web3",
+        "grid"
+      ],
+      "mood": [
+        "technical",
+        "energetic"
+      ],
+      "use_cases": [
+        "tech/crypto landing",
+        "blueprint schematic",
+        "wireframe hero"
+      ],
+      "dsl_file": "samples/style_refer/cobalt-wireframe.yaml",
+      "preview": "samples/style_refer/_out/cobalt-wireframe/shot.png"
+    },
+    {
+      "slug": "ember-foundry",
+      "title": "Ember Foundry",
+      "source": "red-gradient",
+      "essence": "Molten ember-red gradient cubes on warm paper, crisp paper shadows + faint grain.",
+      "tone": "light",
+      "canvas": {
+        "background": "#F1EEE7",
+        "grid": "none"
+      },
+      "palette": [
+        "#F4853F",
+        "#E45222",
+        "#C03F13",
+        "#8E280A",
+        "#9C310C",
+        "#5A1003"
+      ],
+      "features": [
+        "shadow",
+        "grain",
+        "translucent",
+        "gradient"
+      ],
+      "groups": 0,
+      "triggers": [
+        "red",
+        "ember",
+        "warm",
+        "fire",
+        "energetic",
+        "bold",
+        "gradient",
+        "foundry",
+        "heat",
+        "passion",
+        "orange"
+      ],
+      "mood": [
+        "warm",
+        "bold",
+        "energetic"
+      ],
+      "use_cases": [
+        "bold warm brand",
+        "energy/industrial",
+        "fiery hero"
+      ],
+      "dsl_file": "samples/style_refer/ember-foundry.yaml",
+      "preview": "samples/style_refer/_out/ember-foundry/shot.png"
+    },
+    {
+      "slug": "frosted-blueprint-plate",
+      "title": "Frosted Blueprint Plate",
+      "source": "handdrawn-tech",
+      "essence": "Clean technical plates: crisp grey hairlines, near-white faces, faint grain, soft rounded corners + one pale glass variant.",
+      "tone": "light",
+      "canvas": {
+        "background": "#FBFCFD",
+        "grid": "none"
+      },
+      "palette": [
+        "#FCFDFE",
+        "#EEF1F5",
+        "#E6EAF0",
+        "#9AA3B2",
+        "#DCEAFC",
+        "#D2E2F7"
+      ],
+      "features": [
+        "glow",
+        "grain",
+        "faceSplit",
+        "translucent",
+        "gradient"
+      ],
+      "groups": 0,
+      "triggers": [
+        "technical",
+        "blueprint",
+        "clean",
+        "plate",
+        "hairline",
+        "precise",
+        "spec",
+        "whitepaper",
+        "engineering",
+        "subtle",
+        "light"
+      ],
+      "mood": [
+        "precise",
+        "clean",
+        "technical"
+      ],
+      "use_cases": [
+        "spec/whitepaper figure",
+        "technical explainer",
+        "clean light diagram"
+      ],
+      "dsl_file": "samples/style_refer/frosted-blueprint-plate.yaml",
+      "preview": "samples/style_refer/_out/frosted-blueprint-plate/shot.png"
+    },
+    {
+      "slug": "frostlattice-night",
+      "title": "Frostlattice Night",
+      "source": "transparent-frosted",
+      "essence": "Deep navy void; translucent see-through ice-blue cubes with internal panel-line + hatch, one electric-blue accent.",
+      "tone": "dark",
+      "canvas": {
+        "background": "#10142A",
+        "grid": "none"
+      },
+      "palette": [
+        "#EAF1FF",
+        "#C9D6F4",
+        "#AFC0E6",
+        "#8EA3CE",
+        "#C2D2EE",
+        "#9FB4D8"
+      ],
+      "features": [
+        "glow",
+        "hatch",
+        "translucent",
+        "gradient"
+      ],
+      "groups": 0,
+      "triggers": [
+        "transparent",
+        "frosted",
+        "glass",
+        "see-through",
+        "ice",
+        "translucent",
+        "lattice",
+        "x-ray",
+        "layered glass",
+        "depth",
+        "blue"
+      ],
+      "mood": [
+        "cool",
+        "deep",
+        "premium"
+      ],
+      "use_cases": [
+        "transparency/depth concept",
+        "layered-data viz",
+        "cool premium hero"
+      ],
+      "dsl_file": "samples/style_refer/frostlattice-night.yaml",
+      "preview": "samples/style_refer/_out/frostlattice-night/shot.png"
+    },
+    {
+      "slug": "glass-cobalt-glow",
+      "title": "Glass Cobalt Glow",
+      "source": "h0-private-ai",
+      "essence": "Near-black void; glassy electric-blue cubes with luminous gradient tops + soft cyan backglow.",
+      "tone": "dark",
+      "canvas": {
+        "background": "#03050C",
+        "grid": "none"
+      },
+      "palette": [
+        "#AECBF0",
+        "#AEDBFF",
+        "#2F6FC8",
+        "#14304F",
+        "#0E2238",
+        "#9CCBF2"
+      ],
+      "features": [
+        "glow",
+        "translucent",
+        "gradient"
+      ],
+      "groups": 0,
+      "triggers": [
+        "glass",
+        "glow",
+        "electric blue",
+        "ai",
+        "compute",
+        "dark",
+        "futuristic",
+        "private ai",
+        "secure",
+        "gpu",
+        "cyan"
+      ],
+      "mood": [
+        "futuristic",
+        "premium",
+        "focused"
+      ],
+      "use_cases": [
+        "AI/compute platform",
+        "dark tech hero",
+        "secure-AI brand"
+      ],
+      "dsl_file": "samples/style_refer/glass-cobalt-glow.yaml",
+      "preview": "samples/style_refer/_out/glass-cobalt-glow/shot.png"
+    },
+    {
+      "slug": "halftone-poster-flats",
+      "title": "Halftone Poster Flats",
+      "source": "h5",
+      "essence": "Flat saturated teal/crimson/navy blocks, big rounded corners, on a pale grey halftone-dot field.",
+      "tone": "light",
+      "canvas": {
+        "background": "#F2F2F2",
+        "grid": "dots"
+      },
+      "palette": [
+        "#E2E2E2",
+        "#1E9FD0",
+        "#1577A0",
+        "#1888B8",
+        "#FFFFFF",
+        "#EC1F5A"
+      ],
+      "features": [
+        "flat",
+        "rounded"
+      ],
+      "groups": 0,
+      "triggers": [
+        "poster",
+        "flat",
+        "halftone",
+        "retro",
+        "print",
+        "bold color",
+        "graphic",
+        "editorial",
+        "risograph",
+        "dots"
+      ],
+      "mood": [
+        "bold",
+        "retro",
+        "graphic"
+      ],
+      "use_cases": [
+        "editorial/poster",
+        "print graphic",
+        "bold flat brand"
+      ],
+      "dsl_file": "samples/style_refer/halftone-poster-flats.yaml",
+      "preview": "samples/style_refer/_out/halftone-poster-flats/shot.png"
+    },
+    {
+      "slug": "indigo-solidist",
+      "title": "Indigo Solidist",
+      "source": "structuralism",
+      "essence": "Flat two-tone indigo solid cubes seated on dotted-lavender pattern trays — structuralist colour-blocking.",
+      "tone": "light",
+      "canvas": {
+        "background": "#FFFFFF",
+        "grid": "none"
+      },
+      "palette": [
+        "#3A2E9E",
+        "#F1EEFF",
+        "#D8D2F7",
+        "#B7AEEE",
+        "#8C7DF2",
+        "#332A93"
+      ],
+      "features": [
+        "dots",
+        "flat",
+        "groups"
+      ],
+      "groups": 3,
+      "triggers": [
+        "solid",
+        "flat",
+        "structural",
+        "indigo",
+        "bold",
+        "color-block",
+        "bauhaus",
+        "geometric",
+        "corporate",
+        "two-tone"
+      ],
+      "mood": [
+        "assertive",
+        "structural",
+        "bold"
+      ],
+      "use_cases": [
+        "corporate deck",
+        "structural/geometric brand",
+        "solid icon-set"
+      ],
+      "dsl_file": "samples/style_refer/indigo-solidist.yaml",
+      "preview": "samples/style_refer/_out/indigo-solidist/shot.png"
+    },
+    {
+      "slug": "ink-hairline",
+      "title": "Ink Hairline",
+      "source": "bw-lineart",
+      "essence": "Pure white paper; black hairline wireframe cubes (strokes only, no fill/shade) — industrial line-art.",
+      "tone": "light",
+      "canvas": {
+        "background": "#FFFFFF",
+        "grid": "none"
+      },
+      "palette": [
+        "#111111"
+      ],
+      "features": [
+        "wireframe",
+        "flat"
+      ],
+      "groups": 0,
+      "triggers": [
+        "lineart",
+        "wireframe",
+        "hairline",
+        "minimal",
+        "blueprint",
+        "mono",
+        "outline",
+        "technical drawing",
+        "cad",
+        "skeleton"
+      ],
+      "mood": [
+        "minimal",
+        "technical",
+        "restrained"
+      ],
+      "use_cases": [
+        "low-ink print",
+        "schematic",
+        "blueprint figure"
+      ],
+      "dsl_file": "samples/style_refer/ink-hairline.yaml",
+      "preview": "samples/style_refer/_out/ink-hairline/shot.png"
+    },
+    {
+      "slug": "lakehouse-ember",
+      "title": "Lakehouse Ember",
+      "source": "databricks_live",
+      "essence": "White soft-rounded cards in dashed trays, soft slate shadows, glowing ember red-orange accents — Databricks clone.",
+      "tone": "light",
+      "canvas": {
+        "background": "#F6F7F9",
+        "grid": "iso"
+      },
+      "palette": [
+        "#E8EBEF",
+        "#1B3139",
+        "#FFFFFF",
+        "#F1F4F8",
+        "#E3E8ED",
+        "#D3DAE1"
+      ],
+      "features": [
+        "shadow",
+        "glow",
+        "faceSplit",
+        "translucent",
+        "gradient",
+        "rounded",
+        "groups"
+      ],
+      "groups": 3,
+      "triggers": [
+        "databricks",
+        "lakehouse",
+        "white",
+        "clean",
+        "enterprise",
+        "data platform",
+        "dashed tray",
+        "red accent",
+        "corporate",
+        "saas"
+      ],
+      "mood": [
+        "clean",
+        "enterprise",
+        "trustworthy"
+      ],
+      "use_cases": [
+        "data platform diagram",
+        "enterprise SaaS",
+        "corporate product"
+      ],
+      "dsl_file": "samples/style_refer/lakehouse-ember.yaml",
+      "preview": "samples/style_refer/_out/lakehouse-ember/shot.png"
+    },
+    {
+      "slug": "matte-slate-strata",
+      "title": "Matte Slate Strata",
+      "source": "h6",
+      "essence": "Matte navy→white gradient masses, strokeless, soft cool ground shadow, on cool grey field.",
+      "tone": "light",
+      "canvas": {
+        "background": "#EFF1F6",
+        "grid": "none"
+      },
+      "palette": [
+        "#FFFFFF",
+        "#F4F7FC",
+        "#3A5DA8",
+        "#1B2F63",
+        "#7387B8",
+        "#42619E"
+      ],
+      "features": [
+        "shadow",
+        "translucent",
+        "gradient"
+      ],
+      "groups": 0,
+      "triggers": [
+        "matte",
+        "strata",
+        "soft",
+        "neutral",
+        "slate",
+        "strokeless",
+        "calm",
+        "minimal",
+        "layered",
+        "geological",
+        "refined"
+      ],
+      "mood": [
+        "calm",
+        "refined",
+        "minimal"
+      ],
+      "use_cases": [
+        "refined minimal deck",
+        "layered concept",
+        "neutral product"
+      ],
+      "dsl_file": "samples/style_refer/matte-slate-strata.yaml",
+      "preview": "samples/style_refer/_out/matte-slate-strata/shot.png"
+    },
+    {
+      "slug": "mint-blueprint",
+      "title": "Mint Blueprint",
+      "source": "green-bg-lineart",
+      "essence": "Mint field; flat white/grey blocks, dark-ink hairline, cool-green drop shadow + hatch cutaway faces.",
+      "tone": "light",
+      "canvas": {
+        "background": "#C4E1DA",
+        "grid": "none"
+      },
+      "palette": [
+        "#FAFBFA",
+        "#BEC4C1",
+        "#D9DEDB",
+        "#3A423F",
+        "#9CC0B8",
+        "#B9BFBC"
+      ],
+      "features": [
+        "shadow",
+        "hatch",
+        "flat"
+      ],
+      "groups": 0,
+      "triggers": [
+        "lineart",
+        "mint",
+        "green",
+        "blueprint",
+        "architectural",
+        "cutaway",
+        "hatch",
+        "technical",
+        "fresh",
+        "eco"
+      ],
+      "mood": [
+        "fresh",
+        "technical",
+        "clean"
+      ],
+      "use_cases": [
+        "architectural/eco diagram",
+        "technical explainer",
+        "cutaway figure"
+      ],
+      "dsl_file": "samples/style_refer/mint-blueprint.yaml",
+      "preview": "samples/style_refer/_out/mint-blueprint/shot.png"
+    },
+    {
+      "slug": "neon-gridpad-violet",
+      "title": "Neon Gridpad Violet",
+      "source": "h4",
+      "essence": "Saturated violet/cyan/mint glow cubes on bright cyan dot-grid pads with radial teal underglow — dark-crypto.",
+      "tone": "dark",
+      "canvas": {
+        "background": "#070812",
+        "grid": "none"
+      },
+      "palette": [
+        "#E8ECFF",
+        "#7C5CFF",
+        "#5A4AA6",
+        "#2C2458",
+        "#E6DDFF",
+        "#352C66"
+      ],
+      "features": [
+        "glow",
+        "dots",
+        "translucent",
+        "gradient",
+        "groups"
+      ],
+      "groups": 3,
+      "triggers": [
+        "neon",
+        "crypto",
+        "web3",
+        "blockchain",
+        "glow",
+        "violet",
+        "cyan",
+        "dark",
+        "energetic",
+        "futuristic",
+        "grid pad"
+      ],
+      "mood": [
+        "energetic",
+        "futuristic",
+        "high-energy"
+      ],
+      "use_cases": [
+        "crypto/web3 landing",
+        "neon dark hero",
+        "blockchain brand"
+      ],
+      "dsl_file": "samples/style_refer/neon-gridpad-violet.yaml",
+      "preview": "samples/style_refer/_out/neon-gridpad-violet/shot.png"
+    },
+    {
+      "slug": "neon-violet-orb",
+      "title": "Neon Violet Orb",
+      "source": "h1",
+      "essence": "Pure-black dotted field; saturated violet cubes with silver-lavender rims + heavy violet backglow.",
+      "tone": "dark",
+      "canvas": {
+        "background": "#050507",
+        "grid": "dots"
+      },
+      "palette": [
+        "#1A1430",
+        "#F2EEFF",
+        "#6E54E8",
+        "#120A38",
+        "#27187A",
+        "#D6CCFF"
+      ],
+      "features": [
+        "glow",
+        "translucent",
+        "flat"
+      ],
+      "groups": 0,
+      "triggers": [
+        "neon",
+        "violet",
+        "purple",
+        "glow",
+        "orb",
+        "dark",
+        "futuristic",
+        "ai",
+        "energetic",
+        "vivid"
+      ],
+      "mood": [
+        "vivid",
+        "futuristic",
+        "high-energy"
+      ],
+      "use_cases": [
+        "AI/energetic dark hero",
+        "vivid neon brand",
+        "compute platform"
+      ],
+      "dsl_file": "samples/style_refer/neon-violet-orb.yaml",
+      "preview": "samples/style_refer/_out/neon-violet-orb/shot.png"
+    },
+    {
+      "slug": "paper-blueprint",
+      "title": "Paper Blueprint",
+      "source": "bw-ascii-lineart",
+      "essence": "White paper; flat-white cube tops with grey left face + crisp 2px black outline — clean engineering print.",
+      "tone": "light",
+      "canvas": {
+        "background": "#FFFFFF",
+        "grid": "none"
+      },
+      "palette": [
+        "#ECECEC",
+        "#FAFAFA",
+        "#111111",
+        "#E2E2E2",
+        "#F5F5F5",
+        "#F2F2F2"
+      ],
+      "features": [
+        "flat"
+      ],
+      "groups": 0,
+      "triggers": [
+        "blueprint",
+        "paper",
+        "mono",
+        "flat",
+        "engineering",
+        "print",
+        "clean outline",
+        "technical",
+        "drafting",
+        "black-and-white"
+      ],
+      "mood": [
+        "clean",
+        "technical",
+        "precise"
+      ],
+      "use_cases": [
+        "engineering print",
+        "clean B/W diagram",
+        "drafting figure"
+      ],
+      "dsl_file": "samples/style_refer/paper-blueprint.yaml",
+      "preview": "samples/style_refer/_out/paper-blueprint/shot.png"
+    },
+    {
+      "slug": "pencil-hatch-window",
+      "title": "Pencil Hatch Window",
+      "source": "handdrawn",
+      "essence": "Cream paper; thin colored line frames filled with dense pencil-hatch (screen-door), sketch grain — yellow/red/sage.",
+      "tone": "light",
+      "canvas": {
+        "background": "#EDE7D6",
+        "grid": "none"
+      },
+      "palette": [
+        "#E3C24E",
+        "#C99A1E",
+        "#D85C4E",
+        "#C13B2C",
+        "#9DBA63",
+        "#7B9C3E"
+      ],
+      "features": [
+        "grain",
+        "hatch",
+        "flat"
+      ],
+      "groups": 0,
+      "triggers": [
+        "handdrawn",
+        "sketch",
+        "pencil",
+        "hatch",
+        "doodle",
+        "infographic",
+        "warm",
+        "human",
+        "notebook",
+        "friendly",
+        "cream"
+      ],
+      "mood": [
+        "warm",
+        "human",
+        "casual"
+      ],
+      "use_cases": [
+        "explainer with human touch",
+        "sketch infographic",
+        "education"
+      ],
+      "dsl_file": "samples/style_refer/pencil-hatch-window.yaml",
+      "preview": "samples/style_refer/_out/pencil-hatch-window/shot.png"
+    },
+    {
+      "slug": "periwinkle-frost",
+      "title": "Periwinkle Frost",
+      "source": "frosted-glass",
+      "essence": "Borderless white→periwinkle frosted glass cubes, soft diffuse grounding shadow, no grid — calm & premium.",
+      "tone": "light",
+      "canvas": {
+        "background": "#F1F1F3",
+        "grid": "none"
+      },
+      "palette": [
+        "#8390B5",
+        "#FFFFFF",
+        "#F6F9FF",
+        "#FBFCFF",
+        "#C6D3F0",
+        "#F2F5FD"
+      ],
+      "features": [
+        "shadow",
+        "translucent",
+        "gradient"
+      ],
+      "groups": 0,
+      "triggers": [
+        "frosted",
+        "glass",
+        "premium",
+        "periwinkle",
+        "soft",
+        "airy",
+        "elegant",
+        "minimal",
+        "calm",
+        "high-end",
+        "glassmorphism"
+      ],
+      "mood": [
+        "premium",
+        "elegant",
+        "calm",
+        "airy"
+      ],
+      "use_cases": [
+        "premium SaaS/AI landing",
+        "calm minimal product",
+        "glassmorphism hero"
+      ],
+      "dsl_file": "samples/style_refer/periwinkle-frost.yaml",
+      "preview": "samples/style_refer/_out/periwinkle-frost/shot.png"
+    },
+    {
+      "slug": "phantom-glass",
+      "title": "Phantom Glass",
+      "source": "h3",
+      "essence": "Ghostly translucent blue glass cubes in a near-black navy void, luminous white-cyan edges + blue backglow + ground shadow.",
+      "tone": "dark",
+      "canvas": {
+        "background": "#0a0e1a",
+        "grid": "none"
+      },
+      "palette": [
+        "#DFF1FF",
+        "#5F7FC0",
+        "#22397E",
+        "#33508F",
+        "#1B2C66",
+        "#BFE4FF"
+      ],
+      "features": [
+        "shadow",
+        "glow",
+        "translucent",
+        "gradient"
+      ],
+      "groups": 0,
+      "triggers": [
+        "glass",
+        "translucent",
+        "phantom",
+        "ghost",
+        "blue",
+        "ethereal",
+        "premium",
+        "depth",
+        "dark",
+        "luminous"
+      ],
+      "mood": [
+        "ethereal",
+        "premium",
+        "mysterious"
+      ],
+      "use_cases": [
+        "premium dark hero",
+        "glass/depth concept",
+        "ethereal brand"
+      ],
+      "dsl_file": "samples/style_refer/phantom-glass.yaml",
+      "preview": "samples/style_refer/_out/phantom-glass/shot.png"
+    },
+    {
+      "slug": "royal-circuit-flat",
+      "title": "Royal Circuit Flat",
+      "source": "solid-color-tech",
+      "essence": "Flat two-tone solid blocks on royal blue, light-blue edges + mint-green accent, no gradients.",
+      "tone": "dark",
+      "canvas": {
+        "background": "#1c2f8e",
+        "grid": "none"
+      },
+      "palette": [
+        "#7FA0E8",
+        "#3A55B0",
+        "#2F4794",
+        "#6F92E8",
+        "#35E08A",
+        "#1C9A5A"
+      ],
+      "features": [
+        "flat"
+      ],
+      "groups": 0,
+      "triggers": [
+        "flat",
+        "solid",
+        "two-tone",
+        "royal blue",
+        "corporate",
+        "clean",
+        "crisp",
+        "vector",
+        "simple",
+        "professional"
+      ],
+      "mood": [
+        "clean",
+        "professional",
+        "assertive"
+      ],
+      "use_cases": [
+        "corporate deck",
+        "flat icon-set",
+        "general architecture"
+      ],
+      "dsl_file": "samples/style_refer/royal-circuit-flat.yaml",
+      "preview": "samples/style_refer/_out/royal-circuit-flat/shot.png"
+    },
+    {
+      "slug": "slate-cage-blueprint",
+      "title": "Slate Cage Blueprint",
+      "source": "wireframe-handdrawn",
+      "essence": "Slate-navy ground; hollow white wireframe cube cages (grain) on soft frosted slab trays + cyan-ink accent.",
+      "tone": "dark",
+      "canvas": {
+        "background": "#343F54",
+        "grid": "none"
+      },
+      "palette": [
+        "#CDD6E6",
+        "#E4ECFA",
+        "#5CC8FF"
+      ],
+      "features": [
+        "grain",
+        "wireframe",
+        "translucent",
+        "flat",
+        "groups"
+      ],
+      "groups": 3,
+      "triggers": [
+        "wireframe",
+        "cage",
+        "blueprint",
+        "sketch",
+        "handdrawn",
+        "dark",
+        "grain",
+        "technical",
+        "x-ray",
+        "schematic"
+      ],
+      "mood": [
+        "technical",
+        "crafted",
+        "precise"
+      ],
+      "use_cases": [
+        "dark schematic",
+        "wireframe concept",
+        "blueprint on dark"
+      ],
+      "dsl_file": "samples/style_refer/slate-cage-blueprint.yaml",
+      "preview": "samples/style_refer/_out/slate-cage-blueprint/shot.png"
+    },
+    {
+      "slug": "stipple-draft-ink",
+      "title": "Stipple Draft Ink",
+      "source": "line-art",
+      "essence": "Pure-white drafting sheet; hairline black ink, fine dot-screen stipple + 45° cross-hatch tops — hollow line-art.",
+      "tone": "light",
+      "canvas": {
+        "background": "#FFFFFF",
+        "grid": "none"
+      },
+      "palette": [
+        "#141414",
+        "#8A8A8A"
+      ],
+      "features": [
+        "dots",
+        "hatch",
+        "flat"
+      ],
+      "groups": 0,
+      "triggers": [
+        "lineart",
+        "stipple",
+        "draft",
+        "ink",
+        "hatch",
+        "engraving",
+        "etching",
+        "print",
+        "fine",
+        "detailed",
+        "technical"
+      ],
+      "mood": [
+        "fine",
+        "detailed",
+        "technical"
+      ],
+      "use_cases": [
+        "detailed print figure",
+        "engraving-style diagram",
+        "fine technical art"
+      ],
+      "dsl_file": "samples/style_refer/stipple-draft-ink.yaml",
+      "preview": "samples/style_refer/_out/stipple-draft-ink/shot.png"
+    },
+    {
+      "slug": "teal-ink-sketch",
+      "title": "Teal Ink Sketch",
+      "source": "green-handdrawn",
+      "essence": "Dark teal grain paper; translucent slabs traced in bright cyan hand-drawn ink + lone orange accent.",
+      "tone": "dark",
+      "canvas": {
+        "background": "#0c2c30",
+        "grid": "iso"
+      },
+      "palette": [
+        "#163E44",
+        "#10393E",
+        "#0D3034",
+        "#0A282C",
+        "#CCFFF5",
+        "#8FDED5"
+      ],
+      "features": [
+        "grain",
+        "translucent",
+        "flat"
+      ],
+      "groups": 0,
+      "triggers": [
+        "handdrawn",
+        "sketch",
+        "teal",
+        "ink",
+        "dark paper",
+        "grain",
+        "human",
+        "chalkboard",
+        "blueprint sketch",
+        "warm accent"
+      ],
+      "mood": [
+        "crafted",
+        "human",
+        "moody"
+      ],
+      "use_cases": [
+        "dark handdrawn explainer",
+        "chalkboard sketch",
+        "crafted hero"
+      ],
+      "dsl_file": "samples/style_refer/teal-ink-sketch.yaml",
+      "preview": "samples/style_refer/_out/teal-ink-sketch/shot.png"
+    },
+    {
+      "slug": "violet-circuit-grain",
+      "title": "Violet Circuit Grain",
+      "source": "dark-purple-tech",
+      "essence": "Deep-violet tech: purple gradient faces, film grain, wide violet backglow, rounded corners on dotted dark canvas.",
+      "tone": "dark",
+      "canvas": {
+        "background": "#0E0A1E",
+        "grid": "dots"
+      },
+      "palette": [
+        "#241844",
+        "#EDE4FF",
+        "#C4A4FF",
+        "#7A4FE0",
+        "#5C38C2",
+        "#3A1E8C"
+      ],
+      "features": [
+        "shadow",
+        "glow",
+        "grain",
+        "faceSplit",
+        "translucent",
+        "gradient",
+        "rounded"
+      ],
+      "groups": 0,
+      "triggers": [
+        "violet",
+        "purple",
+        "tech",
+        "gradient",
+        "grain",
+        "glow",
+        "dark",
+        "futuristic",
+        "premium",
+        "energetic",
+        "circuit"
+      ],
+      "mood": [
+        "premium",
+        "futuristic",
+        "energetic"
+      ],
+      "use_cases": [
+        "dark tech/AI hero",
+        "premium purple brand",
+        "energetic landing"
+      ],
+      "dsl_file": "samples/style_refer/violet-circuit-grain.yaml",
+      "preview": "samples/style_refer/_out/violet-circuit-grain/shot.png"
+    }
+  ]
+}

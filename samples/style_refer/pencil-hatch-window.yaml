@@ -1,0 +1,60 @@
+# pencil-hatch-window — cream-paper infographic: thin colored line-art frames
+# filled edge-to-edge with dense PROJECTED hatch (screen-door / pencil-shade look),
+# 0.6px ink hairlines, faint sketch grain. Hand-drawn poster palette. (from handdrawn)
+canvas: { background: "#EDE7D6", grid: "", padding: 64, aspectRatio: 1.4 }
+theme:
+  presets:
+    # warm yellow hatched frame — every face the same projected hatch
+    cubeA:
+      stroke: { color: "#E3C24E", width: 0.6 }
+      faces:
+        "*":
+          fill:
+            kind: pattern
+            pattern: { kind: hatch, color: "#C99A1E", spacing: 1.2, angle: 90, projected: true }
+          strokes:
+            - { color: "#E3C24E", width: 0.6, opacity: 1.0 }
+      effects:
+        grain: { intensity: 0.35, scale: 1.4 }
+    # warm red hatched frame
+    cubeB:
+      stroke: { color: "#D85C4E", width: 0.6 }
+      faces:
+        "*":
+          fill:
+            kind: pattern
+            pattern: { kind: hatch, color: "#C13B2C", spacing: 1.2, angle: 90, projected: true }
+          strokes:
+            - { color: "#D85C4E", width: 0.6, opacity: 1.0 }
+      effects:
+        grain: { intensity: 0.35, scale: 1.4 }
+    # sage green hatched frame
+    cubeC:
+      stroke: { color: "#9DBA63", width: 0.6 }
+      faces:
+        "*":
+          fill:
+            kind: pattern
+            pattern: { kind: hatch, color: "#7B9C3E", spacing: 1.2, angle: 90, projected: true }
+          strokes:
+            - { color: "#8FA85E", width: 0.6, opacity: 1.0 }
+      effects:
+        grain: { intensity: 0.35, scale: 1.4 }
+  shapes: { rectangle: { } }
+nodes:
+  scene:
+    shape: composite
+    layout: { mode: grid, cols: 4, gap: 0.6, padding: 1 }
+    parts:
+      - { id: b0,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 34 } }
+      - { id: b1,  shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 70 } }
+      - { id: b2,  shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 22 } }
+      - { id: b3,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 54 } }
+      - { id: b4,  shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 40 } }
+      - { id: b5,  shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 88 } }
+      - { id: b6,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 28 } }
+      - { id: b7,  shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 60 } }
+      - { id: b8,  shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 44 } }
+      - { id: b9,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 76 } }
+      - { id: b10, shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 32 } }
+      - { id: b11, shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 50 } }

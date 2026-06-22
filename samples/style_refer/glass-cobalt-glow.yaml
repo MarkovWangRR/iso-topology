@@ -1,0 +1,39 @@
+# glass-cobalt-glow — near-black void, glassy electric-blue cubes with luminous
+# gradient tops and soft cyan backglow. (from h0-private-ai)
+canvas: { background: "#03050C", grid: none, padding: 72, aspectRatio: 1.4 }
+theme:
+  text: { color: "#AECBF0", size: 9, weight: "600" }
+  presets:
+    # saturated electric-blue glass cube, luminous lit top + cyan backglow
+    cubeA:
+      palette: { topGradient: { from: "#AEDBFF", to: "#2F6FC8", dir: v }, left: "#14304F", right: "#0E2238" }
+      stroke: { color: "#9CCBF2", width: 1 }
+      effects: { cornerRadius: 3, opacity: 0.78, backglow: { color: "#56A6F0", radius: 50, opacity: 0.70 } }
+    # brighter hero-glass variant (hub-like glow)
+    cubeB:
+      palette: { topGradient: { from: "#BFE3FF", to: "#4F9CE6", dir: v }, left: "#173456", right: "#2A5E92" }
+      stroke: { color: "#DCF0FF", width: 1.4 }
+      effects: { cornerRadius: 4, opacity: 0.9, backglow: { color: "#6FC0FF", radius: 70, opacity: 0.85 } }
+    # dim deep-blue variant (recessed, less glow)
+    cubeC:
+      palette: { topGradient: { from: "#5C84B8", to: "#1E4068", dir: v }, left: "#101A2C", right: "#0B1322" }
+      stroke: { color: "#6E9AC8", width: 0.9 }
+      effects: { cornerRadius: 3, opacity: 0.7, backglow: { color: "#3A6EB0", radius: 36, opacity: 0.5 } }
+  shapes: { rectangle: { } }
+nodes:
+  scene:
+    shape: composite
+    layout: { mode: grid, cols: 4, gap: 0.6, padding: 1 }
+    parts:
+      - { id: b0,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 40 } }
+      - { id: b1,  shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 92 } }
+      - { id: b2,  shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 22 } }
+      - { id: b3,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 64 } }
+      - { id: b4,  shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 30 } }
+      - { id: b5,  shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 18 } }
+      - { id: b6,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 100 } }
+      - { id: b7,  shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 46 } }
+      - { id: b8,  shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 16 } }
+      - { id: b9,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 54 } }
+      - { id: b10, shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 78 } }
+      - { id: b11, shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 24 } }

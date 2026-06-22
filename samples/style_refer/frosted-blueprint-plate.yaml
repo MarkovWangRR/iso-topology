@@ -1,0 +1,79 @@
+# frosted-blueprint-plate — clean technical plates: crisp flat 1px grey hairlines,
+# near-white faces, faint grain, soft rounded corners, on near-white paper. One
+# pale translucent-blue glass plate with a tight cool backglow. (from handdrawn-tech)
+canvas: { background: "#FBFCFD", grid: none, padding: 80, aspectRatio: 1.4 }
+theme:
+  presets:
+    # grey wireframe plate — crisp flat 1px hairlines, near-white faces
+    cubeA:
+      palette: { top: "#FCFDFE", left: "#EEF1F5", right: "#E6EAF0" }
+      stroke: { color: "#9AA3B2", width: 1.0 }
+      faces:
+        top:
+          fill: { kind: solid, color: "#FCFDFEEE" }
+          strokes: [ { color: "#9AA3B2", width: 1.0 } ]
+        left:
+          fill: { kind: solid, color: "#EEF1F5EE" }
+          strokes: [ { color: "#9AA3B2", width: 1.0 } ]
+        right:
+          fill: { kind: solid, color: "#E6EAF0EE" }
+          strokes: [ { color: "#9AA3B2", width: 1.0 } ]
+      effects:
+        cornerRadius: 9
+        faceSplit: true
+        grain: { intensity: 0.06, scale: 1.6 }
+    # pale translucent blue GLASS plate — barely tinted, tight cool backglow
+    cubeB:
+      palette: { top: "#DCEAFCBB", left: "#D2E2F7AA", right: "#C8DBF5AA" }
+      stroke: { color: "#6F93D6", width: 1.0 }
+      faces:
+        top:
+          fill: { kind: linearGradient, angle: 35, stops: [ { offset: 0, color: "#EAF2FECC" }, { offset: 1, color: "#CFE0FBBB" } ] }
+          strokes: [ { color: "#6F93D6", width: 1.0 } ]
+        left:
+          fill: { kind: solid, color: "#D2E2F7AA" }
+          strokes: [ { color: "#6F93D6", width: 1.0 } ]
+        right:
+          fill: { kind: solid, color: "#C8DBF5AA" }
+          strokes: [ { color: "#6F93D6", width: 1.0 } ]
+      effects:
+        cornerRadius: 9
+        faceSplit: true
+        grain: { intensity: 0.05, scale: 1.6 }
+        backglow: { color: "#AFC8F244", radius: 28, opacity: 0.22 }
+    # slightly cooler grey plate — same hairline language, darker side faces
+    cubeC:
+      palette: { top: "#F8FAFC", left: "#E4E9F0", right: "#DCE2EB" }
+      stroke: { color: "#9AA3B2", width: 1.0 }
+      faces:
+        top:
+          fill: { kind: solid, color: "#F8FAFCEE" }
+          strokes: [ { color: "#9AA3B2", width: 1.0 } ]
+        left:
+          fill: { kind: solid, color: "#E4E9F0EE" }
+          strokes: [ { color: "#9AA3B2", width: 1.0 } ]
+        right:
+          fill: { kind: solid, color: "#DCE2EBEE" }
+          strokes: [ { color: "#9AA3B2", width: 1.0 } ]
+      effects:
+        cornerRadius: 9
+        faceSplit: true
+        grain: { intensity: 0.06, scale: 1.6 }
+  shapes: { rectangle: { } }
+nodes:
+  scene:
+    shape: composite
+    layout: { mode: grid, cols: 4, gap: 0.6, padding: 1 }
+    parts:
+      - { id: b0,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 34 } }
+      - { id: b1,  shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 70 } }
+      - { id: b2,  shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 22 } }
+      - { id: b3,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 54 } }
+      - { id: b4,  shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 40 } }
+      - { id: b5,  shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 88 } }
+      - { id: b6,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 28 } }
+      - { id: b7,  shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 60 } }
+      - { id: b8,  shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 44 } }
+      - { id: b9,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 76 } }
+      - { id: b10, shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 32 } }
+      - { id: b11, shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 50 } }

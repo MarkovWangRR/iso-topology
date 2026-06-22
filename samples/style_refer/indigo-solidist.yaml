@@ -1,0 +1,61 @@
+# indigo-solidist — flat white field, crisp two-tone indigo solid cubes seated on
+# dotted-lavender pattern tiles; bold structuralist colour-blocking, thin ink edges.
+# (from structuralism)
+canvas: { background: "#FFFFFF", grid: "", padding: 70, aspectRatio: 1.45 }
+theme:
+  text: { family: "Inter, sans-serif", size: 9, weight: "600", color: "#3A2E9E" }
+  presets:
+    # dotted lavender platform tile (group substrate)
+    tray:
+      palette: { top: "#F1EEFF" }
+      stroke: { color: "#D8D2F7", width: 1 }
+      effects: { cornerRadius: 2, pattern: { kind: dots, color: "#B7AEEE", spacing: 9 } }
+    # bright two-tone indigo solid cube
+    cubeA:
+      palette: { top: "#8C7DF2", left: "#332A93", right: "#5747CE" }
+      stroke: { color: "#241C6E", width: 1.1 }
+      effects: { cornerRadius: 2 }
+    # darker contrast variant
+    cubeB:
+      palette: { top: "#5B4FD6", left: "#241C6E", right: "#3B2FA6" }
+      stroke: { color: "#1B154F", width: 1.1 }
+      effects: { cornerRadius: 2 }
+    # mid violet variant
+    cubeC:
+      palette: { top: "#7468E6", left: "#2C2380", right: "#4A3BB8" }
+      stroke: { color: "#201A60", width: 1.1 }
+      effects: { cornerRadius: 2 }
+  shapes: { rectangle: { } }
+nodes:
+  scene:
+    shape: composite
+    layout: { mode: column, gap: 1.0, padding: 1 }
+    parts:
+      # 3 dotted-lavender tray lanes, 4 cubes each (<=3 groups; strict 4-wide grid per lane)
+      - id: laneA
+        shape: group
+        preset: tray
+        layout: { mode: grid, cols: 4, gap: 0.6, padding: 1 }
+        parts:
+          - { id: c0, shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 40 } }
+          - { id: c1, shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 92 } }
+          - { id: c2, shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 22 } }
+          - { id: c3, shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 64 } }
+      - id: laneB
+        shape: group
+        preset: tray
+        layout: { mode: grid, cols: 4, gap: 0.6, padding: 1 }
+        parts:
+          - { id: c4, shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 30 } }
+          - { id: c5, shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 78 } }
+          - { id: c6, shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 50 } }
+          - { id: c7, shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 26 } }
+      - id: laneC
+        shape: group
+        preset: tray
+        layout: { mode: grid, cols: 4, gap: 0.6, padding: 1 }
+        parts:
+          - { id: c8,  shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 100 } }
+          - { id: c9,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 34 } }
+          - { id: c10, shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 60 } }
+          - { id: c11, shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 44 } }

@@ -1,0 +1,44 @@
+# mint-blueprint — line-art architectural: FLAT solid white tops + grey sides,
+# delicate dark-ink outline, soft cool-green grounding shadow on mint paper;
+# one cutaway variant with diagonal hatch on its structure face.
+canvas: { background: "#C4E1DA", grid: "", padding: 64, aspectRatio: 1.4 }
+theme:
+  presets:
+    cubeA:                       # flat white/grey block
+      faces:
+        top:   { fill: { kind: solid, color: "#FAFBFA" } }
+        left:  { fill: { kind: solid, color: "#BEC4C1" } }
+        right: { fill: { kind: solid, color: "#D9DEDB" } }
+      stroke: { color: "#3A423F", width: 0.9 }
+      effects: { cornerRadius: 1, dropShadow: { dx: 5, dy: 7, blur: 7, color: "#9CC0B8" } }
+    cubeB:                       # slightly cooler grey sides
+      faces:
+        top:   { fill: { kind: solid, color: "#FAFBFA" } }
+        left:  { fill: { kind: solid, color: "#B9BFBC" } }
+        right: { fill: { kind: solid, color: "#D5DAD7" } }
+      stroke: { color: "#3A423F", width: 0.9 }
+      effects: { cornerRadius: 1, dropShadow: { dx: 5, dy: 7, blur: 7, color: "#9CC0B8" } }
+    cubeC:                       # cutaway — fine diagonal hatch on left face
+      faces:
+        top:   { fill: { kind: solid, color: "#FAFBFA" } }
+        left:  { fill: { kind: pattern, color: "#EEF1F0", pattern: { kind: hatch, color: "#5E6E6A", spacing: 4, angle: 45, projected: true } } }
+        right: { fill: { kind: solid, color: "#D9DEDB" } }
+      stroke: { color: "#3A423F", width: 0.9 }
+      effects: { cornerRadius: 1, dropShadow: { dx: 5, dy: 7, blur: 7, color: "#9CC0B8" } }
+nodes:
+  scene:
+    shape: composite
+    layout: { mode: grid, cols: 4, gap: 0.6, padding: 1 }
+    parts:
+      - { id: c0,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 30 } }
+      - { id: c1,  shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 64 } }
+      - { id: c2,  shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 44 } }
+      - { id: c3,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 88 } }
+      - { id: c4,  shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 52 } }
+      - { id: c5,  shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 34 } }
+      - { id: c6,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 70 } }
+      - { id: c7,  shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 40 } }
+      - { id: c8,  shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 60 } }
+      - { id: c9,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 46 } }
+      - { id: c10, shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 80 } }
+      - { id: c11, shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 36 } }

@@ -1,0 +1,47 @@
+# cobalt-stack-glow — big-radius rounded cobalt cards on near-black navy with a
+# dot lattice, steep face gradients and deep soft shadows. (from rounded-layers)
+canvas: { background: "#0B1322", grid: dots, gridColor: "#2C4170", gridStep: 20, padding: 80, aspectRatio: 1.4 }
+theme:
+  presets:
+    # hero — near-cyan sheen top, bright cobalt sides
+    cubeA:
+      palette:
+        topGradient:   { from: "#8FD0FF", to: "#3A82EE", dir: down }
+        leftGradient:  { from: "#3A6FC0", to: "#244A95", dir: down }
+        rightGradient: { from: "#4E92E8", to: "#3A6FC0", dir: down }
+      stroke: { color: "#AFD6FF", width: 1.2 }
+      effects: { cornerRadius: 24, faceSplit: true, dropShadow: { dx: 0, dy: 20, blur: 46, color: "#000000AA" }, backglow: { color: "#3A82EE", radius: 64, opacity: 0.85 } }
+    # mid cobalt
+    cubeB:
+      palette:
+        topGradient:   { from: "#4E9AF0", to: "#3576DC", dir: down }
+        leftGradient:  { from: "#264D9A", to: "#193566", dir: down }
+        rightGradient: { from: "#3160B5", to: "#21437F", dir: down }
+      stroke: { color: "#5E92E0", width: 1 }
+      effects: { cornerRadius: 24, faceSplit: true, dropShadow: { dx: 0, dy: 20, blur: 46, color: "#000000AA" } }
+    # deep navy base
+    cubeC:
+      palette:
+        topGradient:   { from: "#2C5DA0", to: "#1C3F7A", dir: down }
+        leftGradient:  { from: "#152C54", to: "#0C1B34", dir: down }
+        rightGradient: { from: "#1B3A6E", to: "#102A52", dir: down }
+      stroke: { color: "#2F578F", width: 1 }
+      effects: { cornerRadius: 24, faceSplit: true, dropShadow: { dx: 0, dy: 20, blur: 46, color: "#000000AA" } }
+  shapes: { rectangle: { } }
+nodes:
+  scene:
+    shape: composite
+    layout: { mode: grid, cols: 4, gap: 0.6, padding: 1 }
+    parts:
+      - { id: b0,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 34 } }
+      - { id: b1,  shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 88 } }
+      - { id: b2,  shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 24 } }
+      - { id: b3,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 60 } }
+      - { id: b4,  shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 42 } }
+      - { id: b5,  shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 16 } }
+      - { id: b6,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 96 } }
+      - { id: b7,  shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 50 } }
+      - { id: b8,  shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 28 } }
+      - { id: b9,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 72 } }
+      - { id: b10, shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 38 } }
+      - { id: b11, shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 20 } }

@@ -1,0 +1,35 @@
+# royal-circuit-flat — flat two-tone solid blocks on royal blue; crisp light-blue
+# edges with a green accent tone, no gradients or shading. (from solid-color-tech)
+canvas: { background: "#1c2f8e", grid: "", padding: 56, aspectRatio: 1.4 }
+theme:
+  presets:
+    # cool periwinkle block, light-blue edge
+    cubeA:
+      palette: { top: "#7fa0e8", left: "#3a55b0", right: "#2f4794" }
+      stroke: { color: "#6f92e8", width: 1.4 }
+    # mint-green accent block
+    cubeB:
+      palette: { top: "#35e08a", left: "#1c9a5a", right: "#147544" }
+      stroke: { color: "#5dffa8", width: 1.4 }
+    # mid royal block, brighter edge
+    cubeC:
+      palette: { top: "#5d7fd6", left: "#2f4794", right: "#243a7e" }
+      stroke: { color: "#7fa0e8", width: 1.4 }
+  shapes: { rectangle: { } }
+nodes:
+  scene:
+    shape: composite
+    layout: { mode: grid, cols: 4, gap: 0.6, padding: 1 }
+    parts:
+      - { id: b0,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 34 } }
+      - { id: b1,  shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 88 } }
+      - { id: b2,  shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 24 } }
+      - { id: b3,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 60 } }
+      - { id: b4,  shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 42 } }
+      - { id: b5,  shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 16 } }
+      - { id: b6,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 96 } }
+      - { id: b7,  shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 50 } }
+      - { id: b8,  shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 28 } }
+      - { id: b9,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 72 } }
+      - { id: b10, shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 38 } }
+      - { id: b11, shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 20 } }

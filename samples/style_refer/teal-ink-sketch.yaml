@@ -1,0 +1,56 @@
+# teal-ink-sketch — dark teal grain paper, translucent slab fills traced in
+# bright near-white cyan hand-drawn ink. (from green-handdrawn)
+canvas:
+  background: "#0c2c30"
+  grid: iso
+  gridColor: "#163e44"
+  gridStep: 26
+  padding: 48
+  aspectRatio: 1.4
+theme:
+  presets:
+    # bright near-white cyan ink, translucent slab fill, heavy grain
+    cubeA:
+      palette: { top: "#10393e", left: "#0d3034", right: "#0a282c" }
+      faces:
+        top:   { fill: { kind: solid, color: "#10393e" }, strokes: [ { color: "#ccfff5", width: 1.9, opacity: 1.0 } ] }
+        left:  { fill: { kind: solid, color: "#0d3034" }, strokes: [ { color: "#8fded5", width: 1.3, opacity: 0.95 } ] }
+        right: { fill: { kind: solid, color: "#0a282c" }, strokes: [ { color: "#8fded5", width: 1.3, opacity: 0.95 } ] }
+      stroke: { color: "#ccfff5", width: 1.9 }
+      effects: { opacity: 0.92, grain: { intensity: 1.0, scale: 2.4 } }
+    # softer mid-cyan ink variant
+    cubeB:
+      palette: { top: "#12373c", left: "#0e3236", right: "#0b2a2e" }
+      faces:
+        top:   { fill: { kind: solid, color: "#12373c" }, strokes: [ { color: "#b6f0e6", width: 1.6, opacity: 0.98 } ] }
+        left:  { fill: { kind: solid, color: "#0e3236" }, strokes: [ { color: "#7fcfc6", width: 1.2, opacity: 0.92 } ] }
+        right: { fill: { kind: solid, color: "#0b2a2e" }, strokes: [ { color: "#7fcfc6", width: 1.2, opacity: 0.92 } ] }
+      stroke: { color: "#b6f0e6", width: 1.6 }
+      effects: { opacity: 0.9, grain: { intensity: 0.8, scale: 2.0 } }
+    # the lone warm accent — orange scale-figure ink
+    cubeC:
+      palette: { top: "#f08b2f", left: "#d4711f", right: "#bb5d16" }
+      faces:
+        top:   { fill: { kind: solid, color: "#f08b2f" }, strokes: [ { color: "#f6a84e", width: 1.0, opacity: 0.98 } ] }
+        left:  { fill: { kind: solid, color: "#d4711f" }, strokes: [ { color: "#f6a84e", width: 1.0, opacity: 0.95 } ] }
+        right: { fill: { kind: solid, color: "#bb5d16" }, strokes: [ { color: "#f6a84e", width: 1.0, opacity: 0.95 } ] }
+      stroke: { color: "#f6a84e", width: 1.0 }
+      effects: { opacity: 0.96, grain: { intensity: 0.6, scale: 2.0 } }
+  shapes: { rectangle: { } }
+nodes:
+  scene:
+    shape: composite
+    layout: { mode: grid, cols: 4, gap: 0.6, padding: 1 }
+    parts:
+      - { id: b0,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 40 } }
+      - { id: b1,  shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 92 } }
+      - { id: b2,  shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 22 } }
+      - { id: b3,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 64 } }
+      - { id: b4,  shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 30 } }
+      - { id: b5,  shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 18 } }
+      - { id: b6,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 100 } }
+      - { id: b7,  shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 46 } }
+      - { id: b8,  shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 16 } }
+      - { id: b9,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 54 } }
+      - { id: b10, shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 78 } }
+      - { id: b11, shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 24 } }

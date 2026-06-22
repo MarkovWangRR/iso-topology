@@ -1,0 +1,39 @@
+# neon-violet-orb — pure-black dotted field, saturated violet cubes with bright
+# silver-lavender rims and heavy violet backglow. (from h1)
+canvas: { background: "#050507", grid: dots, gridColor: "#1A1430", padding: 48, aspectRatio: 1.4 }
+theme:
+  text: { color: "#F2EEFF", size: 11, weight: "600" }
+  presets:
+    # saturated violet cube, silver-lavender rim, strong violet glow
+    cubeA:
+      palette: { top: "#6E54E8", left: "#120A38", right: "#27187A" }
+      stroke: { color: "#D6CCFF", width: 2.0 }
+      effects: { cornerRadius: 3, backglow: { color: "#7C5CFF", radius: 95, opacity: 0.9 } }
+    # bright hero-violet variant, thicker rim + bigger glow
+    cubeB:
+      palette: { top: "#A48CFF", left: "#1A0F52", right: "#3A22B0" }
+      stroke: { color: "#EAE4FF", width: 2.6 }
+      effects: { cornerRadius: 4, backglow: { color: "#8A5CFF", radius: 140, opacity: 1.0 } }
+    # deeper indigo variant, dimmer glow
+    cubeC:
+      palette: { top: "#5640C0", left: "#0E0830", right: "#1E1262" }
+      stroke: { color: "#B8AAF0", width: 1.8 }
+      effects: { cornerRadius: 3, backglow: { color: "#6A4CE0", radius: 70, opacity: 0.75 } }
+  shapes: { rectangle: { } }
+nodes:
+  scene:
+    shape: composite
+    layout: { mode: grid, cols: 4, gap: 0.6, padding: 1 }
+    parts:
+      - { id: b0,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 40 } }
+      - { id: b1,  shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 92 } }
+      - { id: b2,  shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 22 } }
+      - { id: b3,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 64 } }
+      - { id: b4,  shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 30 } }
+      - { id: b5,  shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 18 } }
+      - { id: b6,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 100 } }
+      - { id: b7,  shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 46 } }
+      - { id: b8,  shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 16 } }
+      - { id: b9,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 54 } }
+      - { id: b10, shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 78 } }
+      - { id: b11, shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 24 } }

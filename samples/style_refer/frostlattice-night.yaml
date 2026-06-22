@@ -1,0 +1,69 @@
+# frostlattice-night — deep navy void, translucent ice-blue see-through cubes with
+# pale top-down gradients and faint rims; one saturated electric-blue accent blooms.
+# (from transparent-frosted)
+canvas: { background: "#10142A", grid: "", padding: 64, aspectRatio: 1.45 }
+theme:
+  text: { family: "Inter, sans-serif", color: "#EAF1FF", size: 9, weight: "500" }
+  presets:
+    # frosted ice-blue glass — light, cool, see-through
+    cubeA:
+      palette:
+        topGradient:   { from: "#EAF1FF", to: "#C9D6F4", dir: down }
+        leftGradient:  { from: "#AFC0E6", to: "#8EA3CE", dir: down }
+        rightGradient: { from: "#C2D2EE", to: "#9FB4D8", dir: down }
+      stroke: { color: "#D6E0FA", width: 1 }
+      effects: { cornerRadius: 5, opacity: 0.78, backglow: { color: "#AEC6F2", radius: 38, opacity: 0.18 } }
+    # deeper frosted glass for depth variation
+    cubeB:
+      palette:
+        topGradient:   { from: "#D6E2F8", to: "#AEC0E2", dir: down }
+        leftGradient:  { from: "#90A6CE", to: "#728AB6", dir: down }
+        rightGradient: { from: "#A6BADC", to: "#86A0C6", dir: down }
+      stroke: { color: "#C6D4F0", width: 1 }
+      effects: { cornerRadius: 5, opacity: 0.76, backglow: { color: "#9CB6E2", radius: 42, opacity: 0.16 } }
+    # frosted glass carrying faint panel-line wireframe — keeps the frost fill,
+    # overlays light grid lines via per-face strokes + hatch ON TOP of the gradient,
+    # so internal panel edges read through the translucent glass.
+    cubeWire:
+      palette:
+        topGradient:   { from: "#EAF1FF", to: "#C9D6F4", dir: down }
+        leftGradient:  { from: "#AFC0E6", to: "#8EA3CE", dir: down }
+        rightGradient: { from: "#C2D2EE", to: "#9FB4D8", dir: down }
+      faces:
+        top:
+          fill: { kind: linearGradient, stops: [ { offset: 0, color: "#EAF1FF" }, { offset: 1, color: "#C9D6F4" } ], angle: 90 }
+          strokes: [ { color: "#FFFFFF", width: 1, opacity: 0.5 }, { color: "#B9C8EA", width: 0.6, opacity: 0.7 } ]
+        left:
+          fill: { kind: linearGradient, stops: [ { offset: 0, color: "#AFC0E6" }, { offset: 1, color: "#8EA3CE" } ], angle: 90 }
+          strokes: [ { color: "#E6ECFB", width: 0.6, opacity: 0.55 } ]
+        right:
+          fill: { kind: linearGradient, stops: [ { offset: 0, color: "#C2D2EE" }, { offset: 1, color: "#9FB4D8" } ], angle: 90 }
+          strokes: [ { color: "#E6ECFB", width: 0.6, opacity: 0.55 } ]
+      stroke: { color: "#D6E0FA", width: 1 }
+      effects: { cornerRadius: 5, opacity: 0.80, pattern: { kind: hatch, color: "#E6ECFB", spacing: 14, angle: 0 }, backglow: { color: "#AEC6F2", radius: 38, opacity: 0.18 } }
+    # vivid glowing electric-blue accent cube
+    cubeC:
+      palette:
+        topGradient:   { from: "#4D7BF5", to: "#2E5BE8", dir: down }
+        leftGradient:  { from: "#274FD0", to: "#1C3CB0", dir: down }
+        rightGradient: { from: "#3D63E8", to: "#2A4FD4", dir: down }
+      stroke: { color: "#7DA0FF", width: 1.2 }
+      effects: { cornerRadius: 5, opacity: 0.96, backglow: { color: "#2E6BFF", radius: 120, opacity: 0.85 } }
+  shapes: { rectangle: { } }
+nodes:
+  scene:
+    shape: composite
+    layout: { mode: grid, cols: 4, gap: 0.6, padding: 1 }
+    parts:
+      - { id: b0,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 88 } }
+      - { id: b1,  shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 116 } }
+      - { id: b2,  shape: rectangle, preset: cubeWire, geom: { w: 72, d: 72, h: 100 } }
+      - { id: b3,  shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 124 } }
+      - { id: b4,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 96 } }
+      - { id: b5,  shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 118 } }
+      - { id: b6,  shape: rectangle, preset: cubeWire, geom: { w: 72, d: 72, h: 110 } }
+      - { id: b7,  shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 90 } }
+      - { id: b8,  shape: rectangle, preset: cubeWire, geom: { w: 72, d: 72, h: 124 } }
+      - { id: b9,  shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 100 } }
+      - { id: b10, shape: rectangle, preset: cubeWire, geom: { w: 72, d: 72, h: 116 } }
+      - { id: b11, shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 96 } }

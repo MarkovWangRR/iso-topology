@@ -1,0 +1,139 @@
+# aurora-glass — near-black field, frosted translucent cubes with diagonal
+# pink->blue gradient tops, glowing magenta rim, grain + bloom, rounded corners.
+# (from dark-frosted-gradient)
+canvas: { background: "#050507", grid: "", padding: 80, aspectRatio: 1.4 }
+theme:
+  presets:
+    # frosted glass cube — diagonal pink->blue top, magenta rim, warm bloom
+    cubeA:
+      stroke: { color: "#FF9ECF", width: 1 }
+      faces:
+        top:
+          fill:
+            kind: linearGradient
+            angle: 135
+            stops:
+              - { offset: 0.0,  color: "#FFC2E0" }
+              - { offset: 0.30, color: "#C77FB2" }
+              - { offset: 0.55, color: "#6E5C9E" }
+              - { offset: 0.80, color: "#6E86D6" }
+              - { offset: 1.0,  color: "#AFCBFF" }
+          strokes:
+            - { color: "#FF9ECF", width: 4.5, opacity: 0.30 }
+            - { color: "#FF9ECF", width: 2.0, opacity: 1.0 }
+            - { color: "#9CC0FF", width: 1.6, opacity: 1.0 }
+        left:
+          fill:
+            kind: linearGradient
+            angle: 90
+            stops:
+              - { offset: 0.0, color: "#5A4A7E" }
+              - { offset: 1.0, color: "#241D3C" }
+        right:
+          fill:
+            kind: linearGradient
+            angle: 90
+            stops:
+              - { offset: 0.0, color: "#4A3E6E" }
+              - { offset: 1.0, color: "#2A2448" }
+      effects:
+        cornerRadius: 18
+        faceSplit: true
+        opacity: 0.72
+        grain: { intensity: 0.22, scale: 1.6 }
+        backglow: { color: "#C06AA8", radius: 60, opacity: 0.55 }
+        dropShadow: { dx: 0, dy: 16, blur: 26, color: "#0008" }
+    # cooler blue-leaning variant
+    cubeB:
+      stroke: { color: "#9CC0FF", width: 1 }
+      faces:
+        top:
+          fill:
+            kind: linearGradient
+            angle: 135
+            stops:
+              - { offset: 0.0,  color: "#BFD6FF" }
+              - { offset: 0.35, color: "#7E8FD6" }
+              - { offset: 0.70, color: "#6E5C9E" }
+              - { offset: 1.0,  color: "#C77FB2" }
+          strokes:
+            - { color: "#9CC0FF", width: 4.5, opacity: 0.30 }
+            - { color: "#9CC0FF", width: 2.0, opacity: 1.0 }
+            - { color: "#FF9ECF", width: 1.6, opacity: 1.0 }
+        left:
+          fill:
+            kind: linearGradient
+            angle: 90
+            stops:
+              - { offset: 0.0, color: "#4A4E82" }
+              - { offset: 1.0, color: "#1E2440" }
+        right:
+          fill:
+            kind: linearGradient
+            angle: 90
+            stops:
+              - { offset: 0.0, color: "#3E4470" }
+              - { offset: 1.0, color: "#24284A" }
+      effects:
+        cornerRadius: 18
+        faceSplit: true
+        opacity: 0.72
+        grain: { intensity: 0.22, scale: 1.6 }
+        backglow: { color: "#6A8AC0", radius: 60, opacity: 0.55 }
+        dropShadow: { dx: 0, dy: 16, blur: 26, color: "#0008" }
+    # warmer magenta-leaning variant
+    cubeC:
+      stroke: { color: "#FFB0D8", width: 1 }
+      faces:
+        top:
+          fill:
+            kind: linearGradient
+            angle: 135
+            stops:
+              - { offset: 0.0,  color: "#FFD0E8" }
+              - { offset: 0.40, color: "#D98BC0" }
+              - { offset: 0.75, color: "#7A66A6" }
+              - { offset: 1.0,  color: "#9CB6F0" }
+          strokes:
+            - { color: "#FFB0D8", width: 4.5, opacity: 0.30 }
+            - { color: "#FFB0D8", width: 2.0, opacity: 1.0 }
+            - { color: "#9CC0FF", width: 1.6, opacity: 1.0 }
+        left:
+          fill:
+            kind: linearGradient
+            angle: 90
+            stops:
+              - { offset: 0.0, color: "#62507E" }
+              - { offset: 1.0, color: "#28203C" }
+        right:
+          fill:
+            kind: linearGradient
+            angle: 90
+            stops:
+              - { offset: 0.0, color: "#52426E" }
+              - { offset: 1.0, color: "#2E2648" }
+      effects:
+        cornerRadius: 18
+        faceSplit: true
+        opacity: 0.72
+        grain: { intensity: 0.22, scale: 1.6 }
+        backglow: { color: "#C06AA8", radius: 60, opacity: 0.55 }
+        dropShadow: { dx: 0, dy: 16, blur: 26, color: "#0008" }
+  shapes: { rectangle: { } }
+nodes:
+  scene:
+    shape: composite
+    layout: { mode: grid, cols: 4, gap: 0.7, padding: 1 }
+    parts:
+      - { id: b0,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 34 } }
+      - { id: b1,  shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 70 } }
+      - { id: b2,  shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 22 } }
+      - { id: b3,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 54 } }
+      - { id: b4,  shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 40 } }
+      - { id: b5,  shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 88 } }
+      - { id: b6,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 28 } }
+      - { id: b7,  shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 60 } }
+      - { id: b8,  shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 44 } }
+      - { id: b9,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 76 } }
+      - { id: b10, shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 32 } }
+      - { id: b11, shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 50 } }

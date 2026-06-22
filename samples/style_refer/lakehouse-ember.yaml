@@ -1,0 +1,68 @@
+# lakehouse-ember — Databricks clone: white soft-rounded cards on a pale iso
+# grid, faceSplit + soft slate dropShadow, one ember red-orange hero accent,
+# grouped in dashed white trays.
+canvas: { background: "#F6F7F9", grid: iso, gridColor: "#E8EBEF", gridStep: 40, padding: 64, aspectRatio: 1.5 }
+theme:
+  text: { family: "Inter, system-ui, sans-serif", size: 11, weight: "600", color: "#1B3139" }
+  presets:
+    cubeA:                       # white soft-rounded card
+      palette:
+        topGradient:   { from: "#FFFFFF", to: "#F1F4F8", dir: down }
+        leftGradient:  { from: "#E3E8ED", to: "#D3DAE1", dir: down }
+        rightGradient: { from: "#ECEFF3", to: "#DBE1E8", dir: down }
+      stroke: { color: "#D3DAE0", width: 1 }
+      effects: { cornerRadius: 16, faceSplit: true, dropShadow: { dx: 0, dy: 12, blur: 20, color: "#1B313922" } }
+    cubeB:                       # cool slate card
+      palette:
+        topGradient:   { from: "#EEF2F7", to: "#DCE3EB", dir: down }
+        leftGradient:  { from: "#C2CDD9", to: "#AEBCCB", dir: down }
+        rightGradient: { from: "#D2DBE5", to: "#BDC9D6", dir: down }
+      stroke: { color: "#AEBCCB", width: 1 }
+      effects: { cornerRadius: 16, faceSplit: true, dropShadow: { dx: 0, dy: 12, blur: 20, color: "#1B313922" } }
+    cubeC:                       # ember hero — Databricks red-orange
+      palette:
+        topGradient:   { from: "#FF5A3C", to: "#FF3621", dir: down }
+        leftGradient:  { from: "#B6230F", to: "#8E1808", dir: down }
+        rightGradient: { from: "#DC2C16", to: "#AE1C0B", dir: down }
+      stroke: { color: "#8E1808", width: 1 }
+      effects: { cornerRadius: 18, faceSplit: true, backglow: { color: "#FF3621", radius: 56, opacity: 0.4 }, dropShadow: { dx: 0, dy: 16, blur: 26, color: "#8E180833" } }
+    tray:                        # soft-rounded dashed white tray
+      palette: { top: "#FFFFFFCC" }
+      stroke: { color: "#D3DAE0", width: 1.1, dash: "4 3" }
+      text: { color: "#5A6B73", size: 12, weight: "700" }
+      effects: { cornerRadius: 14 }
+nodes:
+  scene:
+    shape: composite
+    layout: { mode: grid, cols: 3, gap: 1.0, padding: 1 }
+    parts:
+      - id: trayL
+        shape: group
+        preset: tray
+        layout: { mode: grid, cols: 2, gap: 0.6, padding: 1 }
+        geom: { h: 8 }
+        parts:
+          - { id: c0, shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 30 } }
+          - { id: c1, shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 64 } }
+          - { id: c2, shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 44 } }
+          - { id: c3, shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 88 } }
+      - id: trayM
+        shape: group
+        preset: tray
+        layout: { mode: grid, cols: 2, gap: 0.6, padding: 1 }
+        geom: { h: 8 }
+        parts:
+          - { id: c4, shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 52 } }
+          - { id: c5, shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 34 } }
+          - { id: c6, shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 70 } }
+          - { id: c7, shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 40 } }
+      - id: trayR
+        shape: group
+        preset: tray
+        layout: { mode: grid, cols: 2, gap: 0.6, padding: 1 }
+        geom: { h: 8 }
+        parts:
+          - { id: c8,  shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 60 } }
+          - { id: c9,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 46 } }
+          - { id: c10, shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 80 } }
+          - { id: c11, shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 36 } }

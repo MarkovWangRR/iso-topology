@@ -1,0 +1,38 @@
+# ink-hairline — pure white paper, black hairline wireframe cubes (strokes only,
+# no fills, no shading). Hollow industrial line-art. (from bw-lineart)
+canvas: { background: "#FFFFFF", grid: "", padding: 56, aspectRatio: 1.4 }
+theme:
+  presets:
+    # black hairline wireframe — no fill
+    cubeA:
+      palette: { top: "#FFFFFF", left: "#FFFFFF", right: "#FFFFFF" }
+      stroke: { color: "#111111", width: 1.6 }
+      effects: { wireframe: true }
+    # slightly thinner hairline
+    cubeB:
+      palette: { top: "#FFFFFF", left: "#FFFFFF", right: "#FFFFFF" }
+      stroke: { color: "#111111", width: 1.4 }
+      effects: { wireframe: true }
+    # thinnest hairline variant
+    cubeC:
+      palette: { top: "#FFFFFF", left: "#FFFFFF", right: "#FFFFFF" }
+      stroke: { color: "#111111", width: 1.2 }
+      effects: { wireframe: true }
+  shapes: { rectangle: { } }
+nodes:
+  scene:
+    shape: composite
+    layout: { mode: grid, cols: 4, gap: 0.6, padding: 1 }
+    parts:
+      - { id: b0,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 34 } }
+      - { id: b1,  shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 88 } }
+      - { id: b2,  shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 24 } }
+      - { id: b3,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 60 } }
+      - { id: b4,  shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 42 } }
+      - { id: b5,  shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 16 } }
+      - { id: b6,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 96 } }
+      - { id: b7,  shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 50 } }
+      - { id: b8,  shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 28 } }
+      - { id: b9,  shape: rectangle, preset: cubeA, geom: { w: 72, d: 72, h: 72 } }
+      - { id: b10, shape: rectangle, preset: cubeB, geom: { w: 72, d: 72, h: 38 } }
+      - { id: b11, shape: rectangle, preset: cubeC, geom: { w: 72, d: 72, h: 20 } }
