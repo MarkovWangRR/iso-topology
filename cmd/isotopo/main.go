@@ -378,6 +378,27 @@ func renderFile(in, outDir string) error {
 		return err
 	}
 
+	// Pre-flight: run the full validator and surface any issues to stderr
+	// before rendering. Errors are prefixed with "error:" so they are
+	// immediately visible; warnings use "warn:". Rendering continues in
+	// both cases — the output may be incomplete but is never silently wrong.
+	if issues := isotopo.Validate(doc); len(issues) > 0 {
+		errCount, warnCount := 0, 0
+		for _, iss := range issues {
+			switch iss.Severity {
+			case isotopo.SeverityError:
+				errCount++
+				fmt.Fprintf(os.Stderr, "error: %s — %s\n", iss.Path, iss.Message)
+			case isotopo.SeverityWarning:
+				warnCount++
+				fmt.Fprintf(os.Stderr, "warn:  %s — %s\n", iss.Path, iss.Message)
+			}
+		}
+		if errCount > 0 {
+			fmt.Fprintf(os.Stderr, "render: %d error(s), %d warning(s) — output may be incomplete\n", errCount, warnCount)
+		}
+	}
+
 	topologySVG := renderTopologySVG(doc)
 	if err := writeFile(filepath.Join(outDir, "topology.svg"), []byte(topologySVG)); err != nil {
 		return err
