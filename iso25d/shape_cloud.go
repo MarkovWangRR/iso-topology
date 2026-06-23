@@ -16,7 +16,6 @@ func RenderIsoCloud(o IsoBoxOpts) string {
 	proj := make([]vp, n)
 	minX, maxX := math.Inf(1), math.Inf(-1)
 	minY, maxY := math.Inf(1), math.Inf(-1)
-	topMinY, topMaxY := math.Inf(1), math.Inf(-1)
 	for i, p := range outline {
 		sx, sy := project(p[0], p[1], 0)
 		proj[i] = vp{topX: sx, topY: sy - h, botX: sx, botY: sy}
@@ -31,12 +30,6 @@ func RenderIsoCloud(o IsoBoxOpts) string {
 		}
 		if sy > maxY {
 			maxY = sy
-		}
-		if sy-h < topMinY {
-			topMinY = sy - h
-		}
-		if sy-h > topMaxY {
-			topMaxY = sy - h
 		}
 	}
 	tx, ty := -minX+m, -minY+m
@@ -159,25 +152,14 @@ func RenderIsoCloud(o IsoBoxOpts) string {
 		)
 	}
 
-	// Label: flat horizontal text centered in the cloud body area.
-	// Cloud identity IS the cloud form; icons would read as floating debris.
-	if strings.TrimSpace(o.Label) != "" {
-		cx := (minX+maxX)/2 + tx
-		// Place text in the body area of the top face — 70% down the top-face
-		// height range (which excludes side-wall depth, so text stays on top).
-		cy := topMinY + (topMaxY-topMinY)*0.70 + ty
-		lines := strings.Split(o.Label, "\n")
-		lineH := o.FontSize * 1.35
-		startY := cy - float64(len(lines)-1)*lineH/2
-		for i, line := range lines {
-			fmt.Fprintf(&sb,
-				`<text x="%.2f" y="%.2f" font-family="%s" font-size="%.2f" font-weight="%s" fill="%s" text-anchor="middle" dominant-baseline="middle">%s</text>`,
-				cx, startY+float64(i)*lineH,
-				escapeAttr(o.FontFamily), o.FontSize, escapeAttr(o.FontWeight),
-				escapeAttr(o.FontColor), escapeXML(line),
-			)
-		}
-	}
+	// 顶面文字与其他节点保持一致：用等轴投影矩阵倾斜放置。
+	// Cloud 不渲染 icon，cloud 轮廓本身即是身份标识。
+	writeTopLabelAndIcon(
+		&sb,
+		tx, ty-h, w, d,
+		o.Label, "", o.IconScale,
+		o.FontFamily, o.FontSize, o.FontWeight, o.FontColor,
+	)
 
 	closeWrapper(&sb)
 	sb.WriteString(`</svg>`)
