@@ -303,13 +303,15 @@ func sampleCloudOutline(w, d float64) [][2]float64 {
 		angOf(bCL, jMainCL), // upper-right of bCL (~338°)
 		K)...)
 
-	// ── transpose into iso local coords ──────────────────────────────────────
-	// vyScale compresses the uy dimension so the cloud reads as a flat slab
-	// rather than a tall box in isometric view.
+	// ── rotate CW 90° then transpose into iso local coords ───────────────────
+	// Rotation in unit frame (around centre 0.5,0.5):  (ux,uy) → (uy, 1-ux)
+	// vyScale compresses the depth so the cloud reads as a flat slab.
 	const vyScale = 0.62
 	out := make([][2]float64, len(raw))
 	for i, p := range raw {
-		out[i] = [2]float64{p[1] * vyScale * w, p[0] * d}
+		rux := p[1]       // new ux = old uy
+		ruy := 1 - p[0]  // new uy = 1 - old ux
+		out[i] = [2]float64{ruy * vyScale * w, rux * d}
 	}
 	return out
 }
