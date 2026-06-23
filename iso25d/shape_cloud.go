@@ -168,25 +168,29 @@ func RenderIsoCloud(o IsoBoxOpts) string {
 	return sb.String()
 }
 
-// sampleCloudOutline returns the outline of a classic 3-bump cloud silhouette,
-// analytically constructed as the union boundary of three overlapping circles
-// (left small, center tall/dominant, right medium) plus a flat base.
+// sampleCloudOutline returns the outline of the classic 2-bump cloud silhouette
+// (Apple / iOS / macOS style): a large main bump on the left, a smaller secondary
+// bump on the right, and a rounded-rectangle body below.
 //
-// The unit frame is ux=0..1 left→right, uy=0..1 top→bottom. The outline is
-// returned in local iso coords via the pt() transpose and is CW in screen space.
+// The shape is the union boundary of 4 circles analytically traced:
+//   bMain  – large left bump
+//   bSec   – smaller right bump
+//   bCL    – rounded bottom-left corner of the body
+//   bCR    – rounded bottom-right corner of the body
+//
+// Unit frame: ux=0..1 left→right, uy=0..1 top→bottom (small uy = high).
+// Returned in local iso coords (ux↔uy transposed, scaled to w and d).
+// Winding is CW in screen space (increasing angle in uy-down convention).
 func sampleCloudOutline(w, d float64) [][2]float64 {
-	// Three circles — chosen so each pair of adjacent circles overlaps, the
-	// tops of the side bumps protrude above the center circle, and the left and
-	// right circles do NOT directly overlap (gives the classic 3-bump silhouette).
 	type circ struct{ cx, cy, r float64 }
-	bL := circ{0.19, 0.60, 0.22} // left bump  (small)
-	bC := circ{0.50, 0.40, 0.29} // center bump (crown / tallest)
-	bR := circ{0.81, 0.54, 0.24} // right bump  (medium)
+
+	bMain := circ{0.36, 0.40, 0.29} // large main bump (left-center)
+	bSec  := circ{0.69, 0.54, 0.20} // smaller secondary bump (right)
+	bCL   := circ{0.15, 0.74, 0.15} // body — bottom-left rounded corner
+	bCR   := circ{0.85, 0.74, 0.15} // body — bottom-right rounded corner
 
 	// ── helpers ──────────────────────────────────────────────────────────────
 
-	// Circle-circle intersection: returns the two intersection points and true,
-	// or false when the circles are disjoint or one contains the other.
 	intersect2 := func(a, b circ) ([2]float64, [2]float64, bool) {
 		dx, dy := b.cx-a.cx, b.cy-a.cy
 		dd := math.Sqrt(dx*dx + dy*dy)
@@ -200,7 +204,7 @@ func sampleCloudOutline(w, d float64) [][2]float64 {
 			[2]float64{px - hh*dy/dd, py + hh*dx/dd}, true
 	}
 
-	// Angle of point p on circle c, returned in [0, 2π).
+	// Angle of p on circle c, normalised to [0, 2π).
 	angOf := func(c circ, p [2]float64) float64 {
 		a := math.Atan2(p[1]-c.cy, p[0]-c.cx)
 		if a < 0 {
@@ -209,9 +213,9 @@ func sampleCloudOutline(w, d float64) [][2]float64 {
 		return a
 	}
 
-	// sampleArcCW samples n points along the arc of circle c from angle a1 to
-	// a2 going CW in screen space (= increasing angle in [0,2π) uy-down coords).
-	// If a2 <= a1 the arc wraps through 2π.
+	// sampleArcCW samples n equally-spaced points on circle c from angle a1 to
+	// a2, going CW in screen space (= increasing angle in uy-down convention).
+	// If a2 ≤ a1 the arc wraps past 2π.
 	sampleArcCW := func(c circ, a1, a2 float64, n int) [][2]float64 {
 		for a2 <= a1 {
 			a2 += 2 * math.Pi
@@ -225,85 +229,83 @@ func sampleCloudOutline(w, d float64) [][2]float64 {
 		return pts
 	}
 
-	// ── find intersections ────────────────────────────────────────────────────
+	// ── intersections ────────────────────────────────────────────────────────
 
-	lc0, lc1, okLC := intersect2(bL, bC)
-	cr0, cr1, okCR := intersect2(bC, bR)
-	if !okLC || !okCR {
-		// Degenerate geometry: fall back to simple ellipse outline.
+	// bMain ∩ bCL: junction on bMain's lower-left / bCL's upper-right.
+	// We want the LOWER intersection (larger uy) — that is the physical seam
+	// where the left side of the body transitions into the main bump.
+	mc0, mc1, okMC := intersect2(bMain, bCL)
+	if !okMC {
 		return sampleEllipseOutline(w, d)
 	}
-
-	// Upper intersection = smaller uy (higher on screen).
-	upLC, loLC := lc0, lc1
-	if lc1[1] < lc0[1] {
-		upLC, loLC = lc1, lc0
-	}
-	upCR, loCR := cr0, cr1
-	if cr1[1] < cr0[1] {
-		upCR, loCR = cr1, cr0
+	jMainCL := mc0 // lower (larger uy) = the body→bump seam
+	if mc1[1] > mc0[1] {
+		jMainCL = mc1
 	}
 
-	// ── arc angles ───────────────────────────────────────────────────────────
-
-	// bL outer arc: from loLC going CW (increasing angle) through bL's top
-	// (3π/2) to upLC. This traces the left, top, and upper-right of the left bump.
-	aL1 := angOf(bL, loLC) // lower intersection on bL  (~30°)
-	aL2 := angOf(bL, upLC) // upper intersection on bL  (~275°)
-	// Both endpoints should be in [0°..90°) and [270°..360°) respectively when
-	// bL is to the left of bC. Make sure the arc passes through 3π/2 (bL's top).
-	// CW means increasing; if aL2 > aL1 already the arc is < 180°: wrong direction.
-	// Force aL2 to be after 3π/2 by normalising.
-	topL := 3 * math.Pi / 2
-	if aL2 < topL { // upLC is below bL's top in angle — should not happen with our circles
-		aL2 += 2 * math.Pi
+	// bMain ∩ bSec: the valley between the two bumps.
+	// We want the UPPER intersection (smaller uy) — the visible notch.
+	ms0, ms1, okMS := intersect2(bMain, bSec)
+	if !okMS {
+		return sampleEllipseOutline(w, d)
+	}
+	jMainSec := ms0 // upper (smaller uy) = the inter-bump notch
+	if ms1[1] < ms0[1] {
+		jMainSec = ms1
 	}
 
-	// bC top arc: from upLC going CW through bC's top (3π/2) to upCR.
-	aC1 := angOf(bC, upLC) // ~183° (left side of bC, just above mid)
-	aC2 := angOf(bC, upCR) // ~341° (upper-right of bC)
-	topC := 3 * math.Pi / 2
-	if aC2 < topC {
-		aC2 += 2 * math.Pi
+	// bSec ∩ bCR: junction where the secondary bump meets the right body corner.
+	// We want the UPPER intersection (smaller uy).
+	sc0, sc1, okSC := intersect2(bSec, bCR)
+	if !okSC {
+		return sampleEllipseOutline(w, d)
+	}
+	jSecCR := sc0 // upper (smaller uy) = bump→corner seam
+	if sc1[1] < sc0[1] {
+		jSecCR = sc1
 	}
 
-	// bR outer arc: from upCR going CW through bR's top (3π/2) to loCR.
-	aR1 := angOf(bR, upCR) // upper intersection on bR (~178°, upper-left of bR)
-	aR2 := angOf(bR, loCR) // lower intersection on bR (~88°, lower-left of bR)
-	topR := 3 * math.Pi / 2
-	// Arc must pass through 3π/2 (top of bR). If aR2 > aR1 the short path goes
-	// the wrong way; normalise so we travel the long CW route through the top.
-	if aR2 > aR1 {
-		aR2 += 2 * math.Pi // wrap: arc continues past 2π
-	}
-	if aR2 < topR+aR1-aR1 { // ensure midpoint 3π/2 is within [aR1, aR2]
-		_ = topR // guard used above; this branch is informational
-	}
+	// ── arc sequence (5 segments) ─────────────────────────────────────────────
+	//
+	//  1. bMain outer arc  : jMainCL  → jMainSec (over bMain's crown, ~244°)
+	//  2. bSec  outer arc  : jMainSec → jSecCR   (over bSec's top,   ~119°)
+	//  3. bCR   corner arc : jSecCR   → bCR ⊥    (right+bottom,      ~167°)
+	//  4. flat base        : bCR ⊥   → bCL ⊥
+	//  5. bCL   corner arc : bCL ⊥   → jMainCL  (bottom+left+upper,  ~247°)
 
-	// ── assemble outline ─────────────────────────────────────────────────────
-
-	const K = 24 // sample density per arc
+	const K = 24
 	var raw [][2]float64
 
-	// 1. Left bump outer arc (loLC → upLC going over bL's top)
-	raw = append(raw, sampleArcCW(bL, aL1, aL2, K)...)
+	// 1. Main bump — from body-left seam, over the crown, to the valley notch.
+	raw = append(raw, sampleArcCW(bMain,
+		angOf(bMain, jMainCL),  // lower-left of bMain (~105°)
+		angOf(bMain, jMainSec), // upper-right of bMain (~349°)
+		K)...)
 
-	// 2. Center bump top arc (upLC → upCR going over bC's crown)
-	raw = append(raw, sampleArcCW(bC, aC1, aC2, K)...)
+	// 2. Secondary bump — from the valley notch, over the top, to the body-right seam.
+	raw = append(raw, sampleArcCW(bSec,
+		angOf(bSec, jMainSec), // upper-left of bSec  (~257°)
+		angOf(bSec, jSecCR),   // lower-right of bSec (~16°)  → wraps past 2π
+		K)...)
 
-	// 3. Right bump outer arc (upCR → loCR going over bR's top)
-	raw = append(raw, sampleArcCW(bR, aR1, aR2, K)...)
+	// 3. Right corner — from the body-right seam, around the right+bottom of bCR.
+	raw = append(raw, sampleArcCW(bCR,
+		angOf(bCR, jSecCR), // upper-right of bCR (~283°)
+		math.Pi/2,          // bottom of bCR (90°)  → wraps past 2π
+		K)...)
 
-	// 4. Flat base: straight line from loCR back to loLC.
-	// To keep the base horizontal, clamp both to the same uy level.
-	baseUY := math.Max(loLC[1], loCR[1])
-	raw = append(raw, [2]float64{loCR[0], baseUY})
-	raw = append(raw, [2]float64{loLC[0], baseUY})
+	// 4. Flat base connecting the two bottom corners.
+	baseY := bCL.cy + bCL.r // = 0.89
+	raw = append(raw, [2]float64{bCR.cx, baseY}) // right end of base
+	raw = append(raw, [2]float64{bCL.cx, baseY}) // left end of base
+
+	// 5. Left corner — from bCL's bottom, up the left side, to the body-left seam.
+	raw = append(raw, sampleArcCW(bCL,
+		math.Pi/2,          // bottom of bCL (90°)
+		angOf(bCL, jMainCL), // upper-right of bCL (~338°)
+		K)...)
 
 	// ── transpose into iso local coords ──────────────────────────────────────
-	// The cloud is authored with bumps rising in the uy direction; transposing
-	// ux↔uy (and scaling) sets it upright in the isometric projection where w
-	// is the wide axis and d the depth axis.
 	out := make([][2]float64, len(raw))
 	for i, p := range raw {
 		out[i] = [2]float64{p[1] * w, p[0] * d}
