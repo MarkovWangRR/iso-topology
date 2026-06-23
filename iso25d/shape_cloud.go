@@ -16,6 +16,7 @@ func RenderIsoCloud(o IsoBoxOpts) string {
 	proj := make([]vp, n)
 	minX, maxX := math.Inf(1), math.Inf(-1)
 	minY, maxY := math.Inf(1), math.Inf(-1)
+	topMinY, topMaxY := math.Inf(1), math.Inf(-1)
 	for i, p := range outline {
 		sx, sy := project(p[0], p[1], 0)
 		proj[i] = vp{topX: sx, topY: sy - h, botX: sx, botY: sy}
@@ -30,6 +31,12 @@ func RenderIsoCloud(o IsoBoxOpts) string {
 		}
 		if sy > maxY {
 			maxY = sy
+		}
+		if sy-h < topMinY {
+			topMinY = sy - h
+		}
+		if sy-h > topMaxY {
+			topMaxY = sy - h
 		}
 	}
 	tx, ty := -minX+m, -minY+m
@@ -156,8 +163,9 @@ func RenderIsoCloud(o IsoBoxOpts) string {
 	// Cloud identity IS the cloud form; icons would read as floating debris.
 	if strings.TrimSpace(o.Label) != "" {
 		cx := (minX+maxX)/2 + tx
-		// Place text in the lower body area (~72% of the height range from top).
-		cy := minY + (maxY-minY)*0.72 + ty
+		// Place text in the body area of the top face — 70% down the top-face
+		// height range (which excludes side-wall depth, so text stays on top).
+		cy := topMinY + (topMaxY-topMinY)*0.70 + ty
 		lines := strings.Split(o.Label, "\n")
 		lineH := o.FontSize * 1.35
 		startY := cy - float64(len(lines)-1)*lineH/2
