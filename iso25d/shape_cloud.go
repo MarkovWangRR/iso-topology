@@ -191,11 +191,14 @@ func RenderIsoCloud(o IsoBoxOpts) string {
 func sampleCloudOutline(w, d float64) [][2]float64 {
 	type circ struct{ cx, cy, r float64 }
 
-	// Flatter bumps (smaller r, cy closer to body) + wider base (bCL/bCR pushed out).
-	bMain := circ{0.35, 0.53, 0.21} // main bump — lower, flatter
-	bSec  := circ{0.67, 0.63, 0.15} // secondary bump — lower, flatter
-	bCL   := circ{0.08, 0.76, 0.12} // body — bottom-left corner, pushed out
-	bCR   := circ{0.92, 0.76, 0.12} // body — bottom-right corner, pushed out
+	// Circle parameters chosen so all required intersections exist:
+	//   dist(bMain,bCL)=0.392  < r_sum=0.41  ✓
+	//   dist(bMain,bSec)=0.351 < r_sum=0.44  ✓
+	//   dist(bSec,bCR)=0.283   < r_sum=0.33  ✓
+	bMain := circ{0.35, 0.45, 0.26} // large main bump
+	bSec  := circ{0.68, 0.57, 0.18} // smaller secondary bump
+	bCL   := circ{0.11, 0.76, 0.15} // body bottom-left corner
+	bCR   := circ{0.89, 0.76, 0.15} // body bottom-right corner
 
 	// ── helpers ──────────────────────────────────────────────────────────────
 
@@ -317,7 +320,7 @@ func sampleCloudOutline(w, d float64) [][2]float64 {
 	// Direct mapping: ux → iso x (width), uy → iso y (depth).
 	// vyScale compresses depth so the cloud reads as a flat slab not a tall box.
 	// Bumps (small uy) face toward the back of the iso face (visually up-left).
-	const vyScale = 0.60
+	const vyScale = 0.70
 	out := make([][2]float64, len(raw))
 	for i, p := range raw {
 		out[i] = [2]float64{p[0] * w, p[1] * vyScale * d}
