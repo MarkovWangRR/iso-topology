@@ -427,6 +427,10 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo,
 		}
 		sdx, sdy := ar.exit(effFrom[i])
 		tdx, tdy := ar.exit(effTo[i])
+		// Ground-hugging route: silhouette refinement uses each endpoint's
+		// own offWZ so sphere/cloud/prism anchors are computed at the height
+		// where the face actually exists. The route plane (min of the two) is
+		// only needed in the main routing pass below.
 		srcZi, tgtZi := ar.baseZ(effFrom[i]), ar.baseZ(effTo[i])
 		sWX, sWY = ar.refineSilhouette(effFrom[i], sWX, sWY, srcZi)
 		tWX, tWY = ar.refineSilhouette(effTo[i], tWX, tWY, tgtZi)
@@ -520,16 +524,19 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo,
 			// axis order is chosen by which axis the source exits along, so
 			// the very first segment never crosses the source's footprint.
 			//
-			// Iso-axis alignment invariant (v1.6.1):
-			// In 2.5D iso projection the only directions that align with
-			// the TopoDSL diamond grid are world-axis +x and +y; world-axis
-			// +z projects to screen vertical which does NOT match the grid.
-			// To make every segment strictly ±tan30° in screen, the entire
-			// path is routed on a single horizontal world plane at z =
-			// min(srcFaceMidZ, tgtFaceMidZ). That height is guaranteed to
-			// lie inside both endpoints' side faces (any face-mid z ≤ h),
-			// so the endpoints attach inside the visible silhouette and
-			// no vertical "drop" segment is ever needed.
+			// Ground-hugging route (v5.1):
+			// Connectors must lie on the ground and read as physical links,
+			// not bridges flying over the tops (see baseZ / side-anchor docs).
+			// So the flat L is routed on the LOWER of the two endpoints'
+			// base planes — routeZ = min(srcZ, tgtZ) — and the HIGHER
+			// endpoint gets a single vertical riser at its stub that drops
+			// it from its floating face down to that ground plane. World-axis
+			// +x / +y project to the iso diamond grid; the riser is world +z,
+			// which projects to a clean pure-vertical screen segment (the iso
+			// "up" direction), so the path stays visually orthogonal. Routing
+			// at min (not max) keeps the long flat run hugging the floor where
+			// intervening bodies can occlude it — that occlusion is the 2.5D
+			// depth cue.
 			sWX, sWY, _, ok1 := ar.world(effFrom[ci])
 			tWX, tWY, _, ok2 := ar.world(effTo[ci])
 			if !ok1 || !ok2 {
@@ -541,9 +548,9 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo,
 			tgtZ := ar.baseZ(effTo[ci])
 			routeZ := math.Min(srcZ, tgtZ)
 
-			// v1.6.3 / ground-hugging: use each endpoint's own base z
-			// for silhouette refinement so sphere/cloud/prism anchors
-			// are queried at the height where the face actually exists.
+			// v1.6.3 / v5.1 shape-aware anchor refinement: use each
+			// endpoint's own offWZ so sphere/cloud/prism silhouettes are
+			// queried at the height where the face actually exists.
 			sWX, sWY = ar.refineSilhouette(effFrom[ci], sWX, sWY, srcZ)
 			tWX, tWY = ar.refineSilhouette(effTo[ci], tWX, tWY, tgtZ)
 
@@ -640,11 +647,13 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo,
 					}
 				}
 			}
-			// Riser helpers: when an endpoint sits ABOVE the flat routing
-			// plane (routeZ = min of both), insert a vertical segment at
-			// the stub so the connector drops from the elevated face to
-			// the ground plane, then runs flat. A z-only change projects
-			// to a pure-vertical screen segment — the iso "up" direction.
+			// v5.1 — z-riser helpers: when an endpoint sits ABOVE the flat
+			// routing plane (routeZ = min of both), insert a vertical screen
+			// segment at the stub so the connector drops from the elevated
+			// node's floating face down to the ground plane, then runs flat.
+			// A z-only change projects to a pure-vertical screen line — the
+			// iso "up" direction — so the line still reads as orthogonal while
+			// hugging the floor for its long run.
 			appendRiserSrc := func(pts [][3]float64) [][3]float64 {
 				if srcZ > routeZ {
 					pts = append(pts, [3]float64{sStubX, sStubY, routeZ})
@@ -657,10 +666,12 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo,
 				}
 				return pts
 			}
-
 			if xFirst {
 				// Source exits along world x → walk x then y.
-				worldPts = [][3]float64{{sWX, sWY, srcZ}, {sStubX, sStubY, srcZ}}
+				worldPts = [][3]float64{
+					{sWX, sWY, srcZ},
+					{sStubX, sStubY, srcZ},
+				}
 				worldPts = appendRiserSrc(worldPts)
 				worldPts = append(worldPts,
 					[3]float64{tStubX, sStubY, routeZ},
@@ -670,7 +681,10 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo,
 				worldPts = append(worldPts, [3]float64{tWX, tWY, tgtZ})
 			} else {
 				// Source exits along world y → walk y then x.
-				worldPts = [][3]float64{{sWX, sWY, srcZ}, {sStubX, sStubY, srcZ}}
+				worldPts = [][3]float64{
+					{sWX, sWY, srcZ},
+					{sStubX, sStubY, srcZ},
+				}
 				worldPts = appendRiserSrc(worldPts)
 				worldPts = append(worldPts,
 					[3]float64{sStubX, tStubY, routeZ},
@@ -724,21 +738,26 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo,
 			if len(c.Waypoints) > 0 {
 				np := [][3]float64{{sWX, sWY, srcZ}}
 				if srcZ > routeZ {
-					np = append(np, [3]float64{sWX, sWY, routeZ})
+					np = append(np, [3]float64{sWX + sdx*stub, sWY + sdy*stub, srcZ})
+					np = append(np, [3]float64{sWX + sdx*stub, sWY + sdy*stub, routeZ})
 				}
 				for _, wp := range c.Waypoints {
 					np = append(np, [3]float64{wp.WX, wp.WY, routeZ})
 				}
 				if tgtZ > routeZ {
-					np = append(np, [3]float64{tWX, tWY, routeZ})
+					np = append(np, [3]float64{tWX - tdx*stub, tWY - tdy*stub, routeZ})
+					np = append(np, [3]float64{tWX - tdx*stub, tWY - tdy*stub, tgtZ})
 				}
 				np = append(np, [3]float64{tWX, tWY, tgtZ})
 				worldPts = orthoThread(np)
 			}
 			// v1.6 — if every waypoint shares the same world x OR the same
-			// world y (and same z), the L-shape has degenerated to a single
-			// iso-axis line. Guard allSameZ: a z-only riser is not degenerate.
+			// world y, the L-shape has degenerated to a single iso-axis line.
+			// Emit just (source, target) so the path doesn't render multiple
+			// collinear bends (which look like a thicker line at line joints).
 			const eps = 0.01
+			// v5.0 — track allSameZ so we don't collapse paths that have
+			// z-riser segments (z-only changes are valid vertical screen lines).
 			allSameX, allSameY, allSameZ := true, true, true
 			for _, p := range worldPts[1:] {
 				if math.Abs(p[0]-worldPts[0][0]) > eps {
