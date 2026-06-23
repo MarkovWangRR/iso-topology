@@ -154,9 +154,12 @@ func RenderIsoCloud(o IsoBoxOpts) string {
 
 	// 顶面文字与其他节点保持一致：用等轴投影矩阵倾斜放置。
 	// Cloud 不渲染 icon，cloud 轮廓本身即是身份标识。
+	// Cloud iso-x spans [0, vyScale*w]; pass that as faceW so the label
+	// centres at vyScale*w/2 rather than w/2.
+	const vyScale = 0.62
 	writeTopLabelAndIcon(
 		&sb,
-		tx, ty-h, w, d,
+		tx, ty-h, vyScale*w, d,
 		o.Label, "", o.IconScale,
 		o.FontFamily, o.FontSize, o.FontWeight, o.FontColor,
 	)
@@ -182,10 +185,11 @@ func RenderIsoCloud(o IsoBoxOpts) string {
 func sampleCloudOutline(w, d float64) [][2]float64 {
 	type circ struct{ cx, cy, r float64 }
 
-	bMain := circ{0.36, 0.40, 0.29} // large main bump (left-center)
-	bSec  := circ{0.69, 0.54, 0.20} // smaller secondary bump (right)
-	bCL   := circ{0.15, 0.74, 0.15} // body — bottom-left rounded corner
-	bCR   := circ{0.85, 0.74, 0.15} // body — bottom-right rounded corner
+	// Flatter bumps (smaller r, cy closer to body) + wider base (bCL/bCR pushed out).
+	bMain := circ{0.35, 0.53, 0.21} // main bump — lower, flatter
+	bSec  := circ{0.67, 0.63, 0.15} // secondary bump — lower, flatter
+	bCL   := circ{0.08, 0.76, 0.12} // body — bottom-left corner, pushed out
+	bCR   := circ{0.92, 0.76, 0.12} // body — bottom-right corner, pushed out
 
 	// ── helpers ──────────────────────────────────────────────────────────────
 
