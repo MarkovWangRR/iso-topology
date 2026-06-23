@@ -479,6 +479,187 @@ func nestingIssues(doc *Document) []Issue {
 	return issues
 }
 
+// ── 6. styleConsistencyIssues ────────────────────────────────────────────────
+
+// styleConsistencyIssues finds clusters of nodes that share the same visual
+// strategy (same preset, or same bucketed fill+stroke when no preset is used),
+// then flags any node whose text color or icon suffix pattern is an outlier
+// within its cluster.
+//
+// Algorithm:
+//  1. Collect every non-container leaf part with resolved fill, textColor, icon.
+//  2. Assign each a cluster key: preset name if set, else "<fillBucket>/<strokeBucket>".
+//  3. For clusters of size ≥ 2, compute the majority text color and icon-suffix
+//     pattern (none / light / hex).
+//  4. Any part that disagrees with the majority emits a warning.
+func styleConsistencyIssues(doc *Document) []Issue {
+	if doc == nil {
+		return nil
+	}
+
+	type partInfo struct {
+		id          string
+		path        string
+		clusterKey  string
+		textColor   string // resolved, lowercase #rrggbb
+		iconSuffix  string // "none", "light", or "hex"
+	}
+
+	var parts []partInfo
+
+	for nodeID, n := range doc.Nodes {
+		prefix := fmt.Sprintf("nodes.%s", nodeID)
+		var walk func(ps []*CompositePart, pathPrefix string)
+		walk = func(ps []*CompositePart, pathPrefix string) {
+			for _, p := range ps {
+				if p == nil {
+					continue
+				}
+				pPath := fmt.Sprintf("%s.parts[%s]", pathPrefix, p.ID)
+				if p.ID == "" {
+					pPath = pathPrefix + ".parts[?]"
+				}
+
+				eff := ResolveStyle(doc.Theme, p.Shape, p.Preset, p.Style)
+				fill := topFillColor(eff)
+
+				// Cluster key
+				key := ""
+				if p.Preset != "" {
+					key = "preset:" + p.Preset
+				} else {
+					key = "fill:" + luminanceBucket(fill) + "/stroke:" + resolvedStrokeBucket(eff)
+				}
+
+				// Icon suffix pattern
+				suffix := "none"
+				if p.Icon != "" {
+					uri := p.Icon
+					if strings.Contains(uri, "/light") {
+						suffix = "light"
+					} else if iconHasColorSuffix(uri) {
+						suffix = "hex"
+					}
+				}
+
+				parts = append(parts, partInfo{
+					id:         p.ID,
+					path:       pPath,
+					clusterKey: key,
+					textColor:  strings.ToLower(textColor(eff)),
+					iconSuffix: suffix,
+				})
+
+				walk(p.Parts, pPath)
+			}
+		}
+		walk(n.Parts, prefix)
+	}
+
+	// Group by cluster key
+	byCluster := map[string][]partInfo{}
+	for _, pi := range parts {
+		byCluster[pi.clusterKey] = append(byCluster[pi.clusterKey], pi)
+	}
+
+	var issues []Issue
+	for _, cluster := range byCluster {
+		if len(cluster) < 2 {
+			continue
+		}
+
+		// Majority text color
+		textFreq := map[string]int{}
+		for _, pi := range cluster {
+			if pi.textColor != "" {
+				textFreq[pi.textColor]++
+			}
+		}
+		majorityText := majorityKey(textFreq)
+
+		// Majority icon suffix
+		suffixFreq := map[string]int{}
+		for _, pi := range cluster {
+			if pi.iconSuffix != "none" {
+				suffixFreq[pi.iconSuffix]++
+			}
+		}
+		// Only consider suffix majority when most nodes in the cluster carry an icon
+		iconsPresent := suffixFreq["light"] + suffixFreq["hex"]
+		majorityIconSuffix := ""
+		if iconsPresent*2 > len(cluster) { // strict majority have an icon
+			majorityIconSuffix = majorityKey(suffixFreq)
+		}
+
+		for _, pi := range cluster {
+			// Text color outlier
+			if majorityText != "" && pi.textColor != "" && pi.textColor != majorityText {
+				issues = append(issues, Issue{
+					Severity: SeverityWarning,
+					Path:     pi.path + ".style.text.color",
+					Message: fmt.Sprintf(
+						"node %q text color %s differs from the cluster majority %s — nodes sharing the same visual strategy (%s) should use consistent label colors",
+						pi.id, pi.textColor, majorityText, pi.clusterKey),
+				})
+			}
+
+			// Icon suffix outlier (only when the cluster has a clear majority)
+			if majorityIconSuffix != "" && pi.iconSuffix != "none" && pi.iconSuffix != majorityIconSuffix {
+				issues = append(issues, Issue{
+					Severity: SeverityWarning,
+					Path:     pi.path + ".icon",
+					Message: fmt.Sprintf(
+						"node %q uses icon suffix %q but cluster majority uses %q — nodes in the same visual group should use the same icon color convention",
+						pi.id, pi.iconSuffix, majorityIconSuffix),
+				})
+			}
+		}
+	}
+	return issues
+}
+
+// luminanceBucket buckets a hex fill colour into "dark", "mid", or "light"
+// for cluster-key purposes when no preset is present.
+func luminanceBucket(hex string) string {
+	lum, ok := lumOf(hex)
+	if !ok {
+		return "unknown"
+	}
+	switch {
+	case lum < 0.18:
+		return "dark"
+	case lum < 0.50:
+		return "mid"
+	default:
+		return "light"
+	}
+}
+
+// resolvedStrokeBucket returns the first two characters of the stroke color
+// (enough to cluster by hue family) or "none" when no stroke is set.
+func resolvedStrokeBucket(st *Style) string {
+	if st == nil || st.Stroke == nil || st.Stroke.Color == "" {
+		return "none"
+	}
+	c := strings.ToLower(strings.TrimPrefix(st.Stroke.Color, "#"))
+	if len(c) >= 2 {
+		return c[:2]
+	}
+	return c
+}
+
+// majorityKey returns the key with the highest count; ties go to lexically
+// smaller key so the result is deterministic.
+func majorityKey(freq map[string]int) string {
+	best, bestCount := "", 0
+	for k, cnt := range freq {
+		if cnt > bestCount || (cnt == bestCount && k < best) {
+			best, bestCount = k, cnt
+		}
+	}
+	return best
+}
+
 // ── connectorTierIssues ────────────────────────────────────────────────────────
 
 // connectorTierIssues warns when a connector's two endpoints sit at

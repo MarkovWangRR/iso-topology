@@ -1,6 +1,7 @@
 package isotopo
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 )
@@ -245,6 +246,96 @@ func TestDiffIssues_Empty(t *testing.T) {
 }
 
 // ── parseHex round-trip ───────────────────────────────────────────────────────
+
+// ── 7. styleConsistencyIssues ────────────────────────────────────────────────
+
+func mkClusterDoc(textColors []string, icons []string, preset string) *Document {
+	parts := make([]*CompositePart, len(textColors))
+	for i, tc := range textColors {
+		parts[i] = &CompositePart{
+			ID:    fmt.Sprintf("node%d", i),
+			Shape: "rectangle",
+			Label: "Label",
+			Icon:  icons[i],
+		}
+		if preset != "" {
+			parts[i].Preset = preset
+		} else {
+			// same fill+stroke bucket when no preset
+			parts[i].Style = &Style{
+				Palette: &Palette{Top: "#111827"},
+				Stroke:  &Stroke{Color: "#22D3EE"},
+				Text:    &Text{Color: tc},
+			}
+		}
+		if preset != "" {
+			parts[i].Style = &Style{Text: &Text{Color: tc}}
+		}
+	}
+	return &Document{
+		Nodes: map[string]*Node{
+			"scene": {Shape: "composite", Parts: parts},
+		},
+	}
+}
+
+// Three nodes share the same preset; one has a different text color → outlier.
+func TestStyleConsistency_TextColorOutlier(t *testing.T) {
+	doc := mkClusterDoc(
+		[]string{"#ffffff", "#ffffff", "#ff0000"},
+		[]string{"iso://si/github/light", "iso://si/redis/light", "iso://si/redis/light"},
+		"tool",
+	)
+	issues := styleConsistencyIssues(doc)
+	if !hasWarning(issues, "text color") {
+		t.Errorf("expected text color outlier warning, got: %v", issues)
+	}
+}
+
+// All nodes have the same text color → no spurious warning.
+func TestStyleConsistency_NoFalsePositive(t *testing.T) {
+	doc := mkClusterDoc(
+		[]string{"#ffffff", "#ffffff", "#ffffff"},
+		[]string{"iso://si/github/light", "iso://si/redis/light", "iso://si/postgres/light"},
+		"tool",
+	)
+	issues := styleConsistencyIssues(doc)
+	if hasWarning(issues, "text color") {
+		t.Errorf("unexpected text color warning when all colors match: %v", issues)
+	}
+}
+
+// Majority of cluster uses /light icons; one uses /hex → outlier.
+func TestStyleConsistency_IconSuffixOutlier(t *testing.T) {
+	doc := mkClusterDoc(
+		[]string{"#ffffff", "#ffffff", "#ffffff"},
+		[]string{"iso://si/github/light", "iso://si/redis/light", "iso://si/postgres/3BE8F0"},
+		"tool",
+	)
+	issues := styleConsistencyIssues(doc)
+	if !hasWarning(issues, "icon suffix") {
+		t.Errorf("expected icon suffix outlier warning, got: %v", issues)
+	}
+}
+
+// Only 1 node in a cluster → no issue (cluster too small to vote).
+func TestStyleConsistency_SingletonCluster(t *testing.T) {
+	doc := &Document{
+		Nodes: map[string]*Node{
+			"scene": {
+				Shape: "composite",
+				Parts: []*CompositePart{
+					{ID: "a", Shape: "rectangle", Label: "A", Preset: "glass",
+						Style: &Style{Text: &Text{Color: "#ff0000"}}},
+				},
+			},
+		},
+	}
+	issues := styleConsistencyIssues(doc)
+	if hasWarning(issues, "text color") {
+		t.Errorf("unexpected warning for singleton cluster: %v", issues)
+	}
+}
 
 func TestParseHex(t *testing.T) {
 	tests := []struct {

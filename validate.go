@@ -500,6 +500,7 @@ func Validate(doc *Document) []Issue {
 	issues = append(issues, connectorTierIssues(doc)...)
 	issues = append(issues, nestingIssues(doc)...)
 	issues = append(issues, faceSplitIssues(doc)...)
+	issues = append(issues, styleConsistencyIssues(doc)...)
 
 	return issues
 }
