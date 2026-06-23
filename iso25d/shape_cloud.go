@@ -320,7 +320,7 @@ func sampleCloudOutline(w, d float64) [][2]float64 {
 	// Direct mapping: ux → iso x (width), uy → iso y (depth).
 	// vyScale compresses depth so the cloud reads as a flat slab not a tall box.
 	// Bumps (small uy) face toward the back of the iso face (visually up-left).
-	const vyScale = 0.85
+	const vyScale = 1.0
 	out := make([][2]float64, len(raw))
 	for i, p := range raw {
 		out[i] = [2]float64{p[0] * w, p[1] * vyScale * d}
