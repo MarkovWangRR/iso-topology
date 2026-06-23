@@ -95,6 +95,29 @@ footprint, no copied heights:
 
 See [`samples/topology/training-compute`](../../samples/topology/training-compute/input.yaml).
 
+> **Connectors + elevation:** `above` / `wz` is for decorative parts
+> with no wiring. If a stacked part needs a connector, the rule below
+> (tiers) applies — keep it coplanar with what it links to.
+
+### I want a multi-tier architecture (gateway → service → data)
+
+Group each tier and give the whole tier ONE `wz`, so connectors
+inside a tier stay flat 2D and only tier→tier links cross planes —
+that vertical drop then reads as a deliberate cross-layer call:
+
+```yaml
+parts:
+  - {id: edge,    shape: group, offset: {wz: 160}, parts: [ ... ]}   # all L7 nodes share wz 160
+  - {id: service, shape: group, offset: {wz: 80},  parts: [ ... ]}   # all service nodes share wz 80
+  - {id: data,    shape: group, offset: {wz: 0},   parts: [ ... ]}   # data tier on the ground
+connectors:
+  - {from: edge.gw, to: service.api, routing: orthogonal}   # cross-tier: shows a riser, intentional
+  - {from: service.api, to: service.cache, routing: orthogonal}  # intra-tier: flat L
+```
+
+Never give two peer nodes in the SAME tier different `wz` — that
+produces a riser with no semantic meaning (the noir-sandbox bug).
+
 ### I want a hub with satellites around it
 
 One rule — `ring`: first child is the hub, the rest distribute

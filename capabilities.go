@@ -251,11 +251,11 @@ func buildPrimitiveCaps() []PrimitiveCap {
 			Name:    "connector",
 			Where:   "node.connectors[*]",
 			Syntax:  "{from: <part-id>, to: <part-id>, routing: straight|orthogonal|bezier, arrow: none|triangle, label: \"…\"}",
-			Purpose: "Directed line between two parts, optionally labeled and orthogonal-routed.",
+			Purpose: "Directed line between two parts, optionally labeled and orthogonal-routed. Coplanarity contract: the two endpoints should share the same base height (wz / tier) — orthogonal connectors hug the ground plane, so same-tier links render as clean 2D L-shapes. Connecting endpoints at DIFFERENT heights forces a vertical drop segment (riser); do that only to express a deliberate cross-tier call (e.g. gateway layer → data layer), never as a side effect of giving peer nodes different wz.",
 			Fields: map[string]string{
 				"from":          "source part id; \"id.anchor\" picks a specific face-centre (e.g. central.right-mid). Bare ids auto-pick the face FACING the other endpoint.",
 				"to":            "destination part id (same anchor syntax)",
-				"routing":       "ALWAYS use orthogonal — every segment rides the iso ground axes, flush with the 2.5D grid (collinear endpoints collapse to one on-axis segment). straight/bezier cut across the grid and are reserved for non-iso freeform sketches.",
+				"routing":       "ALWAYS use orthogonal — every segment rides the iso ground axes, flush with the 2.5D grid (collinear endpoints collapse to one on-axis segment). straight/bezier cut across the grid and are reserved for non-iso freeform sketches. Endpoints should be coplanar (same wz); see Purpose for cross-tier risers.",
 				"arrow":         "none = no head; triangle = filled arrowhead at the dst",
 				"bend":          "v4.4 — {wx, wy} world offset on the route's interior so a Studio edge-drag shifts the line while both endpoints stay docked",
 				"waypoints":     "v4.6 — explicit interior corner list [{wx, wy}, …] (world coords, source→target) the route threads through, so a Studio edge-drag can move ONE segment independently. Supersedes bend + the auto route; endpoints stay docked. Auto-kept iso-axis-aligned.",
@@ -282,7 +282,7 @@ func buildPrimitiveCaps() []PrimitiveCap {
 			Name:    "place",
 			Where:   "node.parts[*].place",
 			Syntax:  "place: {rightOf: <sibling-id>, inFrontOf: <sibling-id>, above: <sibling-id>, gap: 1, gapX: 2, gapY: 0, align: start|center|end}",
-			Purpose: "Position a part relative to a SIBLING — the preferred way to compose free-standing scenes. One constraint per axis: rightOf/leftOf pins world x, inFrontOf/behind pins world y (front = toward viewer), above pins world z (the part sits flush ON TOP of the sibling, centred on its footprint — stacked plinths, ghost volumes, toppers). Unpinned ground axes align to the referenced sibling per align. Chains are solved topologically (a stair = each tile rightOf+inFrontOf its predecessor). offset degrades to a fine-tune delta.",
+			Purpose: "Position a part relative to a SIBLING — the preferred way to compose free-standing scenes. One constraint per axis: rightOf/leftOf pins world x, inFrontOf/behind pins world y (front = toward viewer), above pins world z. `above` is for DECORATIVE stacking — plinths, ghost volumes, toppers (the part sits flush ON TOP of the sibling, centred on its footprint). If an elevated part also needs a connector, keep it on the same tier (wz) as what it connects to, or the link will hang in a vertical drop; reserve `above` for parts with no connectors. Unpinned ground axes align to the referenced sibling per align. Chains are solved topologically (a stair = each tile rightOf+inFrontOf its predecessor). offset degrades to a fine-tune delta.",
 			Fields: map[string]string{
 				"rightOf":   "sibling id — this part sits on its +x side",
 				"leftOf":    "sibling id — -x side (mutually exclusive with rightOf)",

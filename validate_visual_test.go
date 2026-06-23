@@ -174,6 +174,69 @@ func TestOutDegreeIssues(t *testing.T) {
 	}
 }
 
+// ── connector tier (wz) mismatch ─────────────────────────────────────────────
+
+func TestConnectorTierIssues_PeerMismatch(t *testing.T) {
+	// Two peer nodes given different wz, wired together: should warn.
+	doc := &Document{
+		Nodes: map[string]*Node{
+			"scene": {
+				Shape: "composite",
+				Parts: []*CompositePart{
+					{ID: "a", Shape: "rectangle", Offset: &WorldPoint{WZ: 0}},
+					{ID: "b", Shape: "rectangle", Offset: &WorldPoint{WZ: 74}},
+				},
+				Connectors: []*Connector{{From: "a", To: "b", Routing: "orthogonal"}},
+			},
+		},
+	}
+	if issues := connectorTierIssues(doc); !hasWarning(issues, "different tiers") {
+		t.Errorf("expected tier-mismatch warning, got: %v", issues)
+	}
+}
+
+func TestConnectorTierIssues_Coplanar(t *testing.T) {
+	// Same wz: no warning.
+	doc := &Document{
+		Nodes: map[string]*Node{
+			"scene": {
+				Shape: "composite",
+				Parts: []*CompositePart{
+					{ID: "a", Shape: "rectangle", Offset: &WorldPoint{WZ: 80}},
+					{ID: "b", Shape: "rectangle", Offset: &WorldPoint{WZ: 80}},
+				},
+				Connectors: []*Connector{{From: "a", To: "b", Routing: "orthogonal"}},
+			},
+		},
+	}
+	if issues := connectorTierIssues(doc); hasWarning(issues, "different tiers") {
+		t.Errorf("coplanar endpoints should not warn, got: %v", issues)
+	}
+}
+
+func TestConnectorTierIssues_GroupElevation(t *testing.T) {
+	// A node inside a group with geom.h is lifted by the substrate height;
+	// wiring it to an outside ground node should warn (matches the renderer).
+	doc := &Document{
+		Nodes: map[string]*Node{
+			"scene": {
+				Shape: "composite",
+				Parts: []*CompositePart{
+					{ID: "ground", Shape: "rectangle"},
+					{
+						ID: "grp", Shape: "group", Geom: &Geom{H: 10},
+						Parts: []*CompositePart{{ID: "inner", Shape: "rectangle"}},
+					},
+				},
+				Connectors: []*Connector{{From: "ground", To: "inner", Routing: "orthogonal"}},
+			},
+		},
+	}
+	if issues := connectorTierIssues(doc); !hasWarning(issues, "different tiers") {
+		t.Errorf("expected group-elevation tier warning, got: %v", issues)
+	}
+}
+
 // ── 5. nesting depth > 3 ─────────────────────────────────────────────────────
 
 func TestNestingIssues(t *testing.T) {
