@@ -152,14 +152,20 @@ func RenderIsoCloud(o IsoBoxOpts) string {
 		)
 	}
 
-	// 顶面文字与其他节点保持一致：用等轴投影矩阵倾斜放置。
-	// Cloud 不渲染 icon，cloud 轮廓本身即是身份标识。
-	// Cloud iso-x spans [0, vyScale*w]; pass that as faceW so the label
-	// centres at vyScale*w/2 rather than w/2.
-	const vyScale = 0.62
+	// 顶面文字：计算轮廓点的实际重心，以重心为原点调用 writeTopLabelAndIcon，
+	// 使文字精确居中于云朵顶面，而不是假设面填满整个 (w×d) 矩形。
+	var sumLX, sumLY float64
+	for _, p := range outline {
+		sumLX += p[0]
+		sumLY += p[1]
+	}
+	sumLX /= float64(n)
+	sumLY /= float64(n)
+	csx, csy := project(sumLX, sumLY, 0)
+	// faceW=0, faceD=0 → label placed at local (0,0) = centroid in screen space
 	writeTopLabelAndIcon(
 		&sb,
-		tx, ty-h, vyScale*w, d,
+		csx+tx, csy+(ty-h), 0, 0,
 		o.Label, "", o.IconScale,
 		o.FontFamily, o.FontSize, o.FontWeight, o.FontColor,
 	)
@@ -307,15 +313,14 @@ func sampleCloudOutline(w, d float64) [][2]float64 {
 		angOf(bCL, jMainCL), // upper-right of bCL (~338°)
 		K)...)
 
-	// ── rotate CW 90° then transpose into iso local coords ───────────────────
-	// Rotation in unit frame (around centre 0.5,0.5):  (ux,uy) → (uy, 1-ux)
-	// vyScale compresses the depth so the cloud reads as a flat slab.
-	const vyScale = 0.62
+	// ── map into iso local coords ────────────────────────────────────────────
+	// Direct mapping: ux → iso x (width), uy → iso y (depth).
+	// vyScale compresses depth so the cloud reads as a flat slab not a tall box.
+	// Bumps (small uy) face toward the back of the iso face (visually up-left).
+	const vyScale = 0.60
 	out := make([][2]float64, len(raw))
 	for i, p := range raw {
-		rux := p[1]       // new ux = old uy
-		ruy := 1 - p[0]  // new uy = 1 - old ux
-		out[i] = [2]float64{ruy * vyScale * w, rux * d}
+		out[i] = [2]float64{p[0] * w, p[1] * vyScale * d}
 	}
 	return out
 }
