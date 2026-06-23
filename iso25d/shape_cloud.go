@@ -152,16 +152,24 @@ func RenderIsoCloud(o IsoBoxOpts) string {
 		)
 	}
 
-	// Label on the top face (matrix transform tilts content onto the iso
-	// plane). Cloud is an outline silhouette, not a flat slab — a pasted icon
-	// reads as floating debris, so the cloud shape deliberately ignores o.Icon;
-	// its identity IS the cloud form.
-	writeTopLabelAndIcon(
-		&sb,
-		tx, ty-h, w, d,
-		o.Label, "", o.IconScale,
-		o.FontFamily, o.FontSize, o.FontWeight, o.FontColor,
-	)
+	// Label: flat horizontal text centered in the cloud body area.
+	// Cloud identity IS the cloud form; icons would read as floating debris.
+	if strings.TrimSpace(o.Label) != "" {
+		cx := (minX+maxX)/2 + tx
+		// Place text in the lower body area (~72% of the height range from top).
+		cy := minY + (maxY-minY)*0.72 + ty
+		lines := strings.Split(o.Label, "\n")
+		lineH := o.FontSize * 1.35
+		startY := cy - float64(len(lines)-1)*lineH/2
+		for i, line := range lines {
+			fmt.Fprintf(&sb,
+				`<text x="%.2f" y="%.2f" font-family="%s" font-size="%.2f" font-weight="%s" fill="%s" text-anchor="middle" dominant-baseline="middle">%s</text>`,
+				cx, startY+float64(i)*lineH,
+				escapeAttr(o.FontFamily), o.FontSize, escapeAttr(o.FontWeight),
+				escapeAttr(o.FontColor), escapeXML(line),
+			)
+		}
+	}
 
 	closeWrapper(&sb)
 	sb.WriteString(`</svg>`)
@@ -306,9 +314,12 @@ func sampleCloudOutline(w, d float64) [][2]float64 {
 		K)...)
 
 	// ── transpose into iso local coords ──────────────────────────────────────
+	// vyScale compresses the uy dimension so the cloud reads as a flat slab
+	// rather than a tall box in isometric view.
+	const vyScale = 0.62
 	out := make([][2]float64, len(raw))
 	for i, p := range raw {
-		out[i] = [2]float64{p[1] * w, p[0] * d}
+		out[i] = [2]float64{p[1] * vyScale * w, p[0] * d}
 	}
 	return out
 }
