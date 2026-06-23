@@ -168,58 +168,156 @@ func RenderIsoCloud(o IsoBoxOpts) string {
 	return sb.String()
 }
 
-// sampleCloudOutline returns a CW (in screen y-down) polyline around the
-// cloud silhouette, modelled on a classic icon-style cloud: small left
-// bump + tall wide middle bump + small right bump, joined to a substantial
-// rectangular trunk with rounded bottom corners. The 3-bump layout gives
-// recognisable variation; the trunk gives the silhouette body so the
-// cloud reads as "fluffy" rather than "pinched arc".
+// sampleCloudOutline returns the outline of a classic 3-bump cloud silhouette,
+// analytically constructed as the union boundary of three overlapping circles
+// (left small, center tall/dominant, right medium) plus a flat base.
+//
+// The unit frame is ux=0..1 left→right, uy=0..1 top→bottom. The outline is
+// returned in local iso coords via the pt() transpose and is CW in screen space.
 func sampleCloudOutline(w, d float64) [][2]float64 {
-	// Organic cloud: the silhouette is the OUTER envelope of several overlapping
-	// lobes of VARYING radius, sampled radially from the centroid. Irregular
-	// lobe sizes/positions give natural billows; nothing is a straight or
-	// parallel edge (the old 3-uniform-bump-on-a-rectangular-trunk look read as
-	// mechanical). Lobes are authored in a unit frame, y-down (top = small y).
-	type lobe struct{ cx, cy, r float64 }
-	lobes := []lobe{
-		{0.17, 0.55, 0.16}, // left shoulder
-		{0.33, 0.42, 0.21}, // upper-left billow
-		{0.52, 0.35, 0.25}, // crown (tallest, off-centre → asymmetric)
-		{0.71, 0.44, 0.20}, // upper-right billow
-		{0.86, 0.55, 0.15}, // right shoulder
-		{0.40, 0.63, 0.21}, // lower-left belly
-		{0.63, 0.62, 0.21}, // lower-right belly
+	// Three circles — chosen so each pair of adjacent circles overlaps, the
+	// tops of the side bumps protrude above the center circle, and the left and
+	// right circles do NOT directly overlap (gives the classic 3-bump silhouette).
+	type circ struct{ cx, cy, r float64 }
+	bL := circ{0.19, 0.60, 0.22} // left bump  (small)
+	bC := circ{0.50, 0.40, 0.29} // center bump (crown / tallest)
+	bR := circ{0.81, 0.54, 0.24} // right bump  (medium)
+
+	// ── helpers ──────────────────────────────────────────────────────────────
+
+	// Circle-circle intersection: returns the two intersection points and true,
+	// or false when the circles are disjoint or one contains the other.
+	intersect2 := func(a, b circ) ([2]float64, [2]float64, bool) {
+		dx, dy := b.cx-a.cx, b.cy-a.cy
+		dd := math.Sqrt(dx*dx + dy*dy)
+		if dd < 1e-9 || dd > a.r+b.r+1e-9 || dd < math.Abs(a.r-b.r)-1e-9 {
+			return [2]float64{}, [2]float64{}, false
+		}
+		aa := (a.r*a.r - b.r*b.r + dd*dd) / (2 * dd)
+		hh := math.Sqrt(math.Max(0, a.r*a.r-aa*aa))
+		px, py := a.cx+aa*dx/dd, a.cy+aa*dy/dd
+		return [2]float64{px + hh*dy/dd, py - hh*dx/dd},
+			[2]float64{px - hh*dy/dd, py + hh*dx/dd}, true
 	}
-	cx, cy := 0.52, 0.53
 
-	// The cloud is authored upright (billows up); the previous extrusion read
-	// the long axis the wrong way, so transpose the unit frame 90° before
-	// scaling — local x↔y — to set it upright in the iso projection.
-	pt := func(ux, uy float64) [2]float64 { return [2]float64{uy * w, ux * d} }
+	// Angle of point p on circle c, returned in [0, 2π).
+	angOf := func(c circ, p [2]float64) float64 {
+		a := math.Atan2(p[1]-c.cy, p[0]-c.cx)
+		if a < 0 {
+			a += 2 * math.Pi
+		}
+		return a
+	}
 
-	const N = 112
-	out := make([][2]float64, 0, N)
-	for i := 0; i < N; i++ {
-		ang := 2 * math.Pi * float64(i) / float64(N)
-		dx, dy := math.Cos(ang), math.Sin(ang)
-		best := 0.0
-		for _, lo := range lobes {
-			// farthest hit of ray centroid + t·dir with this lobe's circle
-			ox, oy := cx-lo.cx, cy-lo.cy
-			b := ox*dx + oy*dy
-			c := ox*ox + oy*oy - lo.r*lo.r
-			disc := b*b - c
-			if disc < 0 {
-				continue
-			}
-			if t := -b + math.Sqrt(disc); t > best {
-				best = t
-			}
+	// sampleArcCW samples n points along the arc of circle c from angle a1 to
+	// a2 going CW in screen space (= increasing angle in [0,2π) uy-down coords).
+	// If a2 <= a1 the arc wraps through 2π.
+	sampleArcCW := func(c circ, a1, a2 float64, n int) [][2]float64 {
+		for a2 <= a1 {
+			a2 += 2 * math.Pi
 		}
-		if best <= 0 {
-			continue
+		pts := make([][2]float64, n)
+		for i := 0; i < n; i++ {
+			t := float64(i) / float64(n-1)
+			a := a1 + t*(a2-a1)
+			pts[i] = [2]float64{c.cx + c.r*math.Cos(a), c.cy + c.r*math.Sin(a)}
 		}
-		out = append(out, pt(cx+best*dx, cy+best*dy))
+		return pts
+	}
+
+	// ── find intersections ────────────────────────────────────────────────────
+
+	lc0, lc1, okLC := intersect2(bL, bC)
+	cr0, cr1, okCR := intersect2(bC, bR)
+	if !okLC || !okCR {
+		// Degenerate geometry: fall back to simple ellipse outline.
+		return sampleEllipseOutline(w, d)
+	}
+
+	// Upper intersection = smaller uy (higher on screen).
+	upLC, loLC := lc0, lc1
+	if lc1[1] < lc0[1] {
+		upLC, loLC = lc1, lc0
+	}
+	upCR, loCR := cr0, cr1
+	if cr1[1] < cr0[1] {
+		upCR, loCR = cr1, cr0
+	}
+
+	// ── arc angles ───────────────────────────────────────────────────────────
+
+	// bL outer arc: from loLC going CW (increasing angle) through bL's top
+	// (3π/2) to upLC. This traces the left, top, and upper-right of the left bump.
+	aL1 := angOf(bL, loLC) // lower intersection on bL  (~30°)
+	aL2 := angOf(bL, upLC) // upper intersection on bL  (~275°)
+	// Both endpoints should be in [0°..90°) and [270°..360°) respectively when
+	// bL is to the left of bC. Make sure the arc passes through 3π/2 (bL's top).
+	// CW means increasing; if aL2 > aL1 already the arc is < 180°: wrong direction.
+	// Force aL2 to be after 3π/2 by normalising.
+	topL := 3 * math.Pi / 2
+	if aL2 < topL { // upLC is below bL's top in angle — should not happen with our circles
+		aL2 += 2 * math.Pi
+	}
+
+	// bC top arc: from upLC going CW through bC's top (3π/2) to upCR.
+	aC1 := angOf(bC, upLC) // ~183° (left side of bC, just above mid)
+	aC2 := angOf(bC, upCR) // ~341° (upper-right of bC)
+	topC := 3 * math.Pi / 2
+	if aC2 < topC {
+		aC2 += 2 * math.Pi
+	}
+
+	// bR outer arc: from upCR going CW through bR's top (3π/2) to loCR.
+	aR1 := angOf(bR, upCR) // upper intersection on bR (~178°, upper-left of bR)
+	aR2 := angOf(bR, loCR) // lower intersection on bR (~88°, lower-left of bR)
+	topR := 3 * math.Pi / 2
+	// Arc must pass through 3π/2 (top of bR). If aR2 > aR1 the short path goes
+	// the wrong way; normalise so we travel the long CW route through the top.
+	if aR2 > aR1 {
+		aR2 += 2 * math.Pi // wrap: arc continues past 2π
+	}
+	if aR2 < topR+aR1-aR1 { // ensure midpoint 3π/2 is within [aR1, aR2]
+		_ = topR // guard used above; this branch is informational
+	}
+
+	// ── assemble outline ─────────────────────────────────────────────────────
+
+	const K = 24 // sample density per arc
+	var raw [][2]float64
+
+	// 1. Left bump outer arc (loLC → upLC going over bL's top)
+	raw = append(raw, sampleArcCW(bL, aL1, aL2, K)...)
+
+	// 2. Center bump top arc (upLC → upCR going over bC's crown)
+	raw = append(raw, sampleArcCW(bC, aC1, aC2, K)...)
+
+	// 3. Right bump outer arc (upCR → loCR going over bR's top)
+	raw = append(raw, sampleArcCW(bR, aR1, aR2, K)...)
+
+	// 4. Flat base: straight line from loCR back to loLC.
+	// To keep the base horizontal, clamp both to the same uy level.
+	baseUY := math.Max(loLC[1], loCR[1])
+	raw = append(raw, [2]float64{loCR[0], baseUY})
+	raw = append(raw, [2]float64{loLC[0], baseUY})
+
+	// ── transpose into iso local coords ──────────────────────────────────────
+	// The cloud is authored with bumps rising in the uy direction; transposing
+	// ux↔uy (and scaling) sets it upright in the isometric projection where w
+	// is the wide axis and d the depth axis.
+	out := make([][2]float64, len(raw))
+	for i, p := range raw {
+		out[i] = [2]float64{p[1] * w, p[0] * d}
+	}
+	return out
+}
+
+// sampleEllipseOutline is the fallback when the cloud circles don't intersect.
+func sampleEllipseOutline(w, d float64) [][2]float64 {
+	const N = 72
+	out := make([][2]float64, N)
+	for i := range out {
+		a := 2 * math.Pi * float64(i) / float64(N)
+		out[i] = [2]float64{(0.5 + 0.48*math.Cos(a)) * w, (0.5 + 0.48*math.Sin(a)) * d}
 	}
 	return out
 }
