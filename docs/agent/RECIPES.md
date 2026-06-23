@@ -288,6 +288,13 @@ Orthogonal paths ride the iso ground axes — every segment projects to
 exactly ±30°, in register with `canvas.grid: iso`. **Use this for
 architecture flows**; the default `straight` cuts across the grid.
 
+**Golden rule for picking endpoints: connect nodes at the SAME height
+(wz/tier).** Same-height pairs route as flat, clean 2D L-shapes. When
+several nodes could be the source or target, prefer the coplanar one.
+Only span heights for a deliberate cross-tier link (e.g. a hovering
+control plane projecting down) — that renders a vertical drop segment,
+which should be intentional, never an accident of mismatched `wz`.
+
 ### I want an async / replication link
 
 Same orthogonal routing as everything else — async is expressed by
