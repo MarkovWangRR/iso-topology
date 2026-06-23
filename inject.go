@@ -427,13 +427,11 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo,
 		}
 		sdx, sdy := ar.exit(effFrom[i])
 		tdx, tdy := ar.exit(effTo[i])
-		// v5.0 — route at the HIGHER of the two base z-values so elevated
-		// nodes connect at their actual face height. The lower endpoint gets
-		// a vertical riser in worldPts (see below). Use each endpoint's own
-		// offWZ for silhouette refinement so sphere/cloud/prism anchors are
-		// computed at the correct height, not at an alien routeZ.
+		// Ground-hugging route: silhouette refinement uses each endpoint's
+		// own offWZ so sphere/cloud/prism anchors are computed at the height
+		// where the face actually exists. The route plane (min of the two) is
+		// only needed in the main routing pass below.
 		srcZi, tgtZi := ar.baseZ(effFrom[i]), ar.baseZ(effTo[i])
-		_ = math.Max(srcZi, tgtZi) // routeZ unused here; used in main routing pass
 		sWX, sWY = ar.refineSilhouette(effFrom[i], sWX, sWY, srcZi)
 		tWX, tWY = ar.refineSilhouette(effTo[i], tWX, tWY, tgtZi)
 
@@ -526,16 +524,19 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo,
 			// axis order is chosen by which axis the source exits along, so
 			// the very first segment never crosses the source's footprint.
 			//
-			// Iso-axis alignment invariant (v1.6.1):
-			// In 2.5D iso projection the only directions that align with
-			// the TopoDSL diamond grid are world-axis +x and +y; world-axis
-			// +z projects to screen vertical which does NOT match the grid.
-			// To make every segment strictly ±tan30° in screen, the entire
-			// path is routed on a single horizontal world plane at z =
-			// min(srcFaceMidZ, tgtFaceMidZ). That height is guaranteed to
-			// lie inside both endpoints' side faces (any face-mid z ≤ h),
-			// so the endpoints attach inside the visible silhouette and
-			// no vertical "drop" segment is ever needed.
+			// Ground-hugging route (v5.1):
+			// Connectors must lie on the ground and read as physical links,
+			// not bridges flying over the tops (see baseZ / side-anchor docs).
+			// So the flat L is routed on the LOWER of the two endpoints'
+			// base planes — routeZ = min(srcZ, tgtZ) — and the HIGHER
+			// endpoint gets a single vertical riser at its stub that drops
+			// it from its floating face down to that ground plane. World-axis
+			// +x / +y project to the iso diamond grid; the riser is world +z,
+			// which projects to a clean pure-vertical screen segment (the iso
+			// "up" direction), so the path stays visually orthogonal. Routing
+			// at min (not max) keeps the long flat run hugging the floor where
+			// intervening bodies can occlude it — that occlusion is the 2.5D
+			// depth cue.
 			sWX, sWY, _, ok1 := ar.world(effFrom[ci])
 			tWX, tWY, _, ok2 := ar.world(effTo[ci])
 			if !ok1 || !ok2 {
@@ -545,9 +546,9 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo,
 			tdx, tdy := ar.exit(effTo[ci])
 			srcZ := ar.baseZ(effFrom[ci])
 			tgtZ := ar.baseZ(effTo[ci])
-			routeZ := math.Max(srcZ, tgtZ)
+			routeZ := math.Min(srcZ, tgtZ)
 
-			// v1.6.3 / v5.0 shape-aware anchor refinement: use each
+			// v1.6.3 / v5.1 shape-aware anchor refinement: use each
 			// endpoint's own offWZ so sphere/cloud/prism silhouettes are
 			// queried at the height where the face actually exists.
 			sWX, sWY = ar.refineSilhouette(effFrom[ci], sWX, sWY, srcZ)
@@ -646,21 +647,22 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo,
 					}
 				}
 			}
-			// v5.0 — z-riser helpers: when an endpoint sits BELOW the flat
-			// routing plane (routeZ = max of both), insert a vertical screen
-			// segment at the stub exit/entry point so the connector visually
-			// drops from routeZ down to the lower endpoint's face height.
-			// A z-only change projects to a pure-vertical screen line, which
-			// is clean and intuitive for elevated architecture nodes.
+			// v5.1 — z-riser helpers: when an endpoint sits ABOVE the flat
+			// routing plane (routeZ = min of both), insert a vertical screen
+			// segment at the stub so the connector drops from the elevated
+			// node's floating face down to the ground plane, then runs flat.
+			// A z-only change projects to a pure-vertical screen line — the
+			// iso "up" direction — so the line still reads as orthogonal while
+			// hugging the floor for its long run.
 			appendRiserSrc := func(pts [][3]float64) [][3]float64 {
-				if srcZ < routeZ {
+				if srcZ > routeZ {
 					pts = append(pts, [3]float64{sStubX, sStubY, routeZ})
 				}
 				return pts
 			}
 			appendRiserTgt := func(pts [][3]float64) [][3]float64 {
-				if tgtZ < routeZ {
-					pts = append(pts, [3]float64{tStubX, tStubY, tgtZ})
+				if tgtZ > routeZ {
+					pts = append(pts, [3]float64{tStubX, tStubY, routeZ})
 				}
 				return pts
 			}
@@ -708,7 +710,7 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo,
 				sAxisX := math.Abs(sdx) >= math.Abs(sdy)
 				tAxisX := math.Abs(tdx) >= math.Abs(tdy)
 				np := [][3]float64{{sWX, sWY, srcZ}}
-				if srcZ < routeZ {
+				if srcZ > routeZ {
 					np = append(np, [3]float64{sWX, sWY, routeZ})
 				}
 				if sAxisX { // source exits along world x → x-leg then y-leg
@@ -722,7 +724,7 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo,
 				} else {
 					np = append(np, [3]float64{tWX, cy, routeZ})
 				}
-				if tgtZ < routeZ {
+				if tgtZ > routeZ {
 					np = append(np, [3]float64{tWX, tWY, routeZ})
 				}
 				np = append(np, [3]float64{tWX, tWY, tgtZ})
@@ -735,14 +737,14 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo,
 			// segment stays iso-clean.
 			if len(c.Waypoints) > 0 {
 				np := [][3]float64{{sWX, sWY, srcZ}}
-				if srcZ < routeZ {
+				if srcZ > routeZ {
 					np = append(np, [3]float64{sWX + sdx*stub, sWY + sdy*stub, srcZ})
 					np = append(np, [3]float64{sWX + sdx*stub, sWY + sdy*stub, routeZ})
 				}
 				for _, wp := range c.Waypoints {
 					np = append(np, [3]float64{wp.WX, wp.WY, routeZ})
 				}
-				if tgtZ < routeZ {
+				if tgtZ > routeZ {
 					np = append(np, [3]float64{tWX - tdx*stub, tWY - tdy*stub, routeZ})
 					np = append(np, [3]float64{tWX - tdx*stub, tWY - tdy*stub, tgtZ})
 				}
