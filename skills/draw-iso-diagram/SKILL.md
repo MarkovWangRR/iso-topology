@@ -266,8 +266,54 @@ isotopo render  scene.yaml ./out
   screenshot and check: nothing clipped, labels legible, one hero, on-grid
   connectors. Cap at ~3 renders per round — don't spin.
 
-Once it's clean, finish with the delivery handoff in §8 — don't stop at a silent
-file write.
+Once `validate`/`evaluate` are clean, do the visual self-review in §5.5 BEFORE
+the §8 handoff — don't stop at a silent file write.
+
+## 5.5 · Look at it — mandatory visual self-review BEFORE you ship
+
+`validate`/`evaluate` prove the scene is *legal* and the *wiring* is clean; they
+say NOTHING about whether it actually looks right. So before delivery you MUST
+rasterize the SVG (headless Chrome at the `viewBox` size) and review the PNG
+*with your own eyes*, as a designer doing QA — actually judge it, don't just
+confirm it rendered. Walk BOTH axes below; every "no" is a fix-then-re-render,
+not a ship. A diagram that fails either axis is not done.
+
+**A · Colour sense — is the palette defensible, or does it break colour common sense?**
+- **≤ 3 hues** (+ at most one accent). A 4th hue, or a new hue per node, reads as
+  noise → collapse sub-tiers to light/dark shades of the SAME hue.
+- **Every label + icon is legible on its OWN top face** — a clear lightness gap,
+  never ink≈background. Light/pastel top → dark ink; dark/saturated top → light
+  ink + `…/light` icon. A caption you can't read at a glance is a hard fail.
+- **No clashing or vibrating pairs** (saturated red touching saturated green,
+  neon-on-white), and no muddy near-greys pretending to be a colour. Prefer the
+  domain's conventional hues (cloud blue, data green, security red, AWS amber…),
+  not arbitrary picks.
+- **Tiles separate from their tray and the canvas** — a node must not melt into
+  the slab it sits on or the background (the validator's contrast warnings catch
+  the worst of this — but your eye is the final judge).
+- **One hero louder, the rest calm** — exactly one node carries the accent / glow;
+  the field is not a rainbow of equals.
+
+**B · Composition sense — do the proportions and structure read?**
+- **Parent ⊃ child sizing is harmonious** — a group slab comfortably wraps its
+  children with even padding: no child bursting out of its tray, no tray dwarfing
+  one lonely node, no child nearly as large as its own parent. Disproportionate
+  parent/child sizing is the #1 "looks off" tell — fix the child `geom` or the
+  group padding/`gap`.
+- **Sibling sizes are consistent** — same-role tiles share a size; only the hero
+  is bigger, and on purpose. Nothing else is randomly out-sized.
+- **Balanced, near-square canvas** — visual weight isn't dumped in one corner, and
+  the modules aren't a long thin bar (re-grid toward square per §5).
+- **Breathing room** — nodes and group slabs don't touch or crowd each other; the
+  plan-view footprint check reports no overlap/touch.
+- **Nothing clipped, alignment holds, connectors ride the grid** and don't skewer
+  a node.
+
+If anything fails, name what's wrong in plain product terms ("the storage tray is
+swallowing its label"; "the two source tiles are different sizes"; "purple clashes
+with the orange hero"), fix the palette / `preset` / `geom` / `place`, and
+re-render. Cap at ~3 review rounds — converge, don't fiddle. Only a diagram that
+passes BOTH axes proceeds to §8.
 
 ## 6 · Pitfalls — the things that actually go wrong
 
