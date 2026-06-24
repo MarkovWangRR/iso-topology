@@ -497,6 +497,10 @@ func Validate(doc *Document) []Issue {
 	// cross, or cover one another in the top-down projection (see validate_plan.go).
 	issues = append(issues, PlanFootprintIssues(doc)...)
 
+	// v: label occlusion — a node sitting over a group label / title (the silent
+	// render-time auto-fix surfaced as negative feedback; see occlusion.go).
+	issues = append(issues, LabelOcclusionIssues(doc)...)
+
 	// v: visual quality warnings (contrast, labels, connectivity, nesting).
 	issues = append(issues, VisualContrastIssues(doc)...)
 	issues = append(issues, labelIssues(doc)...)

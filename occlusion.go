@@ -1,6 +1,82 @@
 package isotopo
 
-import "math"
+import (
+	"fmt"
+	"math"
+	"sort"
+)
+
+// LabelOcclusionIssues warns when a group label (or an iso_text title) is
+// covered by a later-painted node in the rendered view. resolveGroupLabelOcclusion
+// silently LIFTS an occluded group label on top, so the pixels survive — but a
+// caption floating over a node body still reads as cramped, and the layout
+// should be fixed. Surfacing it as a warning is the negative feedback the silent
+// auto-fix would otherwise swallow. It detects the same way the resolver does
+// (2.5D screen cover OR top-down footprint cover, later-painted solids only).
+func LabelOcclusionIssues(doc *Document) []Issue {
+	if doc == nil {
+		return nil
+	}
+	var issues []Issue
+	for nodeID, n := range doc.Nodes {
+		if n == nil || n.Shape != "composite" {
+			continue
+		}
+		issues = append(issues, labelOcclusionComposite(n, doc.Canvas, nodeID)...)
+	}
+	return issues
+}
+
+func labelOcclusionComposite(n *Node, canvas *Canvas, nodeID string) []Issue {
+	// Solve + lower on a clone (Validate must never mutate the doc) to get the
+	// same paint-ordered flat parts, solved offsets, and groupLabel/substrate
+	// flags the renderer's occlusion resolver sees.
+	clone := &Node{Shape: n.Shape, GridStep: n.GridStep, Parts: cloneParts(n.Parts)}
+	if n.Layout != nil {
+		l := *n.Layout
+		clone.Layout = &l
+	}
+	applyLayout(clone, canvas)
+	flat := lowerCompositeParts(clone.Parts, 0, 0, 0)
+	return labelOcclusionInFlat(flat, nodeID)
+}
+
+// labelOcclusionInFlat is the paint-order detection over already-lowered parts.
+func labelOcclusionInFlat(flat []*CompositePart, nodeID string) []Issue {
+	var issues []Issue
+	for i, lb := range flat {
+		if lb == nil || lb.Label == "" {
+			continue
+		}
+		if !lb.groupLabel && lb.Shape != "iso_text" {
+			continue // only group labels and iso_text titles are caption victims
+		}
+		lbScr, lbTop := occLabelBoxes(lb)
+		for j := i + 1; j < len(flat); j++ {
+			q := flat[j]
+			if q == nil || q.groupLabel || q.isSubstrate || q.Shape == "iso_text" ||
+				isContainerShape(q.Shape) || q.ID == "" {
+				continue // labels/slabs/containers don't occlude; need a named solid
+			}
+			qScr, ok := occScreenBox(q)
+			if !ok {
+				continue
+			}
+			if occOverlap(lbScr, qScr) || occOverlap(lbTop, occTopBox(q)) {
+				issues = append(issues, Issue{
+					Severity: SeverityWarning,
+					Path:     fmt.Sprintf("nodes.%s", nodeID),
+					Message: fmt.Sprintf("label %q is covered by node %q in the rendered view — the caption will read as cramped; move the node (raise its place gap) or the label",
+						lb.Label, q.ID),
+					Suggest: "move the occluding node or raise its place gap so it doesn't sit over the label",
+				})
+				break
+			}
+		}
+	}
+	sort.Slice(issues, func(i, j int) bool { return issues[i].Message < issues[j].Message })
+	return issues
+}
 
 // occRect is a screen-space (or world top-down) axis-aligned box.
 type occRect struct{ x0, y0, x1, y1 float64 }
