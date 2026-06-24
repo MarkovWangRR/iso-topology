@@ -79,6 +79,15 @@ Parses the input and runs structural validation: unknown shape names,
 annotation anchors that don't resolve, connector references to
 missing parts, unknown canvas grid modes, etc.
 
+It also runs geometry/quality lints, including a **plan-view footprint
+collision** check: after solving layout, every node and group is projected to
+its top-down (x, y, w, d) footprint, and any two that **touch, cross, or cover**
+one another are warned — except a child sitting inside its own group (legitimate
+containment) and stack replicas. This catches `place`/`offset` values that make
+boxes or group slabs collide in the flat plan view, which the 3-D cross-container
+lint (it requires height overlap too) and the same-container sibling check (it
+ignores mere touching) would miss.
+
 Emits JSON of issues:
 
 ```json
