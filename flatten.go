@@ -1,6 +1,7 @@
 package isotopo
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/MarkovWangRR/iso-topology/iso25d"
@@ -54,6 +55,27 @@ func Flatten(n *Node, theme *Theme) (string, iso25d.ConvertOpts) {
 					from = p.Right
 				}
 				o.RightGradient = &iso25d.FaceGradient{From: from, To: g.To, Dir: g.Dir}
+			}
+			// Derive missing side faces from the top instead of letting them
+			// fall back to the engine's default blue walls: a palette that sets
+			// only `top` should read as a flat SHADED box (top bright, sides the
+			// same hue darker), not sprout unrelated blue sides. No-op when a
+			// side fill/gradient is already set or `top` isn't a parseable hex.
+			base := p.Top
+			if base == "" && o.TopGradient != nil {
+				base = o.TopGradient.From
+			}
+			if base != "" {
+				if o.LeftFill == "" && o.LeftGradient == nil {
+					if s, ok := shadeHexFace(base, 0.80); ok {
+						o.LeftFill = s
+					}
+				}
+				if o.RightFill == "" && o.RightGradient == nil {
+					if s, ok := shadeHexFace(base, 0.90); ok {
+						o.RightFill = s
+					}
+				}
 			}
 		}
 		if merged.Faces != nil {
@@ -220,4 +242,40 @@ func Flatten(n *Node, theme *Theme) (string, iso25d.ConvertOpts) {
 	}
 
 	return n.Shape, o
+}
+
+// shadeHexFace darkens a hex colour toward black by `factor` (0..1) for deriving
+// an iso side face from the top fill. Accepts #RGB, #RRGGBB, or #RRGGBBAA (alpha
+// is dropped — side walls render opaque). Returns ok=false for any non-hex value
+// (named colours, gradients) so the caller can skip derivation.
+func shadeHexFace(hex string, factor float64) (string, bool) {
+	if len(hex) == 0 || hex[0] != '#' {
+		return "", false
+	}
+	h := hex[1:]
+	var r, g, b int
+	switch len(h) {
+	case 3: // #RGB
+		if _, err := fmt.Sscanf(h, "%1x%1x%1x", &r, &g, &b); err != nil {
+			return "", false
+		}
+		r, g, b = r*17, g*17, b*17
+	case 6, 8: // #RRGGBB or #RRGGBBAA (alpha ignored)
+		if _, err := fmt.Sscanf(h[:6], "%02x%02x%02x", &r, &g, &b); err != nil {
+			return "", false
+		}
+	default:
+		return "", false
+	}
+	clamp := func(v int) int {
+		v = int(float64(v) * factor)
+		if v < 0 {
+			return 0
+		}
+		if v > 255 {
+			return 255
+		}
+		return v
+	}
+	return fmt.Sprintf("#%02X%02X%02X", clamp(r), clamp(g), clamp(b)), true
 }
