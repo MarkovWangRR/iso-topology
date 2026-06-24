@@ -501,6 +501,10 @@ func Validate(doc *Document) []Issue {
 	// render-time auto-fix surfaced as negative feedback; see occlusion.go).
 	issues = append(issues, LabelOcclusionIssues(doc)...)
 
+	// v: container fit — a child bursting a fixed-size group (>90% on an axis,
+	// effective dims; see validate_fit.go).
+	issues = append(issues, ContainerFitIssues(doc)...)
+
 	// v: visual quality warnings (contrast, labels, connectivity, nesting).
 	issues = append(issues, VisualContrastIssues(doc)...)
 	issues = append(issues, labelIssues(doc)...)

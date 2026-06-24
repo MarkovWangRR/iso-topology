@@ -88,6 +88,16 @@ boxes or group slabs collide in the flat plan view, which the 3-D cross-containe
 lint (it requires height overlap too) and the same-container sibling check (it
 ignores mere touching) would miss.
 
+Two more geometry lints:
+- **label occlusion** — warns when a node sits over a group label or `iso_text`
+  title in the rendered view. The renderer silently lifts an occluded group label
+  on top, so this surfaces the defect as feedback instead of swallowing it.
+- **container fit** — warns when a child's effective footprint exceeds 90% of a
+  **fixed-size** group/boundary on either axis (it bursts the slab). Auto-sized
+  containers grow to wrap their children, so they're exempt. Effective dims honour
+  per-shape render floors (e.g. a cloud is measured at its drawn 200×140), so a
+  cloud crammed into a small fixed group is caught.
+
 Emits JSON of issues:
 
 ```json
