@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"math"
 	"strings"
+
+	"github.com/MarkovWangRR/iso-topology/iso25d"
 )
 
 // planview.go renders a composite scene as a flat TOP-DOWN (plan) view —
@@ -68,7 +70,7 @@ func buildPlanModelOpt(n *Node, theme *Theme, canvas *Canvas, optimize bool) (re
 		planCollect(n.Parts, 0, 0, 0, theme, &rects)
 	} else {
 		st := ResolveStyle(theme, n.Shape, n.Preset, n.Style)
-		w, d, h := planDims(n.Geom)
+		w, d, h := planDims(n.Shape, n.Geom)
 		rects = append(rects, planRectFor(n.Label, n.Label, 0, 0, 0, w, d, h, n.Shape, st, false))
 	}
 	byID = map[string]planRect{}
@@ -370,7 +372,7 @@ func planCollect(parts []*CompositePart, ox, oy, oz float64, theme *Theme, out *
 			y += p.Offset.WY
 			z += p.Offset.WZ
 		}
-		w, d, h := planDims(p.Geom)
+		w, d, h := planDims(p.Shape, p.Geom)
 		container := isContainerShape(p.Shape) || len(p.Parts) > 0
 		st := ResolveStyle(theme, p.Shape, p.Preset, p.Style)
 		*out = append(*out, planRectFor(p.ID, p.Label, x, y, z, w, d, h, p.Shape, st, container))
@@ -380,7 +382,7 @@ func planCollect(parts []*CompositePart, ox, oy, oz float64, theme *Theme, out *
 	}
 }
 
-func planDims(g *Geom) (w, d, h float64) {
+func planDims(shape string, g *Geom) (w, d, h float64) {
 	w, d, h = 140, 140, 80
 	if g != nil {
 		if g.W > 0 {
@@ -393,7 +395,10 @@ func planDims(g *Geom) (w, d, h float64) {
 			h = g.H
 		}
 	}
-	return
+	// Clamp up to the rendered floor (e.g. cloud) so the plan view and the
+	// footprint-collision check measure the size that is actually drawn.
+	mw, md, mh := iso25d.ShapeMinDims(shape)
+	return math.Max(w, mw), math.Max(d, md), math.Max(h, mh)
 }
 
 func planRectFor(id, label string, x, y, z, w, d, h float64, shape string, st *Style, container bool) planRect {

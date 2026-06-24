@@ -124,14 +124,15 @@ func Convert2DTo25D(shapeType string, o ConvertOpts) string {
 	case "cloud":
 		b := DefaultIsoBox()
 		applyBox(o, &b)
-		if b.Width < 200 {
-			b.Width = 200
+		mw, md, mh := ShapeMinDims("cloud")
+		if b.Width < mw {
+			b.Width = mw
 		}
-		if b.Depth < 140 {
-			b.Depth = 140
+		if b.Depth < md {
+			b.Depth = md
 		}
-		if b.Height < 24 {
-			b.Height = 24
+		if b.Height < mh {
+			b.Height = mh
 		}
 		return RenderIsoCloud(b)
 
@@ -225,6 +226,22 @@ func pickDim(v, defaultVal float64) float64 {
 // pickStructural lowers the DSL Header / Rows / RowColors into concrete
 // values for RenderIsoBoxWithDividers. Falls back to label / defaults when
 // the DSL didn't supply data.
+// ShapeMinDims returns the minimum world (w, d, h) a shape will actually be
+// DRAWN at, regardless of authored geom. Some silhouettes (the cloud) need a
+// floor size to read correctly, so the renderer clamps up to these values. It
+// is exported so the layout solver reserves the SAME space it will draw into —
+// otherwise an auto-sized group wraps the authored size while the renderer
+// paints the larger clamped size, and the shape overflows its slot. Shapes with
+// no floor return (0, 0, 0), i.e. "use whatever was authored".
+func ShapeMinDims(shape string) (w, d, h float64) {
+	switch shape {
+	case "cloud":
+		return 200, 140, 24
+	default:
+		return 0, 0, 0
+	}
+}
+
 func applyBox(o ConvertOpts, b *IsoBoxOpts) {
 	if o.Width > 0 {
 		b.Width = o.Width

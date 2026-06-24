@@ -742,7 +742,7 @@ func childOrigin(doc *Document, lowered map[string]*CompositePart, src, targetID
 	if op := findPart(doc, targetID); op != nil && op.Offset != nil {
 		authoredZ = op.Offset.WZ
 	}
-	slabH := 8.0
+	slabH := defaultGroupSubstrateH
 	if tp.Geom != nil && tp.Geom.H > 0 {
 		slabH = tp.Geom.H
 	}

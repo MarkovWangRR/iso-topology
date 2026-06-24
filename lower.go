@@ -193,11 +193,17 @@ func groupSubstrate(p *CompositePart) *CompositePart {
 	return &cp
 }
 
+// defaultGroupSubstrateH is the slab thickness a group/boundary gets when its
+// geom.h is unset. Children sit ON the slab, so the layout solver (partHeight),
+// the substrate lowering here, and the reparent base-z math (editops) all read
+// this same value — keep them in lockstep.
+const defaultGroupSubstrateH = 40.0
+
 func groupSubstrateHeight(p *CompositePart) float64 {
 	if p != nil && p.Geom != nil && p.Geom.H > 0 {
 		return p.Geom.H
 	}
-	return 8
+	return defaultGroupSubstrateH
 }
 
 // injectCanvasBackground splices a viewBox-sized backdrop rect under

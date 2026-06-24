@@ -18,6 +18,8 @@ import (
 	"fmt"
 	"math"
 	"strings"
+
+	"github.com/MarkovWangRR/iso-topology/iso25d"
 )
 
 const defaultCellSize = 40.0
@@ -428,17 +430,23 @@ func partFootprint(p *CompositePart) (w, d float64) {
 			d = p.Geom.D
 		}
 	}
-	return w, d
+	// Reserve the size the renderer will actually DRAW: shapes with a floor
+	// (e.g. cloud) are clamped up at render, so the solver must clamp too or
+	// the shape overflows its slot / its auto-sized group.
+	mw, md, _ := iso25d.ShapeMinDims(p.Shape)
+	return math.Max(w, mw), math.Max(d, md)
 }
 
 func partHeight(p *CompositePart) float64 {
-	if p.Geom != nil && p.Geom.H > 0 {
-		return p.Geom.H
-	}
+	h := defaultPartH
 	if isContainerShape(p.Shape) {
-		return 8
+		h = defaultGroupSubstrateH
 	}
-	return defaultPartH
+	if p.Geom != nil && p.Geom.H > 0 {
+		h = p.Geom.H
+	}
+	_, _, mh := iso25d.ShapeMinDims(p.Shape)
+	return math.Max(h, mh)
 }
 
 // ── container arrangement (layout: row / column / grid) ─────────────
