@@ -299,6 +299,23 @@ func routeTunnels(pts [][2]float64, srcID, tgtID string, routeZ float64, obstacl
 
 func rectsOverlap(a, b planRect) bool {
 	const eps = 1.0
-	return a.x+eps < b.x+b.w && b.x+eps < a.x+a.w &&
-		a.y+eps < b.y+b.d && b.y+eps < a.y+a.d
+	// Ground footprint (x,y) must overlap.
+	if !(a.x+eps < b.x+b.w && b.x+eps < a.x+a.w &&
+		a.y+eps < b.y+b.d && b.y+eps < a.y+a.d) {
+		return false
+	}
+	// ...AND the two parts must share a vertical band. Parts stacked on
+	// different floors (one placed `above` another — a topper, a chip resting on
+	// a plate) deliberately share an x,y footprint but do NOT collide; counting
+	// them as overlaps produced a phantom the layout could never resolve by
+	// nudging gaps. planZTol absorbs a small resting/rounding gap, and a near-
+	// flat decoration (h≈0) contributes no band, so neither reads as a collision.
+	zLo, zHi := a.z, a.z+a.h
+	if b.z > zLo {
+		zLo = b.z
+	}
+	if b.z+b.h < zHi {
+		zHi = b.z + b.h
+	}
+	return zHi-zLo > planZTol
 }
