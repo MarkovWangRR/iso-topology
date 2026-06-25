@@ -33,3 +33,7 @@ samples/style_refer/_out/
 
 # scratch experiment dir (playbook dev throwaway)
 samples/playground_tmp/
+
+# render output dirs at repo root (regenerable via `isotopo render <in> <out>`)
+/out/
+/out-*/
