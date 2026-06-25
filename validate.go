@@ -505,6 +505,10 @@ func Validate(doc *Document) []Issue {
 	// effective dims; see validate_fit.go).
 	issues = append(issues, ContainerFitIssues(doc)...)
 
+	// v: rounded side band — a solid palette.right silently dropped on a rounded
+	// (or default-rounded group) part (see validate_rounded.go).
+	issues = append(issues, RoundedSideIgnoredIssues(doc)...)
+
 	// v: visual quality warnings (contrast, labels, connectivity, nesting).
 	issues = append(issues, VisualContrastIssues(doc)...)
 	issues = append(issues, labelIssues(doc)...)

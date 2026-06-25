@@ -97,6 +97,13 @@ Two more geometry lints:
   containers grow to wrap their children, so they're exempt. Effective dims honour
   per-shape render floors (e.g. a cloud is measured at its drawn 200×140), so a
   cloud crammed into a small fixed group is caught.
+- **rounded side band** — warns when a solid `palette.right` that is clearly
+  different from `palette.left` is set on a **rounded** part (cornerRadius ≥ 6,
+  including the default-rounded group slab). The rounded renderer collapses the
+  two side walls into one band driven by top + left and never reads the solid
+  right, so that colour is silently dropped. Normal same-hue iso shading is below
+  the distance threshold and stays quiet; set `cornerRadius: 0` for distinct
+  left/right faces.
 
 Emits JSON of issues:
 

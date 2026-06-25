@@ -184,14 +184,20 @@ func groupSubstrate(p *CompositePart) *CompositePart {
 		cp.Style.Stroke = &Stroke{Color: "#7C8DB5", Width: &w}
 	}
 	if cp.Style.Effects == nil {
-		r := 14.0
+		r := defaultGroupCornerRadius
 		cp.Style.Effects = &Effects{CornerRadius: &r}
 	} else if cp.Style.Effects.CornerRadius == nil {
-		r := 14.0
+		r := defaultGroupCornerRadius
 		cp.Style.Effects.CornerRadius = &r
 	}
 	return &cp
 }
+
+// defaultGroupCornerRadius is the rounding a preset-less group/boundary gets, so
+// its substrate renders as a soft slab. The validator reads it to know a group
+// will render via the rounded path (which collapses left/right into one side
+// band) even when the author set no cornerRadius.
+const defaultGroupCornerRadius = 14.0
 
 // defaultGroupSubstrateH is the slab thickness a group/boundary gets when its
 // geom.h is unset. Children sit ON the slab, so the layout solver (partHeight),
