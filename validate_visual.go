@@ -140,7 +140,7 @@ func visuallySeparated(st *Style) bool {
 	if st.Stroke != nil && st.Stroke.Color != "" {
 		return true
 	}
-	if st.Effects != nil && (st.Effects.DropShadow != nil || st.Effects.Outline != nil) {
+	if st.Effects != nil && (st.Effects.DropShadow != nil || st.Effects.Outline != nil || st.Effects.Backglow != nil) {
 		return true
 	}
 	return false
@@ -297,13 +297,21 @@ func VisualContrastIssues(doc *Document) []Issue {
 					}
 				}
 
-				// c) group/boundary vs direct children
+				// c) group/boundary vs direct children — skipped when the child
+				// separates itself from the tray by a NON-fill channel (border,
+				// drop shadow, glow). Premium card styles (e.g. white card on a
+				// white tray) read fine via the shadow/border; only a child with
+				// no such channel actually melts into the slab.
 				if isContainerShape(p.Shape) && fillOK {
 					for _, child := range p.Parts {
 						if child == nil {
 							continue
 						}
-						childFill := topFillColor(ResolveStyle(doc.Theme, child.Shape, child.Preset, child.Style))
+						childEff := ResolveStyle(doc.Theme, child.Shape, child.Preset, child.Style)
+						if visuallySeparated(childEff) {
+							continue
+						}
+						childFill := topFillColor(childEff)
 						if childLum, ok := lumOf(childFill); ok {
 							cr := contrastRatio(fillLum, childLum)
 							if cr < 1.3 {
@@ -311,7 +319,7 @@ func VisualContrastIssues(doc *Document) []Issue {
 								issues = append(issues, Issue{
 									Severity: SeverityWarning,
 									Path:     childPath + ".style.fill",
-									Message:  fmt.Sprintf("child top fill %s has low contrast against group fill %s (ratio %.2f < 1.3)", childFill, fill, cr),
+									Message:  fmt.Sprintf("child top fill %s has low contrast against group fill %s (ratio %.2f < 1.3) and no border/shadow to separate them", childFill, fill, cr),
 								})
 							}
 						}
