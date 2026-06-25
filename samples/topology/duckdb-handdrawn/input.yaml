@@ -1,0 +1,141 @@
+# DuckDB — classic hand-drawn data architecture (sketch / whiteboard feel).
+# Warm paper background, charcoal ink strokes, film grain on every face (no glow).
+# One brand accent: the orange DuckDB duck at the centre. Category coding via pale
+# colour washes (sources blue · ingestion purple · transform grey · BI olive · AI green).
+canvas: { background: "#F4EEE1", grid: iso, gridColor: "#E2D7C0", gridStep: 40, padding: 76 }
+
+theme:
+  text: { family: "Inter, system-ui, sans-serif", size: 10, weight: "600", color: "#3A352B" }
+  presets:
+    # ---- generic sketch chip (pale paper wash + ink + grain) ----
+    chip:
+      palette: { top: "#FBFAF5", left: "#E2DDCF", right: "#ECE8DD" }
+      stroke: { color: "#8A8478", width: 1.8 }
+      effects: { cornerRadius: 3, grain: { intensity: 0.4, scale: 0.8 } }
+      text: { color: "#3A352B" }
+    # ---- category trays (pale colour wash; ink stroke shared for sketch coherence) ----
+    traySrc:   # Sources — pale blue
+      palette: { top: "#E6EEF6", left: "#C6D6E6", right: "#D6E2EE" }
+      stroke: { color: "#5B9BD5", width: 2.2 }
+      effects: { cornerRadius: 4, grain: { intensity: 0.34, scale: 0.9 } }
+      text: { color: "#2A3A4A" }
+    trayIng:   # Ingestion — pale purple
+      palette: { top: "#ECE6F6", left: "#D2C8E4", right: "#DED6EC" }
+      stroke: { color: "#9B86DB", width: 2.2 }
+      effects: { cornerRadius: 4, grain: { intensity: 0.34, scale: 0.9 } }
+      text: { color: "#3A3050" }
+    trayXf:    # Transformation — pale grey
+      palette: { top: "#E9ECEE", left: "#CDD3D8", right: "#DAE0E4" }
+      stroke: { color: "#9BA7B3", width: 2.2 }
+      effects: { cornerRadius: 4, grain: { intensity: 0.34, scale: 0.9 } }
+      text: { color: "#33373A" }
+    trayBI:    # Business intelligence — pale olive
+      palette: { top: "#F4EFD8", left: "#DED6AE", right: "#E8E2C4" }
+      stroke: { color: "#D4C24E", width: 2.2 }
+      effects: { cornerRadius: 4, grain: { intensity: 0.34, scale: 0.9 } }
+      text: { color: "#463F1E" }
+    trayAI:    # AI & data science — pale green
+      palette: { top: "#E6F0E9", left: "#C6DCCC", right: "#D6E6DC" }
+      stroke: { color: "#5FBF8E", width: 2.2 }
+      effects: { cornerRadius: 4, grain: { intensity: 0.34, scale: 0.9 } }
+      text: { color: "#234A30" }
+
+nodes:
+  scene:
+    shape: composite
+    parts:
+      # ============ Title ============
+      - id: title
+        offset: { wx: -373, wy: -71 }
+        shape: iso_text
+        geom: { w: 520, d: 26, h: 4 }
+        label: "DuckDB — Cloud Data Warehouse"
+        style:
+          palette: { top: "#F4EEE1" }
+          text: { orient: screen, size: 20, weight: "700", color: "#9A5A18" }
+
+      # ============ HERO: DuckDB warehouse (white sketch "sticker" + orange duck) ============
+      - id: hub
+        shape: rectangle
+        geom: { w: 188, d: 188, h: 50 }
+        icon: "iso://si/duckdb/E07B1A"
+        label: "DuckDB"
+        style:
+          palette: { top: "#FFFDF8", left: "#E8D8BE", right: "#F2E6CE" }
+          stroke: { color: "#2A2520", width: 3.2 }
+          effects: { cornerRadius: 10, grain: { intensity: 0.22, scale: 0.9 }, dropShadow: { dx: 7, dy: 9, blur: 2, color: "#2A252055" } }
+          text: { color: "#7A4410", size: 16 }
+
+      # ============ Sources (top-left) ============
+      - id: sources
+        geom: { d: 230 }
+        offset: { wx: -394, wy: 16 }
+        preset: traySrc
+        shape: group
+        label: "Sources"
+        layout: { mode: grid, cols: 2, gap: 0.7 }
+        parts:
+          - { id: pg,     preset: chip, shape: rectangle, geom: { w: 78, d: 64, h: 18 }, icon: "iso://si/postgresql", label: "PostgreSQL" }
+          - { id: s3,     preset: chip, shape: rectangle, geom: { w: 78, d: 64, h: 18 }, icon: "iso://glyph/cloud",    label: "Amazon S3" }
+          - { id: stripe, preset: chip, shape: rectangle, geom: { w: 78, d: 64, h: 18 }, icon: "iso://si/stripe",     label: "Stripe" }
+          - { id: sf,     preset: chip, shape: rectangle, geom: { w: 78, d: 64, h: 18 }, icon: "iso://glyph/database", label: "Salesforce" }
+
+      # ============ Ingestion (bottom-left) ============
+      - id: ingestion
+        geom: { d: 230 }
+        offset: { wx: -9, wy: 394 }
+        preset: trayIng
+        shape: group
+        label: "Ingestion"
+        layout: { mode: grid, cols: 2, gap: 0.7 }
+        parts:
+          - { id: fivetran, preset: chip, shape: rectangle, geom: { w: 78, d: 64, h: 18 }, icon: "iso://glyph/etl",    label: "Fivetran" }
+          - { id: airbyte,  preset: chip, shape: rectangle, geom: { w: 78, d: 64, h: 18 }, icon: "iso://si/airbyte",   label: "Airbyte" }
+          - { id: dlt,      preset: chip, shape: rectangle, geom: { w: 78, d: 64, h: 18 }, icon: "iso://glyph/stream", label: "dlt" }
+
+      # ============ Transformation (front-centre) ============
+      - id: xform
+        geom: { d: 140 }
+        offset: { wx: 314, wy: 332 }
+        preset: trayXf
+        shape: group
+        label: "Transformation"
+        layout: { mode: row, gap: 0.7 }
+        parts:
+          - { id: dbt,     preset: chip, shape: rectangle, geom: { w: 84, d: 66, h: 18 }, icon: "iso://si/dbt",     label: "dbt" }
+          - { id: sqlmesh, preset: chip, shape: rectangle, geom: { w: 84, d: 66, h: 18 }, icon: "iso://glyph/bolt", label: "SQLMesh" }
+
+      # ============ Business Intelligence (top-right) ============
+      - id: bi
+        geom: { d: 230 }
+        offset: { wx: -40, wy: -356 }
+        preset: trayBI
+        shape: group
+        label: "Business Intelligence"
+        layout: { mode: grid, cols: 2, gap: 0.7 }
+        parts:
+          - { id: tableau,  preset: chip, shape: rectangle, geom: { w: 80, d: 64, h: 18 }, icon: "iso://glyph/chart", label: "Tableau" }
+          - { id: powerbi,  preset: chip, shape: rectangle, geom: { w: 80, d: 64, h: 18 }, icon: "iso://glyph/gauge", label: "Power BI" }
+          - { id: metabase, preset: chip, shape: rectangle, geom: { w: 80, d: 64, h: 18 }, icon: "iso://glyph/table", label: "Metabase" }
+
+      # ============ AI & Data Science (bottom-right) ============
+      - id: aids
+        geom: { d: 230 }
+        offset: { wx: 357, wy: -212 }
+        preset: trayAI
+        shape: group
+        label: "AI & Data Science"
+        layout: { mode: grid, cols: 2, gap: 0.7 }
+        parts:
+          - { id: chatgpt, preset: chip, shape: rectangle, geom: { w: 78, d: 64, h: 18 }, icon: "iso://si/openai",    label: "ChatGPT" }
+          - { id: claude,  preset: chip, shape: rectangle, geom: { w: 78, d: 64, h: 18 }, icon: "iso://si/anthropic", label: "Claude" }
+          - { id: jupyter, preset: chip, shape: rectangle, geom: { w: 78, d: 64, h: 18 }, icon: "iso://si/jupyter",   label: "Jupyter" }
+          - { id: py,      preset: chip, shape: rectangle, geom: { w: 78, d: 64, h: 18 }, icon: "iso://si/python",    label: "Python" }
+
+    connectors:
+      # categories feed / read the warehouse — hand-drawn ink links
+      - { from: sources,    to: hub, routing: orthogonal, arrow: triangle, stroke: { color: "#3A4A5A", width: 3.2 }, label: "Ingest" }
+      - { from: ingestion,  to: hub, routing: orthogonal, arrow: triangle, stroke: { color: "#4A3F5A", width: 3.2 }, label: "Ingest" }
+      - { waypoints: [{ wx: 173, wy: 87 }, { wx: 173, wy: 126 }, { wx: 373, wy: 126 }, { wx: 373, wy: 393 }],     from: hub, to: xform,  routing: orthogonal, arrow: triangle, stroke: { color: "#9A5A18", width: 3.4 }, label: "Transform" }
+      - { from: hub, to: bi,     routing: orthogonal, arrow: triangle, stroke: { color: "#5A5230", width: 3.2 }, label: "Query" }
+      - { waypoints: [{ wx: 188, wy: 47 }, { wx: 212, wy: 47 }, { wx: 212, wy: 48 }, { wx: 295, wy: 48 }, { wx: 295, wy: -86 }],  from: hub, to: aids,   routing: orthogonal, arrow: triangle, stroke: { color: "#2E5B3E", width: 3.2 }, label: "Query" }

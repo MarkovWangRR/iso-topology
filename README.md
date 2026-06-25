@@ -233,22 +233,28 @@ drop shadow keep the field neutral; a single lime accent is spent only on
 the hub and the thick dashed-gradient Ingest/Query connectors.
 [Source](samples/topology/clickhouse-hub/input.yaml).
 
-### LLM inference board (engineering · projected silk layer)
+### DuckDB data architecture (hand-drawn · paper grain + iso grid)
 
-![Isometric PCB-style LLM inference board with via-dot silk layer and gradient GPU chips](docs/assets/inference-board.png)
+![Hand-drawn isometric DuckDB data architecture on warm paper — a white DuckDB sticker-hero with the orange duck, wired to bright-bordered category trays of source/ingestion/transform/BI/AI logo chips](docs/assets/duckdb-handdrawn.png)
 
-A board whose top face carries a `projected: true` via-dot pattern —
-the tile follows the iso plane, not the screen — under a hexprism
-scheduler and a grid of gradient-top GPU dies.
-[Source](samples/topology/inference-board/input.yaml).
+A sketch/whiteboard take: warm paper with a diagonal iso grid, film
+grain on every face, ink strokes and small hand-feel corners — no glow.
+The white DuckDB "sticker" hero (orange duck, soft offset shadow) is the
+single brand accent; five bright-bordered category trays (sources,
+ingestion, transformation, BI, AI & data science) wire in via labelled
+ink links. [Source](samples/topology/duckdb-handdrawn/input.yaml).
 
-### Payment rails (print · octprism routing)
+### Databricks Lakehouse + LLM agent (brand · single lava accent)
 
-![Swiss-print isometric payment flow with octprism routing and hexprism gateway, one emerald gradient accent](docs/assets/payment-rails.png)
+![Brand-faithful isometric Databricks Lakehouse and LLM agent architecture — a lava-orange Lakehouse hero on a warm canvas, with cool slate-to-navy modules for sources, model serving, and the agent app](docs/assets/lakehouse-agent.png)
 
-White canvas, ink tonal ladder, exactly one emerald 3-stop gradient —
-and the flow semantics carried by shapes: hexprism gateway, octprism
-router. [Source](samples/topology/payment-rails/input.yaml).
+A real product architecture under brand discipline: one warm Lava accent
+is spent entirely on the Lakehouse hero (Delta Lake medallion, Unity
+Catalog, Spark, Vector Search), while every other module rides a single
+cool slate→navy depth ladder — sources, model serving, and the deep-navy
+agent app (orchestrator, LLM, RAG, tools). The dashed lava loop is the
+agent's RAG retrieval back into Vector Search.
+[Source](samples/topology/lakehouse-agent/input.yaml).
 
 ### LLM serving platform (dark · layered flow)
 
