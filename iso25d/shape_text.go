@@ -55,6 +55,14 @@ func RenderIsoText(o IsoBoxOpts) string {
 		`<g data-face="iso-text" transform="matrix(%.4f %.4f %.4f %.4f %.2f %.2f)">`,
 		cos30, sin30, -cos30, sin30, originX, originY,
 	)
+	// v2.10 — transparent hit-rect over the text's local bbox (0..textW,
+	// −fontSize..0) so the whole label area is clickable/draggable in Studio,
+	// not just the thin glyph strokes. It tilts with the text via the matrix
+	// above; pointer-events:all captures clicks despite the transparent fill.
+	fmt.Fprintf(&sb,
+		`<rect x="0" y="%.2f" width="%.2f" height="%.2f" fill="transparent" pointer-events="all"/>`,
+		-fontSize, textW, fontSize,
+	)
 	fmt.Fprintf(&sb,
 		`<text x="0" y="0" font-family="%s" font-size="%.2f" font-weight="%s" fill="%s">%s</text>`,
 		escapeAttr(fontFamily), fontSize, escapeAttr(fontWeight), escapeAttr(fontColor), escapeXML(text),

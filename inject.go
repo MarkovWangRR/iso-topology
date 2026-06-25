@@ -209,6 +209,20 @@ func injectScreenLabels(svg string, infos []partInfo, extraObstacles []screenRec
 		if color == "" {
 			color = "#FFFFFF"
 		}
+		// v2.10 — a screen-space label is now a first-class interactive node:
+		// wrap it in a <g data-part-id> (so Studio's hover/click/drag wiring
+		// picks it up) and lay a transparent full-box hit-rect under it with
+		// pointer-events:all, so the WHOLE label area is grabbable — not just
+		// the glyph strokes — and clicks map back to this part's id/source.
+		gidAttr := ""
+		if p.id != "" {
+			gidAttr = fmt.Sprintf(` data-part-id="%s"`, escAttr(p.id))
+		}
+		fmt.Fprintf(&sb, `<g data-screen-label="1"%s>`, gidAttr)
+		fmt.Fprintf(&sb,
+			`<rect x="%.2f" y="%.2f" width="%.2f" height="%.2f" fill="transparent" pointer-events="all"/>`,
+			cx-boxW/2, baseY, boxW, boxH,
+		)
 		if bg != "transparent" || border != "none" {
 			strokeAttr := ""
 			if border != "none" {
@@ -223,6 +237,7 @@ func injectScreenLabels(svg string, infos []partInfo, extraObstacles []screenRec
 			`<text x="%.2f" y="%.2f" dy=".35em" font-family="%s" font-size="%.1f" font-weight="%s" fill="%s" text-anchor="middle">%s</text>`,
 			cx, baseY+boxH/2, escAttr(family), fontSize, escAttr(weight), color, escapeXML(text),
 		)
+		sb.WriteString(`</g>`)
 		if labelBottom := baseY + boxH; labelBottom > maxLabelY {
 			maxLabelY = labelBottom
 		}

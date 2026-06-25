@@ -194,7 +194,18 @@ func renderComposite(n *Node, theme *Theme, canvas *Canvas, anns []*Annotation) 
 			oz += p.Offset.WZ
 		}
 
-		cp := iso25d.CompositePart{ID: p.ID, Shape: shape, Opts: opts, OffWX: ox, OffWY: oy, OffWZ: oz}
+		// v2.10 — an injected group-label (the caption iso_text) is given the
+		// PARENT group's id as its SVG data-part-id, so clicking/dragging the
+		// caption selects the group in Studio. It is kept OUT of infos (id="")
+		// below so the tiny label never overwrites the slab's anchor geometry
+		// in the connector/model map.
+		svgID := p.ID
+		infoID := p.ID
+		if p.groupLabel && p.labelFor != "" {
+			svgID = p.labelFor
+			infoID = ""
+		}
+		cp := iso25d.CompositePart{ID: svgID, Shape: shape, Opts: opts, OffWX: ox, OffWY: oy, OffWZ: oz}
 		parts = append(parts, cp)
 
 		// partInfo dims MUST match what RenderComposite draws (p.Opts.*),
@@ -209,7 +220,7 @@ func renderComposite(n *Node, theme *Theme, canvas *Canvas, anns []*Annotation) 
 		// invent a phantom-wide part and skew the projection origin.
 		w, d, h := opts.Width, opts.Depth, opts.Height
 		infos[i] = partInfo{
-			id: p.ID, shape: p.Shape,
+			id: infoID, shape: p.Shape,
 			w: w, d: d, h: h, offWX: ox, offWY: oy, offWZ: oz,
 			screenLabel: screenLabel, labelBg: labelBg, labelBorder: labelBorder,
 			labelColor: labelColor, labelFamily: labelFamily, labelWeight: labelWeight,

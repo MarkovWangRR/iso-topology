@@ -118,6 +118,11 @@ type CompositePart struct {
 	// (internal; never parsed). The occlusion pass repaints these last so an
 	// upper-layer node can't cover a lane label. Unexported → not serialised.
 	groupLabel bool      `yaml:"-" json:"-"`
+	// labelFor is the id of the group this injected label captions. The render
+	// pass emits the label's <g> with data-part-id=labelFor (so clicking the
+	// caption selects/drags the parent group in Studio) WITHOUT registering it
+	// in the interaction model / connector anchor map. Unexported → not parsed.
+	labelFor string     `yaml:"-" json:"-"`
 	Geom    *Geom       `yaml:"geom,omitempty" json:"geom,omitempty"`
 	Style   *Style      `yaml:"style,omitempty" json:"style,omitempty"`
 	Preset  string      `yaml:"preset,omitempty" json:"preset,omitempty"` // v2.5 — theme.presets reference

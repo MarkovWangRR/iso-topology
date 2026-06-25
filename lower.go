@@ -267,6 +267,7 @@ func groupLabelPart(sub *CompositePart, label string) *CompositePart {
 	return &CompositePart{
 		Shape:      "iso_text",
 		groupLabel: true,
+		labelFor:   sub.ID,
 		Label:      label,
 		Offset:     off,
 		Style: &Style{
