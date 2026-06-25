@@ -36,15 +36,17 @@ description matches your task, imitate its structure, then check
 |---|---|
 | [`ai-platform`](../../samples/topology/ai-platform/input.yaml) | ai-platform v2 — flagship hero, reimagined with the v3.3 surface pipeline. |
 | [`auto-flow`](../../samples/topology/auto-flow/input.yaml) | (no header comment) |
+| [`clickhouse-hub`](../../samples/topology/clickhouse-hub/input.yaml) | ClickHouse — real-time data warehouse & database, hub-and-spoke ecosystem map. |
 | [`data-fabric`](../../samples/topology/data-fabric/input.yaml) | data-fabric — connector-driven AUTO layout (v4.2). |
 | [`devtool-pipeline`](../../samples/topology/devtool-pipeline/input.yaml) | devtool-pipeline — CI/CD neon. |
+| [`duckdb-handdrawn`](../../samples/topology/duckdb-handdrawn/input.yaml) | DuckDB — classic hand-drawn data architecture (sketch / whiteboard feel). |
 | [`edge-security`](../../samples/topology/edge-security/input.yaml) | edge-security — zero-trust edge, converted to connector-driven auto-layout (v4.2). |
 | [`gateway-mesh`](../../samples/topology/gateway-mesh/input.yaml) | (no header comment) |
 | [`identity-flow`](../../samples/topology/identity-flow/input.yaml) | identity-flow — monochrome film-grain editorial style: how human identities delegate to AI agents which consume machine identities. |
 | [`inference-board`](../../samples/topology/inference-board/input.yaml) | inference-board — LLM inference PCB, dark green / copper engineering look. |
+| [`lakehouse-agent`](../../samples/topology/lakehouse-agent/input.yaml) | lakehouse-agent — Databricks Lakehouse + LLM agent application architecture. |
 | [`llm-serving`](../../samples/topology/llm-serving/input.yaml) | llm-serving — a dark-mode LLM inference platform. |
 | [`microservice`](../../samples/topology/microservice/input.d2) | microservice — minimal .d2 auto-layout path: person → services → database. |
-| [`payment-rails`](../../samples/topology/payment-rails/input.yaml) | payment-rails — fintech print register: a payment authorization flow Converted to connector-driven auto-layout (layout: {mode: auto}, v4.2). |
 | [`platform-board`](../../samples/topology/platform-board/input.yaml) | platform-board — PCB / circuit-board hero shot, landing-page style. |
 | [`rag-pipeline`](../../samples/topology/rag-pipeline/input.yaml) | rag-pipeline — a RAG system, now under connector-driven auto-layout. |
 | [`training-compute`](../../samples/topology/training-compute/input.yaml) | training-compute — where the GPU hours of a training run go. |

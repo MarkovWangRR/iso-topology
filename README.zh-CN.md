@@ -186,12 +186,12 @@ docs/agent/SAMPLES.md that best matches the task. Use
 板面顶层是 `projected: true` 的过孔点阵——纹理贴在等距平面上而非屏幕空间；上面是六棱柱调度器和渐变顶面的 GPU 芯片网格。
 [源码](samples/topology/inference-board/input.yaml)。
 
-### 支付通道（印刷风 · 菱形路由）
+### Databricks 湖仓 + LLM 智能体（品牌色 · 唯一 Lava 强调）
 
-![瑞士印刷风支付流程等距图——菱形路由与六棱柱网关，唯一翡翠渐变强调](docs/assets/payment-rails.png)
+![品牌还原的 Databricks 湖仓与 LLM 智能体架构等距图——暖白底上以 Lava 橙红的湖仓为唯一焦点，数据源、模型服务与智能体应用走冷调 slate→navy 深浅梯度](docs/assets/lakehouse-agent.png)
 
-白底、墨色阶梯、全图唯一一处三色标翡翠渐变；流程语义由形状本身承载：六棱柱网关、菱形路由。
-[源码](samples/topology/payment-rails/input.yaml)。
+真实产品架构 + 品牌纪律：唯一的暖色 Lava 全部留给湖仓焦点（Delta Lake 奖牌架构、Unity Catalog、Spark、向量检索），其余模块共用一条冷调 slate→navy 的深度梯度——数据源、模型服务，以及最深的 navy 智能体应用（编排器、LLM、RAG、工具）。虚线 Lava 回路是智能体回到向量检索的 RAG 取数。
+[源码](samples/topology/lakehouse-agent/input.yaml)。
 
 
 ### LLM 推理平台（暗色）

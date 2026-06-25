@@ -1,0 +1,177 @@
+# lakehouse-agent — Databricks Lakehouse + LLM agent application architecture.
+# Brand-faithful palette: one warm Lava accent reserved for the Lakehouse
+# hero; every other module rides a cool slate->navy depth ladder. Sources ->
+# Lakehouse -> Model Serving -> Agent app, with a dashed RAG-retrieval loop
+# from the agent back to the lakehouse Vector Search index.
+
+canvas: { background: "#F9F7F4", grid: iso, gridColor: "#ECE8E1", gridStep: 40, padding: 80 }
+
+theme:
+  text: { family: "Inter, system-ui, sans-serif", size: 10, weight: "600", color: "#1B3139" }
+  presets:
+    # ── Slate blue (light) : Sources / Ingestion ──
+    slateTile:
+      palette: { top: "#9DB7C3", left: "#6B8C9C", right: "#4E7283" }
+      text: { color: "#12242B" }
+      effects: { cornerRadius: 8 }
+    # ── Lava (HERO) : Lakehouse centerpiece ──
+    lavaHero:
+      palette:
+        top: "#FFFFFF"
+        leftGradient:  { from: "#EE5D43", to: "#AB2D1E", dir: "down" }
+        rightGradient: { from: "#E1442B", to: "#8F2417", dir: "down" }
+      text: { color: "#AB2D1E" }
+      effects:
+        cornerRadius: 12
+        backglow: { color: "#FF5A3C", radius: 50, opacity: 0.5 }
+        dropShadow: { }
+    # ── Lava (coral) : Lakehouse interior tiles ──
+    lavaTile:
+      palette: { top: "#FF8A66", left: "#EE5D43", right: "#C5341F" }
+      text: { color: "#1B3139" }
+      effects: { cornerRadius: 8 }
+    # ── Slate blue (mid) : Model Serving ──
+    servingTile:
+      palette: { top: "#5E8295", left: "#3D5E6E", right: "#2A4756" }
+      text: { color: "#EAF1F4" }
+      effects: { cornerRadius: 8 }
+    # ── Navy (deep) : Agent Application ──
+    agentTile:
+      palette: { top: "#2E4651", left: "#1B3139", right: "#0E2128" }
+      text: { color: "#E7EEF0" }
+      effects: { cornerRadius: 8 }
+    # ── Warm grey : People ──
+    userTile:
+      palette: { top: "#B7AFA4", left: "#8F887D", right: "#6E6860" }
+      text: { color: "#1B1916" }
+
+nodes:
+  scene:
+    shape: composite
+    parts:
+
+      # ───────────────── SOURCES (slate, light) ─────────────────
+      - id: sources
+        shape: group
+        label: "Data Sources & Ingestion"
+        layout: { mode: column, gap: 1.4 }
+        style:
+          palette: { top: "#E0E8EC", left: "#CBD9E0", right: "#B4C7D0" }
+          text: { color: "#1B3139" }
+        parts:
+          - id: kafka
+            shape: cylinder
+            geom: { w: 104, d: 104, h: 40 }
+            preset: slateTile
+            icon: "iso://si/apachekafka"
+            label: "Streaming (Kafka)"
+          - id: airbyte
+            shape: rectangle
+            geom: { w: 104, d: 104, h: 26 }
+            preset: slateTile
+            icon: "iso://si/airbyte"
+            label: "Batch / CDC Ingest"
+
+      # ───────────────── LAKEHOUSE (lava hero) ─────────────────
+      - id: lakehouse
+        shape: group
+        place: { rightOf: sources, gap: 3 }
+        label: "Databricks Lakehouse"
+        layout: { mode: grid, gap: 1.6 }
+        style:
+          palette: { top: "#FFEAE2", left: "#FFD7C9", right: "#FFC6B4" }
+          text: { color: "#AB2D1E" }
+        parts:
+          - id: delta
+            shape: cylinder
+            geom: { w: 132, d: 132, h: 52 }
+            preset: lavaHero
+            icon: "iso://si/databricks"
+            label: "Delta Lake · Medallion"
+          - id: catalog
+            shape: hexprism
+            geom: { w: 118, d: 118, h: 34 }
+            preset: lavaTile
+            label: "Unity Catalog · Governance"
+          - id: spark
+            shape: rectangle
+            geom: { w: 118, d: 118, h: 30 }
+            preset: lavaTile
+            icon: "iso://si/apachespark"
+            label: "Spark · Photon Compute"
+          - id: vector
+            shape: array2d
+            geom: { w: 118, d: 118, h: 24 }
+            preset: lavaTile
+            label: "Vector Search Index"
+
+      # ───────────────── MODEL SERVING (slate, mid) ─────────────────
+      - id: serving
+        shape: group
+        place: { rightOf: lakehouse, gap: 3 }
+        label: "AI / Model Serving"
+        layout: { mode: column, gap: 1.4 }
+        style:
+          palette: { top: "#D7E0E4", left: "#BFCED4", right: "#A6BAC2" }
+          text: { color: "#1B3139" }
+        parts:
+          - id: mlflow
+            shape: rectangle
+            geom: { w: 108, d: 108, h: 28 }
+            preset: servingTile
+            icon: "iso://si/mlflow/light"
+            label: "MLflow Registry"
+          - id: endpoint
+            shape: rectangle
+            geom: { w: 108, d: 108, h: 28 }
+            preset: servingTile
+            icon: "iso://si/databricks/light"
+            label: "Model Serving Endpoint"
+
+      # ───────────────── AGENT APP (navy, deep) ─────────────────
+      - id: agent
+        shape: group
+        place: { inFrontOf: serving, gap: 2.4 }
+        label: "LLM Agent Application"
+        layout: { mode: grid, gap: 1.5 }
+        style:
+          palette: { top: "#CDD8DD", left: "#B3C3CA", right: "#98AEB6" }
+          text: { color: "#1B3139" }
+        parts:
+          - id: orchestrator
+            shape: rectangle
+            geom: { w: 108, d: 108, h: 30 }
+            preset: agentTile
+            icon: "iso://si/langchain/light"
+            label: "Agent Orchestrator"
+          - id: llm
+            shape: rectangle
+            geom: { w: 108, d: 108, h: 30 }
+            preset: agentTile
+            icon: "iso://si/openai/light"
+            label: "LLM · Foundation Model"
+          - id: rag
+            shape: triprism
+            geom: { w: 108, d: 108, h: 28 }
+            preset: agentTile
+            label: "RAG Retrieval Tool"
+          - id: tools
+            shape: rectangle
+            geom: { w: 108, d: 108, h: 28 }
+            preset: agentTile
+            label: "Tools / Functions"
+
+      # ───────────────── USERS ─────────────────
+      - id: users
+        shape: person
+        place: { inFrontOf: agent, gap: 3.4 }
+        geom: { w: 86, d: 86, h: 96 }
+        preset: userTile
+        label: "Users / App"
+
+    connectors:
+      - { from: sources,   to: lakehouse, routing: orthogonal, arrow: triangle, stroke: { color: "#557A8E", width: 1.4 } }
+      - { from: lakehouse, to: serving,   routing: orthogonal, arrow: triangle, stroke: { color: "#FF3621", width: 1.6 } }
+      - { from: serving,   to: agent,     routing: orthogonal, arrow: triangle, stroke: { color: "#557A8E", width: 1.4 } }
+      - { from: agent,     to: lakehouse, routing: orthogonal, arrow: triangle, stroke: { color: "#EE5D43", width: 1.3, dash: "4 3" } }
+      - { from: users,     to: agent,     routing: orthogonal, arrow: triangle, stroke: { color: "#6E6860", width: 1.2 } }
