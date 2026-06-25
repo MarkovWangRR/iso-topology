@@ -1,0 +1,127 @@
+# ClickHouse — typical real-time analytics pipeline.
+# Dark stage; the ClickHouse cluster glows yellow (on-brand) as the single hero,
+# everything else stays in a cool slate-blue field. Flow: sources -> Kafka ->
+# ClickHouse (Kafka engine -> materialized view -> MergeTree) -> dashboards/API.
+canvas: { background: "#0B0F1A", grid: "", padding: 72 }
+
+theme:
+  text: { family: "Inter, system-ui, sans-serif", size: 10, weight: "600", color: "#AEB9D6" }
+  presets:
+    # ---- cool slate service block — light top -> dark ink ----
+    svc:
+      palette: { top: "#8AA6DC", left: "#2F4794", right: "#3A55B0" }
+      stroke: { color: "#A9C0F0", width: 1.4 }
+      text: { color: "#101A3A" }
+    # ---- mid slate block — sources (medium top -> light ink + light icons) ----
+    svcDeep:
+      palette: { top: "#5D7FD6", left: "#243A7E", right: "#2F4794" }
+      stroke: { color: "#8AA6DC", width: 1.4 }
+      text: { color: "#EAF1FF" }
+    # ---- Kafka streaming accent (brighter blue, same family) ----
+    kafka:
+      palette: { top: "#7DD3FC", left: "#0369A1", right: "#0284C7" }
+      stroke: { color: "#BAE6FD", width: 1.4 }
+      text: { color: "#08263A" }
+    # ---- ClickHouse cluster (yellow hero tiers) — light tops -> dark ink ----
+    chTop:
+      palette: { top: "#FFE680", left: "#C99A00", right: "#E6B800" }
+      stroke: { color: "#FFF0A6", width: 1.4 }
+      text: { color: "#2A2200" }
+    chMid:
+      palette: { top: "#FFD23F", left: "#B38600", right: "#D9A800" }
+      stroke: { color: "#FFE680", width: 1.4 }
+      text: { color: "#2A2200" }
+    chDeep:
+      palette: { top: "#F5B400", left: "#8A6200", right: "#B38600" }
+      stroke: { color: "#FFD23F", width: 1.4 }
+      text: { color: "#2A1E00" }
+    # ---- dark group tray (dots) ----
+    tray:
+      palette: { top: "#141A2E" }
+      stroke: { color: "#2A3556", width: 1.1 }
+      text: { color: "#9FB0D8" }
+      effects: { cornerRadius: 4, pattern: { kind: dots, color: "#283256", spacing: 9 } }
+    # ---- elevated hero tray (the cluster) with yellow glow ----
+    trayHero:
+      palette: { top: "#1B2238" }
+      stroke: { color: "#E6B800", width: 1.5 }
+      text: { color: "#FFE680" }
+      effects: { cornerRadius: 6, pattern: { kind: dots, color: "#3A4060", spacing: 9 }, dropShadow: { dx: 5, dy: 10, blur: 16, color: "#00000077" }, backglow: { color: "#FFD23F", radius: 44, opacity: 0.4 } }
+
+nodes:
+  scene:
+    shape: composite
+    parts:
+      # ============ Title ============
+      - id: title
+        offset: { wx: -540, wy: -150 }
+        shape: iso_text
+        geom: { w: 540, d: 26, h: 4 }
+        label: "ClickHouse — Real-Time Analytics Pipeline"
+        style:
+          palette: { top: "#0B0F1A" }
+          text: { orient: screen, size: 19, weight: "700", color: "#F4D24B" }
+
+      # ============ HERO: ClickHouse cluster (Kafka engine -> MV -> MergeTree) ============
+      - id: cluster
+        preset: trayHero
+        shape: group
+        label: "ClickHouse Cluster · Shards + Replicas"
+        layout: { mode: column, gap: 0.7 }
+        parts:
+          - { id: chkafka, preset: chTop,  shape: rectangle, geom: { w: 184, d: 80, h: 28 }, icon: "iso://glyph/queue",    label: "Kafka Engine Table" }
+          - { id: chmv,    preset: chMid,  shape: rectangle, geom: { w: 184, d: 80, h: 28 }, icon: "iso://glyph/bolt",     label: "Materialized View" }
+          - { id: chmt,    preset: chDeep, shape: rectangle, geom: { w: 184, d: 80, h: 28 }, icon: "iso://si/clickhouse",  label: "MergeTree · Distributed" }
+
+      # ============ Streaming / ingest (left of hero) ============
+      - id: stream
+        place: { leftOf: cluster, gap: 2.6 }
+        preset: tray
+        shape: group
+        label: "Streaming Ingest"
+        layout: { mode: column, gap: 0.9 }
+        parts:
+          - { id: kafka,  preset: kafka, shape: rectangle, geom: { w: 144, d: 78, h: 26 }, icon: "iso://si/apachekafka", label: "Kafka · Topics" }
+          - { id: vector, preset: svc,   shape: rectangle, geom: { w: 144, d: 78, h: 24 }, icon: "iso://glyph/etl",       label: "Vector · Collector" }
+
+      # ============ Sources (far left) ============
+      - id: sources
+        place: { leftOf: stream, gap: 2.6 }
+        preset: tray
+        shape: group
+        label: "Event Sources"
+        layout: { mode: column, gap: 0.9 }
+        parts:
+          - { id: srcevt, preset: svcDeep, shape: rectangle, geom: { w: 132, d: 70, h: 24 }, icon: "iso://glyph/stream/light",  label: "App / Clickstream" }
+          - { id: srclog, preset: svcDeep, shape: rectangle, geom: { w: 132, d: 70, h: 24 }, icon: "iso://glyph/gauge/light",   label: "Logs · Metrics" }
+          - { id: srccdc, preset: svcDeep, shape: cylinder,  geom: { w: 92,  d: 92, h: 38 }, icon: "iso://si/postgresql/light", label: "CDC · OLTP" }
+
+      # ============ Serving / consumption (right of hero) ============
+      - id: serve
+        place: { rightOf: cluster, gap: 2.6 }
+        preset: tray
+        shape: group
+        label: "Analytics & Serving"
+        layout: { mode: column, gap: 0.9 }
+        parts:
+          - { id: grafana, preset: svc, shape: rectangle, geom: { w: 140, d: 72, h: 24 }, icon: "iso://si/grafana",   label: "Grafana · Dashboards" }
+          - { id: bi,      preset: svc, shape: rectangle, geom: { w: 140, d: 72, h: 24 }, icon: "iso://glyph/chart",  label: "BI · Superset" }
+          - { id: api,     preset: svc, shape: rectangle, geom: { w: 140, d: 72, h: 24 }, icon: "iso://glyph/bolt",   label: "Query API · Apps" }
+
+      # ============ ClickHouse Keeper — coordination (cross-cutting, below cluster) ============
+      - id: keeper
+        place: { inFrontOf: cluster, gap: 2.4 }
+        preset: tray
+        shape: group
+        label: "Coordination"
+        layout: { mode: row, gap: 0.9 }
+        parts:
+          - { id: kpr,  preset: svc, shape: rectangle, geom: { w: 150, d: 66, h: 22 }, icon: "iso://glyph/database", label: "ClickHouse Keeper" }
+
+    connectors:
+      # main left -> right real-time flow, module -> module
+      - { from: sources, to: stream,  routing: orthogonal, arrow: triangle, stroke: { color: "#7DD3FC", width: 1.4 } }
+      - { from: stream,  to: cluster, routing: orthogonal, arrow: triangle, stroke: { color: "#7DD3FC", width: 1.4 } }
+      - { from: cluster, to: serve,   routing: orthogonal, arrow: triangle, stroke: { color: "#FFD23F", width: 1.5 } }
+      # Keeper coordinates the cluster (dashed control plane)
+      - { from: keeper,  to: cluster, routing: orthogonal, arrow: none, stroke: { color: "#8AA6DC", width: 1.1, dash: "4 4" } }

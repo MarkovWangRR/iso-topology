@@ -1,0 +1,202 @@
+# ClickHouse — real-time data warehouse & database, hub-and-spoke ecosystem map.
+# References the official ClickHouse architecture art: near-black stage, a glowing
+# yellow-bordered ClickHouse hub in the center, five brand-logo categories around it.
+canvas: { background: "#0B0B0E", grid: "", padding: 80 }
+
+theme:
+  text: { family: "Inter, system-ui, sans-serif", size: 10, weight: "600", color: "#AEB9D6" }
+  presets:
+    # ---- ClickHouse yellow action GLASS (Integrations / ClickPipes) ----
+    chYellow:
+      stroke: { color: "#FFF0A6", width: 1 }
+      faces:
+        top:   { fill: { kind: linearGradient, angle: 135, stops: [ { offset: 0.0, color: "#FFF3B0" }, { offset: 0.5, color: "#FFE066" }, { offset: 1.0, color: "#E0A800" } ] } }
+        left:  { fill: { kind: linearGradient, angle: 90,  stops: [ { offset: 0.0, color: "#C99A00" }, { offset: 1.0, color: "#7A5C00" } ] } }
+        right: { fill: { kind: linearGradient, angle: 90,  stops: [ { offset: 0.0, color: "#B38600" }, { offset: 1.0, color: "#6B5000" } ] } }
+      effects: { cornerRadius: 16, faceSplit: true, opacity: 0.86, dropShadow: { dx: 0, dy: 12, blur: 22, color: "#000000AA" } }
+      text: { color: "#2A2200" }
+    # ---- internal grey feature GLASS (Dictionaries / Projections / Mat views) ----
+    grey:
+      stroke: { color: "#AAB3C2", width: 1 }
+      faces:
+        top:   { fill: { kind: linearGradient, angle: 135, stops: [ { offset: 0.0, color: "#A6AFBF" }, { offset: 0.55, color: "#79828F" }, { offset: 1.0, color: "#525A66" } ] } }
+        left:  { fill: { kind: linearGradient, angle: 90,  stops: [ { offset: 0.0, color: "#4A515E" }, { offset: 1.0, color: "#2C313B" } ] } }
+        right: { fill: { kind: linearGradient, angle: 90,  stops: [ { offset: 0.0, color: "#3E444F" }, { offset: 1.0, color: "#262A33" } ] } }
+      effects: { cornerRadius: 14, faceSplit: true, opacity: 0.80, dropShadow: { dx: 0, dy: 10, blur: 18, color: "#000000A0" } }
+      text: { color: "#F4F7FB" }
+    # ---- dark brand-logo GLASS chip ----
+    chip:
+      stroke: { color: "#52608A", width: 1 }
+      faces:
+        top:   { fill: { kind: linearGradient, angle: 135, stops: [ { offset: 0.0, color: "#3E4C7C" }, { offset: 0.6, color: "#2A335A" }, { offset: 1.0, color: "#1B2238" } ] } }
+        left:  { fill: { kind: linearGradient, angle: 90,  stops: [ { offset: 0.0, color: "#222A48" }, { offset: 1.0, color: "#141A30" } ] } }
+        right: { fill: { kind: linearGradient, angle: 90,  stops: [ { offset: 0.0, color: "#1C2440" }, { offset: 1.0, color: "#121830" } ] } }
+      effects: { cornerRadius: 12, faceSplit: true, opacity: 0.86, dropShadow: { dx: 0, dy: 8, blur: 16, color: "#00000099" } }
+      text: { color: "#C7D3F5" }
+    # ---- ClickHouse header GLASS ----
+    chHead:
+      stroke: { color: "#E6B800", width: 1.6 }
+      faces:
+        top:   { fill: { kind: linearGradient, angle: 135, stops: [ { offset: 0.0, color: "#202744" }, { offset: 1.0, color: "#12182C" } ] } }
+        left:  { fill: { kind: linearGradient, angle: 90,  stops: [ { offset: 0.0, color: "#141A30" }, { offset: 1.0, color: "#0C1020" } ] } }
+        right: { fill: { kind: linearGradient, angle: 90,  stops: [ { offset: 0.0, color: "#10162A" }, { offset: 1.0, color: "#0A0E1C" } ] } }
+      effects: { cornerRadius: 16, faceSplit: true, opacity: 0.88, dropShadow: { dx: 0, dy: 12, blur: 20, color: "#000000AA" } }
+      text: { color: "#FFE680" }
+    # ---- inner GLASS sub-group (actions / feats) — no glow ----
+    trayInner:
+      stroke: { color: "#3E4A6E", width: 1 }
+      faces:
+        top:   { fill: { kind: linearGradient, angle: 135, stops: [ { offset: 0.0, color: "#1A2036" }, { offset: 1.0, color: "#111626" } ] } }
+        left:  { fill: { kind: linearGradient, angle: 90,  stops: [ { offset: 0.0, color: "#141A2E" }, { offset: 1.0, color: "#0B0F1C" } ] } }
+        right: { fill: { kind: linearGradient, angle: 90,  stops: [ { offset: 0.0, color: "#0E1220" }, { offset: 1.0, color: "#080B14" } ] } }
+      effects: { cornerRadius: 16, faceSplit: true, opacity: 0.42, dropShadow: { dx: 0, dy: 8, blur: 16, color: "#00000088" } }
+      text: { color: "#9FB0D8" }
+    # ---- dark category GLASS tray (yellow rim, frosted) ----
+    tray:
+      stroke: { color: "#E6C84A", width: 1.2 }
+      faces:
+        top:   { fill: { kind: linearGradient, angle: 135, stops: [ { offset: 0.0, color: "#1A1E2E" }, { offset: 1.0, color: "#0E1120" } ] } }
+        left:  { fill: { kind: linearGradient, angle: 90,  stops: [ { offset: 0.0, color: "#121624" }, { offset: 1.0, color: "#0A0D16" } ] } }
+        right: { fill: { kind: linearGradient, angle: 90,  stops: [ { offset: 0.0, color: "#0E1220" }, { offset: 1.0, color: "#080B14" } ] } }
+      effects: { cornerRadius: 18, faceSplit: true, opacity: 0.62, dropShadow: { dx: 0, dy: 16, blur: 28, color: "#000000AA" }, grain: { intensity: 0.14, scale: 1.5 } }
+      text: { color: "#D7C067" }
+    # ---- hero GLASS tray (the ClickHouse hub) — strong yellow glow ----
+    trayHub:
+      stroke: { color: "#F4D24B", width: 1.8 }
+      faces:
+        top:   { fill: { kind: linearGradient, angle: 135, stops: [ { offset: 0.0, color: "#202848" }, { offset: 1.0, color: "#10162A" } ] } }
+        left:  { fill: { kind: linearGradient, angle: 90,  stops: [ { offset: 0.0, color: "#161C34" }, { offset: 1.0, color: "#0B0F1E" } ] } }
+        right: { fill: { kind: linearGradient, angle: 90,  stops: [ { offset: 0.0, color: "#121830" }, { offset: 1.0, color: "#090D1A" } ] } }
+      effects: { cornerRadius: 22, faceSplit: true, opacity: 0.66, dropShadow: { dx: 0, dy: 20, blur: 32, color: "#000000BB" }, backglow: { color: "#F4D24B", radius: 72, opacity: 0.55 }, grain: { intensity: 0.12, scale: 1.6 } }
+      text: { color: "#FFE680" }
+
+nodes:
+  scene:
+    shape: composite
+    parts:
+      # ============ Title ============
+      - id: title
+        offset: { wx: -341, wy: -21 }
+        shape: iso_text
+        geom: { w: 560, d: 26, h: 4 }
+        label: "ClickHouse — Real-Time Data Warehouse & Database"
+        style:
+          palette: { top: "#0B0B0E" }
+          text: { orient: screen, size: 19, weight: "700", color: "#F4D24B" }
+
+      # ============ HERO: the ClickHouse hub ============
+      - id: hub
+        geom: { d: 460 }
+        preset: trayHub
+        shape: group
+        label: "ClickHouse"
+        parts:
+          - id: chhead
+            offset: { wx: 65, wy: 24 }
+            preset: chHead
+            shape: rectangle
+            geom: { w: 360, d: 60, h: 18 }
+            icon: "iso://si/clickhouse/F4D24B"
+            label: "REAL-TIME DATA WAREHOUSE & DATABASE"
+          - id: actions
+            offset: { wx: 63, wy: 108 }
+            shape: group
+            preset: trayInner
+            layout: { mode: row, gap: 0.7 }
+            parts:
+              - { id: integ, preset: chYellow, shape: rectangle, geom: { w: 140, d: 70, h: 24 }, icon: "iso://glyph/etl", label: "Integrations" }
+              - { id: pipes, preset: chYellow, shape: rectangle, geom: { w: 140, d: 70, h: 24 }, icon: "iso://glyph/bolt", label: "ClickPipes" }
+          - id: feats
+            offset: { wx: 24, wy: 265 }
+            shape: group
+            preset: trayInner
+            layout: { mode: row, gap: 0.7 }
+            parts:
+              - { id: dict, preset: grey, shape: rectangle, geom: { w: 110, d: 66, h: 22 }, icon: "iso://glyph/database/light", label: "Dictionaries" }
+              - { id: proj, preset: grey, shape: rectangle, geom: { w: 110, d: 66, h: 22 }, icon: "iso://glyph/table/light",    label: "Projections" }
+              - { id: matv, preset: grey, shape: rectangle, geom: { w: 110, d: 66, h: 22 }, icon: "iso://glyph/bolt/light",     label: "Materialized views" }
+
+      # ============ Top-left: Databases & data warehouses ============
+      - id: dbs
+        geom: { d: 220 }
+        offset: { wx: -449, wy: 207 }
+        preset: tray
+        shape: group
+        label: "Databases & data warehouses"
+        layout: { mode: grid, cols: 3, gap: 0.6 }
+        parts:
+          - { id: pg,    preset: chip, shape: rectangle, geom: { w: 66, d: 60, h: 18 }, icon: "iso://si/postgresql/light" }
+          - { id: snow,  preset: chip, shape: rectangle, geom: { w: 66, d: 60, h: 18 }, icon: "iso://si/snowflake/light" }
+          - { id: maria, preset: chip, shape: rectangle, geom: { w: 66, d: 60, h: 18 }, icon: "iso://si/mariadb/light" }
+          - { id: my,    preset: chip, shape: rectangle, geom: { w: 66, d: 60, h: 18 }, icon: "iso://si/mysql/light" }
+          - { id: mongo, preset: chip, shape: rectangle, geom: { w: 66, d: 60, h: 18 }, icon: "iso://si/mongodb/light" }
+          - { id: lite,  preset: chip, shape: rectangle, geom: { w: 66, d: 60, h: 18 }, icon: "iso://si/sqlite/light" }
+
+      # ============ Bottom-left: Streams, logs & analytics ============
+      - id: streams
+        geom: { d: 220 }
+        offset: { wx: 200, wy: 765 }
+        preset: tray
+        shape: group
+        label: "Streams, logs & analytics"
+        layout: { mode: grid, cols: 3, gap: 0.6 }
+        parts:
+          - { id: kafka,  preset: chip, shape: rectangle, geom: { w: 66, d: 60, h: 18 }, icon: "iso://si/apachekafka/light" }
+          - { id: pulsar, preset: chip, shape: rectangle, geom: { w: 66, d: 60, h: 18 }, icon: "iso://si/apachepulsar/light" }
+          - { id: spark,  preset: chip, shape: rectangle, geom: { w: 66, d: 60, h: 18 }, icon: "iso://si/apachespark/light" }
+          - { id: flink,  preset: chip, shape: rectangle, geom: { w: 66, d: 60, h: 18 }, icon: "iso://si/apacheflink/light" }
+          - { id: prom,   preset: chip, shape: rectangle, geom: { w: 66, d: 60, h: 18 }, icon: "iso://si/prometheus/light" }
+          - { id: sentry, preset: chip, shape: rectangle, geom: { w: 66, d: 60, h: 18 }, icon: "iso://si/sentry/light" }
+
+      # ============ Top-right: Tooling & visualization ============
+      - id: tooling
+        geom: { d: 230 }
+        offset: { wx: 166, wy: -360 }
+        preset: tray
+        shape: group
+        label: "Tooling & visualization"
+        parts:
+          - { offset: { wx: 24, wy: 24 }, id: graf,  preset: chip, shape: rectangle, geom: { w: 66, d: 60, h: 18 }, icon: "iso://si/grafana/light" }
+          - { offset: { wx: 114, wy: 24 }, id: kib,   preset: chip, shape: rectangle, geom: { w: 66, d: 60, h: 18 }, icon: "iso://si/kibana/light" }
+          - { offset: { wx: 23, wy: 104 },   id: jup,   preset: chip, shape: rectangle, geom: { w: 66, d: 60, h: 18 }, icon: "iso://si/jupyter/light" }
+          - { offset: { wx: 114, wy: 108 }, id: bichart, preset: chip, shape: rectangle, geom: { w: 66, d: 60, h: 18 }, icon: "iso://glyph/chart/light" }
+
+      # ============ Bottom-right: Apps & language clients ============
+      - id: apps
+        geom: { d: 220 }
+        offset: { wx: 707, wy: -192 }
+        preset: tray
+        shape: group
+        label: "Apps & language clients"
+        layout: { mode: grid, cols: 3, gap: 0.6 }
+        parts:
+          - { id: py,   preset: chip, shape: rectangle, geom: { w: 66, d: 60, h: 18 }, icon: "iso://si/python/light" }
+          - { id: jdk,  preset: chip, shape: rectangle, geom: { w: 66, d: 60, h: 18 }, icon: "iso://si/openjdk/light" }
+          - { id: net,  preset: chip, shape: rectangle, geom: { w: 66, d: 60, h: 18 }, icon: "iso://si/dotnet/light" }
+          - { id: rust, preset: chip, shape: rectangle, geom: { w: 66, d: 60, h: 18 }, icon: "iso://si/rust/light" }
+          - { id: golang, preset: chip, shape: rectangle, geom: { w: 66, d: 60, h: 18 }, icon: "iso://si/go/light" }
+          - { id: node, preset: chip, shape: rectangle, geom: { w: 66, d: 60, h: 18 }, icon: "iso://si/nodedotjs/light" }
+
+      # ============ Bottom-center: Data lakes & object storage ============
+      - id: lakes
+        geom: { d: 130 }
+        offset: { wx: 464, wy: 566 }
+        preset: tray
+        shape: group
+        label: "Data lakes & object storage"
+        layout: { mode: row, gap: 0.6 }
+        parts:
+          - { id: dbx,   preset: chip, shape: rectangle, geom: { w: 66, d: 60, h: 18 }, icon: "iso://si/databricks/light" }
+          - { id: hadoop,preset: chip, shape: rectangle, geom: { w: 66, d: 60, h: 18 }, icon: "iso://si/apachehadoop/light" }
+          - { id: gcs,   preset: chip, shape: rectangle, geom: { w: 66, d: 60, h: 18 }, icon: "iso://si/googlecloud/light" }
+          - { id: minio, preset: chip, shape: rectangle, geom: { w: 66, d: 60, h: 18 }, icon: "iso://si/minio/light" }
+
+    connectors:
+      # left categories -> hub (Ingest)
+      - { from: dbs,     to: hub, routing: orthogonal, arrow: triangle, stroke: { color: "#F4D24B", width: 1.5 }, label: "Ingest" }
+      - { waypoints: [{ wx: 263, wy: 765 }, { wx: 263, wy: 590 }, { wx: 267, wy: 590 }, { wx: 267, wy: 493 }, { wx: 268, wy: 493 }],       from: streams, to: hub, routing: orthogonal, arrow: triangle, stroke: { color: "#F4D24B", width: 1.5 }, label: "Ingest" }
+      # hub -> right categories (Query)
+      - { waypoints: [{ wx: 268, wy: -122 }, { wx: 268, wy: -122 }, { wx: 268, wy: -24 }], from: tooling, to: hub, routing: orthogonal, arrow: triangle, stroke: { color: "#F4D24B", width: 1.5 }, label: "Query" }
+      - { waypoints: [{ wx: 605, wy: -82 }, { wx: 605, wy: 154 }, { wx: 490, wy: 154 }],  from: apps,    to: hub, routing: orthogonal, arrow: triangle, stroke: { color: "#F4D24B", width: 1.5 }, label: "Query" }
+      # data lakes <-> hub (ingest + query as external sources)
+      - { waypoints: [{ wx: 606, wy: 535 }, { wx: 606, wy: 256 }, { wx: 490, wy: 256 }],  from: lakes,   to: hub, routing: orthogonal, arrow: triangle, stroke: { color: "#F4D24B", width: 1.5 }, label: "Ingest / external" }
