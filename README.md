@@ -221,15 +221,17 @@ crawlers.
 
 ## Gallery
 
-### Zero-trust edge (dark · prism family + per-face gradients)
+### ClickHouse ecosystem (dark · frosted-glass hub-and-spoke, one accent)
 
-![Dark isometric zero-trust diagram — octprism firewalls, octprism policy decision, projected-hatch service deck](docs/assets/edge-security.png)
+![Dark isometric ClickHouse ecosystem diagram — a glowing lime hub (Integrations, ClickPipes, Dictionaries, Projections, Materialized views) wired to five brand-logo categories on frosted charcoal trays](docs/assets/clickhouse-hub.png)
 
-Dual octprism firewalls with per-side gradient ladders guard the
-deny/allow split: an amber octprism gate decides, denials sink into a
-triprism SIEM, allows land on a projected-hatch deck of service chips.
-Every wall color is one `style.faces` entry.
-[Source](samples/topology/edge-security/input.yaml).
+A glowing ClickHouse hub — Integrations / ClickPipes over Dictionaries /
+Projections / Materialized views — wired out to five brand-logo
+categories (databases, streaming, tooling, language clients, object
+storage) on frosted charcoal trays. Translucent faces with faceSplit and
+drop shadow keep the field neutral; a single lime accent is spent only on
+the hub and the thick dashed-gradient Ingest/Query connectors.
+[Source](samples/topology/clickhouse-hub/input.yaml).
 
 ### LLM inference board (engineering · projected silk layer)
 
