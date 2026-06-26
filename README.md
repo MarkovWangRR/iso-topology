@@ -138,12 +138,21 @@ Full machine-readable inventory: `isotopo capabilities` (or
 
 ## Gallery
 
-| | |
-|---|---|
-| **ClickHouse ecosystem** — dark frosted-glass hub-and-spoke, one neon accent.<br>[Source](samples/topology/clickhouse-hub/input.yaml) | **DuckDB data architecture** — hand-drawn: warm paper, iso grid, film grain.<br>[Source](samples/topology/duckdb-handdrawn/input.yaml) |
-| ![ClickHouse ecosystem isometric diagram](docs/assets/clickhouse-hub.png) | ![DuckDB hand-drawn isometric diagram](docs/assets/duckdb-handdrawn.png) |
-| **Training compute** — light canvas, dashed budget "ghost" volumes.<br>[Source](samples/topology/training-compute/input.yaml) | **Microservice from 3 lines of d2** — auto-layout lifts a graph to 2.5D.<br>[Source](samples/topology/microservice/input.d2) |
-| ![Isometric training-compute bar chart](docs/assets/training-compute.png) | ![Auto-laid-out microservice topology](docs/assets/microservice.png) |
+**ClickHouse ecosystem** — dark frosted-glass hub-and-spoke, one neon accent. [Source](samples/topology/clickhouse-hub/input.yaml)
+
+![ClickHouse ecosystem isometric diagram](docs/assets/clickhouse-hub.png)
+
+**DuckDB data architecture** — hand-drawn: warm paper, iso grid, film grain. [Source](samples/topology/duckdb-handdrawn/input.yaml)
+
+![DuckDB hand-drawn isometric diagram](docs/assets/duckdb-handdrawn.png)
+
+**Databricks Lakehouse + LLM agent** — brand-faithful, single lava accent on a warm canvas. [Source](samples/topology/lakehouse-agent/input.yaml)
+
+![Databricks Lakehouse and LLM agent isometric diagram](docs/assets/lakehouse-agent.png)
+
+**Training compute** — light canvas, dashed budget "ghost" volumes. [Source](samples/topology/training-compute/input.yaml)
+
+![Isometric training-compute bar chart](docs/assets/training-compute.png)
 
 ## Why isometric, and why this tool
 
