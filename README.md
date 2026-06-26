@@ -68,20 +68,24 @@ isotopo render scene.d2 ./out           # → out/topology.svg (+ html + per-nod
 isotopo serve  scene.d2                 # → localhost:8731 — drag, restyle, export
 ```
 
-**With your agent** (Claude Code, Cursor, …) — paste this:
+**With your agent** (Claude Code, Cursor, …) — set it up once:
 
 ```
-Install isotopo (go install github.com/MarkovWangRR/iso-topology/cmd/isotopo@latest),
-read `isotopo capabilities` once, then draw my <X> architecture: author YAML using
-place/layout relations only (never coordinates), loop `isotopo validate` until exit 0,
-then `isotopo render`. Keep the YAML as input.yaml next to the output.
+Install the isotopo CLI and the draw-iso-diagram skill from
+github.com/MarkovWangRR/iso-topology, then render a sample to confirm it works.
 ```
 
-The full battle-tested system prompt (positioning rules + output contract, generated
-from code so it can't go stale) is [PROMPT_TEMPLATE.md](docs/agent/PROMPT_TEMPLATE.md).
-There's also an installable [`draw-iso-diagram` skill](skills/README.md), an
-[MCP server](docs/agent/MCP.md) (`claude mcp add isotopo -- isotopo-mcp`), and a
-generated [`llms.txt`](llms.txt).
+Then just ask in plain language — the skill handles capabilities, validation, and
+rendering for you:
+
+> *"draw a ClickHouse real-time analytics architecture, dark glass style"*
+> *"make the connectors thicker, dashed, with a gradient"*
+> *"add a diagonal grid to the background and brighten the node borders"*
+
+That's the whole workflow: **ask → tweak**. The full system prompt lives in
+[PROMPT_TEMPLATE.md](docs/agent/PROMPT_TEMPLATE.md), with an
+[MCP server](docs/agent/MCP.md) (`claude mcp add isotopo -- isotopo-mcp`) and a
+generated [`llms.txt`](llms.txt) for other runtimes.
 
 ## The loop your agent runs
 
