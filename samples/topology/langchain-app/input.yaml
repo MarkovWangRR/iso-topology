@@ -1,0 +1,146 @@
+# LangChain — typical agent application architecture, in the LangChain visual
+# language: deep navy-black stage, ONE cool-blue glow accent, hairline-bordered
+# dark panels, monospace labels, glowing blue flow connectors. A LangGraph agent
+# runtime at the centre, wired to client / models / retrieval / tools, with
+# LangSmith observing everything.
+canvas: { background: "#070B12", grid: "", padding: 80 }
+
+theme:
+  text: { family: "ui-monospace, 'JetBrains Mono', SFMono-Regular, Menlo, monospace", size: 10, weight: "500", color: "#9AA4B4" }
+  presets:
+    # ---- cool-blue agent hero (the one glowing element) ----
+    heroBlue:
+      stroke: { color: "#6FA8E0", width: 1.6 }
+      palette: { left: "#0C1626", right: "#11203A" }
+      faces:
+        top: { fill: { kind: linearGradient, angle: 135, stops: [ { offset: 0, color: "#1A3550" }, { offset: 1, color: "#0E1C30" } ] } }
+      effects: { cornerRadius: 12, faceSplit: true, opacity: 0.92, dropShadow: { dx: 0, dy: 14, blur: 24, color: "#00000099" } }
+      text: { color: "#E6EEFA" }
+    # ---- memory tile inside the hero runtime ----
+    mem:
+      stroke: { color: "#5C7099", width: 1.4 }
+      palette: { left: "#0A0F18", right: "#11161F" }
+      faces:
+        top: { fill: { kind: linearGradient, angle: 135, stops: [ { offset: 0, color: "#141C28" }, { offset: 1, color: "#0C121C" } ] } }
+      effects: { cornerRadius: 10, faceSplit: true, opacity: 0.92, dropShadow: { dx: 0, dy: 8, blur: 16, color: "#00000088" } }
+      text: { color: "#C7D0DC" }
+    # ---- hairline dark chip (the workhorse) ----
+    chip:
+      stroke: { color: "#4E6188", width: 1.4 }
+      palette: { left: "#0A0F18", right: "#11161F" }
+      faces:
+        top: { fill: { kind: linearGradient, angle: 135, stops: [ { offset: 0, color: "#121822" }, { offset: 1, color: "#0C121C" } ] } }
+      effects: { cornerRadius: 8, faceSplit: true, opacity: 0.94, dropShadow: { dx: 0, dy: 6, blur: 12, color: "#00000077" } }
+      text: { color: "#C7D0DC" }
+    # ---- dark category panel (hairline border, low fill) ----
+    tray:
+      stroke: { color: "#46587A", width: 1.5 }
+      palette: { left: "#070C14", right: "#0B111B" }
+      faces:
+        top: { fill: { kind: linearGradient, angle: 135, stops: [ { offset: 0, color: "#0D131D" }, { offset: 1, color: "#080D15" } ] } }
+      effects: { cornerRadius: 12, faceSplit: true, opacity: 0.6, dropShadow: { dx: 0, dy: 14, blur: 26, color: "#00000099" } }
+      text: { color: "#7E93B8" }
+    # ---- elevated hero runtime panel (blue rim + glow) ----
+    trayHero:
+      stroke: { color: "#5E8FD0", width: 1.5 }
+      palette: { left: "#080E18", right: "#0C1422" }
+      faces:
+        top: { fill: { kind: linearGradient, angle: 135, stops: [ { offset: 0, color: "#101B2C" }, { offset: 1, color: "#0A1120" } ] } }
+      effects: { cornerRadius: 16, faceSplit: true, opacity: 0.66, dropShadow: { dx: 0, dy: 18, blur: 30, color: "#000000AA" }, backglow: { color: "#6BA8E8", radius: 70, opacity: 0.5 } }
+      text: { color: "#9DC3F0" }
+
+nodes:
+  scene:
+    shape: composite
+    parts:
+      # ============ Title ============
+      - id: title
+        offset: { wx: -380, wy: -138 }
+        shape: iso_text
+        geom: { w: 540, d: 26, h: 4 }
+        label: "LangChain — Agent Application Architecture"
+        style:
+          palette: { top: "#070B12" }
+          text: { orient: screen, size: 19, weight: "600", color: "#8FBEEF" }
+
+      # ============ HERO: LangGraph agent runtime ============
+      - id: runtime
+        geom: { d: 260 }
+        preset: trayHero
+        shape: group
+        label: "LangGraph · Agent Runtime"
+        layout: { mode: column, gap: 0.7 }
+        parts:
+          - { id: agent, preset: heroBlue, shape: rectangle, geom: { w: 196, d: 86, h: 28 }, icon: "iso://si/langchain/8FBEEF", label: "LangGraph Agent" }
+          - { id: memory, preset: mem,     shape: rectangle, geom: { w: 196, d: 72, h: 22 }, icon: "iso://glyph/database/9DC3F0", label: "Memory · State" }
+
+      # ============ Client (top-left) ============
+      - id: client
+        offset: { wx: -311, wy: 15 }
+        preset: tray
+        shape: group
+        label: "Client"
+        layout: { mode: column, gap: 0.8 }
+        parts:
+          - { id: chatui, preset: chip, shape: rectangle, geom: { w: 104, d: 66, h: 18 }, icon: "iso://glyph/chat/light",  label: "Chat UI" }
+          - { id: api,    preset: chip, shape: rectangle, geom: { w: 104, d: 66, h: 18 }, icon: "iso://si/fastapi/light",  label: "API · FastAPI" }
+
+      # ============ Models (top-right) ============
+      - id: models
+        offset: { wx: 7, wy: -425 }
+        preset: tray
+        shape: group
+        label: "Models"
+        layout: { mode: grid, cols: 2, gap: 0.7 }
+        parts:
+          - { id: openai,  preset: chip, shape: rectangle, geom: { w: 96, d: 64, h: 18 }, icon: "iso://si/openai/light",      label: "OpenAI" }
+          - { id: claude,  preset: chip, shape: rectangle, geom: { w: 96, d: 64, h: 18 }, icon: "iso://si/anthropic/light",   label: "Anthropic" }
+          - { id: ollama,  preset: chip, shape: rectangle, geom: { w: 96, d: 64, h: 18 }, icon: "iso://si/ollama/light",      label: "Ollama" }
+          - { id: hf,      preset: chip, shape: rectangle, geom: { w: 96, d: 64, h: 18 }, icon: "iso://si/huggingface/light", label: "Hugging Face" }
+
+      # ============ Retrieval / RAG (bottom-left) ============
+      - id: retrieval
+        offset: { wx: 69, wy: 429 }
+        preset: tray
+        shape: group
+        label: "Retrieval · RAG"
+        layout: { mode: grid, cols: 2, gap: 0.7 }
+        parts:
+          - { id: vstore, preset: chip, shape: rectangle, geom: { w: 100, d: 64, h: 18 }, icon: "iso://glyph/vector/light",     label: "Vector store" }
+          - { id: pgv,    preset: chip, shape: rectangle, geom: { w: 100, d: 64, h: 18 }, icon: "iso://si/postgresql/light",    label: "pgvector" }
+          - { id: embed,  preset: chip, shape: rectangle, geom: { w: 100, d: 64, h: 18 }, icon: "iso://glyph/model/light",      label: "Embeddings" }
+          - { id: loaders,preset: chip, shape: rectangle, geom: { w: 100, d: 64, h: 18 }, icon: "iso://glyph/doc/light",        label: "Loaders" }
+
+      # ============ Tools & MCP (bottom-right) ============
+      - id: tools
+        offset: { wx: 422, wy: -205 }
+        preset: tray
+        shape: group
+        label: "Tools · MCP"
+        layout: { mode: grid, cols: 2, gap: 0.7 }
+        parts:
+          - { id: tool,   preset: chip, shape: rectangle, geom: { w: 100, d: 64, h: 18 }, icon: "iso://glyph/bolt/light",   label: "Tools" }
+          - { id: mcp,    preset: chip, shape: rectangle, geom: { w: 100, d: 64, h: 18 }, icon: "iso://glyph/code/light",   label: "MCP servers" }
+          - { id: search, preset: chip, shape: rectangle, geom: { w: 100, d: 64, h: 18 }, icon: "iso://glyph/search/light", label: "Search APIs" }
+          - { id: cache,  preset: chip, shape: rectangle, geom: { w: 100, d: 64, h: 18 }, icon: "iso://si/redis/light",     label: "Redis cache" }
+
+      # ============ LangSmith — observability (front-centre, cross-cutting) ============
+      - id: langsmith
+        offset: { wx: 397, wy: 252 }
+        preset: tray
+        shape: group
+        label: "LangSmith · Observability"
+        layout: { mode: row, gap: 0.8 }
+        parts:
+          - { id: trace, preset: chip, shape: rectangle, geom: { w: 96, d: 62, h: 18 }, icon: "iso://glyph/gauge/light", label: "Tracing" }
+          - { id: eval,  preset: chip, shape: rectangle, geom: { w: 96, d: 62, h: 18 }, icon: "iso://glyph/graph/light", label: "Eval" }
+          - { id: mon,   preset: chip, shape: rectangle, geom: { w: 96, d: 62, h: 18 }, icon: "iso://glyph/chart/light", label: "Monitor" }
+
+    connectors:
+      # client request -> agent; agent <-> models / retrieval / tools (glowing blue flow)
+      - { from: client,    to: runtime, routing: orthogonal, arrow: triangle, stroke: { color: "#5E9AE0", width: 2.4, gradient: { from: "#3B6FD4", to: "#8FBEEF" } } }
+      - { from: runtime,   to: models,  routing: orthogonal, arrow: triangle, stroke: { color: "#5E9AE0", width: 2.4, gradient: { from: "#3B6FD4", to: "#8FBEEF" } } }
+      - { waypoints: [{ wx: 126, wy: 266 }, { wx: 123, wy: 266 }, { wx: 123, wy: 573 }], from: runtime,   to: retrieval, routing: orthogonal, arrow: triangle, stroke: { color: "#5E9AE0", width: 2.4, gradient: { from: "#3B6FD4", to: "#8FBEEF" } } }
+      - { waypoints: [{ wx: 276, wy: -126 }, { wx: 596, wy: -126 }, { wx: 596, wy: -94 }], from: runtime,   to: tools,   routing: orthogonal, arrow: triangle, stroke: { color: "#5E9AE0", width: 2.4, gradient: { from: "#3B6FD4", to: "#8FBEEF" } } }
+      # LangSmith observes the runtime (dashed control / telemetry plane)
+      - { from: langsmith, to: runtime, routing: orthogonal, arrow: none, stroke: { color: "#4E6E9E", width: 1.4, dash: "5 5" } }

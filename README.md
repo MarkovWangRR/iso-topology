@@ -33,31 +33,36 @@ your code.
 
 ## Prefer to write it yourself? It's just text.
 
-`place` / `layout` relations — never coordinates. From this:
+Presets define the look once; `layout` / `place` relations do the positioning — never
+pixel coordinates. From this:
 
 ```yaml
+theme:
+  presets:
+    heroBlue:                                  # the one glowing accent, reused by name
+      stroke: { color: "#6FA8E0", width: 1.6 }
+      faces: { top: { fill: { kind: linearGradient, stops: [ {offset: 0, color: "#1A3550"}, {offset: 1, color: "#0E1C30"} ] } } }
+      effects: { faceSplit: true, backglow: { color: "#6BA8E8", radius: 70 } }
 nodes:
   scene:
-    shape: composite
     parts:
-      - id: core                          # the hero anchors the scene
-        shape: rectangle
-        icon: "iso://glyph/sparkles/7C5CFC"
-        label: "AI Core"
-        style: { effects: { cornerRadius: 14, backglow: { color: "#A78BFA", radius: 46 } } }
-      - id: llm
-        place: { behind: core, gap: 2.6 }  # ← relations, never coordinates
-        icon: "iso://glyph/chat"
-        label: "LLM Gateway"
-      # …more satellites, each one `place` rule
+      - id: runtime
+        shape: group
+        layout: { mode: column }               # ← auto-arranged, no coordinates
+        parts:
+          - { id: agent,  preset: heroBlue, icon: "iso://si/langchain/8FBEEF", label: "LangGraph Agent" }
+          - { id: memory, icon: "iso://glyph/database", label: "Memory · State" }
+    connectors:
+      - { from: client, to: runtime, routing: orthogonal,
+          stroke: { gradient: { from: "#3B6FD4", to: "#8FBEEF" } } }   # glowing flow
 ```
 
-…to this:
+…renders to this — a typical LangChain agent app, in LangChain's own dark/cool-blue style:
 
-![Isometric AI platform architecture diagram rendered from YAML by iso-topology](docs/assets/ai-platform.png)
+![LangChain agent application architecture — deep navy stage, glowing cool-blue LangGraph runtime wired to client, models, retrieval, tools, with LangSmith observability](docs/assets/langchain-app.png)
 
-Every scene in this README is coordinate-free — a deterministic solver turns relations
-into geometry. [Source](samples/topology/ai-platform/input.yaml).
+A deterministic solver turns relations into geometry — every scene here is coordinate-free.
+[Source](samples/topology/langchain-app/input.yaml).
 
 ## Start in 60 seconds
 
