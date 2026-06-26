@@ -10,11 +10,11 @@
 
 ### Figma-grade isometric architecture diagrams — as code, agent-native.
 
-**One sentence to your agent → this.** Text you commit and diff — no Figma, no coordinates.
+**Ask your agent in plain language. Refine the same way. Commit the result.**
 
 ![ClickHouse real-time analytics — dark frosted-glass isometric architecture rendered by iso-topology](docs/assets/clickhouse-hub.png)
 
-<sub>↑ *“draw a ClickHouse real-time analytics architecture, dark glass style.”* &nbsp;Then just: *“make the connectors dashed with a gradient.”*</sub>
+<sub>↑ Built by asking — *“draw a ClickHouse real-time analytics architecture, dark glass style”* — then a few plain-language tweaks (*“thicker dashed gradient connectors,” “add a diagonal grid,” “lime accent”*). No Figma, no coordinates; it's text you diff.</sub>
 
 `single binary` · `zero runtime deps` · `renders in ms` · `200+ icons incl. real brand logos` · `every sample golden-tested`
 
@@ -70,24 +70,24 @@ isotopo render scene.d2 ./out           # → out/topology.svg (+ html + per-nod
 isotopo serve  scene.d2                 # → localhost:8731 — drag, restyle, export
 ```
 
-**With your agent** (Claude Code, Cursor, …) — set it up once:
+**With your agent** (Claude Code, Cursor, …) — wire it up once (commands below are tested):
 
-```
-Install the isotopo CLI and the draw-iso-diagram skill from
-github.com/MarkovWangRR/iso-topology, then render a sample to confirm it works.
+```bash
+go install github.com/MarkovWangRR/iso-topology/cmd/isotopo@latest      # the renderer
+go install github.com/MarkovWangRR/iso-topology/cmd/isotopo-mcp@latest  # MCP server
+claude mcp add isotopo -- isotopo-mcp                                   # register with Claude Code
 ```
 
-Then just ask in plain language — the skill handles capabilities, validation, and
-rendering for you:
+Then just ask in plain language and refine the same way — the agent runs the
+`capabilities → validate → render` loop for you:
 
 > *"draw a ClickHouse real-time analytics architecture, dark glass style"*
 > *"make the connectors thicker, dashed, with a gradient"*
 > *"add a diagonal grid to the background and brighten the node borders"*
 
-That's the whole workflow: **ask → tweak**. The full system prompt lives in
-[PROMPT_TEMPLATE.md](docs/agent/PROMPT_TEMPLATE.md), with an
-[MCP server](docs/agent/MCP.md) (`claude mcp add isotopo -- isotopo-mcp`) and a
-generated [`llms.txt`](llms.txt) for other runtimes.
+That's the whole workflow: **ask → tweak**. Prefer a Claude Code skill over MCP?
+`git clone` the repo and run `scripts/install-skill.sh`. The full system prompt is in
+[PROMPT_TEMPLATE.md](docs/agent/PROMPT_TEMPLATE.md); [`llms.txt`](llms.txt) covers other runtimes.
 
 ## The loop your agent runs
 
