@@ -1,0 +1,13 @@
+# BAD: two straight edges cross (now reliably detected after the straight-route fix)
+canvas: { background: "#0E1726", padding: 50 }
+nodes:
+  scene:
+    shape: composite
+    parts:
+      - { id: tl, shape: rectangle, geom: { w: 96, d: 76, h: 28 }, label: "TL", style: { palette: { top: "#274060" }, text: { color: "#DCE7F5" } } }
+      - { id: tr, shape: rectangle, geom: { w: 96, d: 76, h: 28 }, label: "TR", place: { rightOf: tl, gap: 3 }, style: { palette: { top: "#274060" }, text: { color: "#DCE7F5" } } }
+      - { id: bl, shape: rectangle, geom: { w: 96, d: 76, h: 28 }, label: "BL", place: { inFrontOf: tl, gap: 3 }, style: { palette: { top: "#2C3A1C" }, text: { color: "#E2F5C8" } } }
+      - { id: br, shape: rectangle, geom: { w: 96, d: 76, h: 28 }, label: "BR", place: { rightOf: bl, gap: 3 }, style: { palette: { top: "#2C3A1C" }, text: { color: "#E2F5C8" } } }
+    connectors:
+      - { from: tl, to: br, routing: straight, stroke: { color: "#7FB0E0" } }
+      - { from: tr, to: bl, routing: straight, stroke: { color: "#9FD080" } }

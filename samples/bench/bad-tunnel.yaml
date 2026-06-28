@@ -1,0 +1,11 @@
+# BAD: a straight edge tunnels through the middle node (now detected)
+canvas: { background: "#0E1726", padding: 50 }
+nodes:
+  scene:
+    shape: composite
+    parts:
+      - { id: a, shape: rectangle, geom: { w: 96, d: 84, h: 30 }, label: "A", style: { palette: { top: "#274060" }, text: { color: "#DCE7F5" } } }
+      - { id: mid, shape: rectangle, geom: { w: 96, d: 84, h: 70 }, label: "Mid", place: { rightOf: a, gap: 1 }, style: { palette: { top: "#3A2A50" }, text: { color: "#E8DCF5" } } }
+      - { id: c, shape: rectangle, geom: { w: 96, d: 84, h: 30 }, label: "C", place: { rightOf: mid, gap: 1 }, style: { palette: { top: "#2C3A1C" }, text: { color: "#E2F5C8" } } }
+    connectors:
+      - { from: a, to: c, routing: straight, stroke: { color: "#C0708A" } }

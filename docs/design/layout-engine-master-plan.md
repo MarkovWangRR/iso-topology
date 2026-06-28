@@ -235,8 +235,21 @@ ranking, (c) the current `R`. Seeded from `samples/topology/` + `style_refer/`
   - **Still open (rolls into P1.x / later):** body-vs-body occlusion (node fully
     hidden) is not yet a detected/repaired signal; nested (in-group) overlaps use
     only the top-level pass for now.
-- **Next — Phase 2:** global routing (replace the per-edge greedy), which also
-  unlocks the reliable crossing/tunnel corpus scenes P0 deferred.
+- **Phase 2 — IN PROGRESS.**
+  - **Detection completion (measurement prerequisite) — DONE.** Straight-routed
+    connectors were scored via the orthogonal *staircase* plan route, so two
+    crossing straight diagonals (or a line tunnelling a node) read as clean.
+    `buildPlanModelOpt` now scores a straight connector as the actual straight
+    center→center line, so crossings/tunnelling of straight edges are detected
+    (iso render unchanged → goldens stable). Unblocks the deferred corpus scenes:
+    bad-crossing (cross=1, R 0.480) and bad-tunnel (tunnel=1, R 0.248) added; the
+    corpus now covers all four defect classes and the P0 gate still holds
+    (worst good 0.872 > best bad 0.480).
+  - **Remaining P2:** the actual global router — make the iso elbow picker
+    crossing-aware (score candidates against already-placed edges, not just node
+    tunnelling), unifying its objective with the evaluator; gate on ≥30% crossing/
+    bend reduction vs the current greedy. (Higher risk: changes rendered routes →
+    will regenerate route goldens, verified to improve not regress.)
 
 ## 7. Honest caveats
 

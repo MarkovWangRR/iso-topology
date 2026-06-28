@@ -94,9 +94,20 @@ func buildPlanModelOpt(n *Node, theme *Theme, canvas *Canvas, optimize bool) (re
 			continue // dangling endpoint — Validate already flags it
 		}
 		var pts [][2]float64
-		if optimize {
+		switch {
+		case c.Routing == "straight":
+			// A straight connector renders as a direct line, so it must be
+			// SCORED as one — not the orthogonal staircase the router would pick.
+			// Otherwise two crossing straight diagonals (or a line tunnelling a
+			// node) read as clean, because the staircase avoids what the straight
+			// line does not.
+			pts = [][2]float64{
+				{fr.x + fr.w/2, fr.y + fr.d/2},
+				{to.x + to.w/2, to.y + to.d/2},
+			}
+		case optimize:
 			pts = selectRoute(fr, to, leaves, placed)
-		} else {
+		default:
 			pts = planRoute(fr, to)
 		}
 		placed = append(placed, pts)

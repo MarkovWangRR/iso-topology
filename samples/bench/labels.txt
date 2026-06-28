@@ -4,3 +4,5 @@ good good-grid.yaml
 bad  bad-occlusion.yaml
 bad  bad-overlap.yaml
 bad  bad-both.yaml
+bad  bad-crossing.yaml
+bad  bad-tunnel.yaml
