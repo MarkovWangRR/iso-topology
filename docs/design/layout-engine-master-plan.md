@@ -245,11 +245,23 @@ ranking, (c) the current `R`. Seeded from `samples/topology/` + `style_refer/`
     bad-crossing (cross=1, R 0.480) and bad-tunnel (tunnel=1, R 0.248) added; the
     corpus now covers all four defect classes and the P0 gate still holds
     (worst good 0.872 > best bad 0.480).
-  - **Remaining P2:** the actual global router — make the iso elbow picker
-    crossing-aware (score candidates against already-placed edges, not just node
-    tunnelling), unifying its objective with the evaluator; gate on ≥30% crossing/
-    bend reduction vs the current greedy. (Higher risk: changes rendered routes →
-    will regenerate route goldens, verified to improve not regress.)
+  - **Crossing-aware router — ATTEMPTED, NOT SHIPPED (honest negative result).**
+    Implemented a crossing-aware elbow picker (score x/y candidates against the
+    already-routed edges, prefer fewer crossings when node-tunnelling is tied).
+    But on **every** scene tested — interleaved sources→targets, 2×2 diagonals,
+    and all shipped samples — the existing "tent" heuristic (corner x+y kept
+    monotonic) **already yields 0 crossings**; the new tie-break fired but never
+    reduced the final crossing count, only churned one sample's bytes
+    (microservice, metric-identical). Gate (≥30% crossing reduction) unmet → per
+    the ratchet (R only up, no churn), reverted. **Finding:** the orthogonal
+    router's crossing-avoidance is already adequate via the tent heuristic; P2's
+    real win was the detection completion. Revisit only if real-world dense
+    graphs actually surface orthogonal crossings the tent misses.
+- **Net P2 result:** straight-edge crossing/tunnel detection completed (shipped);
+  router left as-is (already crossing-free in practice).
+- **Next — Phase 3:** adaptive placement (graph-class detection → ELK/dagre for
+  DAGs, stress/constrained-force for mesh/hub), which is where non-DAG graphs
+  actually degrade today — a bigger lever than the router.
 
 ## 7. Honest caveats
 
