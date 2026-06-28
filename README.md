@@ -141,8 +141,9 @@ touched until you hit save. Tour: [docs/guides/studio.md](docs/guides/studio.md)
   / `bezier`, with dashes, gradients, waypoints, and labels.
 - **200+ recolorable icons** — 150+ real brand logos (Simple Icons, CC0) plus 35
   concept glyphs; tint any with `/RRGGBB` or `/light`.
-- **Reusable looks** — `theme.presets`, an 8-family [style playbook](samples/playbook),
-  and 28 ready-to-copy [style references](samples/style_refer).
+- **Reusable looks** — `theme.presets` plus 28 ready-to-copy
+  [style references](samples/style_refer): pick a visual language by mood, copy
+  its `theme.presets` + `canvas`, then layer your topology on top.
 
 Full machine-readable inventory: `isotopo capabilities` (or
 [CAPABILITIES.md](docs/agent/CAPABILITIES.md)).

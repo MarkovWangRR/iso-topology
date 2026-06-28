@@ -25,13 +25,10 @@ test-results/
 samples/playground/
 /visreg
 
-# playbook style-swatch render artifacts (regenerable)
-samples/playbook/styles/_swatch/out_*/
-
 # style_refer render artifacts (regenerable)
 samples/style_refer/_out/
 
-# scratch experiment dir (playbook dev throwaway)
+# scratch experiment dir (dev throwaway)
 samples/playground_tmp/
 
 # render output dirs at repo root (regenerable via `isotopo render <in> <out>`)

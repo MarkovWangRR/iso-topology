@@ -242,7 +242,7 @@ diagram can skip the module loop.
 - Reuse styles with `theme.presets` (define `hero`/`tile`/`ghost` once, parts
   say `preset: tile`) instead of repeating style blocks.
 
-Playbooks: `docs/guides/scene-design.md`, task→primitive `docs/agent/RECIPES.md`.
+Guides: `docs/guides/scene-design.md`, task→primitive `docs/agent/RECIPES.md`.
 
 ## 5 · Self-check loop, then render
 

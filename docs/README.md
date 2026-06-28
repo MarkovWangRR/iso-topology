@@ -26,7 +26,7 @@ order — each step builds on the last.
 
 **You have a specific task — recipes that show one solution.**
 
-- [`scene-design.md`](guides/scene-design.md) — the visual playbook:
+- [`scene-design.md`](guides/scene-design.md) — the visual style guide:
   hero/accent rules, composition patterns, presets, pre-ship checklist
 - [`extending.md`](guides/extending.md) — add a new shape, primitive,
   or layout engine

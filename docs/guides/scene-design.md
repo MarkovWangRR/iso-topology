@@ -1,6 +1,6 @@
 # Scene design — making diagrams that look designed
 
-This is the visual playbook behind the
+This is the visual style guide behind the
 [showcase gallery](../../samples/topology). The DSL reference tells
 you what every field does; this guide tells you which fields to reach
 for so the output looks like a launch-post illustration instead of a
