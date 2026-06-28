@@ -21,8 +21,18 @@ func hasWarning(issues []Issue, substr string) bool {
 
 // ── 1a. top fill vs text contrast ────────────────────────────────────────────
 
+func hasError(issues []Issue, substr string) bool {
+	for _, iss := range issues {
+		if iss.Severity == SeverityError && strings.Contains(iss.Message, substr) {
+			return true
+		}
+	}
+	return false
+}
+
 func TestVisualContrast_TextLowContrast(t *testing.T) {
-	// Fill #E0E0E0 (light grey) vs text #D0D0D0 (nearly same) → ratio well below 3.0
+	// White fill vs mid-grey text → ratio in [1.5, 3.0): low but still legible,
+	// so a WARNING (not the invisible-text error).
 	doc := &Document{
 		Nodes: map[string]*Node{
 			"scene": {
@@ -33,8 +43,8 @@ func TestVisualContrast_TextLowContrast(t *testing.T) {
 						Shape: "rectangle",
 						Label: "Hi", // fill-vs-text contrast only applies to a labelled face
 						Style: &Style{
-							Palette: &Palette{Top: "#E0E0E0"},
-							Text:    &Text{Color: "#D0D0D0"},
+							Palette: &Palette{Top: "#FFFFFF"},
+							Text:    &Text{Color: "#9AA0A6"},
 						},
 					},
 				},
@@ -44,6 +54,53 @@ func TestVisualContrast_TextLowContrast(t *testing.T) {
 	issues := VisualContrastIssues(doc)
 	if !hasWarning(issues, "low contrast between top fill") {
 		t.Errorf("expected low-contrast warning, got: %v", issues)
+	}
+	if hasError(issues, "low contrast between top fill") {
+		t.Errorf("legible-but-low contrast must be a warning, not an error: %v", issues)
+	}
+}
+
+// A node styled via the v3.3 `faces.top` override (NOT palette) must have its
+// REAL fill read — the bug was that contrast was checked against the default
+// light fill, so dark-on-dark via faces passed silently.
+func TestVisualContrast_FacesTopFillIsRead(t *testing.T) {
+	doc := &Document{
+		Nodes: map[string]*Node{
+			"scene": {Shape: "composite", Parts: []*CompositePart{{
+				ID: "box", Shape: "rectangle", Label: "Hi",
+				Style: &Style{
+					Faces: map[string]*FaceStyle{"top": {Fill: &FillSpec{Kind: "solid", Color: "#14242E"}}},
+					Text:  &Text{Color: "#1E293B"}, // dark text on the dark faces fill
+				},
+			}}},
+		},
+	}
+	issues := VisualContrastIssues(doc)
+	if !hasError(issues, "low contrast between top fill #14242E") {
+		t.Errorf("dark text on a faces-set dark fill must be a contrast ERROR, got: %v", issues)
+	}
+}
+
+// A light sheen highlight over an otherwise-dark gradient top face leaves the
+// label readable on the dark majority — it is a warning, never an error.
+func TestVisualContrast_SheenGradientStaysWarning(t *testing.T) {
+	doc := &Document{
+		Nodes: map[string]*Node{
+			"scene": {Shape: "composite", Parts: []*CompositePart{{
+				ID: "box", Shape: "rectangle", Label: "Hi",
+				Style: &Style{
+					Faces: map[string]*FaceStyle{"top": {Fill: &FillSpec{Kind: "linearGradient", Stops: []ColorStop{
+						{Offset: 0, Color: "#F3FCF9"}, // light sheen
+						{Offset: 1, Color: "#1B2330"}, // dark base
+					}}}},
+					Text: &Text{Color: "#EAF0F8"}, // light text: invisible on the sheen, readable on the base
+				},
+			}}},
+		},
+	}
+	issues := VisualContrastIssues(doc)
+	if hasError(issues, "low contrast between top fill") {
+		t.Errorf("a sheen highlight with a readable base must not be an error: %v", issues)
 	}
 }
 

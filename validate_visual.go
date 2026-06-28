@@ -108,23 +108,73 @@ func lumOf(hex string) (float64, bool) {
 	return relativeLuminance(r, g, b), true
 }
 
-// topFillColor returns the effective top-face fill colour for a part or its
-// defaults.
-func topFillColor(st *Style) string {
-	if st != nil && st.Palette != nil {
-		if st.Palette.Top != "" {
-			return st.Palette.Top
-		}
-		// A gradient top has no single colour; the "from" stop is the
-		// representative the eye reads at the lit corner. Without this the
-		// check fell through to the default box fill and false-flagged every
-		// gradient-topped part (heroes, glows) as low-contrast.
-		if st.Palette.TopGradient != nil && st.Palette.TopGradient.From != "" {
-			return st.Palette.TopGradient.From
+// topFillColors returns EVERY candidate colour the renderer may paint on the
+// top face, in the renderer's own precedence: the v3.3 per-face `faces.top`
+// override (which OUTRANKS palette) first, then palette, then the default box
+// fill. A gradient contributes all its stops so the contrast check can test the
+// worst one. Reading `faces` is what stops a `faces`-styled dark node (every
+// preset uses faces, not palette) from being silently checked against the light
+// default fill — the cause of dark-text-on-dark-faces passing validation.
+func topFillColors(st *Style) []string {
+	if st != nil && st.Faces != nil {
+		if fs := st.Faces["top"]; fs != nil && fs.Fill != nil {
+			if cs := fillSpecColors(fs.Fill); len(cs) > 0 {
+				return cs
+			}
 		}
 	}
-	// Single source of truth: the same default the renderer paints. Hard-coding a
-	// different value here made every unstyled part false-fail the contrast check.
+	if st != nil && st.Palette != nil {
+		if st.Palette.Top != "" {
+			return []string{st.Palette.Top}
+		}
+		if g := st.Palette.TopGradient; g != nil {
+			var out []string
+			if g.From != "" {
+				out = append(out, g.From)
+			}
+			if g.To != "" {
+				out = append(out, g.To)
+			}
+			if len(out) > 0 {
+				return out
+			}
+		}
+	}
+	// Single source of truth: the same default the renderer paints.
+	return []string{iso25d.DefaultIsoBox().TopFill}
+}
+
+// fillSpecColors returns a FillSpec's representative colours: the solid colour,
+// or every gradient stop.
+func fillSpecColors(f *FillSpec) []string {
+	if f == nil {
+		return nil
+	}
+	var out []string
+	if f.Color != "" {
+		out = append(out, f.Color)
+	}
+	for _, s := range f.Stops {
+		if s.Color != "" {
+			out = append(out, s.Color)
+		}
+	}
+	// A pattern face (hatch/dots) paints its ink colour over the face; that ink
+	// is the surface a label sits against, so it must be read too — otherwise a
+	// pattern-topped node falls through to the default fill and is checked
+	// against a colour that is never painted.
+	if f.Pattern != nil && f.Pattern.Color != "" {
+		out = append(out, f.Pattern.Color)
+	}
+	return out
+}
+
+// topFillColor returns a single representative top-face fill (the first
+// candidate) for checks that need one colour (vs canvas background, vs icon).
+func topFillColor(st *Style) string {
+	if cs := topFillColors(st); len(cs) > 0 {
+		return cs[0]
+	}
 	return iso25d.DefaultIsoBox().TopFill
 }
 
@@ -244,15 +294,40 @@ func VisualContrastIssues(doc *Document) []Issue {
 
 				if fillOK {
 					// a) top fill vs label text — only meaningful when the part
-					// actually carries a label on its face.
+					// actually carries a label on its face. Test the WORST top-face
+					// fill (a gradient is readable at one stop, invisible at the
+					// other), and escalate a near-invisible result to an error:
+					// such a label is gone in the render, not merely cramped.
 					txt := textColor(eff)
 					if txtLum, ok := lumOf(txt); ok && p.Label != "" {
-						cr := contrastRatio(fillLum, txtLum)
-						if cr < 3.0 {
+						// Track the worst stop (for the warning) AND the best (for
+						// the error). A gradient is flagged if ANY stop is low
+						// contrast, but only escalated to an error when EVEN ITS
+						// MOST READABLE stop is near-invisible — so a small light
+						// sheen highlight over an otherwise-dark face (where the
+						// label is plainly readable) stays a warning, while a solid
+						// dark-on-dark face (every stop fails) is an error.
+						worst, best, worstFill := math.Inf(1), math.Inf(-1), fill
+						for _, f := range topFillColors(eff) {
+							if fl, ok := lumOf(f); ok {
+								cr := contrastRatio(fl, txtLum)
+								if cr < worst {
+									worst, worstFill = cr, f
+								}
+								if cr > best {
+									best = cr
+								}
+							}
+						}
+						if !math.IsInf(worst, 1) && worst < 3.0 {
+							sev, bound := SeverityWarning, "3.0"
+							if best < 1.5 {
+								sev, bound = SeverityError, "1.5 across the whole face — text is effectively invisible"
+							}
 							issues = append(issues, Issue{
-								Severity: SeverityWarning,
+								Severity: sev,
 								Path:     pPath + ".style.fill",
-								Message:  fmt.Sprintf("low contrast between top fill %s and text %s (ratio %.2f < 3.0)", fill, txt, cr),
+								Message:  fmt.Sprintf("low contrast between top fill %s and text %s (ratio %.2f < %s)", worstFill, txt, worst, bound),
 							})
 						}
 					}
