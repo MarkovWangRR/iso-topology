@@ -554,7 +554,7 @@ func arrangeContainer(parts []*CompositePart, lay *Layout, owner *CompositePart,
 	if owner != nil {
 		contentW := padW*2 - gapW + sumPlusGaps(colW, gapW)
 		contentD := padW*2 - gapW + sumPlusGaps(rowD, gapW)
-		ensureFootprint(owner, contentW, contentD)
+		ensureGroupFootprint(owner, contentW, contentD, padW)
 	}
 }
 
@@ -603,7 +603,7 @@ func arrangeRing(kids []*CompositePart, gapW, padW float64, owner *CompositePart
 		bakeOffset(k, xs[i]-minX+padW, ys[i]-minY+padW)
 	}
 	if owner != nil {
-		ensureFootprint(owner, (maxX-minX)+2*padW, (maxY-minY)+2*padW)
+		ensureGroupFootprint(owner, (maxX-minX)+2*padW, (maxY-minY)+2*padW, padW)
 	}
 }
 
@@ -651,6 +651,39 @@ func ensureFootprint(owner *CompositePart, w, d float64) {
 	if owner.Geom.D <= 0 {
 		owner.Geom.D = d
 	}
+}
+
+// ensureGroupFootprint is ensureFootprint after reserving room for the group's
+// own caption, so an auto-sized slab grows to fit its label instead of letting
+// the caption overrun the slab or sit on the front row of children.
+func ensureGroupFootprint(owner *CompositePart, w, d, padW float64) {
+	w, d = labelReservedFootprint(owner, w, d, padW)
+	ensureFootprint(owner, w, d)
+}
+
+// labelReservedFootprint grows (w, d) so a populated group's caption fits.
+// groupLabelPart draws the label inset 14 from the front-left corner, running
+// +x as iso-text at ~size*0.62 per rune and anchored at WY = d-14-size; without
+// matching reservation a long caption overruns the right edge or shares the
+// front child row. Returns (w, d) unchanged when there is no caption or it
+// already fits, so short labels and roomy slabs are byte-identical as before.
+func labelReservedFootprint(owner *CompositePart, w, d, padW float64) (float64, float64) {
+	if owner == nil || strings.TrimSpace(owner.Label) == "" || len(owner.Parts) == 0 {
+		return w, d
+	}
+	size := 11.0
+	if owner.Style != nil && owner.Style.Text != nil &&
+		owner.Style.Text.Size != nil && *owner.Style.Text.Size > 0 {
+		size = *owner.Style.Text.Size
+	}
+	runes := float64(len([]rune(strings.TrimSpace(owner.Label))))
+	if needW := 14 + runes*size*0.62 + 14; needW > w { // caption must fit L→R
+		w = needW
+	}
+	if band := 14 + size; band > padW { // front strip must clear the caption row
+		d += band - padW
+	}
+	return w, d
 }
 
 // ── sibling relations (place: rightOf / leftOf / inFrontOf / behind) ─
@@ -918,7 +951,7 @@ func autosizeGroup(owner *CompositePart, parts []*CompositePart, cell float64) {
 		}
 		bakeOffset(p, padW-minX, padW-minY)
 	}
-	ensureFootprint(owner, (maxX-minX)+2*padW, (maxY-minY)+2*padW)
+	ensureGroupFootprint(owner, (maxX-minX)+2*padW, (maxY-minY)+2*padW, padW)
 }
 
 // autosizeManualGroup wraps a group whose children are positioned by explicit
@@ -956,7 +989,7 @@ func autosizeManualGroup(owner *CompositePart, parts []*CompositePart, cell floa
 		owner.Offset.WX -= sx
 		owner.Offset.WY -= sy
 	}
-	ensureFootprint(owner, (maxX-minX)+2*pad, (maxY-minY)+2*pad)
+	ensureGroupFootprint(owner, (maxX-minX)+2*pad, (maxY-minY)+2*pad, pad)
 }
 
 // ── post-solve diagnostics ───────────────────────────────────────────

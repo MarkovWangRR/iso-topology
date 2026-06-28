@@ -56,10 +56,12 @@ func main() {
 			usage()
 			os.Exit(2)
 		}
-		if err := renderFile(args[0], args[1]); err != nil {
+		code, err := renderFile(args[0], args[1])
+		if err != nil {
 			fmt.Fprintln(os.Stderr, "error:", err)
 			os.Exit(1)
 		}
+		os.Exit(code)
 	case "capabilities":
 		if err := emitCapabilities(os.Stdout); err != nil {
 			fmt.Fprintln(os.Stderr, "error:", err)
@@ -353,7 +355,19 @@ subcommands:
                  gallery at /nodes/`)
 }
 
-func renderFile(in, outDir string) error {
+// renderFile renders the input into outDir and returns a process exit
+// code alongside any I/O error. The exit code mirrors `validate`'s
+// contract so an agent can gate on `render` alone:
+//
+//	0  rendered a non-empty scene with no validation errors
+//	3  validation errors were present, OR the document produced no scene
+//	1  an I/O / parse failure (returned as the error)
+//
+// Warnings alone do not fail the render (exit stays 0). Rendering still
+// writes whatever it produced even on a code-3 result, so the partial
+// output is available for inspection — it just is no longer reported as
+// success.
+func renderFile(in, outDir string) (int, error) {
 	var data []byte
 	var err error
 	if in == "-" {
@@ -362,28 +376,28 @@ func renderFile(in, outDir string) error {
 		data, err = os.ReadFile(in)
 	}
 	if err != nil {
-		return err
+		return 1, err
 	}
 	if err := os.MkdirAll(outDir, 0o755); err != nil {
-		return err
+		return 1, err
 	}
 	nodesDir := filepath.Join(outDir, "nodes")
 	if err := os.MkdirAll(nodesDir, 0o755); err != nil {
-		return err
+		return 1, err
 	}
 
 	sourceLang, sourceExt := classifyInput(in)
 	doc, err := loadDocument(sourceLang, data)
 	if err != nil {
-		return err
+		return 1, err
 	}
 
 	// Pre-flight: run the full validator and surface any issues to stderr
 	// before rendering. Errors are prefixed with "error:" so they are
 	// immediately visible; warnings use "warn:". Rendering continues in
 	// both cases — the output may be incomplete but is never silently wrong.
+	errCount, warnCount := 0, 0
 	if issues := isotopo.Validate(doc); len(issues) > 0 {
-		errCount, warnCount := 0, 0
 		for _, iss := range issues {
 			switch iss.Severity {
 			case isotopo.SeverityError:
@@ -400,13 +414,21 @@ func renderFile(in, outDir string) error {
 	}
 
 	topologySVG := renderTopologySVG(doc)
+	// An empty topology SVG means the document resolved to no renderable
+	// scene (no scene node, or a scene with no parts). Writing a 0-byte
+	// topology.svg and exiting 0 is the worst case for an agent: a green
+	// light over an empty canvas. Attribute it and fail the exit code.
+	emptyScene := topologySVG == ""
+	if emptyScene {
+		fmt.Fprintln(os.Stderr, "render: document produced no scene — no renderable nodes were resolved (expected a scene node with parts under 'nodes')")
+	}
 	if err := writeFile(filepath.Join(outDir, "topology.svg"), []byte(topologySVG)); err != nil {
-		return err
+		return 1, err
 	}
 
 	sourceFilename := "topology" + sourceExt
 	if err := writeFile(filepath.Join(outDir, sourceFilename), data); err != nil {
-		return err
+		return 1, err
 	}
 
 	absCopy, err := filepath.Abs(filepath.Join(outDir, sourceFilename))
@@ -415,7 +437,7 @@ func renderFile(in, outDir string) error {
 	}
 	topologyHTML := isotopo.TopologyHTML(topologySVG, string(data), sourceLang, absCopy)
 	if err := writeFile(filepath.Join(outDir, "topology.html"), []byte(topologyHTML)); err != nil {
-		return err
+		return 1, err
 	}
 
 	parts := isotopo.RenderParts(doc)
@@ -427,31 +449,38 @@ func renderFile(in, outDir string) error {
 			continue
 		}
 		if err := writeFile(filepath.Join(nodesDir, id+".svg"), []byte(svg)); err != nil {
-			return err
+			return 1, err
 		}
 		var fragYAML []byte
 		if f := frags[id]; f != nil {
 			fragYAML, err = isotopo.MarshalFragmentYAML(f)
 			if err != nil {
-				return err
+				return 1, err
 			}
 			if err := writeFile(filepath.Join(nodesDir, id+".yaml"), fragYAML); err != nil {
-				return err
+				return 1, err
 			}
 		}
 		nodeHTML := isotopo.NodeHTML(id, svg, string(fragYAML))
 		if err := writeFile(filepath.Join(nodesDir, id+".html"), []byte(nodeHTML)); err != nil {
-			return err
+			return 1, err
 		}
 	}
 
 	indexHTML := isotopo.NodesIndexHTML(ids)
 	if err := writeFile(filepath.Join(nodesDir, "_index.html"), []byte(indexHTML)); err != nil {
-		return err
+		return 1, err
 	}
 
 	fmt.Fprintf(os.Stderr, "rendered %d node(s) into %s\n", len(ids), outDir)
-	return nil
+
+	// Exit-code contract (mirrors validate): errors or an empty scene fail
+	// the render so an agent gating on the exit code never treats a broken
+	// or empty output as success. Warnings alone stay at 0.
+	if errCount > 0 || emptyScene {
+		return 3, nil
+	}
+	return 0, nil
 }
 
 // renderTopologySVG returns the topology-level scene SVG. Resolution

@@ -26,6 +26,20 @@ already encode placement). The projection can also be set per-document
 with `canvas.projection` (see [DSL/YAML](dsl-yaml.md)). Output structure
 is documented in [OUTPUTS.md](../reference/output-layout.md).
 
+`render` runs the full validator first (issues go to stderr) and returns
+an exit code that mirrors `validate`, so an agent can gate on `render`
+alone without a separate `validate` step:
+
+| Exit code | Meaning |
+|---|---|
+| 0 | rendered a non-empty scene with no validation errors (warnings may have printed) |
+| 3 | validation **errors** were present, **or** the document produced no scene (empty `topology.svg`) |
+| 1 | I/O or parse failure (message on stderr) |
+
+Warnings alone do **not** fail the render. On a code-3 result the
+(partial or empty) output is still written for inspection — it is simply
+no longer reported as success.
+
 Examples:
 
 ```bash

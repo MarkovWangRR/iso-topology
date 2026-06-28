@@ -15,7 +15,7 @@ func nodeWithID(id string, wx, wy float64) *CompositePart {
 func TestLabelOcclusion_Warns(t *testing.T) {
 	label := lbl("Lane")
 	cover := nodeWithID("api", 0, 90) // overlaps the label's projected box
-	issues := labelOcclusionInFlat([]*CompositePart{label, cover}, "scene")
+	issues := labelOcclusionInFlat([]*CompositePart{label, cover}, nil, "scene")
 	if len(issues) == 0 {
 		t.Fatal("a node covering a group label must be flagged")
 	}
@@ -29,7 +29,7 @@ func TestLabelOcclusion_Warns(t *testing.T) {
 func TestLabelOcclusion_ClearIsSilent(t *testing.T) {
 	label := lbl("Lane")
 	far := nodeWithID("api", 900, 900)
-	if issues := labelOcclusionInFlat([]*CompositePart{label, far}, "scene"); len(issues) != 0 {
+	if issues := labelOcclusionInFlat([]*CompositePart{label, far}, nil, "scene"); len(issues) != 0 {
 		t.Fatalf("a clear label must not warn, got %v", issues)
 	}
 }
@@ -40,7 +40,7 @@ func TestLabelOcclusion_SubstrateIgnored(t *testing.T) {
 	slab := nodeWithID("tray", 0, 90)
 	slab.isSubstrate = true
 	slab.Shape = "group"
-	if issues := labelOcclusionInFlat([]*CompositePart{label, slab}, "scene"); len(issues) != 0 {
+	if issues := labelOcclusionInFlat([]*CompositePart{label, slab}, nil, "scene"); len(issues) != 0 {
 		t.Fatalf("a substrate must not be flagged as occluding, got %v", issues)
 	}
 }
