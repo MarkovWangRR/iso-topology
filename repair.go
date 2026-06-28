@@ -23,6 +23,10 @@ func RepairScene(doc *Document) (*Document, int) {
 	if doc == nil {
 		return doc, 0
 	}
+	// Headroom: separating one genuine overlap can cascade into neighbours, so a
+	// dense scene may need several passes to reach the no-change fixpoint. The
+	// loop breaks early the instant nothing changes, so this only costs
+	// iterations on scenes that genuinely need them.
 	const maxIters = 16
 	iters := 0
 	for ; iters < maxIters; iters++ {
@@ -67,60 +71,78 @@ func repairCaptions(doc *Document) bool {
 	return bumped
 }
 
-// repairOverlaps pushes overlapping TOP-LEVEL parts apart along their axis of
-// least penetration by nudging each side's offset. One pass; returns whether
-// anything moved. Positions are read from a solved clone so the source
-// declarations are untouched; the push is applied as an offset delta on the real
-// parts (offset is a fine-tune on top of place, so the solver honours it).
+// repairOverlaps pushes genuinely-colliding TOP-LEVEL parts apart along their
+// axis of least penetration by nudging each side's offset. One pass; returns
+// whether anything moved.
+//
+// It uses the evaluator's OWN overlap test (rectsOverlap on the plan model) —
+// an (x,y) collision that ALSO shares a vertical band — instead of a naive
+// footprint test. Parts stacked on different floors (place: above — a chip on a
+// plate, a stacked board) deliberately share a footprint and must NOT be pushed
+// apart; a naive test shreds such a clean Z-stack and never converges. Positions
+// come from a clone so the source declarations are untouched; the push lands as
+// an offset delta on the real parts (offset is a fine-tune on top of place).
 func repairOverlaps(doc *Document, scene *Node) bool {
-	clone := cloneSceneForEval(scene)
-	applyLayout(clone, doc.Canvas)
-	type rect struct {
-		idx        int
-		x, y, w, d float64
+	rects, _, _ := buildPlanModel(cloneSceneForEval(scene), doc.Theme, doc.Canvas)
+	// Map every part id (at any depth) to its TOP-LEVEL ancestor — the part we
+	// can actually relocate by nudging its offset. A collision between a loose
+	// node and another group's *child* is resolved by pushing the two top-level
+	// owners apart.
+	descTop := map[string]*CompositePart{}
+	var mark func(top, p *CompositePart)
+	mark = func(top, p *CompositePart) {
+		if p.ID != "" {
+			descTop[p.ID] = top
+		}
+		for _, c := range p.Parts {
+			if c != nil {
+				mark(top, c)
+			}
+		}
 	}
-	var rs []rect
-	for i, p := range clone.Parts {
-		if p == nil {
-			continue
+	for _, p := range scene.Parts {
+		if p != nil {
+			mark(p, p)
 		}
-		// A nil offset means the part sits at the world origin (the unplaced
-		// anchor), NOT "skip me" — else an overlap with the anchor is missed.
-		var x, y float64
-		if p.Offset != nil {
-			x, y = p.Offset.WX, p.Offset.WY
+	}
+	var leaves []planRect
+	for _, r := range rects {
+		if !r.container {
+			leaves = append(leaves, r)
 		}
-		w, d := partFootprint(p)
-		rs = append(rs, rect{i, x, y, w, d})
 	}
 	const margin = 10.0
 	moved := false
-	for a := 0; a < len(rs); a++ {
-		for b := a + 1; b < len(rs); b++ {
-			ra, rb := rs[a], rs[b]
+	for a := 0; a < len(leaves); a++ {
+		for b := a + 1; b < len(leaves); b++ {
+			ra, rb := leaves[a], leaves[b]
+			pa, pb := descTop[ra.id], descTop[rb.id]
+			if pa == nil || pb == nil || pa == pb {
+				continue // same top-level owner (intra-group) or unknown — skip
+			}
+			if !rectsOverlap(ra, rb) {
+				continue // no real collision (e.g. Z-stacked) — leave it alone
+			}
 			ox := math.Min(ra.x+ra.w, rb.x+rb.w) - math.Max(ra.x, rb.x)
 			oy := math.Min(ra.y+ra.d, rb.y+rb.d) - math.Max(ra.y, rb.y)
-			if ox <= 0 || oy <= 0 {
-				continue // no footprint overlap
-			}
 			// push half the penetration (+margin) each, along the smaller axis.
 			if ox <= oy {
 				push := (ox + margin) / 2
 				if ra.x <= rb.x {
-					nudge(scene.Parts[ra.idx], -push, 0)
-					nudge(scene.Parts[rb.idx], +push, 0)
+					nudge(pa, -push, 0)
+					nudge(pb, +push, 0)
 				} else {
-					nudge(scene.Parts[ra.idx], +push, 0)
-					nudge(scene.Parts[rb.idx], -push, 0)
+					nudge(pa, +push, 0)
+					nudge(pb, -push, 0)
 				}
 			} else {
 				push := (oy + margin) / 2
 				if ra.y <= rb.y {
-					nudge(scene.Parts[ra.idx], 0, -push)
-					nudge(scene.Parts[rb.idx], 0, +push)
+					nudge(pa, 0, -push)
+					nudge(pb, 0, +push)
 				} else {
-					nudge(scene.Parts[ra.idx], 0, +push)
-					nudge(scene.Parts[rb.idx], 0, -push)
+					nudge(pa, 0, +push)
+					nudge(pb, 0, -push)
 				}
 			}
 			moved = true

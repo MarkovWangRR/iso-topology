@@ -8,3 +8,4 @@ bad  bad-crossing.yaml
 bad  bad-tunnel.yaml
 good hub.yaml
 bad  mesh.yaml
+good stacked.yaml

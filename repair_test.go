@@ -83,6 +83,21 @@ func TestRepair_P1Gate(t *testing.T) {
 	}
 }
 
+// Regression: a Z-stacked board (plates + chip via place:above) overlaps in the
+// ground plane BY DESIGN but is separated in height. Repair must read this as
+// clean (the evaluator's Z-aware overlap test), NOT shove the stack apart — the
+// bug that wrecked the real platform-board sample (R 0.98 → 0.24).
+func TestRepair_NoOpOnZStack(t *testing.T) {
+	doc := loadBench(t, "stacked.yaml")
+	before := Readability(doc).Score
+	if _, iters := RepairScene(doc); iters != 0 {
+		t.Fatalf("repair must not touch a Z-stack, ran %d iters", iters)
+	}
+	if after := Readability(doc).Score; after != before {
+		t.Fatalf("Z-stack readability changed (%.3f → %.3f)", before, after)
+	}
+}
+
 // Readability / EvaluateIso must NOT mutate the document (they solve a clone),
 // so a measure-then-repair sequence still sees the original Layout declarations.
 func TestEvaluate_DoesNotMutateDoc(t *testing.T) {
