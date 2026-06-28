@@ -1,0 +1,16 @@
+# BAD: column group whose front-most child rides the caption (iso occlusion)
+canvas: { background: "#0E1726", padding: 60 }
+nodes:
+  scene:
+    shape: composite
+    parts:
+      - id: lane
+        shape: group
+        label: "Ingestion Lane"
+        style: { palette: { top: "#0E1F1C" }, text: { color: "#92D4C8" } }
+        layout: { mode: column, gap: 0.6 }
+        parts:
+          - { id: flink,  shape: rectangle, geom: { w: 140, d: 96, h: 40 }, label: "Flink", style: { palette: { top: "#16403B" }, text: { color: "#EAFBF3" } } }
+          - { id: routine,shape: rectangle, geom: { w: 140, d: 96, h: 40 }, label: "Routine", style: { palette: { top: "#16403B" }, text: { color: "#EAFBF3" } } }
+          - { id: dbt,    shape: rectangle, geom: { w: 140, d: 96, h: 40 }, label: "dbt", style: { palette: { top: "#16403B" }, text: { color: "#EAFBF3" } } }
+    connectors: []

@@ -1,0 +1,6 @@
+# benchmark labels — good/bad per scene; the gate is: min(R over good) > max(R over bad)
+good good-flow.yaml
+good good-grid.yaml
+bad  bad-occlusion.yaml
+bad  bad-overlap.yaml
+bad  bad-both.yaml

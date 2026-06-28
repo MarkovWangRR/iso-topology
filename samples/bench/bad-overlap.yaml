@@ -1,0 +1,9 @@
+# BAD: two node footprints collide (explicit offset drops B on top of A)
+canvas: { background: "#0E1726", padding: 60 }
+nodes:
+  scene:
+    shape: composite
+    parts:
+      - { id: a, shape: rectangle, geom: { w: 150, d: 130, h: 40 }, label: "A", style: { palette: { top: "#274060" }, text: { color: "#DCE7F5" } } }
+      - { id: b, shape: rectangle, geom: { w: 150, d: 130, h: 40 }, label: "B", place: { rightOf: a }, offset: { wx: -110 }, style: { palette: { top: "#50281C" }, text: { color: "#F5DCD0" } } }
+    connectors: []

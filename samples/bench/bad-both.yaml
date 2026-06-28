@@ -1,0 +1,16 @@
+# BAD (severe): node overlap AND a caption ridden by its front child
+canvas: { background: "#0E1726", padding: 60 }
+nodes:
+  scene:
+    shape: composite
+    parts:
+      - id: lane
+        shape: group
+        label: "Crowded Lane"
+        style: { palette: { top: "#0E1F1C" }, text: { color: "#92D4C8" } }
+        layout: { mode: column, gap: 0.5 }
+        parts:
+          - { id: x, shape: rectangle, geom: { w: 150, d: 100, h: 44 }, label: "X", style: { palette: { top: "#16403B" }, text: { color: "#EAFBF3" } } }
+          - { id: y, shape: rectangle, geom: { w: 150, d: 100, h: 44 }, label: "Y", style: { palette: { top: "#16403B" }, text: { color: "#EAFBF3" } } }
+      - { id: loose, shape: rectangle, geom: { w: 150, d: 130, h: 40 }, label: "Loose", place: { rightOf: lane }, offset: { wx: -120 }, style: { palette: { top: "#50281C" }, text: { color: "#F5DCD0" } } }
+    connectors: []

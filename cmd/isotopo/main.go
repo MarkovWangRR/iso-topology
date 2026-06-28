@@ -192,11 +192,18 @@ func evaluateFile(in, outDir string) error {
 	}
 	svg, planReport := isotopo.RenderPlanAnnotated(scene, doc.Theme, doc.Canvas)
 	isoReport := isotopo.EvaluateIso(scene, doc.Theme, doc.Canvas)
-	// plan = the simplified preview router; iso = the engine's REAL routes.
-	// Emitting both makes the gap (and the engine's actual quality) explicit.
+	// readability = the single iso-space objective the engine optimizes toward
+	// (docs/design/layout-engine-master-plan.md). plan = the simplified preview
+	// router; iso = the engine's REAL routes. Emitting all three makes the
+	// objective and the gap explicit.
+	readability := isotopo.Readability(doc)
 	enc := json.NewEncoder(os.Stdout)
 	enc.SetIndent("", "  ")
-	if err := enc.Encode(map[string]any{"plan": planReport, "iso": isoReport}); err != nil {
+	if err := enc.Encode(map[string]any{
+		"readability": readability,
+		"plan":        planReport,
+		"iso":         isoReport,
+	}); err != nil {
 		return err
 	}
 	if outDir != "" {

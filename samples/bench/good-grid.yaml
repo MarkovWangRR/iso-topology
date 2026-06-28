@@ -1,0 +1,17 @@
+# GOOD: a labeled grid group with breathing room, readable caption
+canvas: { background: "#0E1726", padding: 60 }
+nodes:
+  scene:
+    shape: composite
+    parts:
+      - id: panel
+        shape: group
+        label: "Services"
+        style: { palette: { top: "#11203A" }, text: { color: "#A8C2DC" } }
+        layout: { mode: grid, cols: 2, gap: 1.2 }
+        parts:
+          - { id: a, shape: rectangle, geom: { w: 110, d: 80, h: 26 }, label: "A", style: { palette: { top: "#274060" }, text: { color: "#DCE7F5" } } }
+          - { id: b, shape: rectangle, geom: { w: 110, d: 80, h: 26 }, label: "B", style: { palette: { top: "#274060" }, text: { color: "#DCE7F5" } } }
+          - { id: c, shape: rectangle, geom: { w: 110, d: 80, h: 26 }, label: "C", style: { palette: { top: "#274060" }, text: { color: "#DCE7F5" } } }
+          - { id: d, shape: rectangle, geom: { w: 110, d: 80, h: 26 }, label: "D", style: { palette: { top: "#274060" }, text: { color: "#DCE7F5" } } }
+    connectors: []
