@@ -9,10 +9,6 @@ git config user.name Claude
 
 Run these at the start of every session. The stop hook (`~/.claude/stop-hook-git-check.sh`) rejects commits whose committer email is not `noreply@anthropic.com`.
 
-## Development branch
-
-All work goes to `claude/adoring-feynman-6cklb1`. Never push to `main` directly.
-
 ## Build & test
 
 ```bash
