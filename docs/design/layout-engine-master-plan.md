@@ -280,6 +280,24 @@ ranking, (c) the current `R`. Seeded from `samples/topology/` + `style_refer/`
   router already adequate) ✓, P3 (adaptive placement) ✓. The objective `R`,
   the corpus, and the gates now drive every change.
 
+### End-to-end validation on real demos (`samples/topology`, 13 scenes)
+Acceptance run of `--repair` over every real demo (not just the synthetic corpus):
+- **9 clean scenes** (R 0.67–0.99): repair is a byte-identical **no-op**.
+- **3 defective scenes fixed:** vpc-boundary R 0.167→1.000, data-fabric
+  0.061→0.742, langchain-app 0.046→0.662 — all group-caption-rides cleared,
+  composition preserved (verified by rendering before/after).
+- **0 regressions.**
+- **Regression caught and fixed by the validation itself:** platform-board (a
+  clean Z-stacked board) was being shredded 0.98→0.24 — `repairOverlaps` used a
+  naive (x,y) test and shoved the height-separated stack apart. Fixed by adopting
+  the evaluator's Z-aware `rectsOverlap` + pushing top-level ancestors; locked
+  with `samples/bench/stacked.yaml` + `TestRepair_NoOpOnZStack`.
+- **Known limitation (1 scene):** clickhouse-hub's long title (`iso_text`) floats
+  above the hub and *projects* over the `chhead` node — a **screen-space
+  neighbour-label occlusion**, distinct from in-group caption-rides and world
+  overlaps. Correctly left untouched (it's not a 3D collision); needs a dedicated
+  neighbour-label repair (move the label owner to clear a screen occluder). Next.
+
 ## 7. Honest caveats
 
 - "Optimal" is NP-hard (crossing/area minimization); the goal is **objective in
