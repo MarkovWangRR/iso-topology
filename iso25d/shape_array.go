@@ -2,6 +2,7 @@ package iso25d
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 )
 
@@ -139,55 +140,65 @@ func RenderIsoArray(o IsoBoxOpts, shapeName string) string {
 		return [2]float64{p[0] + m, p[1] + m}
 	}
 
-	// Painter order: k=bottom..top, j=back..front, i=left..right
-	// Within each cell: left face, right face, top face
+	// Painter order: a cube grid in this iso projection must be drawn strictly
+	// back-to-front, and one cell occludes another exactly when its i+j+k is
+	// larger (cells on the same i+j+k anti-diagonal lie in a plane facing the
+	// camera and never occlude each other). A nested k/j/i loop does NOT give
+	// this order — e.g. a front-bottom cell (i+j+k high) in a lower z-layer
+	// would be painted before a back-top cell (i+j+k low) in an upper layer,
+	// so the back cell wrongly draws over the front one. Sort by i+j+k instead.
+	type acell struct{ i, j, k int }
+	cells := make([]acell, 0, cX*cY*cZ)
 	for k := 0; k < cZ; k++ {
-		for j := cY - 1; j >= 0; j-- {
+		for j := 0; j < cY; j++ {
 			for i := 0; i < cX; i++ {
-				offX := float64(i) * (cellW + gap)
-				offY := float64(j) * (cellD + gap)
-				offZ := float64(k) * (cellH + gap)
-
-				x0, y0, z0 := offX, offY, offZ
-				x1, y1, z1 := offX+cellW, offY+cellD, offZ+cellH
-
-				// Front-left wall: y=y1 (screen-left in this projection), spans x.
-				leftPts := [4][2]float64{
-					proj(x0, y1, z0),
-					proj(x0, y1, z1),
-					proj(x1, y1, z1),
-					proj(x1, y1, z0),
-				}
-				writeFace(&sb, fmt.Sprintf("cell-%d-%d-%d-left", i, j, k),
-					o.LeftFill, stroke, sw*0.7, "", 0, leftPts[:]...)
-
-				// Front-right wall: x=x1 (screen-right), spans y. The old code drew
-				// x=x0 — a hidden BACK face — leaving every exposed cell's right
-				// side open; x=x1 is the camera-facing wall that closes the cell.
-				rightPts := [4][2]float64{
-					proj(x1, y0, z0),
-					proj(x1, y0, z1),
-					proj(x1, y1, z1),
-					proj(x1, y1, z0),
-				}
-				writeFace(&sb, fmt.Sprintf("cell-%d-%d-%d-right", i, j, k),
-					o.RightFill, stroke, sw*0.7, "", 0, rightPts[:]...)
-
-				// Top face: z=z1, corners at (x0,y0), (x1,y0), (x1,y1), (x0,y1)
-				topPts := [4][2]float64{
-					proj(x0, y0, z1),
-					proj(x1, y0, z1),
-					proj(x1, y1, z1),
-					proj(x0, y1, z1),
-				}
-				writeFace(&sb, fmt.Sprintf("cell-%d-%d-%d-top", i, j, k),
-					o.TopFill, stroke, sw*0.7, "", 0, topPts[:]...)
-
-				_ = x1
-				_ = y0
-				_ = z0
+				cells = append(cells, acell{i, j, k})
 			}
 		}
+	}
+	sort.SliceStable(cells, func(a, b int) bool {
+		return cells[a].i+cells[a].j+cells[a].k < cells[b].i+cells[b].j+cells[b].k
+	})
+
+	// Within each cell: left face, right face, top face (the camera-facing trio).
+	for _, c := range cells {
+		i, j, k := c.i, c.j, c.k
+		offX := float64(i) * (cellW + gap)
+		offY := float64(j) * (cellD + gap)
+		offZ := float64(k) * (cellH + gap)
+
+		x0, y0, z0 := offX, offY, offZ
+		x1, y1, z1 := offX+cellW, offY+cellD, offZ+cellH
+
+		// Front-left wall: y=y1 (screen-left in this projection), spans x.
+		leftPts := [4][2]float64{
+			proj(x0, y1, z0),
+			proj(x0, y1, z1),
+			proj(x1, y1, z1),
+			proj(x1, y1, z0),
+		}
+		writeFace(&sb, fmt.Sprintf("cell-%d-%d-%d-left", i, j, k),
+			o.LeftFill, stroke, sw*0.7, "", 0, leftPts[:]...)
+
+		// Front-right wall: x=x1 (screen-right), spans y — the camera-facing wall.
+		rightPts := [4][2]float64{
+			proj(x1, y0, z0),
+			proj(x1, y0, z1),
+			proj(x1, y1, z1),
+			proj(x1, y1, z0),
+		}
+		writeFace(&sb, fmt.Sprintf("cell-%d-%d-%d-right", i, j, k),
+			o.RightFill, stroke, sw*0.7, "", 0, rightPts[:]...)
+
+		// Top face: z=z1, corners at (x0,y0), (x1,y0), (x1,y1), (x0,y1)
+		topPts := [4][2]float64{
+			proj(x0, y0, z1),
+			proj(x1, y0, z1),
+			proj(x1, y1, z1),
+			proj(x0, y1, z1),
+		}
+		writeFace(&sb, fmt.Sprintf("cell-%d-%d-%d-top", i, j, k),
+			o.TopFill, stroke, sw*0.7, "", 0, topPts[:]...)
 	}
 
 	if grainID != "" {
