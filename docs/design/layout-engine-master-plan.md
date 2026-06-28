@@ -223,10 +223,20 @@ ranking, (c) the current `R`. Seeded from `samples/topology/` + `style_refer/`
   - **Fixed a real side-effect bug en route:** `EvaluateIso` (hence
     `Readability`) was solving + clearing the caller's Layout in place; now it
     deep-clones (`cloneSceneForEval`). `TestEvaluate_DoesNotMutateDoc` locks it.
-  - **Remaining P1:** body-vs-body occlusion detection + an overlap-removal
-    repair (bad-overlap / the overlap half of bad-both still need it), then the
-    P1 gate (occlusion 0 after repair on ≥95% corpus).
-- **Next:** overlap-removal repair, then body-occlusion detection.
+  - **Overlap-removal repair — DONE** (`repairOverlaps`): solve a clone, find
+    colliding top-level footprints, push them apart along the axis of least
+    penetration via offset deltas; folded into the same convergence loop as
+    caption repair. bad-overlap 0.200→**1.000** (3 iters), bad-both 0.071→
+    **1.000** (4 iters, caption + overlap both fixed).
+  - **Phase-1 GATE MET** (`TestRepair_P1Gate`): after repair, **every** corpus
+    scene is occlusion- AND overlap-free and R never decreases; clean scenes are
+    0-iteration no-ops (golden-stable, full suite green). Converges ≤4 iters;
+    deterministic.
+  - **Still open (rolls into P1.x / later):** body-vs-body occlusion (node fully
+    hidden) is not yet a detected/repaired signal; nested (in-group) overlaps use
+    only the top-level pass for now.
+- **Next — Phase 2:** global routing (replace the per-edge greedy), which also
+  unlocks the reliable crossing/tunnel corpus scenes P0 deferred.
 
 ## 7. Honest caveats
 

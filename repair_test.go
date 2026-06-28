@@ -2,6 +2,7 @@ package isotopo
 
 import (
 	"os"
+	"path/filepath"
 	"testing"
 )
 
@@ -48,6 +49,36 @@ func TestRepair_NoOpOnClean(t *testing.T) {
 		}
 		if _, iters := RepairScene(doc); iters != 0 {
 			t.Fatalf("%s: repair must be a no-op on a clean scene, ran %d iters", name, iters)
+		}
+	}
+}
+
+// TestRepair_P1Gate is the Phase-1 acceptance gate: after the projection-repair
+// loop, every benchmark scene must be free of occlusion AND overlap, and its
+// readability must not have decreased.
+func TestRepair_P1Gate(t *testing.T) {
+	files, err := filepath.Glob("samples/bench/*.yaml")
+	if err != nil || len(files) == 0 {
+		t.Fatalf("no bench scenes: %v", err)
+	}
+	for _, f := range files {
+		data, err := os.ReadFile(f)
+		if err != nil {
+			t.Fatalf("read %s: %v", f, err)
+		}
+		doc, err := Parse(data)
+		if err != nil {
+			t.Fatalf("parse %s: %v", f, err)
+		}
+		before := Readability(doc).Score
+		RepairScene(doc)
+		after := Readability(doc)
+		if after.Occlusions != 0 || after.Overlaps != 0 {
+			t.Errorf("%s: not clean after repair (occl=%d overlap=%d)",
+				filepath.Base(f), after.Occlusions, after.Overlaps)
+		}
+		if after.Score < before-1e-9 {
+			t.Errorf("%s: repair lowered R (%.3f → %.3f)", filepath.Base(f), before, after.Score)
 		}
 	}
 }
