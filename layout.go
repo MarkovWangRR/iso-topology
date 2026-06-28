@@ -64,7 +64,14 @@ func applyLayout(n *Node, canvas *Canvas) []Issue {
 				p.Layout = nil
 			}
 		}
-		arrangeAuto(n.Parts, n.Connectors, n.Layout, cell, "nodes.scene", &issues)
+		// Graph-class adaptive: longest-path layering is great for DAG flows but
+		// crams cyclic/mesh graphs so edges tunnel — route those to the
+		// force-directed placer, which spreads them to a near-uniform distance.
+		if graphIsCyclic(n.Parts, n.Connectors) {
+			arrangeForce(n.Parts, n.Connectors, n.Layout, cell)
+		} else {
+			arrangeAuto(n.Parts, n.Connectors, n.Layout, cell, "nodes.scene", &issues)
+		}
 		checkSiblingOverlaps(n.Parts, "nodes.scene", &issues)
 		n.Layout = nil
 		return issues

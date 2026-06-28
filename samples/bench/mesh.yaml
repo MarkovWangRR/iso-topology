@@ -1,0 +1,22 @@
+# mesh: dense cyclic graph — force-directed cuts tunnelling 6→2 (still hard; inherent density)
+canvas: { background: "#0E1726", padding: 50 }
+nodes:
+  scene:
+    shape: composite
+    layout: { mode: auto, gap: 1.4 }
+    parts:
+      - { id: a, shape: rectangle, geom: { w: 100, d: 80, h: 30 }, label: "A", style: { palette: { top: "#274060" }, text: { color: "#DCE7F5" } } }
+      - { id: b, shape: rectangle, geom: { w: 100, d: 80, h: 30 }, label: "B", style: { palette: { top: "#274060" }, text: { color: "#DCE7F5" } } }
+      - { id: c, shape: rectangle, geom: { w: 100, d: 80, h: 30 }, label: "C", style: { palette: { top: "#274060" }, text: { color: "#DCE7F5" } } }
+      - { id: d, shape: rectangle, geom: { w: 100, d: 80, h: 30 }, label: "D", style: { palette: { top: "#274060" }, text: { color: "#DCE7F5" } } }
+      - { id: e, shape: rectangle, geom: { w: 100, d: 80, h: 30 }, label: "E", style: { palette: { top: "#274060" }, text: { color: "#DCE7F5" } } }
+    connectors:
+      - { from: a, to: b, routing: orthogonal }
+      - { from: a, to: c, routing: orthogonal }
+      - { from: b, to: c, routing: orthogonal }
+      - { from: b, to: d, routing: orthogonal }
+      - { from: c, to: d, routing: orthogonal }
+      - { from: c, to: e, routing: orthogonal }
+      - { from: d, to: e, routing: orthogonal }
+      - { from: e, to: a, routing: orthogonal }
+      - { from: d, to: a, routing: orthogonal }

@@ -259,9 +259,25 @@ ranking, (c) the current `R`. Seeded from `samples/topology/` + `style_refer/`
     graphs actually surface orthogonal crossings the tent misses.
 - **Net P2 result:** straight-edge crossing/tunnel detection completed (shipped);
   router left as-is (already crossing-free in practice).
-- **Next — Phase 3:** adaptive placement (graph-class detection → ELK/dagre for
-  DAGs, stress/constrained-force for mesh/hub), which is where non-DAG graphs
-  actually degrade today — a bigger lever than the router.
+- **Phase 3 — graph-class adaptive placement — DONE.**
+  - **Measured the degradation first** (discipline, post-P2): a dense cyclic mesh
+    scored **R=0.052 with 6 edges tunnelling** under longest-path layering, and
+    raising the gap did NOTHING (1.4→9, still 6) — confirming it's a *placement*,
+    not spacing, problem.
+  - **Fix (`force_layout.go`):** `graphIsCyclic` routes cyclic/mesh graphs to a
+    deterministic Fruchterman-Reingold `arrangeForce` (connected attract, all
+    repel, fixed circle init + iterations, grid-snapped); DAGs stay on
+    longest-path. Results: **mesh R 0.052→0.135** (tunnelling **6→2**; the
+    remainder is inherent K5-density), **hub R 0.715→0.792** (clean ring, all
+    defects 0). **Zero golden drift** (no shipped auto sample is cyclic).
+  - Corpus: mesh + hub added; gate holds (worst good = hub 0.792 > best bad 0.480).
+    Tests: `TestGraphClass_DetectsCycles`, `TestForceLayout_ReducesMeshTunnelling`.
+  - **Open:** dense meshes still leave a few tunnels (a tunnelling-aware repair —
+    nudge the through-node off the edge — would close the gap, reusing the P1
+    loop); ELK/dagre integration for DAGs deferred (current longest-path is fine).
+- **Status:** P0 (measure) ✓, P1 (occlusion/overlap repair) ✓, P2 (detection;
+  router already adequate) ✓, P3 (adaptive placement) ✓. The objective `R`,
+  the corpus, and the gates now drive every change.
 
 ## 7. Honest caveats
 

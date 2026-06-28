@@ -6,3 +6,5 @@ bad  bad-overlap.yaml
 bad  bad-both.yaml
 bad  bad-crossing.yaml
 bad  bad-tunnel.yaml
+good hub.yaml
+bad  mesh.yaml

@@ -1,0 +1,20 @@
+# hub: cyclic hub-and-spoke — force-directed yields a clean ring (R 0.715→0.792)
+canvas: { background: "#0E1726", padding: 50 }
+nodes:
+  scene:
+    shape: composite
+    layout: { mode: auto, gap: 1.4 }
+    parts:
+      - { id: hub, shape: hexprism, geom: { w: 110, d: 110, h: 40 }, label: "Hub", style: { palette: { top: "#5A3410" }, text: { color: "#FFD9A8" } } }
+      - { id: s1, shape: rectangle, geom: { w: 96, d: 76, h: 28 }, label: "S1", style: { palette: { top: "#274060" }, text: { color: "#DCE7F5" } } }
+      - { id: s2, shape: rectangle, geom: { w: 96, d: 76, h: 28 }, label: "S2", style: { palette: { top: "#274060" }, text: { color: "#DCE7F5" } } }
+      - { id: s3, shape: rectangle, geom: { w: 96, d: 76, h: 28 }, label: "S3", style: { palette: { top: "#274060" }, text: { color: "#DCE7F5" } } }
+      - { id: s4, shape: rectangle, geom: { w: 96, d: 76, h: 28 }, label: "S4", style: { palette: { top: "#274060" }, text: { color: "#DCE7F5" } } }
+    connectors:
+      - { from: hub, to: s1 }
+      - { from: hub, to: s2 }
+      - { from: hub, to: s3 }
+      - { from: hub, to: s4 }
+      - { from: s1, to: hub }
+      - { from: s2, to: hub }
+      - { from: s3, to: hub }
