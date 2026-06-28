@@ -172,20 +172,6 @@ docs/agent/SAMPLES.md that best matches the task. Use
 
 ## 画廊
 
-### 零信任边界（暗色 · 棱柱族 + 逐面渐变）
-
-![零信任架构等距图——八棱柱防火墙、菱形策略决策、投影纹理服务甲板](docs/assets/edge-security.png)
-
-双八棱柱防火墙的每一面墙色都是一条 `style.faces`：琥珀菱形做放行/拒绝决策，拒绝沉入三棱柱 SIEM，放行落到投影 hatch 纹理的服务甲板。
-[源码](samples/topology/edge-security/input.yaml)。
-
-### LLM 推理板（工程风 · 投影丝印层）
-
-![PCB 风格 LLM 推理板等距图——过孔点阵丝印层与渐变 GPU 芯片](docs/assets/inference-board.png)
-
-板面顶层是 `projected: true` 的过孔点阵——纹理贴在等距平面上而非屏幕空间；上面是六棱柱调度器和渐变顶面的 GPU 芯片网格。
-[源码](samples/topology/inference-board/input.yaml)。
-
 ### Databricks 湖仓 + LLM 智能体（品牌色 · 唯一 Lava 强调）
 
 ![品牌还原的 Databricks 湖仓与 LLM 智能体架构等距图——暖白底上以 Lava 橙红的湖仓为唯一焦点，数据源、模型服务与智能体应用走冷调 slate→navy 深浅梯度](docs/assets/lakehouse-agent.png)
@@ -193,12 +179,6 @@ docs/agent/SAMPLES.md that best matches the task. Use
 真实产品架构 + 品牌纪律：唯一的暖色 Lava 全部留给湖仓焦点（Delta Lake 奖牌架构、Unity Catalog、Spark、向量检索），其余模块共用一条冷调 slate→navy 的深度梯度——数据源、模型服务，以及最深的 navy 智能体应用（编排器、LLM、RAG、工具）。虚线 Lava 回路是智能体回到向量检索的 RAG 取数。
 [源码](samples/topology/lakehouse-agent/input.yaml)。
 
-
-### LLM 推理平台（暗色）
-
-![暗色等距图：客户端请求经过服务网关，到达 GPU 集群](docs/assets/llm-serving.png)
-
-聊天应用和命令行的请求穿过中央的服务网关。网关是一块 `layout: grid` 自动排布的面板，路由、安全护栏、缓存、鉴权四个格子各带一个青色图标。后方是模型层：GPU 集群和一摞模型仓库副本。[源码](samples/topology/llm-serving/input.yaml)。
 
 ### RAG 链路（暗色）
 
@@ -217,12 +197,6 @@ docs/agent/SAMPLES.md that best matches the task. Use
 ![爆炸式等距电路板插画：浮空的板层和斜纹芯片](docs/assets/platform-board.png)
 
 官网首页那种质感：三层白板悬空叠起（每层就是一条 `place: {above}`），紫色斜纹的芯片之间走着粗走线，再加上虚线内框、点阵纹理和悬在主芯片上方的线框。[源码](samples/topology/platform-board/input.yaml)。
-
-### 身份流转（白底印刷质感）
-
-![黑白颗粒质感的示意图：人类身份委托给 AI agent，agent 调用机器身份](docs/assets/identity-flow.png)
-
-完全不同的画风：白底上三个带胶片颗粒质感的深色物体，连线上挂着小标签，说明文字用粗体排在画面下方，像一页杂志广告。颗粒来自 `effects.grain` 一个参数。[源码](samples/topology/identity-flow/input.yaml)。
 
 ### 三行 d2 画微服务（全自动布局）
 

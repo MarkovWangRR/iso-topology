@@ -46,12 +46,11 @@ the solver do geometry (all gaps in cells):
 | Composition | One-liner | Worked example |
 |---|---|---|
 | hub-and-spoke | `layout: {mode: ring, gap: 2.6}` — first child is the hub | [ai-platform](../../samples/topology/ai-platform/input.yaml) |
-| dashboard / board | `group` + `layout: {mode: grid, cols: N}` — substrate auto-sizes | [llm-serving](../../samples/topology/llm-serving/input.yaml) |
-| layered flow | anchor part + `place` chains (`rightOf`, `behind`) | [llm-serving](../../samples/topology/llm-serving/input.yaml) |
+| dashboard / board | `group` + `layout: {mode: grid, cols: N}` — substrate auto-sizes | [langchain-app](../../samples/topology/langchain-app/input.yaml) |
+| layered flow | anchor part + `place` chains (`rightOf`, `behind`) | [lakehouse-agent](../../samples/topology/lakehouse-agent/input.yaml) |
 | dual plane | two `layout: row` groups, the second `place: {inFrontOf: …}` | [rag-pipeline](../../samples/topology/rag-pipeline/input.yaml) |
 | metric bars + ghosts | bars in a `place` chain, ghosts `place: {above: <bar>}` | [training-compute](../../samples/topology/training-compute/input.yaml) |
 | exploded plate stack (PCB) | plates chained with `above` + a `wz` lift each | [platform-board](../../samples/topology/platform-board/input.yaml) |
-| editorial screen-horizontal row | `rightOf`+`behind` with `gapX/gapY` so Δx = −Δy | [identity-flow](../../samples/topology/identity-flow/input.yaml) |
 | stair | each tile `{rightOf: prev, inFrontOf: prev, gap: 0}` | [RECIPES § stair](../agent/RECIPES.md#i-want-a-staircase-climbing-the-iso-axis) |
 
 ## Ship a design system with `theme.presets`
@@ -115,7 +114,7 @@ and `ghost` or `pedestal`.
 
 - **Texture panel**: a large thin tile with
   `pattern: {kind: dots}` floating `behind` the hero adds depth for
-  one part's worth of YAML (see llm-serving's mesh panel).
+  one part's worth of YAML.
 - **Replica stacks**: `stack: {count: 3}` on a cylinder or thin tile
   reads instantly as "replicated".
 - **Ghost volumes**: a `place: {above: …}` box with

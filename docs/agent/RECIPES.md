@@ -78,8 +78,8 @@ One container, `layout: grid` — the substrate auto-sizes:
 ```
 
 `mode: row` marches along world +x, `column` along +y. See
-[`samples/topology/llm-serving`](../../samples/topology/llm-serving/input.yaml)
-for a 2×2 service board carrying glyph icons.
+[`samples/topology/langchain-app`](../../samples/topology/langchain-app/input.yaml)
+for 2×2 grid service boards carrying glyph icons.
 
 ### I want a part stacked ON TOP of another (plinth, ghost volume)
 
@@ -479,7 +479,7 @@ or around solid parts freely:
 ### I want a film-grain / print texture
 
 `effects.grain` overlays monochrome noise — the editorial "print ad"
-register (see [`identity-flow`](../../samples/topology/identity-flow/input.yaml)):
+register (see [`duckdb-handdrawn`](../../samples/topology/duckdb-handdrawn/input.yaml)):
 
 ```yaml
 style:
@@ -573,7 +573,7 @@ nodes:
 Pick the central element, give it no `place` (it anchors the world
 origin), chain every satellite off it. See
 [`samples/topology/ai-platform`](../../samples/topology/ai-platform/input.yaml) /
-[`llm-serving`](../../samples/topology/llm-serving/input.yaml) /
+[`clickhouse-hub`](../../samples/topology/clickhouse-hub/input.yaml) /
 [`training-compute`](../../samples/topology/training-compute/input.yaml) —
 all coordinate-free.
 

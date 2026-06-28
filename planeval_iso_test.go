@@ -40,10 +40,10 @@ func TestEvaluateIso_ParsesRealRoutes(t *testing.T) {
 }
 
 // TestEvaluateIso_ObstacleAwareElbow locks the P2 win: the engine's real
-// routing must keep inference-board's GPU edges OUT of the other GPUs (the
-// obstacle-aware default elbow). Without it the engine tunnelled 2 GPUs.
+// routing must keep edges OUT of intervening nodes (the obstacle-aware default
+// elbow), so a dense multi-edge scene tunnels nothing.
 func TestEvaluateIso_ObstacleAwareElbow(t *testing.T) {
-	data, err := os.ReadFile("samples/topology/inference-board/input.yaml")
+	data, err := os.ReadFile("samples/topology/ai-platform/input.yaml")
 	if err != nil {
 		t.Skip("sample missing")
 	}

@@ -93,7 +93,7 @@ agent edits `input.yaml` and re-renders the same folder, so the
 | two things overlap | "validate reports the colliding pair — increase that gap" |
 | a line cuts across the grid | "all connectors must be routing: orthogonal" |
 | text spills or looks cramped | shorten the label, or just say "let the caption sit below the part" (`orient: screen`) |
-| wrong vibe entirely | point at a gallery scene: "make it look like llm-serving" |
+| wrong vibe entirely | point at a gallery scene: "make it look like clickhouse-hub" |
 
 Prefer doing things by hand instead? The manual path starts at
 [01-install.md](01-install.md).
