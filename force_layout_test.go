@@ -15,11 +15,18 @@ func TestGraphClass_DetectsCycles(t *testing.T) {
 	}
 }
 
-// Force-directed placement must materially beat longest-path layering on the
-// dense mesh, where longest-path tunnels 6 edges.
-func TestForceLayout_ReducesMeshTunnelling(t *testing.T) {
-	doc := loadBench(t, "mesh.yaml")
-	if thru := Readability(doc).Tunnels; thru >= 6 {
-		t.Fatalf("force-directed should cut mesh tunnelling below the longest-path baseline of 6, got %d", thru)
+// Adaptive-spread force-directed placement must clear ALL tunnelling on the
+// dense mesh (longest-path tunnels 6), without regressing the sparse hub, which
+// must keep its compact base spread (it never tunnels, so never escalates).
+func TestForceLayout_ClearsMeshTunnelling(t *testing.T) {
+	if thru := Readability(loadBench(t, "mesh.yaml")).Tunnels; thru != 0 {
+		t.Fatalf("adaptive force-directed must clear mesh tunnelling, got %d", thru)
+	}
+	hub := Readability(loadBench(t, "hub.yaml"))
+	if hub.Tunnels != 0 || hub.Crossings != 0 {
+		t.Fatalf("hub should stay clean (thru=%d cross=%d)", hub.Tunnels, hub.Crossings)
+	}
+	if hub.Score < 0.78 {
+		t.Fatalf("hub must keep its compact ring (R≈0.79), got %.3f — over-spread?", hub.Score)
 	}
 }

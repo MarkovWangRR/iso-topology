@@ -267,14 +267,15 @@ ranking, (c) the current `R`. Seeded from `samples/topology/` + `style_refer/`
   - **Fix (`force_layout.go`):** `graphIsCyclic` routes cyclic/mesh graphs to a
     deterministic Fruchterman-Reingold `arrangeForce` (connected attract, all
     repel, fixed circle init + iterations, grid-snapped); DAGs stay on
-    longest-path. Results: **mesh R 0.052→0.135** (tunnelling **6→2**; the
-    remainder is inherent K5-density), **hub R 0.715→0.792** (clean ring, all
+    longest-path. Results: **mesh R 0.052→0.282** (tunnelling **6→0** via adaptive spread —
+    k escalates only while edges tunnel, so the mesh clears and the hub stays compact), **hub R 0.715→0.792** (clean ring, all
     defects 0). **Zero golden drift** (no shipped auto sample is cyclic).
   - Corpus: mesh + hub added; gate holds (worst good = hub 0.792 > best bad 0.480).
     Tests: `TestGraphClass_DetectsCycles`, `TestForceLayout_ReducesMeshTunnelling`.
-  - **Open:** dense meshes still leave a few tunnels (a tunnelling-aware repair —
-    nudge the through-node off the edge — would close the gap, reusing the P1
-    loop); ELK/dagre integration for DAGs deferred (current longest-path is fine).
+  - **Adaptive spread (`runFD`/`hasTunnel`):** start tight (sparse graphs keep a
+    compact ring), escalate the ideal distance only while edges still tunnel a
+    node — mesh thru 2→0 (R→0.282) with hub unchanged at 0.792 (no over-spread).
+  - **Open:** ELK/dagre integration for DAGs deferred (longest-path is fine).
 - **Status:** P0 (measure) ✓, P1 (occlusion/overlap repair) ✓, P2 (detection;
   router already adequate) ✓, P3 (adaptive placement) ✓. The objective `R`,
   the corpus, and the gates now drive every change.

@@ -114,63 +114,93 @@ func arrangeForce(parts []*CompositePart, conns []*Connector, lay *Layout, cell 
 	if lay != nil && lay.Gap != nil && *lay.Gap >= 0 {
 		gap = *lay.Gap
 	}
-	k := avg + gap*cell // ideal edge length (separates node bodies + gap)
-
-	px := make([]float64, n)
-	py := make([]float64, n)
-	radius := k * float64(n) / (2 * math.Pi)
-	for i := range order { // deterministic circle init
-		a := 2 * math.Pi * float64(i) / float64(n)
-		px[i], py[i] = radius*math.Cos(a), radius*math.Sin(a)
-	}
-
-	const iters = 240
-	temp := radius / 2
-	cool := temp / float64(iters+1)
-	dx := make([]float64, n)
-	dy := make([]float64, n)
-	for it := 0; it < iters; it++ {
-		for i := range dx {
-			dx[i], dy[i] = 0, 0
+	// runFD runs Fruchterman-Reingold at a given ideal edge length k. Fixed
+	// circle init + fixed iterations ⇒ deterministic.
+	runFD := func(k float64) (px, py []float64) {
+		px = make([]float64, n)
+		py = make([]float64, n)
+		radius := k * float64(n) / (2 * math.Pi)
+		for i := range order { // deterministic circle init
+			a := 2 * math.Pi * float64(i) / float64(n)
+			px[i], py[i] = radius*math.Cos(a), radius*math.Sin(a)
 		}
-		for i := 0; i < n; i++ { // repulsion (all pairs)
-			for j := i + 1; j < n; j++ {
-				ex, ey := px[i]-px[j], py[i]-py[j]
+		const iters = 240
+		temp := radius / 2
+		cool := temp / float64(iters+1)
+		dx := make([]float64, n)
+		dy := make([]float64, n)
+		for it := 0; it < iters; it++ {
+			for i := range dx {
+				dx[i], dy[i] = 0, 0
+			}
+			for i := 0; i < n; i++ { // repulsion (all pairs)
+				for j := i + 1; j < n; j++ {
+					ex, ey := px[i]-px[j], py[i]-py[j]
+					d := math.Hypot(ex, ey)
+					if d < 0.01 {
+						d, ex = 0.01, 0.01
+					}
+					f := k * k / d
+					ux, uy := ex/d, ey/d
+					dx[i] += ux * f
+					dy[i] += uy * f
+					dx[j] -= ux * f
+					dy[j] -= uy * f
+				}
+			}
+			for _, e := range edges { // attraction (edges)
+				ex, ey := px[e.a]-px[e.b], py[e.a]-py[e.b]
 				d := math.Hypot(ex, ey)
 				if d < 0.01 {
-					d, ex = 0.01, 0.01
+					d = 0.01
 				}
-				f := k * k / d
+				f := d * d / k
 				ux, uy := ex/d, ey/d
-				dx[i] += ux * f
-				dy[i] += uy * f
-				dx[j] -= ux * f
-				dy[j] -= uy * f
+				dx[e.a] -= ux * f
+				dy[e.a] -= uy * f
+				dx[e.b] += ux * f
+				dy[e.b] += uy * f
+			}
+			for i := 0; i < n; i++ { // apply, capped by cooling temperature
+				d := math.Hypot(dx[i], dy[i])
+				if d < 0.01 {
+					continue
+				}
+				lim := math.Min(d, temp)
+				px[i] += dx[i] / d * lim
+				py[i] += dy[i] / d * lim
+			}
+			temp -= cool
+		}
+		return px, py
+	}
+
+	// hasTunnel reports whether any edge's straight center-line passes through a
+	// non-endpoint node's footprint — the defect we spread to remove.
+	hasTunnel := func(px, py []float64) bool {
+		for _, e := range edges {
+			seg := [][2]float64{{px[e.a], py[e.a]}, {px[e.b], py[e.b]}}
+			for c := 0; c < n; c++ {
+				if c == e.a || c == e.b {
+					continue
+				}
+				r := planRect{x: px[c] - fw[c]/2, y: py[c] - fd[c]/2, w: fw[c], d: fd[c]}
+				if routeHitsRect(seg, r) {
+					return true
+				}
 			}
 		}
-		for _, e := range edges { // attraction (edges)
-			ex, ey := px[e.a]-px[e.b], py[e.a]-py[e.b]
-			d := math.Hypot(ex, ey)
-			if d < 0.01 {
-				d = 0.01
-			}
-			f := d * d / k
-			ux, uy := ex/d, ey/d
-			dx[e.a] -= ux * f
-			dy[e.a] -= uy * f
-			dx[e.b] += ux * f
-			dy[e.b] += uy * f
-		}
-		for i := 0; i < n; i++ { // apply, capped by cooling temperature
-			d := math.Hypot(dx[i], dy[i])
-			if d < 0.01 {
-				continue
-			}
-			lim := math.Min(d, temp)
-			px[i] += dx[i] / d * lim
-			py[i] += dy[i] / d * lim
-		}
-		temp -= cool
+		return false
+	}
+
+	// Adaptive spread: start tight — best for sparse graphs like hub-and-spoke,
+	// which keep a compact ring — then escalate the ideal distance ONLY while
+	// edges still tunnel a node, so a dense mesh spreads out just enough to clear
+	// them without over-sprawling. Bounded ⇒ deterministic and terminating.
+	base := avg + gap*cell
+	px, py := runFD(base)
+	for mult := 1.4; mult <= 3.0 && hasTunnel(px, py); mult += 0.4 {
+		px, py = runFD(base * mult)
 	}
 
 	minx, miny := math.Inf(1), math.Inf(1)
