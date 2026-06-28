@@ -213,8 +213,20 @@ ranking, (c) the current `R`. Seeded from `samples/topology/` + `style_refer/`
     routes aren't scored), so a reliable crossing/tunnel corpus scene must wait on
     **P2** (global routing + detection). Body-vs-body occlusion (node fully hidden)
     is not yet in the occlusion term — **P1**.
-- **Next — Phase 1:** complete iso occlusion (bodies/icons) + the projection-repair
-  loop; add the missing corpus scenes once P1/P2 detection lands.
+- **Phase 1 — IN PROGRESS.**
+  - **Projection-repair loop v1 (caption clearance) — DONE** (`repair.go`,
+    `RepairScene`): detect iso-screen caption occlusion → widen the offending
+    group's front padding → re-check → converge. `isotopo render --repair` runs
+    it. Demonstrated: bad-occlusion auto-fixes in 1 iteration, occlusion 1→0,
+    **R 0.167 → 1.000**; strict no-op (0 iters) on clean scenes (golden-safe).
+    Tests: `TestRepair_FixesCaptionOcclusion`, `TestRepair_NoOpOnClean`.
+  - **Fixed a real side-effect bug en route:** `EvaluateIso` (hence
+    `Readability`) was solving + clearing the caller's Layout in place; now it
+    deep-clones (`cloneSceneForEval`). `TestEvaluate_DoesNotMutateDoc` locks it.
+  - **Remaining P1:** body-vs-body occlusion detection + an overlap-removal
+    repair (bad-overlap / the overlap half of bad-both still need it), then the
+    P1 gate (occlusion 0 after repair on ≥95% corpus).
+- **Next:** overlap-removal repair, then body-occlusion detection.
 
 ## 7. Honest caveats
 

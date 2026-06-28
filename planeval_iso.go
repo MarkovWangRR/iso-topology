@@ -21,6 +21,22 @@ var reIsoRoute = regexp.MustCompile(`data-connector="(\d+)" data-from="[^"]*" da
 // isoRealRoutes renders the scene isometrically and parses each connector's
 // real WORLD route from its data-route attribute, keyed by connector index.
 // Straight-routed connectors emit no data-route and are simply absent.
+// cloneSceneForEval deep-copies the parts (whose offsets/Layout applyLayout
+// mutates) and the node's own Layout, sharing the connector slice (untouched by
+// solving), so evaluating a scene never alters the caller's document.
+func cloneSceneForEval(n *Node) *Node {
+	if n == nil {
+		return nil
+	}
+	c := *n
+	c.Parts = cloneParts(n.Parts)
+	if n.Layout != nil {
+		l := *n.Layout
+		c.Layout = &l
+	}
+	return &c
+}
+
 func isoRealRoutes(n *Node, theme *Theme, canvas *Canvas) map[int][][2]float64 {
 	cv := &Canvas{}
 	if canvas != nil {
@@ -72,6 +88,12 @@ func EvaluateIsoText(format string, src []byte) (*PlanReport, error) {
 // available (orthogonal edges), falling back to the plan route for straight
 // edges that emit none. Node footprints are the same applyLayout output.
 func EvaluateIso(n *Node, theme *Theme, canvas *Canvas) *PlanReport {
+	// Evaluation must NOT mutate the caller's scene. buildPlanModel and
+	// isoRealRoutes both run applyLayout (which clears Layout/Place and writes
+	// Offsets) in place, so score a deep clone — otherwise callers like
+	// Readability silently solve-and-clear the doc, breaking any later pass
+	// (e.g. RepairScene) that needs the original Layout declarations.
+	n = cloneSceneForEval(n)
 	rects, _, edges := buildPlanModel(n, theme, canvas)
 	real := isoRealRoutes(n, theme, canvas)
 	for i := range edges {
