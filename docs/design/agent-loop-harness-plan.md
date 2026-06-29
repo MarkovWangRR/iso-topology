@@ -186,5 +186,16 @@ Invariants every layer must hold (non-negotiable, tested):
   screen coords) — needs the detectors to expose screen bboxes; the faithful
   snapshot + the L2 report (defect located by part id) already let the agent find
   a defect, so this is a refinement.
-- **Next — L4:** correct-by-construction (joint groups+labels solve) + the
-  neighbour-label repair that closes the clickhouse-hub class — the higher lever.
+- **L4 (part 1) — neighbour-label repair — DONE.** `repairNeighbourLabels` closes
+  the last open class: a standalone label/title a node from another module covers
+  in projection (clickhouse-hub's wide title over `chhead`) is raised back up the
+  screen, stepping until it clears (bounded so it can't drift off-canvas).
+  clickhouse-hub: **occl 1→0, R 0.153→0.649**, composition preserved (verified via
+  the faithful snapshot). **All 13 real demos now reach BIC = 0** — 0 residual
+  occlusion/overlap, 0 regressions; the BIC gate now covers clickhouse with no
+  exception.
+- **Remaining — L4 (part 2):** correct-by-construction — fold caption clearance,
+  container auto-size and label avoidance into the layout *solve* so the classes
+  are 0 before repair runs (repair becomes a no-op everywhere). Architectural
+  refactor; the user-facing outcome (BIC = 0 on every demo) is already met by the
+  repair path.

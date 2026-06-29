@@ -50,6 +50,7 @@ func occlusionMessages(doc *Document) map[string]bool {
 }
 
 var captionOcclRe = regexp.MustCompile(`group label "([^"]+)" is covered`)
+var neighbourOcclRe = regexp.MustCompile(`label "([^"]+)" is covered by node.*adjacent`)
 
 // RepairScene is the Phase-1 projection-repair loop (docs/design/layout-engine-
 // master-plan.md): it measures the rendered scene and locally repairs the
@@ -75,6 +76,9 @@ func RepairScene(doc *Document) (*Document, int) {
 	iters := 0
 	for ; iters < maxIters; iters++ {
 		changed := repairCaptions(doc)
+		if repairNeighbourLabels(doc) {
+			changed = true
+		}
 		if scene := doc.Scene(); scene != nil && repairOverlaps(doc, scene) {
 			changed = true
 		}
@@ -83,6 +87,58 @@ func RepairScene(doc *Document) (*Document, int) {
 		}
 	}
 	return doc, iters
+}
+
+// repairNeighbourLabels raises a standalone label/title that a node from another
+// module covers in the projected view — the screen-space neighbour-label class
+// (e.g. a wide heading whose tail projects over a node). It moves the label's
+// owner back (−wy = up the screen), away from the content covering it, stepping
+// until that label clears or a bounded number of steps (so a label that can't be
+// cleared this way doesn't drift off-canvas). Returns whether anything moved.
+func repairNeighbourLabels(doc *Document) bool {
+	const (
+		step     = 40.0
+		maxSteps = 9
+	)
+	coveredNow := func() map[string]bool {
+		m := map[string]bool{}
+		for _, is := range LabelOcclusionIssues(doc) {
+			if mm := neighbourOcclRe.FindStringSubmatch(is.Message); mm != nil {
+				m[mm[1]] = true
+			}
+		}
+		return m
+	}
+	covered := coveredNow()
+	if len(covered) == 0 {
+		return false
+	}
+	moved := false
+	for label := range covered {
+		owner := findOwnerByLabel(doc, label)
+		if owner == nil {
+			continue
+		}
+		for s := 0; s < maxSteps && coveredNow()[label]; s++ {
+			if owner.Offset == nil {
+				owner.Offset = &WorldPoint{}
+			}
+			owner.Offset.WY -= step
+			moved = true
+		}
+	}
+	return moved
+}
+
+// findOwnerByLabel returns the first part carrying the given label.
+func findOwnerByLabel(doc *Document, label string) *CompositePart {
+	var found *CompositePart
+	walkParts(doc, func(p *CompositePart) {
+		if found == nil && p.Label == label {
+			found = p
+		}
+	})
+	return found
 }
 
 // repairCaptions widens the front padding of every group whose caption is ridden

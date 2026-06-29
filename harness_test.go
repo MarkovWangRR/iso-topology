@@ -90,8 +90,7 @@ func TestBIC_HandledClassesZero(t *testing.T) {
 		}
 		RepairScene(doc)
 		r := Readability(doc)
-		known := strings.Contains(f, "clickhouse-hub") // L4: neighbour-label class
-		if (r.Occlusions != 0 || r.Overlaps != 0) && !known {
+		if r.Occlusions != 0 || r.Overlaps != 0 {
 			t.Errorf("%s: not accepted after one repair (occl=%d overlap=%d) — BIC>0",
 				filepath.Base(filepath.Dir(f)), r.Occlusions, r.Overlaps)
 		}
