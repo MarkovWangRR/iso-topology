@@ -37,7 +37,8 @@ import (
 var (
 	flagLayout     = "dagre"
 	flagProjection = "" // "" | iso | top — overrides canvas.projection
-	flagRepair     = true // projection-repair loop runs by default (L1); --no-repair opts out
+	flagRepair     = true  // projection-repair loop runs by default (L1); --no-repair opts out
+	flagReport     = false // L2: emit report.json (R breakdown + located defects + patches)
 )
 
 func main() {
@@ -308,6 +309,8 @@ func parseFlags(argv []string) ([]string, error) {
 			flagRepair = true
 		case a == "--no-repair":
 			flagRepair = false
+		case a == "--report":
+			flagReport = true
 		default:
 			positional = append(positional, a)
 		}
@@ -410,6 +413,20 @@ func renderFile(in, outDir string) (int, error) {
 				fmt.Fprintf(os.Stderr, "  - %s\n", f)
 			}
 		}
+	}
+	// Build the report BEFORE rendering — rendering runs applyLayout, which
+	// clears group Layout in place and would strip the padding patches.
+	if flagReport {
+		report := isotopo.BuildRenderReport(doc)
+		js, _ := json.MarshalIndent(report, "", "  ")
+		if err := os.MkdirAll(outDir, 0o755); err != nil {
+			return 1, err
+		}
+		if err := writeFile(filepath.Join(outDir, "report.json"), js); err != nil {
+			return 1, err
+		}
+		fmt.Fprintf(os.Stderr, "report: R=%.3f, %d residual defect(s) → %s\n",
+			report.Readability.Score, len(report.Defects), filepath.Join(outDir, "report.json"))
 	}
 
 	// Pre-flight: run the full validator and surface any issues to stderr

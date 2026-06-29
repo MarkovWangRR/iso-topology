@@ -165,5 +165,15 @@ Invariants every layer must hold (non-negotiable, tested):
   class (caption-rides, world-overlaps) cleared in one call. The lone residual is
   clickhouse-hub's neighbour-label screen-occlusion (the L4 target). Clean scenes
   stay no-op; golden-stable (goldens render via the library, not the CLI).
-- **Next — L2:** one authoritative report (R-breakdown + located residual
-  defects + machine-applicable patches), gated on ≥95% patch actionability.
+- **L2 — DONE.** `render --report` emits a single `report.json` (`RenderReport`):
+  the readability breakdown plus every occlusion located by part id, and a
+  **machine-applicable `patch`** (`{target, field, value}`) on each in-group
+  caption-ride — the front-padding value the repair loop converges to, so
+  applying it is guaranteed to clear the ride. `ApplyPatch` round-trips a patch
+  into the document. Gate met (`TestL2_PatchActionability`): **patch
+  actionability 10/10 (100%)** across the corpus + real demos. The report is
+  built **before** rendering (rendering's `applyLayout` clears group `Layout`
+  in place, which would strip the patches). Neighbour-occlusions are located but
+  carry no auto-patch yet (L4).
+- **Next — L3:** native deterministic snapshot (SVG→PNG, viewport==viewBox, no
+  trim) + annotated defect overlay, to retire the lying `qlmanage` path.
