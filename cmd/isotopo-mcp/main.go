@@ -1,8 +1,9 @@
 // isotopo-mcp is a Model Context Protocol (MCP) server exposing the
-// iso-topology agent loop as three tools — iso_capabilities,
-// iso_validate, iso_render — over the stdio transport, so MCP clients
-// (Claude Code, Claude Desktop, Cursor, …) can draw isometric
-// diagrams without shelling out to the CLI.
+// iso-topology agent loop as five tools — iso_capabilities,
+// iso_validate, iso_evaluate, iso_render, iso_preview — over the stdio
+// transport, so MCP clients (Claude Code, Claude Desktop, Cursor, …)
+// can draw and self-correct isometric diagrams without shelling out to
+// the CLI.
 //
 // The implementation is a deliberately minimal, dependency-free
 // JSON-RPC 2.0 loop (newline-delimited messages per the MCP stdio
@@ -26,7 +27,7 @@ import (
 	isotopo "github.com/MarkovWangRR/iso-topology"
 )
 
-const serverVersion = "0.3.1"
+const serverVersion = "0.4.0"
 
 // ── JSON-RPC plumbing ────────────────────────────────────────────────
 
@@ -151,6 +152,24 @@ func toolList() []map[string]any {
 			"description": "Directory to write topology.svg / topology.html / nodes/* into. Defaults to a fresh temp directory.",
 		},
 	}
+	previewProps := map[string]any{
+		"dsl":    dslProps["dsl"],
+		"format": dslProps["format"],
+		"selectors": map[string]any{
+			"type":        "array",
+			"items":       map[string]any{"type": "string"},
+			"description": "What to crop: node/group ids, or 'edge:N' for the Nth connector. e.g. [\"core\", \"edge:3\"].",
+		},
+		"projection": map[string]any{
+			"type":        "string",
+			"enum":        []string{"", "top"},
+			"description": "Set to 'top' for the flat plan view of the selection. Default is isometric.",
+		},
+		"output_dir": map[string]any{
+			"type":        "string",
+			"description": "Optional directory to also write preview.svg into.",
+		},
+	}
 	return []map[string]any{
 		{
 			"name":        "iso_capabilities",
@@ -167,12 +186,30 @@ func toolList() []map[string]any {
 			},
 		},
 		{
+			"name":        "iso_evaluate",
+			"description": "Score the layout quality of iso-topology DSL without producing final art. Returns a JSON scorecard — edge crossings, node overlaps, edge-through-node tunnelling, bends, and an overall readability score — from three views: 'readability' (the iso objective the engine optimizes), 'iso' (the engine's real routes), and 'plan' (the flat preview router). Use it to self-correct layout (aim for 0 crossings / 0 tunnels) before rendering.",
+			"inputSchema": map[string]any{
+				"type":       "object",
+				"required":   []string{"dsl"},
+				"properties": dslProps,
+			},
+		},
+		{
 			"name":        "iso_render",
 			"description": "Render iso-topology DSL to a 2.5D isometric SVG scene. Validates first (refuses on errors), then writes topology.svg, topology.html (SVG beside editable source), and per-element nodes/<id>.svg fragments. Returns the output paths.",
 			"inputSchema": map[string]any{
 				"type":       "object",
 				"required":   []string{"dsl"},
 				"properties": renderProps,
+			},
+		},
+		{
+			"name":        "iso_preview",
+			"description": "Crop and return the SVG for ONE node, group, or connector of a scene, so an agent can inspect a single element up close instead of the whole diagram. Pass selectors like [\"core\"] or [\"edge:3\"]; set projection 'top' for the flat plan view. Returns the cropped SVG markup.",
+			"inputSchema": map[string]any{
+				"type":       "object",
+				"required":   []string{"dsl", "selectors"},
+				"properties": previewProps,
 			},
 		},
 	}
@@ -198,6 +235,53 @@ func callTool(name string, args json.RawMessage) (text string, isError bool) {
 		}
 		enc, _ := json.MarshalIndent(map[string]any{"issues": issues}, "", "  ")
 		return string(enc), hasErrorIssue(issues)
+
+	case "iso_evaluate":
+		doc, _, errText := loadFromArgs(args)
+		if errText != "" {
+			return errText, true
+		}
+		scene := doc.Scene()
+		if scene == nil {
+			return "document has no scene to evaluate", true
+		}
+		_, planReport := isotopo.RenderPlanAnnotated(scene, doc.Theme, doc.Canvas)
+		isoReport := isotopo.EvaluateIso(scene, doc.Theme, doc.Canvas)
+		readability := isotopo.Readability(doc)
+		enc, _ := json.MarshalIndent(map[string]any{
+			"readability": readability,
+			"plan":        planReport,
+			"iso":         isoReport,
+		}, "", "  ")
+		return string(enc), false
+
+	case "iso_preview":
+		doc, parsed, errText := loadFromArgs(args)
+		if errText != "" {
+			return errText, true
+		}
+		if len(parsed.Selectors) == 0 {
+			return "argument 'selectors' is required (e.g. [\"core\", \"edge:3\"])", true
+		}
+		if parsed.Projection != "" {
+			if doc.Canvas == nil {
+				doc.Canvas = &isotopo.Canvas{}
+			}
+			doc.Canvas.Projection = parsed.Projection
+		}
+		svg, err := isotopo.RenderSubgraph(doc, parsed.Selectors)
+		if err != nil {
+			return "preview: " + err.Error(), true
+		}
+		if parsed.OutputDir != "" {
+			if err := os.MkdirAll(parsed.OutputDir, 0o755); err != nil {
+				return "mkdir: " + err.Error(), true
+			}
+			if err := os.WriteFile(filepath.Join(parsed.OutputDir, "preview.svg"), []byte(svg), 0o644); err != nil {
+				return "write: " + err.Error(), true
+			}
+		}
+		return svg, false
 
 	case "iso_render":
 		doc, parsed, errText := loadFromArgs(args)
@@ -237,9 +321,11 @@ func callTool(name string, args json.RawMessage) (text string, isError bool) {
 // ── Document loading / rendering (mirrors the CLI pipeline) ─────────
 
 type toolArgs struct {
-	DSL       string `json:"dsl"`
-	Format    string `json:"format"`
-	OutputDir string `json:"output_dir"`
+	DSL        string   `json:"dsl"`
+	Format     string   `json:"format"`
+	OutputDir  string   `json:"output_dir"`
+	Selectors  []string `json:"selectors"`
+	Projection string   `json:"projection"`
 }
 
 func loadFromArgs(raw json.RawMessage) (*isotopo.Document, *toolArgs, string) {

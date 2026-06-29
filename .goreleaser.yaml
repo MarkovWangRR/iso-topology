@@ -1,0 +1,56 @@
+# goreleaser config — builds prebuilt binaries for both the renderer (isotopo)
+# and the MCP server (isotopo-mcp), so users without a Go toolchain can just
+# download. Validate locally with `goreleaser check`.
+version: 2
+
+project_name: isotopo
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: isotopo
+    main: ./cmd/isotopo
+    binary: isotopo
+    env:
+      - CGO_ENABLED=0
+    goos: [linux, darwin, windows]
+    goarch: [amd64, arm64]
+    ldflags:
+      - -s -w
+  - id: isotopo-mcp
+    main: ./cmd/isotopo-mcp
+    binary: isotopo-mcp
+    env:
+      - CGO_ENABLED=0
+    goos: [linux, darwin, windows]
+    goarch: [amd64, arm64]
+    ldflags:
+      - -s -w
+
+archives:
+  - id: default
+    ids: [isotopo, isotopo-mcp]
+    name_template: >-
+      {{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}
+    formats: [tar.gz]
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+
+checksum:
+  name_template: checksums.txt
+
+release:
+  draft: false
+  prerelease: auto
+
+changelog:
+  use: github
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"

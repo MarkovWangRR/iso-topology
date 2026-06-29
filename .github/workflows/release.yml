@@ -4,30 +4,39 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Version tag (e.g. v0.9.0)'
+        description: 'Version tag (e.g. v0.13.0)'
         required: true
       body:
         description: 'Release notes (markdown)'
         required: true
 
+permissions:
+  contents: write
+
 jobs:
   release:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
       - uses: actions/checkout@v4
-      - name: Create tag
+        with:
+          fetch-depth: 0
+      - name: Create and push tag
         run: |
           git config user.email "actions@github.com"
           git config user.name "GitHub Actions"
           git tag ${{ github.event.inputs.tag }}
           git push origin ${{ github.event.inputs.tag }}
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+      - uses: actions/setup-go@v5
         with:
-          tag_name: ${{ github.event.inputs.tag }}
-          name: ${{ github.event.inputs.tag }}
-          body: ${{ github.event.inputs.body }}
-          draft: false
-          prerelease: false
+          go-version: '1.25'
+      - name: Write release notes
+        env:
+          NOTES: ${{ github.event.inputs.body }}
+        run: printf '%s' "$NOTES" > "${RUNNER_TEMP}/release-notes.md"
+      - name: GoReleaser (build binaries + create release)
+        uses: goreleaser/goreleaser-action@v6
+        with:
+          version: '~> v2'
+          args: release --clean --release-notes "${{ runner.temp }}/release-notes.md"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

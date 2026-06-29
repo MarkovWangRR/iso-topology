@@ -112,6 +112,30 @@ quality from a deterministic plan view; both let an agent self-correct before it
 looks at pixels. Output is byte-deterministic — same input, same SVG — which is what
 makes the golden-file tests and clean git diffs work.
 
+## MCP server
+
+`isotopo-mcp` exposes the whole loop to any MCP client (Claude Code, Claude
+Desktop, Cursor, …) as five stdio tools — `iso_capabilities`, `iso_validate`,
+`iso_evaluate`, `iso_render`, `iso_preview` — so an agent draws *and*
+self-corrects (validate → evaluate → render) without shelling out to the CLI:
+
+```bash
+go install github.com/MarkovWangRR/iso-topology/cmd/isotopo-mcp@latest
+claude mcp add isotopo -- isotopo-mcp        # Claude Code
+```
+
+Claude Desktop / Cursor / any generic client — add to its MCP config:
+
+```json
+{
+  "mcpServers": {
+    "isotopo": { "command": "isotopo-mcp" }
+  }
+}
+```
+
+Full tool reference + the MCP-shaped loop: [docs/agent/MCP.md](docs/agent/MCP.md).
+
 ## Studio — point, drag, restyle
 
 ```bash

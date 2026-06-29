@@ -34,3 +34,4 @@ samples/playground_tmp/
 # render output dirs at repo root (regenerable via `isotopo render <in> <out>`)
 /out/
 /out-*/
+dist/
