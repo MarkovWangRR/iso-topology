@@ -1,0 +1,145 @@
+# Dremio — Unified Lakehouse Platform, in Dremio's visual language:
+# deep navy stage (#051344), teal-dominant brand (#006d6f / #43b8c9 cyan accents,
+# #e1fffe mint highlights), violet (#5d46ed) secondary accent for the consumer
+# plane. Sources on the left feed the Dremio engine at the centre, which serves
+# BI / apps on the right and reads/writes Apache Iceberg tables via the Nessie
+# catalog below.
+canvas: { background: "#040C24", grid: "", padding: 80 }
+
+theme:
+  text: { family: "Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif", size: 10, weight: "500", color: "#9FB4C8" }
+  presets:
+    # ---- Dremio engine hero tile (bright teal, cyan rim, mint text) ----
+    engine:
+      stroke: { color: "#43B8C9", width: 1.7 }
+      palette: { left: "#00484A", right: "#003536" }
+      faces:
+        top: { fill: { kind: linearGradient, angle: 135, stops: [ { offset: 0, color: "#0A8C8E" }, { offset: 1, color: "#006D6F" } ] } }
+      effects: { cornerRadius: 12, faceSplit: true, opacity: 0.96, dropShadow: { dx: 0, dy: 14, blur: 24, color: "#00000099" } }
+      text: { color: "#E1FFFE" }
+    # ---- secondary engine tile (darker teal) ----
+    core:
+      stroke: { color: "#359AA8", width: 1.5 }
+      palette: { left: "#003E40", right: "#002E2F" }
+      faces:
+        top: { fill: { kind: linearGradient, angle: 135, stops: [ { offset: 0, color: "#00686A" }, { offset: 1, color: "#00484A" } ] } }
+      effects: { cornerRadius: 10, faceSplit: true, opacity: 0.95, dropShadow: { dx: 0, dy: 8, blur: 16, color: "#00000088" } }
+      text: { color: "#CFF6F5" }
+    # ---- source chip (navy, cyan hairline) ----
+    source:
+      stroke: { color: "#3E7E9E", width: 1.4 }
+      palette: { left: "#08172E", right: "#0C1E3A" }
+      faces:
+        top: { fill: { kind: linearGradient, angle: 135, stops: [ { offset: 0, color: "#12305A" }, { offset: 1, color: "#0A1E3C" } ] } }
+      effects: { cornerRadius: 8, faceSplit: true, opacity: 0.94, dropShadow: { dx: 0, dy: 6, blur: 12, color: "#00000077" } }
+      text: { color: "#BFD6EA" }
+    # ---- consumer chip (navy, violet hairline) ----
+    consumer:
+      stroke: { color: "#7B6BE6", width: 1.4 }
+      palette: { left: "#140F30", right: "#181238" }
+      faces:
+        top: { fill: { kind: linearGradient, angle: 135, stops: [ { offset: 0, color: "#241C52" }, { offset: 1, color: "#170F38" } ] } }
+      effects: { cornerRadius: 8, faceSplit: true, opacity: 0.94, dropShadow: { dx: 0, dy: 6, blur: 12, color: "#00000077" } }
+      text: { color: "#D6CEF6" }
+    # ---- catalog chip (teal-mint, the lakehouse table layer) ----
+    catalog:
+      stroke: { color: "#5FBFCD", width: 1.4 }
+      palette: { left: "#063C3D", right: "#08302F" }
+      faces:
+        top: { fill: { kind: linearGradient, angle: 135, stops: [ { offset: 0, color: "#0C5E5E" }, { offset: 1, color: "#08403F" } ] } }
+      effects: { cornerRadius: 8, faceSplit: true, opacity: 0.95, dropShadow: { dx: 0, dy: 6, blur: 12, color: "#00000077" } }
+      text: { color: "#CFF6F5" }
+    # ---- dark category tray (hairline border, low fill) ----
+    tray:
+      stroke: { color: "#345A78", width: 1.5 }
+      palette: { left: "#060F22", right: "#0A1428" }
+      faces:
+        top: { fill: { kind: linearGradient, angle: 135, stops: [ { offset: 0, color: "#0B1A30" }, { offset: 1, color: "#070F22" } ] } }
+      effects: { cornerRadius: 12, faceSplit: true, opacity: 0.6, dropShadow: { dx: 0, dy: 14, blur: 26, color: "#00000099" } }
+      text: { color: "#7FA0BE" }
+    # ---- consumer tray (violet hairline) ----
+    trayViolet:
+      stroke: { color: "#5D46ED", width: 1.5 }
+      palette: { left: "#0E0A24", right: "#120D2C" }
+      faces:
+        top: { fill: { kind: linearGradient, angle: 135, stops: [ { offset: 0, color: "#171034" }, { offset: 1, color: "#0E0A24" } ] } }
+      effects: { cornerRadius: 12, faceSplit: true, opacity: 0.6, dropShadow: { dx: 0, dy: 14, blur: 26, color: "#00000099" } }
+      text: { color: "#9D8FE6" }
+    # ---- elevated Dremio platform tray (cyan rim + glow) ----
+    trayHero:
+      stroke: { color: "#43B8C9", width: 1.6 }
+      palette: { left: "#04201F", right: "#06231F" }
+      faces:
+        top: { fill: { kind: linearGradient, angle: 135, stops: [ { offset: 0, color: "#0A3A38" }, { offset: 1, color: "#05201F" } ] } }
+      effects: { cornerRadius: 16, faceSplit: true, opacity: 0.7, dropShadow: { dx: 0, dy: 18, blur: 30, color: "#000000AA" }, backglow: { color: "#31D3DB", radius: 80, opacity: 0.55 } }
+      text: { color: "#6FE0E6" }
+
+nodes:
+  scene:
+    shape: composite
+    parts:
+      # ============ Title ============
+      - id: title
+        offset: { wx: -360, wy: -150 }
+        shape: iso_text
+        geom: { w: 560, d: 26, h: 4 }
+        label: "Dremio — Unified Lakehouse Platform"
+        style:
+          palette: { top: "#040C24" }
+          text: { orient: screen, size: 19, weight: "600", color: "#43B8C9" }
+
+      # ============ HERO: Dremio engine (centre) ============
+      - id: dremio
+        preset: trayHero
+        shape: group
+        label: "Dremio Lakehouse Engine"
+        layout: { mode: column, gap: 0.7 }
+        parts:
+          - { id: query,  preset: engine, shape: rectangle, geom: { w: 210, d: 80, h: 28 }, icon: "iso://glyph/bolt/E1FFFE",    label: "SQL Query Engine · Arrow" }
+          - { id: reflect,preset: core,   shape: rectangle, geom: { w: 210, d: 70, h: 22 }, icon: "iso://glyph/sparkles/CFF6F5", label: "Reflections · Acceleration" }
+          - { id: semantic,preset: core,  shape: rectangle, geom: { w: 210, d: 70, h: 22 }, icon: "iso://glyph/layers/CFF6F5",  label: "Semantic Layer" }
+
+      # ============ Data Sources (left) ============
+      - id: sources
+        offset: { wx: -430, wy: 70 }
+        preset: tray
+        shape: group
+        label: "Data Sources"
+        layout: { mode: column, gap: 0.8 }
+        parts:
+          - { id: lake,  preset: source, shape: rectangle, geom: { w: 132, d: 60, h: 18 }, icon: "iso://glyph/lake/BFD6EA",        label: "Data Lake · S3 / ADLS" }
+          - { id: wh,    preset: source, shape: rectangle, geom: { w: 132, d: 60, h: 18 }, icon: "iso://si/snowflake/BFD6EA",      label: "Warehouses" }
+          - { id: db,    preset: source, shape: rectangle, geom: { w: 132, d: 60, h: 18 }, icon: "iso://si/postgresql/BFD6EA",     label: "Databases" }
+          - { id: stream,preset: source, shape: rectangle, geom: { w: 132, d: 60, h: 18 }, icon: "iso://si/apachekafka/BFD6EA",    label: "Streaming · Kafka" }
+
+      # ============ Consumers (right) ============
+      - id: consumers
+        offset: { wx: 470, wy: -250 }
+        preset: trayViolet
+        shape: group
+        label: "Consumers"
+        layout: { mode: grid, cols: 2, gap: 0.7 }
+        parts:
+          - { id: bi,     preset: consumer, shape: rectangle, geom: { w: 120, d: 60, h: 18 }, icon: "iso://glyph/chart/D6CEF6",    label: "BI · Tableau / Power BI" }
+          - { id: sqlc,   preset: consumer, shape: rectangle, geom: { w: 120, d: 60, h: 18 }, icon: "iso://glyph/terminal/D6CEF6", label: "SQL Clients" }
+          - { id: ds,     preset: consumer, shape: rectangle, geom: { w: 120, d: 60, h: 18 }, icon: "iso://si/python/D6CEF6",      label: "Data Science" }
+          - { id: apps,   preset: consumer, shape: rectangle, geom: { w: 120, d: 60, h: 18 }, icon: "iso://glyph/browser/D6CEF6",  label: "Applications" }
+
+      # ============ Catalog / Iceberg (front-centre, the lakehouse table layer) ============
+      - id: catalog
+        offset: { wx: 250, wy: 480 }
+        preset: tray
+        shape: group
+        label: "Catalog · Apache Iceberg + Nessie"
+        layout: { mode: row, gap: 0.8 }
+        parts:
+          - { id: iceberg, preset: catalog, shape: rectangle, geom: { w: 130, d: 62, h: 18 }, icon: "iso://glyph/table/CFF6F5",    label: "Iceberg Tables" }
+          - { id: nessie,  preset: catalog, shape: rectangle, geom: { w: 130, d: 62, h: 18 }, icon: "iso://glyph/code/CFF6F5",     label: "Nessie · Data-as-Code" }
+
+    connectors:
+      # sources -> engine (ingest / connect)
+      - { from: sources,  to: dremio,    routing: orthogonal, arrow: triangle, stroke: { color: "#43B8C9", width: 2.4, gradient: { from: "#2A7E8C", to: "#43B8C9" } } }
+      # engine -> consumers (serve)
+      - { from: dremio,   to: consumers, routing: orthogonal, arrow: triangle, stroke: { color: "#6FA8E0", width: 2.4, gradient: { from: "#43B8C9", to: "#7B6BE6" } } }
+      # engine <-> catalog (Iceberg storage plane, dashed)
+      - { from: dremio,   to: catalog,   routing: orthogonal, arrow: none, stroke: { color: "#359AA8", width: 1.6, dash: "5 5" } }

@@ -116,7 +116,13 @@ func repairNeighbourLabels(doc *Document) bool {
 	moved := false
 	for label := range covered {
 		owner := findOwnerByLabel(doc, label)
-		if owner == nil {
+		// Only relocate a STANDALONE label (e.g. an iso_text title). Never move a
+		// group/container by this path: a group caption "covered" by its own
+		// child is a caption-ride (fixed by padding, repairCaptions) — sometimes
+		// misclassified as a neighbour when the child overflows the group's
+		// declared footprint. Moving the whole group can't clear it (the child
+		// moves too) and would fling the layout instead.
+		if owner == nil || len(owner.Parts) > 0 || isContainerShape(owner.Shape) {
 			continue
 		}
 		for s := 0; s < maxSteps && coveredNow()[label]; s++ {
