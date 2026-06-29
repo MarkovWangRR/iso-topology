@@ -333,8 +333,11 @@ func VisualContrastIssues(doc *Document) []Issue {
 					}
 
 					// b) top fill vs canvas background — skipped when the part
-					// separates itself from the canvas via shadow/outline/stroke.
-					if bgOK && !visuallySeparated(eff) {
+					// separates itself from the canvas via shadow/outline/stroke,
+					// or is an iso_text (text-only: it has no real box, so its fill
+					// is deliberately the background; its readability is the
+					// text-vs-background contrast tested in (a), not this).
+					if bgOK && !visuallySeparated(eff) && p.Shape != "iso_text" {
 						cr := contrastRatio(fillLum, bgLum)
 						if cr < 1.5 {
 							issues = append(issues, Issue{

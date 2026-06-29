@@ -86,6 +86,46 @@ nodes:
 	}
 }
 
+// An iso_text title whose fill equals the canvas background must NOT raise the
+// "indistinguishable from canvas" warning — it is text-only (no box), and its
+// readability is the text-vs-background contrast, not fill-vs-background. A real
+// boxed node invisible on the background must still warn. (Recurring noise found
+// across every titled real demo.)
+func TestContrast_IsoTextTitleExempt(t *testing.T) {
+	hasBgWarn := func(src string) bool {
+		doc, err := Parse([]byte(src))
+		if err != nil {
+			t.Fatalf("parse: %v", err)
+		}
+		for _, is := range VisualContrastIssues(doc) {
+			if strings.Contains(is.Message, "indistinguishable from canvas") {
+				return true
+			}
+		}
+		return false
+	}
+	title := `
+canvas: { background: "#04161F" }
+nodes:
+  scene: { shape: composite, parts: [
+    { id: title, shape: iso_text, geom: { w: 300, d: 26, h: 4 }, label: "Readable Title",
+      style: { palette: { top: "#04161F" }, text: { orient: screen, color: "#29B5E8" } } } ] }
+`
+	if hasBgWarn(title) {
+		t.Error("iso_text title (fill==bg, text-only) must not warn fill-vs-background")
+	}
+	box := `
+canvas: { background: "#04161F" }
+nodes:
+  scene: { shape: composite, parts: [
+    { id: ghost, shape: rectangle, geom: { w: 120, d: 70, h: 22 },
+      style: { palette: { top: "#04161F" } } } ] }
+`
+	if !hasBgWarn(box) {
+		t.Error("a real boxed node invisible on the background must still warn")
+	}
+}
+
 // TestL2_PatchActionability is the L2 gate (docs/design/agent-loop-harness-plan.md):
 // every machine-applicable patch the report emits must, when applied, clear the
 // defect it targets — ≥95%. Exercised on the caption-ride class (the one the
