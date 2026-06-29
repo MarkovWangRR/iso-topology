@@ -25,6 +25,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -59,6 +60,18 @@ func main() {
 			os.Exit(2)
 		}
 		code, err := renderFile(args[0], args[1])
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "error:", err)
+			os.Exit(1)
+		}
+		os.Exit(code)
+	case "snapshot":
+		args, err := parseFlags(os.Args[2:])
+		if err != nil || len(args) != 2 {
+			usage()
+			os.Exit(2)
+		}
+		code, err := snapshotFile(args[0], args[1])
 		if err != nil {
 			fmt.Fprintln(os.Stderr, "error:", err)
 			os.Exit(1)
@@ -330,7 +343,8 @@ func parseFlags(argv []string) ([]string, error) {
 
 func usage() {
 	fmt.Fprintln(os.Stderr, `usage:
-  isotopo render [--layout dagre|elk] [--projection iso|top] <input.yaml|input.d2|-> <output-dir>
+  isotopo render [--layout dagre|elk] [--projection iso|top] [--no-repair] [--report] <input.yaml|input.d2|-> <output-dir>
+  isotopo snapshot [--no-repair] [--report] <input> <output-dir>
   isotopo capabilities
 
 input formats:
@@ -344,7 +358,11 @@ flags:
   --projection top    flat top-down plan view (footprints + orthogonal edges)
 
 subcommands:
-  render         render an input file to <output-dir>
+  render         render an input file to <output-dir> (auto-repairs by default;
+                 --no-repair opts out, --report writes report.json)
+  snapshot       render + rasterize to a FAITHFUL deterministic topology.png
+                 (viewport == viewBox, no trim) — a trustworthy image to look at,
+                 not a mis-cropping rasterization. Needs resvg (or ImageMagick).
   capabilities   emit structured JSON of supported shapes, primitives,
                  layouts, and style keys — intended for agents to read
                  before generating DSL
@@ -382,6 +400,39 @@ subcommands:
 // writes whatever it produced even on a code-3 result, so the partial
 // output is available for inspection — it just is no longer reported as
 // success.
+// snapshotFile (L3 of the agent-loop harness plan) renders the scene and then
+// rasterizes it to a FAITHFUL, deterministic PNG: viewport == the SVG viewBox,
+// NO auto-trim — so the image's geometry matches the SVG exactly and the agent
+// can trust what it sees, retiring the qlmanage→magick→trim pipeline that
+// mis-crops and lies. Repair + report run as for `render`.
+func snapshotFile(in, outDir string) (int, error) {
+	code, err := renderFile(in, outDir)
+	if err != nil || code != 0 {
+		return code, err
+	}
+	svg := filepath.Join(outDir, "topology.svg")
+	png := filepath.Join(outDir, "topology.png")
+	if err := rasterize(svg, png); err != nil {
+		return 1, err
+	}
+	fmt.Fprintln(os.Stderr, "snapshot →", png)
+	return 0, nil
+}
+
+// rasterize converts an SVG to PNG deterministically with NO trim, preferring
+// resvg (faithful text + gradients). The output keeps the SVG's intrinsic
+// width/height, so screen coordinates are preserved 1:1.
+func rasterize(svg, png string) error {
+	if p, err := exec.LookPath("resvg"); err == nil {
+		return exec.Command(p, svg, png).Run()
+	}
+	if p, err := exec.LookPath("magick"); err == nil {
+		// No -trim: keep the full viewBox so nothing is cropped.
+		return exec.Command(p, "-background", "none", svg, png).Run()
+	}
+	return fmt.Errorf("snapshot needs a rasterizer on PATH: install resvg (recommended) or ImageMagick")
+}
+
 func renderFile(in, outDir string) (int, error) {
 	var data []byte
 	var err error

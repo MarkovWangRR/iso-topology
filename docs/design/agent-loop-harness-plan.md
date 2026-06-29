@@ -175,5 +175,16 @@ Invariants every layer must hold (non-negotiable, tested):
   built **before** rendering (rendering's `applyLayout` clears group `Layout`
   in place, which would strip the patches). Neighbour-occlusions are located but
   carry no auto-patch yet (L4).
-- **Next — L3:** native deterministic snapshot (SVG→PNG, viewport==viewBox, no
-  trim) + annotated defect overlay, to retire the lying `qlmanage` path.
+- **L3.1 — DONE.** `isotopo snapshot <in> <out>` renders **and** rasterizes to a
+  faithful `topology.png` via **resvg** (ImageMagick fallback): viewport == the
+  SVG `viewBox`, **no trim**, so geometry is preserved 1:1 and text/gradients
+  render truthfully. This retires the `qlmanage→magick→trim` path that mis-crops
+  and lies. Gate met (`TestSnapshot_FaithfulDeterministic`, skipped where no
+  rasterizer): PNG dims == SVG dims exactly; **byte-identical across runs**
+  (deterministic). Verified visually faithful on clickhouse-hub.
+- **Remaining — L3.2:** annotated overlay (boxes on detected defects at their
+  screen coords) — needs the detectors to expose screen bboxes; the faithful
+  snapshot + the L2 report (defect located by part id) already let the agent find
+  a defect, so this is a refinement.
+- **Next — L4:** correct-by-construction (joint groups+labels solve) + the
+  neighbour-label repair that closes the clickhouse-hub class — the higher lever.
