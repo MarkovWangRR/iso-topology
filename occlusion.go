@@ -249,15 +249,13 @@ func captionGroupFootprint(flat []*CompositePart, lb *CompositePart) (occRect, b
 	return occRect{}, false
 }
 
-// qInsideFootprint reports whether q's top-down centre falls within box.
+// qInsideFootprint reports whether q belongs to the group whose footprint is box.
+// It tests footprint OVERLAP, not centre-inside: a child that overflows a
+// deliberately-narrow author-fixed group geom still belongs to it (its box
+// straddles the slab), so the caption-ride is classified in-group — not
+// misread as a neighbour occlusion "from an adjacent module".
 func qInsideFootprint(q *CompositePart, box occRect) bool {
-	w, d, _ := occDims(q)
-	var ox, oy float64
-	if q.Offset != nil {
-		ox, oy = q.Offset.WX, q.Offset.WY
-	}
-	cx, cy := ox+w/2, oy+d/2
-	return cx >= box.x0 && cx <= box.x1 && cy >= box.y0 && cy <= box.y1
+	return occOverlap(occTopBox(q), box)
 }
 
 // fmtIDList renders up to 3 ids quoted and comma-joined, with a "+N more" tail.

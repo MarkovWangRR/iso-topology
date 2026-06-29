@@ -46,6 +46,46 @@ nodes:
 	}
 }
 
+// A child that overflows a deliberately-narrow author-fixed group geom must be
+// classified as the group's OWN child (caption-ride), not misread as a neighbour
+// occlusion "from an adjacent module" — the misclassification that flung the
+// Dremio hero. The author's explicit dims are still respected (not grown); the
+// classifier just uses footprint overlap instead of centre-inside.
+func TestGroup_OverflowChildClassifiedInGroup(t *testing.T) {
+	src := `
+canvas: { background: "#0E1726" }
+nodes:
+  scene:
+    shape: composite
+    parts:
+      - id: g
+        geom: { d: 120 }
+        shape: group
+        label: "A Deliberately Long Group Caption Here"
+        layout: { mode: column, gap: 0.8 }
+        parts:
+          - { id: c1, shape: rectangle, geom: { w: 170, d: 92, h: 24 }, label: "Child One" }
+          - { id: c2, shape: rectangle, geom: { w: 170, d: 92, h: 24 }, label: "Child Two" }
+          - { id: c3, shape: rectangle, geom: { w: 170, d: 92, h: 24 }, label: "Child Three" }
+`
+	doc, err := Parse([]byte(src))
+	if err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+	var sawInGroup bool
+	for _, is := range LabelOcclusionIssues(doc) {
+		if strings.Contains(is.Message, "adjacent module") {
+			t.Errorf("overflow child misclassified as neighbour: %s", is.Message)
+		}
+		if strings.Contains(is.Message, "its own child") {
+			sawInGroup = true
+		}
+	}
+	if !sawInGroup {
+		t.Fatal("expected an in-group caption-ride for the overflowing child")
+	}
+}
+
 // TestL2_PatchActionability is the L2 gate (docs/design/agent-loop-harness-plan.md):
 // every machine-applicable patch the report emits must, when applied, clear the
 // defect it targets — ≥95%. Exercised on the caption-ride class (the one the
