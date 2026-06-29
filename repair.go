@@ -1,9 +1,53 @@
 package isotopo
 
 import (
+	"fmt"
 	"math"
 	"regexp"
+	"sort"
+	"strings"
 )
+
+// RepairAndReport runs the projection-repair loop and returns the iteration
+// count plus a human/agent-readable list of what it cleared (occlusions that
+// vanished, overlap pairs that were separated). Side-effect-free measurement:
+// the defect snapshots are taken via the clone-based detectors. This is the L1
+// "what I fixed" report of the agent-loop harness plan.
+func RepairAndReport(doc *Document) (iters int, fixed []string) {
+	if doc == nil {
+		return 0, nil
+	}
+	beforeOcc := occlusionMessages(doc)
+	beforeOver := Readability(doc).Overlaps
+	_, iters = RepairScene(doc)
+	afterOcc := occlusionMessages(doc)
+	afterOver := Readability(doc).Overlaps
+	for msg := range beforeOcc {
+		if !afterOcc[msg] {
+			fixed = append(fixed, "cleared occlusion: "+msg)
+		}
+	}
+	sort.Strings(fixed)
+	if d := beforeOver - afterOver; d > 0 {
+		fixed = append(fixed, fmt.Sprintf("separated %d overlapping node pair(s)", d))
+	}
+	return iters, fixed
+}
+
+// occlusionMessages snapshots the current label/caption occlusions as a set,
+// trimmed to the defect phrase (before the em-dash rationale) so before/after
+// comparison is stable.
+func occlusionMessages(doc *Document) map[string]bool {
+	out := map[string]bool{}
+	for _, is := range LabelOcclusionIssues(doc) {
+		msg := is.Message
+		if i := strings.Index(msg, " — "); i >= 0 {
+			msg = msg[:i]
+		}
+		out[msg] = true
+	}
+	return out
+}
 
 var captionOcclRe = regexp.MustCompile(`group label "([^"]+)" is covered`)
 

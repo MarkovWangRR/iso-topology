@@ -37,7 +37,7 @@ import (
 var (
 	flagLayout     = "dagre"
 	flagProjection = "" // "" | iso | top — overrides canvas.projection
-	flagRepair     = false // run the projection-repair loop before rendering
+	flagRepair     = true // projection-repair loop runs by default (L1); --no-repair opts out
 )
 
 func main() {
@@ -306,6 +306,8 @@ func parseFlags(argv []string) ([]string, error) {
 			flagProjection = strings.TrimPrefix(a, "--projection=")
 		case a == "--repair":
 			flagRepair = true
+		case a == "--no-repair":
+			flagRepair = false
 		default:
 			positional = append(positional, a)
 		}
@@ -402,8 +404,11 @@ func renderFile(in, outDir string) (int, error) {
 		return 1, err
 	}
 	if flagRepair {
-		if _, iters := isotopo.RepairScene(doc); iters > 0 {
-			fmt.Fprintf(os.Stderr, "repair: converged in %d iteration(s)\n", iters)
+		if iters, fixed := isotopo.RepairAndReport(doc); len(fixed) > 0 {
+			fmt.Fprintf(os.Stderr, "repaired (%d fix(es), %d iteration(s)):\n", len(fixed), iters)
+			for _, f := range fixed {
+				fmt.Fprintf(os.Stderr, "  - %s\n", f)
+			}
 		}
 	}
 

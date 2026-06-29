@@ -157,5 +157,13 @@ Invariants every layer must hold (non-negotiable, tested):
 ---
 
 ## 6. Progress log
-- *(plan defined — implementation not started; layers ship one at a time behind
-  their gates, each validated on corpus + real demos before the next.)*
+- **L1 — DONE.** `render` runs the projection-repair loop **by default**
+  (`--no-repair` opts out) and emits a `repaired (N fix(es), K iters): …` report
+  listing each cleared occlusion / separated overlap (`RepairAndReport`). Gate
+  met (`TestBIC_HandledClassesZero`): a single repaired render drives **BIC = 0**
+  on 21/22 defective scenes across the corpus + all real demos — every handled
+  class (caption-rides, world-overlaps) cleared in one call. The lone residual is
+  clickhouse-hub's neighbour-label screen-occlusion (the L4 target). Clean scenes
+  stay no-op; golden-stable (goldens render via the library, not the CLI).
+- **Next — L2:** one authoritative report (R-breakdown + located residual
+  defects + machine-applicable patches), gated on ≥95% patch actionability.
