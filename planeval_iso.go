@@ -107,5 +107,63 @@ func EvaluateIso(n *Node, theme *Theme, canvas *Canvas) *PlanReport {
 			leaves = append(leaves, r)
 		}
 	}
-	return evalGeom(leaves, edges)
+	rep := evalGeom(leaves, edges)
+	// Overlap reflects the VISUAL truth: count collisions between distinct
+	// top-level parts' footprints — group SLABS included, not just leaves — so a
+	// tray colliding with another tray (which leaf-only counting misses) is in R,
+	// matching validate and the eye. Parent/child pairs share an owner and don't
+	// count.
+	rep.NodeOverlaps = countTopLevelCollisions(n.Parts, rects)
+	return rep
+}
+
+// countTopLevelCollisions returns the number of distinct top-level-part pairs
+// whose footprints collide (Z-aware), excluding parent/child. Footprint = the
+// part's own rect (a group's slab, or a leaf's box).
+func countTopLevelCollisions(topParts []*CompositePart, rects []planRect) int {
+	descTop := map[string]string{}
+	var mark func(top string, p *CompositePart)
+	mark = func(top string, p *CompositePart) {
+		if p.ID != "" {
+			descTop[p.ID] = top
+		}
+		for _, c := range p.Parts {
+			if c != nil {
+				mark(top, c)
+			}
+		}
+	}
+	topIDs := map[string]bool{}
+	for _, p := range topParts {
+		if p != nil {
+			mark(p.ID, p)
+			if p.ID != "" {
+				topIDs[p.ID] = true
+			}
+		}
+	}
+	var boxes []planRect
+	for _, r := range rects {
+		if !r.container || topIDs[r.id] {
+			boxes = append(boxes, r)
+		}
+	}
+	seen := map[[2]string]bool{}
+	for i := 0; i < len(boxes); i++ {
+		for j := i + 1; j < len(boxes); j++ {
+			ta, tb := descTop[boxes[i].id], descTop[boxes[j].id]
+			if ta == "" || tb == "" || ta == tb {
+				continue
+			}
+			if !rectsOverlap(boxes[i], boxes[j]) {
+				continue
+			}
+			key := [2]string{ta, tb}
+			if ta > tb {
+				key = [2]string{tb, ta}
+			}
+			seen[key] = true
+		}
+	}
+	return len(seen)
 }

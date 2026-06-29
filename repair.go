@@ -211,9 +211,19 @@ func repairOverlaps(doc *Document, scene *Node) bool {
 			mark(p, p)
 		}
 	}
+	// Collision set: every leaf, PLUS each top-level group's own slab — so two
+	// category trays whose slabs collide (even when no leaf inside them does) are
+	// separated, not just leaf-vs-leaf. Parent/child pairs share a top-level
+	// owner below and are skipped there.
+	topIDs := map[string]bool{}
+	for _, p := range scene.Parts {
+		if p != nil && p.ID != "" {
+			topIDs[p.ID] = true
+		}
+	}
 	var leaves []planRect
 	for _, r := range rects {
-		if !r.container {
+		if !r.container || topIDs[r.id] {
 			leaves = append(leaves, r)
 		}
 	}

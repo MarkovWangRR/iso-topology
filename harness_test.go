@@ -7,6 +7,45 @@ import (
 	"testing"
 )
 
+// Two top-level group trays whose slabs collide must register in R's overlap
+// term (not only validate) — the leaf-only count missed it — and the repair must
+// separate them. (Dogfooding the Dremio diagram surfaced this gap.)
+func TestOverlap_GroupSlabsCountedAndRepaired(t *testing.T) {
+	src := `
+canvas: { background: "#0E1726" }
+nodes:
+  scene:
+    shape: composite
+    parts:
+      - id: g1
+        shape: group
+        label: "Group One"
+        layout: { mode: column, gap: 0.8 }
+        parts:
+          - { id: a1, shape: rectangle, geom: { w: 120, d: 80, h: 24 }, label: "A1" }
+          - { id: a2, shape: rectangle, geom: { w: 120, d: 80, h: 24 }, label: "A2" }
+      - id: g2
+        offset: { wx: 70, wy: 70 }
+        shape: group
+        label: "Group Two"
+        layout: { mode: column, gap: 0.8 }
+        parts:
+          - { id: b1, shape: rectangle, geom: { w: 120, d: 80, h: 24 }, label: "B1" }
+          - { id: b2, shape: rectangle, geom: { w: 120, d: 80, h: 24 }, label: "B2" }
+`
+	doc, err := Parse([]byte(src))
+	if err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+	if before := Readability(doc).Overlaps; before == 0 {
+		t.Fatal("colliding group slabs must count as an overlap in R")
+	}
+	RepairScene(doc)
+	if after := Readability(doc).Overlaps; after != 0 {
+		t.Fatalf("repair must separate colliding group slabs, still %d", after)
+	}
+}
+
 // TestL2_PatchActionability is the L2 gate (docs/design/agent-loop-harness-plan.md):
 // every machine-applicable patch the report emits must, when applied, clear the
 // defect it targets — ≥95%. Exercised on the caption-ride class (the one the
