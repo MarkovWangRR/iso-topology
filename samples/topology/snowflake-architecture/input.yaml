@@ -1,0 +1,151 @@
+# Snowflake — multi-cluster shared-data architecture, in Snowflake's visual
+# language: dark navy stage (#042130), iconic bright cyan-blue brand (#29B5E8),
+# light-cyan highlights (#D4F0FA), a rose (#E59DBC) governance accent. Three
+# decoupled layers stacked top→bottom: Cloud Services (the brain), elastic
+# Virtual Warehouses (compute), and one centralized Storage layer; data loading
+# on the left, consumers on the right.
+canvas: { background: "#04161F", grid: "", padding: 80 }
+
+theme:
+  text: { family: "Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif", size: 10, weight: "500", color: "#9FB8C6" }
+  presets:
+    # ---- bright compute hero tile (the Snowflake blue) ----
+    warehouse:
+      stroke: { color: "#29B5E8", width: 1.7 }
+      palette: { left: "#0E4C6E", right: "#0A3A54" }
+      faces:
+        top: { fill: { kind: linearGradient, angle: 135, stops: [ { offset: 0, color: "#1E8FD0" }, { offset: 1, color: "#126FE7" } ] } }
+      effects: { cornerRadius: 11, faceSplit: true, opacity: 0.96, dropShadow: { dx: 0, dy: 12, blur: 22, color: "#00000099" } }
+      text: { color: "#EAF7FE" }
+    # ---- cloud-services tile (mid blue) ----
+    service:
+      stroke: { color: "#3FA9D6", width: 1.5 }
+      palette: { left: "#0B3A54", right: "#082C40" }
+      faces:
+        top: { fill: { kind: linearGradient, angle: 135, stops: [ { offset: 0, color: "#13668F" }, { offset: 1, color: "#0E4C6E" } ] } }
+      effects: { cornerRadius: 9, faceSplit: true, opacity: 0.95, dropShadow: { dx: 0, dy: 8, blur: 16, color: "#00000088" } }
+      text: { color: "#D4F0FA" }
+    # ---- storage tile (deep blue) ----
+    storage:
+      stroke: { color: "#2E7FA8", width: 1.5 }
+      palette: { left: "#072838", right: "#051E2A" }
+      faces:
+        top: { fill: { kind: linearGradient, angle: 135, stops: [ { offset: 0, color: "#0C4566" }, { offset: 1, color: "#08324A" } ] } }
+      effects: { cornerRadius: 9, faceSplit: true, opacity: 0.95, dropShadow: { dx: 0, dy: 8, blur: 16, color: "#00000088" } }
+      text: { color: "#BFE6F5" }
+    # ---- side chip (loaders / consumers) ----
+    chip:
+      stroke: { color: "#3A6E88", width: 1.4 }
+      palette: { left: "#0A2230", right: "#0C2A3A" }
+      faces:
+        top: { fill: { kind: linearGradient, angle: 135, stops: [ { offset: 0, color: "#11384C" }, { offset: 1, color: "#0A2634" } ] } }
+      effects: { cornerRadius: 8, faceSplit: true, opacity: 0.94, dropShadow: { dx: 0, dy: 6, blur: 12, color: "#00000077" } }
+      text: { color: "#BcD7E4" }
+    # ---- category tray (hairline, low fill) ----
+    tray:
+      stroke: { color: "#2C5A74", width: 1.5 }
+      palette: { left: "#05222F", right: "#072836" }
+      faces:
+        top: { fill: { kind: linearGradient, angle: 135, stops: [ { offset: 0, color: "#0A303F" }, { offset: 1, color: "#061F2B" } ] } }
+      effects: { cornerRadius: 12, faceSplit: true, opacity: 0.58, dropShadow: { dx: 0, dy: 14, blur: 26, color: "#00000099" } }
+      text: { color: "#7FA8BE" }
+    # ---- elevated compute tray (cyan rim + glow) ----
+    trayHero:
+      stroke: { color: "#29B5E8", width: 1.6 }
+      palette: { left: "#062A3C", right: "#08303f" }
+      faces:
+        top: { fill: { kind: linearGradient, angle: 135, stops: [ { offset: 0, color: "#0C4965" }, { offset: 1, color: "#062A3C" } ] } }
+      effects: { cornerRadius: 16, faceSplit: true, opacity: 0.66, dropShadow: { dx: 0, dy: 18, blur: 30, color: "#000000AA" }, backglow: { color: "#29B5E8", radius: 80, opacity: 0.5 } }
+      text: { color: "#7FD6F2" }
+    # ---- governance tray (rose accent) ----
+    trayRose:
+      stroke: { color: "#E59DBC", width: 1.5 }
+      palette: { left: "#2A1622", right: "#241320" }
+      faces:
+        top: { fill: { kind: linearGradient, angle: 135, stops: [ { offset: 0, color: "#3A1E2E" }, { offset: 1, color: "#241320" } ] } }
+      effects: { cornerRadius: 12, faceSplit: true, opacity: 0.6, dropShadow: { dx: 0, dy: 14, blur: 26, color: "#00000099" } }
+      text: { color: "#E0AEC4" }
+
+nodes:
+  scene:
+    shape: composite
+    parts:
+      # ============ Title ============
+      - id: title
+        offset: { wx: -300, wy: -300 }
+        shape: iso_text
+        geom: { w: 520, d: 26, h: 4 }
+        label: "Snowflake — Multi-Cluster Shared Data"
+        style:
+          palette: { top: "#04161F" }
+          text: { orient: screen, size: 19, weight: "600", color: "#29B5E8" }
+
+      # ============ Layer 1 — Cloud Services (top/back) ============
+      - id: services
+        offset: { wx: -160, wy: -160 }
+        preset: trayRose
+        shape: group
+        label: "Cloud Services"
+        layout: { mode: grid, cols: 2, gap: 0.7 }
+        parts:
+          - { id: auth,  preset: service, shape: rectangle, geom: { w: 116, d: 58, h: 18 }, icon: "iso://glyph/key/D4F0FA",    label: "Auth & Access" }
+          - { id: meta,  preset: service, shape: rectangle, geom: { w: 116, d: 58, h: 18 }, icon: "iso://glyph/database/D4F0FA", label: "Metadata" }
+          - { id: opt,   preset: service, shape: rectangle, geom: { w: 116, d: 58, h: 18 }, icon: "iso://glyph/gear/D4F0FA",   label: "Optimizer" }
+          - { id: gov,   preset: service, shape: rectangle, geom: { w: 116, d: 58, h: 18 }, icon: "iso://glyph/shield/D4F0FA", label: "Governance" }
+
+      # ============ Layer 2 — Virtual Warehouses (middle, HERO) ============
+      - id: compute
+        preset: trayHero
+        shape: group
+        label: "Virtual Warehouses · Elastic Compute"
+        layout: { mode: row, gap: 0.7 }
+        parts:
+          - { id: whxs, preset: warehouse, shape: rectangle, geom: { w: 92, d: 70, h: 26 }, icon: "iso://glyph/cpu/EAF7FE", label: "WH · XS" }
+          - { id: whs,  preset: warehouse, shape: rectangle, geom: { w: 92, d: 70, h: 30 }, icon: "iso://glyph/cpu/EAF7FE", label: "WH · S" }
+          - { id: whm,  preset: warehouse, shape: rectangle, geom: { w: 92, d: 70, h: 34 }, icon: "iso://glyph/cpu/EAF7FE", label: "WH · M" }
+          - { id: whl,  preset: warehouse, shape: rectangle, geom: { w: 92, d: 70, h: 38 }, icon: "iso://glyph/cpu/EAF7FE", label: "WH · L" }
+
+      # ============ Layer 3 — Centralized Storage (bottom/front) ============
+      - id: storagegrp
+        offset: { wx: 150, wy: 200 }
+        preset: tray
+        shape: group
+        label: "Centralized Storage · Micro-Partitions"
+        layout: { mode: row, gap: 0.8 }
+        parts:
+          - { id: micro,  preset: storage, shape: rectangle, geom: { w: 150, d: 64, h: 18 }, icon: "iso://glyph/layers/BFE6F5", label: "Columnar Micro-Partitions" }
+          - { id: objstore,preset: storage, shape: rectangle, geom: { w: 140, d: 64, h: 18 }, icon: "iso://glyph/lake/BFE6F5",   label: "Cloud Object Storage" }
+
+      # ============ Data Loading (left) ============
+      - id: loading
+        offset: { wx: -430, wy: 150 }
+        preset: tray
+        shape: group
+        label: "Data Loading"
+        layout: { mode: column, gap: 0.8 }
+        parts:
+          - { id: pipe,   preset: chip, shape: rectangle, geom: { w: 122, d: 58, h: 18 }, icon: "iso://glyph/stream/BcD7E4", label: "Snowpipe · Streaming" }
+          - { id: connect,preset: chip, shape: rectangle, geom: { w: 122, d: 58, h: 18 }, icon: "iso://glyph/etl/BcD7E4",    label: "Connectors · CDC" }
+
+      # ============ Consumers (right) ============
+      - id: consumers
+        offset: { wx: 470, wy: -120 }
+        preset: tray
+        shape: group
+        label: "Consumers"
+        layout: { mode: grid, cols: 2, gap: 0.7 }
+        parts:
+          - { id: bi,     preset: chip, shape: rectangle, geom: { w: 116, d: 58, h: 18 }, icon: "iso://glyph/chart/BcD7E4",   label: "BI & Analytics" }
+          - { id: ds,     preset: chip, shape: rectangle, geom: { w: 116, d: 58, h: 18 }, icon: "iso://si/python/BcD7E4",     label: "Data Science" }
+          - { id: apps,   preset: chip, shape: rectangle, geom: { w: 116, d: 58, h: 18 }, icon: "iso://glyph/browser/BcD7E4", label: "Apps" }
+          - { id: share,  preset: chip, shape: rectangle, geom: { w: 116, d: 58, h: 18 }, icon: "iso://glyph/globe/BcD7E4",   label: "Data Sharing" }
+
+    connectors:
+      # loading -> storage (ingest)
+      - { from: loading,    to: storagegrp, routing: orthogonal, arrow: triangle, stroke: { color: "#29B5E8", width: 2.2, gradient: { from: "#1E7FB4", to: "#29B5E8" } } }
+      # services orchestrates compute (control plane, rose dashed)
+      - { from: services,   to: compute,    routing: orthogonal, arrow: none, stroke: { color: "#E59DBC", width: 1.5, dash: "5 5" } }
+      # compute reads/writes storage (decoupled compute↔storage)
+      - { from: compute,    to: storagegrp, routing: orthogonal, arrow: triangle, stroke: { color: "#29B5E8", width: 2.4, gradient: { from: "#126FE7", to: "#29B5E8" } } }
+      # compute serves consumers
+      - { from: compute,    to: consumers,  routing: orthogonal, arrow: triangle, stroke: { color: "#3FA9D6", width: 2.2, gradient: { from: "#29B5E8", to: "#7FD6F2" } } }
