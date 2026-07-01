@@ -5,10 +5,10 @@ nodes:
     shape: composite
     layout: { mode: auto, gap: 1.4 }
     parts:
-      - { id: src,  shape: cylinder,  geom: { w: 110, d: 110, h: 50 }, label: "Source", style: { palette: { top: "#274060" } } }
-      - { id: proc, shape: rectangle, geom: { w: 130, d: 96,  h: 34 }, label: "Process", style: { palette: { top: "#1C4A3A" } } }
-      - { id: store,shape: cylinder,  geom: { w: 110, d: 110, h: 50 }, label: "Store", style: { palette: { top: "#3A2A50" } } }
-      - { id: bi,   shape: rectangle, geom: { w: 130, d: 96,  h: 34 }, label: "BI", style: { palette: { top: "#2C3A1C" } } }
+      - { id: src,  shape: cylinder,  geom: { w: 110, d: 110, h: 50 }, label: "Source", style: { palette: { top: "#274060" }, text: { color: "#E6EEF8" } } }
+      - { id: proc, shape: rectangle, geom: { w: 130, d: 96,  h: 34 }, label: "Process", style: { palette: { top: "#1C4A3A" }, text: { color: "#E6EEF8" } } }
+      - { id: store,shape: cylinder,  geom: { w: 110, d: 110, h: 50 }, label: "Store", style: { palette: { top: "#3A2A50" }, text: { color: "#E6EEF8" } } }
+      - { id: bi,   shape: rectangle, geom: { w: 130, d: 96,  h: 34 }, label: "BI", style: { palette: { top: "#2C3A1C" }, text: { color: "#E6EEF8" } } }
     connectors:
       - { from: src,  to: proc,  routing: orthogonal }
       - { from: proc, to: store, routing: orthogonal }
