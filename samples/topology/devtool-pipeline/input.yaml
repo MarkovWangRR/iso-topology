@@ -181,8 +181,8 @@ nodes:
                 kind: linearGradient
                 angle: 135
                 stops:
-                  - { offset: 0,    color: "#10B981" }
-                  - { offset: 0.55, color: "#0B8A62" }
+                  - { offset: 0,    color: "#0B8A62" }
+                  - { offset: 0.55, color: "#087152" }
                   - { offset: 1,    color: "#065F46" }
               strokes:
                 - { color: "#022C22", width: 1.5 }
