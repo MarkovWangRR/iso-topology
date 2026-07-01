@@ -1,0 +1,38 @@
+name: "Bad diagram case"
+description: "Report a scene that renders wrong, cramped, or hard to read — it becomes a permanent regression sample."
+title: "[bad-case] <short description>"
+labels: ["bad-case"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bad case! Accepted reports are turned into a golden
+        test sample via `scripts/add-sample.sh`, so the exact rendering that bothered
+        you can never silently regress again.
+  - type: textarea
+    id: dsl
+    attributes:
+      label: DSL source
+      description: The full `.yaml` / `.d2` scene that reproduces the problem.
+      render: yaml
+    validations:
+      required: true
+  - type: textarea
+    id: whats-wrong
+    attributes:
+      label: What looks wrong
+      description: e.g. labels unreadable, nodes overlap, edges tunnel, colors too low-contrast.
+    validations:
+      required: true
+  - type: input
+    id: command
+    attributes:
+      label: Command used
+      description: The exact `isotopo` invocation (render / evaluate / validate + flags).
+      placeholder: "isotopo render scene.yaml ./out"
+    validations:
+      required: false
+  - type: markdown
+    attributes:
+      value: |
+        If you can, attach the rendered `topology.svg` / `topology.png` by dragging it in.
