@@ -21,7 +21,7 @@ theme:
       stroke: { color: "#ADADB4", width: 1 }
       palette: { left: "#2E2E33", right: "#404045" }
       faces:
-        top:   { fill: { kind: linearGradient, angle: 135, stops: [ { offset: 0.0, color: "#ABABB0" }, { offset: 0.55, color: "#7E7E84" }, { offset: 1.0, color: "#56565C" } ] } }
+        top:   { fill: { kind: linearGradient, angle: 135, stops: [ { offset: 0.0, color: "#6E6E73" }, { offset: 0.55, color: "#5A5A5F" }, { offset: 1.0, color: "#45454A" } ] } }
         left:  { fill: { kind: linearGradient, angle: 90,  stops: [ { offset: 0.0, color: "#4C4C52" }, { offset: 1.0, color: "#2E2E33" } ] } }
         right: { fill: { kind: linearGradient, angle: 90,  stops: [ { offset: 0.0, color: "#404045" }, { offset: 1.0, color: "#28282C" } ] } }
       effects: { cornerRadius: 14, faceSplit: true, opacity: 0.80, dropShadow: { dx: 0, dy: 10, blur: 18, color: "#000000A0" } }

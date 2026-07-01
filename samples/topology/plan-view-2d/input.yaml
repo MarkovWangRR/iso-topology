@@ -1,0 +1,38 @@
+# 2D top-down (plan) view — projection declared in the scene's own canvas, so
+# `isotopo render` and the golden test both render it flat. This is the readable
+# "documentation" mode: height (z) is dropped, footprints become rectangles, and
+# connectors route orthogonally. Compare with the isometric samples.
+canvas:
+  projection: top
+  background: "#0E1116"
+  grid: dots
+  gridColor: "#1C2230"
+  padding: 40
+theme:
+  presets:
+    svc:
+      stroke: { color: "#3B6FD4", width: 1.4 }
+      palette: { top: "#16233A" }
+      text: { color: "#DCE7FF" }
+    data:
+      stroke: { color: "#2FB79A", width: 1.4 }
+      palette: { top: "#123027" }
+      text: { color: "#CFF6EC" }
+nodes:
+  scene:
+    shape: composite
+    layout: { mode: auto }
+    parts:
+      - { id: client,  preset: svc,  shape: rectangle, label: "Client" }
+      - { id: gateway, preset: svc,  shape: rectangle, label: "API Gateway" }
+      - { id: orders,  preset: svc,  shape: rectangle, label: "Orders svc" }
+      - { id: users,   preset: svc,  shape: rectangle, label: "Users svc" }
+      - { id: db,      preset: data, shape: cylinder,  label: "Postgres" }
+      - { id: cache,   preset: data, shape: cylinder,  label: "Redis" }
+    connectors:
+      - { from: client,  to: gateway, routing: orthogonal }
+      - { from: gateway, to: orders,  routing: orthogonal }
+      - { from: gateway, to: users,   routing: orthogonal }
+      - { from: orders,  to: db,      routing: orthogonal }
+      - { from: users,   to: db,      routing: orthogonal }
+      - { from: orders,  to: cache,   routing: orthogonal }

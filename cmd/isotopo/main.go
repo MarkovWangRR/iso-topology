@@ -40,6 +40,7 @@ var (
 	flagProjection = "" // "" | iso | top — overrides canvas.projection
 	flagRepair     = true  // projection-repair loop runs by default (L1); --no-repair opts out
 	flagReport     = false // L2: emit report.json (R breakdown + located defects + patches)
+	flagReadable   = false // --readable: legibility-first "documentation" profile (#11)
 )
 
 func main() {
@@ -324,6 +325,8 @@ func parseFlags(argv []string) ([]string, error) {
 			flagRepair = false
 		case a == "--report":
 			flagReport = true
+		case a == "--readable":
+			flagReadable = true
 		default:
 			positional = append(positional, a)
 		}
@@ -343,7 +346,7 @@ func parseFlags(argv []string) ([]string, error) {
 
 func usage() {
 	fmt.Fprintln(os.Stderr, `usage:
-  isotopo render [--layout dagre|elk] [--projection iso|top] [--no-repair] [--report] <input.yaml|input.d2|-> <output-dir>
+  isotopo render [--layout dagre|elk] [--projection iso|top] [--readable] [--no-repair] [--report] <input.yaml|input.d2|-> <output-dir>
   isotopo snapshot [--no-repair] [--report] <input> <output-dir>
   isotopo capabilities
 
@@ -356,6 +359,9 @@ flags:
   --layout elk        orthogonal right-angle edges with obstacle avoidance
   --projection iso    2.5D isometric view (default)
   --projection top    flat top-down plan view (footprints + orthogonal edges)
+  --readable          legibility-first "documentation" profile: upright screen
+                      labels with a canvas-aware contrast chip + a padding floor
+                      (opt-in; only fills gaps the author left blank)
 
 subcommands:
   render         render an input file to <output-dir> (auto-repairs by default;
@@ -456,6 +462,12 @@ func renderFile(in, outDir string) (int, error) {
 	doc, err := loadDocument(sourceLang, data)
 	if err != nil {
 		return 1, err
+	}
+	// --readable: layer the legibility-first documentation profile (screen
+	// labels + contrast chip + padding floor) over the loaded doc before repair
+	// and render (#11). Opt-in; only fills gaps the author left blank.
+	if flagReadable {
+		isotopo.ApplyReadableProfile(doc)
 	}
 	if flagRepair {
 		if iters, fixed := isotopo.RepairAndReport(doc); len(fixed) > 0 {

@@ -12,7 +12,7 @@ nodes:
         offset: { wx: 0, wy: 0 }
         label: "VITE"
         style:
-          palette: { top: "#A78BFA", left: "#6D28D9", right: "#7C3AED" }
+          palette: { top: "#7C3AED", left: "#4C1D95", right: "#6D28D9" }
           text: { color: "#FFFFFF" }
       - id: value
         shape: iso_text

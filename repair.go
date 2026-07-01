@@ -19,9 +19,11 @@ func RepairAndReport(doc *Document) (iters int, fixed []string) {
 	}
 	beforeOcc := occlusionMessages(doc)
 	beforeOver := Readability(doc).Overlaps
+	beforeContrast := contrastIssueCount(doc)
 	_, iters = RepairScene(doc)
 	afterOcc := occlusionMessages(doc)
 	afterOver := Readability(doc).Overlaps
+	afterContrast := contrastIssueCount(doc)
 	for msg := range beforeOcc {
 		if !afterOcc[msg] {
 			fixed = append(fixed, "cleared occlusion: "+msg)
@@ -31,7 +33,22 @@ func RepairAndReport(doc *Document) (iters int, fixed []string) {
 	if d := beforeOver - afterOver; d > 0 {
 		fixed = append(fixed, fmt.Sprintf("separated %d overlapping node pair(s)", d))
 	}
+	if d := beforeContrast - afterContrast; d > 0 {
+		fixed = append(fixed, fmt.Sprintf("raised label contrast on %d node(s)", d))
+	}
 	return iters, fixed
+}
+
+// contrastIssueCount counts labels flagged below the text/fill contrast
+// threshold — the before/after metric for the contrast-repair pass.
+func contrastIssueCount(doc *Document) int {
+	n := 0
+	for _, is := range VisualContrastIssues(doc) {
+		if strings.Contains(is.Message, "low contrast between top fill") {
+			n++
+		}
+	}
+	return n
 }
 
 // occlusionMessages snapshots the current label/caption occlusions as a set,
@@ -77,6 +94,9 @@ func RepairScene(doc *Document) (*Document, int) {
 	for ; iters < maxIters; iters++ {
 		changed := repairCaptions(doc)
 		if repairNeighbourLabels(doc) {
+			changed = true
+		}
+		if repairContrast(doc) {
 			changed = true
 		}
 		if scene := doc.Scene(); scene != nil && repairOverlaps(doc, scene) {
