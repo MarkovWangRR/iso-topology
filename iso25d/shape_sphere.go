@@ -39,7 +39,7 @@ func DefaultIsoSphere() IsoSphereOpts {
 		Stroke:      "#1D3A66",
 		StrokeWidth: 1.5,
 		FontFamily:  "Helvetica Neue, Arial, sans-serif",
-		FontSize:    16,
+		FontSize:    defaultFontSize,
 		FontColor:   "#0B1F3A",
 		FontWeight:  "600",
 		Margin:      24,
