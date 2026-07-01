@@ -74,26 +74,6 @@ func applyReadableToParts(parts []*CompositePart, textColor, chipBg, chipBorder 
 				}
 			}
 		}
-		// Minimum footprint (Option A): bump a small LEAF node up to a legible
-		// floor so its label/logo isn't cramped. Containers auto-size to their
-		// children, so they're left alone; nodes without an explicit geom already
-		// use the 140-default. Only enlarges — never shrinks an author's node.
-		if p.Geom != nil && len(p.Parts) == 0 && !isContainerShape(p.Shape) {
-			if p.Geom.W > 0 && p.Geom.W < readableMinNodeW {
-				p.Geom.W = readableMinNodeW
-			}
-			if p.Geom.D > 0 && p.Geom.D < readableMinNodeD {
-				p.Geom.D = readableMinNodeD
-			}
-		}
 		applyReadableToParts(p.Parts, textColor, chipBg, chipBorder)
 	}
 }
-
-// readableMinNodeW/D are the minimum leaf-node footprint the readable profile
-// enforces, so tiny tiles (e.g. 66x60 logo chips) grow enough for a legible
-// label/logo instead of shrinking their content to fit.
-const (
-	readableMinNodeW = 96
-	readableMinNodeD = 80
-)

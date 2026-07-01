@@ -58,39 +58,3 @@ func TestApplyReadableProfile(t *testing.T) {
 		t.Errorf("dark canvas: label color = %q; want light #F5F7FA", col)
 	}
 }
-
-// TestReadableMinFootprint covers Option A: the readable profile enlarges small
-// leaf nodes to a minimum footprint (so tiny logo/label tiles grow), while
-// leaving big nodes, containers, and geomless nodes alone.
-func TestReadableMinFootprint(t *testing.T) {
-	doc := &Document{
-		Nodes: map[string]*Node{
-			"scene": {
-				Shape: "composite",
-				Parts: []*CompositePart{
-					{ID: "chip", Shape: "rectangle", Icon: "iso://si/github",
-						Geom: &Geom{W: 66, D: 60, H: 18}}, // small leaf → bumped
-					{ID: "big", Shape: "rectangle", Label: "Big",
-						Geom: &Geom{W: 200, D: 160, H: 40}}, // already large → untouched
-					{ID: "grp", Shape: "group", Geom: &Geom{W: 66, D: 60, H: 8},
-						Parts: []*CompositePart{{ID: "inner", Shape: "rectangle", Icon: "iso://si/go",
-							Geom: &Geom{W: 66, D: 60, H: 18}}}}, // container untouched; child bumped
-				},
-			},
-		},
-	}
-	ApplyReadableProfile(doc)
-	p := doc.Nodes["scene"].Parts
-	if p[0].Geom.W != readableMinNodeW || p[0].Geom.D != readableMinNodeD {
-		t.Errorf("small leaf not bumped: got %gx%g; want %dx%d", p[0].Geom.W, p[0].Geom.D, readableMinNodeW, readableMinNodeD)
-	}
-	if p[1].Geom.W != 200 || p[1].Geom.D != 160 {
-		t.Errorf("large node was modified: %gx%g", p[1].Geom.W, p[1].Geom.D)
-	}
-	if p[2].Geom.W != 66 { // container itself left alone
-		t.Errorf("container footprint changed: %g", p[2].Geom.W)
-	}
-	if c := p[2].Parts[0].Geom; c.W != readableMinNodeW || c.D != readableMinNodeD {
-		t.Errorf("nested leaf not bumped: %gx%g", c.W, c.D)
-	}
-}
