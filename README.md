@@ -168,6 +168,10 @@ touched until you hit save. Tour: [docs/guides/studio.md](docs/guides/studio.md)
   visual flair. Switch per-render with `--projection top` or per-scene with
   `canvas: { projection: top }` — same DSL, same layout solver, no rewrite.
   See [`samples/topology/plan-view-2d`](samples/topology/plan-view-2d/input.yaml).
+- **One-flag readability** — `isotopo render --readable` layers a legibility-first
+  "documentation" profile over any scene: upright screen labels with a canvas-aware
+  contrast chip and a padding floor. Opt-in and non-destructive — it only fills gaps
+  you left blank, so hand-tuned scenes keep their look.
 - **200+ recolorable icons** — 150+ real brand logos (Simple Icons, CC0) plus 35
   concept glyphs; tint any with `/RRGGBB` or `/light`.
 - **Reusable looks** — `theme.presets` plus 28 ready-to-copy
