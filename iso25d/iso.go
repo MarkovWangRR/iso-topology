@@ -97,7 +97,7 @@ func DefaultIsoBox() IsoBoxOpts {
 		Stroke:      "#1D3A66",
 		StrokeWidth: 1.5,
 		FontFamily:  "Helvetica Neue, Arial, sans-serif",
-		FontSize:    16,
+		FontSize:    defaultFontSize,
 		FontColor:   "#0B1F3A",
 		FontWeight:  "600",
 		IconScale:   defaultIconScale,
@@ -121,6 +121,12 @@ const (
 // diagram (issue #7). The adaptive fit path still caps it so icons never
 // overflow the face.
 const defaultIconScale = 0.55
+
+// defaultFontSize is the top-face label size when no explicit size is set.
+// Raised from the historical 16 so node labels read comfortably at 1:1. The
+// adaptive fit path (fitTopContent) still shrinks it when a label would
+// otherwise overflow a small face, so bigger-by-default never causes spill.
+const defaultFontSize = 18
 
 func project(x, y, z float64) (float64, float64) {
 	return x*cos30 - y*cos30, x*sin30 + y*sin30 - z

@@ -154,7 +154,7 @@ func renderComposite(n *Node, theme *Theme, canvas *Canvas, anns []*Annotation) 
 		isoLabel := p.Label
 		var screenLabel, labelBg, labelBorder, labelColor string
 		var labelFamily, labelWeight string
-		var labelSize float64 = 11
+		var labelSize float64 = 13
 		if mergedForLabel != nil && mergedForLabel.Text != nil && mergedForLabel.Text.Orient == "screen" {
 			screenLabel = p.Label
 			// v3.1 — stack clones (id~1, id~2, …) repeat the base part's

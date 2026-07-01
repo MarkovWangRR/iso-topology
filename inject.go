@@ -1033,7 +1033,7 @@ func injectCompositeConnectors(svg string, conns []*Connector, infos []partInfo,
 			}
 			lfs := c.LabelFontSize
 			if lfs <= 0 {
-				lfs = 11
+				lfs = 13
 			}
 			textW := float64(len([]rune(c.Label)))*lfs*0.64 + 12
 

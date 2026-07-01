@@ -69,7 +69,7 @@ func DefaultIsoCylinder() IsoCylinderOpts {
 		Stroke:      "#5C2A0A",
 		StrokeWidth: 1.5,
 		FontFamily:  "Helvetica Neue, Arial, sans-serif",
-		FontSize:    16,
+		FontSize:    defaultFontSize,
 		FontColor:   "#3A1A06",
 		FontWeight:  "600",
 		IconScale:   0.45,

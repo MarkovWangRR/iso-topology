@@ -48,7 +48,7 @@ func DefaultIsoPerson() IsoPersonOpts {
 		BodyTop: "#7FB3FF", BodyLeft: "#3A6FBA", BodyRight: "#5589D6",
 		Stroke: "#1D3A66", StrokeWidth: 1.5,
 		FontFamily: "Helvetica Neue, Arial, sans-serif",
-		FontSize:   15, FontColor: "#0B1F3A", FontWeight: "600",
+		FontSize:   defaultFontSize, FontColor: "#0B1F3A", FontWeight: "600",
 		Margin:    24,
 		HeadStyle: "sphere",
 	}
