@@ -254,7 +254,10 @@ func groupLabelPart(sub *CompositePart, label string) *CompositePart {
 	if sub.Style != nil && sub.Style.Text != nil && sub.Style.Text.Color != "" {
 		color = sub.Style.Text.Color
 	}
-	size := 11.0
+	// Group captions default to the same readable secondary-label size as edge
+	// labels (13); raised from 11 so category headers read at 1:1. An explicit
+	// group text.size still wins.
+	size := 13.0
 	if sub.Style != nil && sub.Style.Text != nil && sub.Style.Text.Size != nil && *sub.Style.Text.Size > 0 {
 		size = *sub.Style.Text.Size
 	}

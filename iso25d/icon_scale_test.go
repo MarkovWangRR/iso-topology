@@ -29,3 +29,39 @@ func TestDefaultIconScaleLegible(t *testing.T) {
 		t.Errorf("default icon width %.1f on a 140 face is too small (old default was 56); want >= 70", w)
 	}
 }
+
+// TestIconOnlyLogoIsLarger guards the icon-only enlargement: a node with an icon
+// and NO label renders its logo larger than the same-size node with a label,
+// because there is no text sharing the face. Uses a small chip-sized face like
+// the brand-logo tiles in dense scenes.
+func TestIconOnlyLogoIsLarger(t *testing.T) {
+	base := DefaultIsoBox()
+	base.Width, base.Depth, base.Height = 66, 60, 18
+	base.Icon = "iso://si/github"
+
+	iconOnly := base
+	iconOnly.Label = ""
+	withLabel := base
+	withLabel.Label = "GitHub"
+
+	wOnly := iconImageWidth(t, RenderIsoBox(iconOnly))
+	wLabel := iconImageWidth(t, RenderIsoBox(withLabel))
+	if wOnly <= wLabel {
+		t.Errorf("icon-only logo (%.1f) should be larger than icon+label logo (%.1f)", wOnly, wLabel)
+	}
+	// Should reflect the icon-only scale (0.72*60 = 43.2), clearly above the
+	// 0.55 default (33).
+	if wOnly < 40 {
+		t.Errorf("icon-only logo width %.1f too small on a 66x60 chip; want >= 40", wOnly)
+	}
+}
+
+func iconImageWidth(t *testing.T, svg string) float64 {
+	t.Helper()
+	m := regexp.MustCompile(`<image[^>]*width="([0-9.]+)"`).FindStringSubmatch(svg)
+	if m == nil {
+		t.Fatal("no icon <image> rendered")
+	}
+	v, _ := strconv.ParseFloat(m[1], 64)
+	return v
+}
