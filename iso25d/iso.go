@@ -100,7 +100,7 @@ func DefaultIsoBox() IsoBoxOpts {
 		FontSize:    16,
 		FontColor:   "#0B1F3A",
 		FontWeight:  "600",
-		IconScale:   0.4,
+		IconScale:   defaultIconScale,
 		Margin:      24,
 	}
 }
@@ -114,6 +114,13 @@ const (
 	cos30 = Cos30 // internal lowercase alias (used throughout iso25d)
 	sin30 = Sin30
 )
+
+// defaultIconScale is the top-face icon size as a fraction of the smaller face
+// dimension when no explicit scale is set. Raised from the historical 0.4 so
+// brand logos (e.g. GitHub) are identifiable at 1:1 without enlarging the whole
+// diagram (issue #7). The adaptive fit path still caps it so icons never
+// overflow the face.
+const defaultIconScale = 0.55
 
 func project(x, y, z float64) (float64, float64) {
 	return x*cos30 - y*cos30, x*sin30 + y*sin30 - z
@@ -333,7 +340,7 @@ func writeTopLabelAndIcon(
 		return
 	}
 	if iconScale <= 0 {
-		iconScale = 0.4
+		iconScale = defaultIconScale
 	}
 
 	fmt.Fprintf(sb, `<g data-face="top-content" transform="%s">`, topContentTransform(originX, originY))
@@ -581,7 +588,7 @@ func writeTopLabelAndIconV12(
 		return
 	}
 	if iconScale <= 0 {
-		iconScale = 0.4
+		iconScale = defaultIconScale
 	}
 
 	// v2.7 — adaptive fit: icons must never overflow the top face;
