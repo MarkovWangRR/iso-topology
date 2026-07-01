@@ -122,6 +122,12 @@ const (
 // overflow the face.
 const defaultIconScale = 0.55
 
+// defaultIconOnlyScale is the default icon size for a node that carries an icon
+// but NO label: with no text sharing the face, a brand logo can fill more of it.
+// Used only when the author didn't set an explicit scale, so deliberate scales
+// are respected. Makes logo-only chips (e.g. a GitHub/Postgres tile) legible.
+const defaultIconOnlyScale = 0.72
+
 // defaultFontSize is the top-face label size when no explicit size is set.
 // Raised from the historical 16 so node labels read comfortably at 1:1. The
 // adaptive fit path (fitTopContent) still shrinks it when a label would
@@ -347,6 +353,9 @@ func writeTopLabelAndIcon(
 	}
 	if iconScale <= 0 {
 		iconScale = defaultIconScale
+	}
+	if !hasLabel && iconScale <= defaultIconScale {
+		iconScale = defaultIconOnlyScale // no text sharing the face → larger logo
 	}
 
 	fmt.Fprintf(sb, `<g data-face="top-content" transform="%s">`, topContentTransform(originX, originY))
@@ -595,6 +604,9 @@ func writeTopLabelAndIconV12(
 	}
 	if iconScale <= 0 {
 		iconScale = defaultIconScale
+	}
+	if !hasLabel && iconScale <= defaultIconScale {
+		iconScale = defaultIconOnlyScale // no text sharing the face → larger logo
 	}
 
 	// v2.7 — adaptive fit: icons must never overflow the top face;
