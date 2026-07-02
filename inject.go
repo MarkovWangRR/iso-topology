@@ -59,9 +59,17 @@ func partsScreenOrigin(infos []partInfo) (tx, ty float64) {
 	return -minX + pad, -minY + pad
 }
 
+// projectIso mirrors iso25d's project(), including its coordinate
+// quantization — both must agree exactly or the connector/label layer
+// drifts off the parts (see iso25d.Cos30's single-source-of-truth note).
 func projectIso(wx, wy, wz float64) (float64, float64) {
-	return wx*cos30 - wy*cos30, wx*sin30 + wy*sin30 - wz
+	return quantIso(wx*cos30 - wy*cos30), quantIso(wx*sin30 + wy*sin30 - wz)
 }
+
+// quantIso quantizes a projected coordinate to the same 1e-6 quantum as
+// iso25d.project, so sub-ULP FMA differences between Go toolchains can't
+// flip threshold decisions (anchor picks, facing tests) between builds.
+func quantIso(v float64) float64 { return math.Round(v*1e6) / 1e6 }
 
 func injectCanvasBackground(svg string, c *Canvas) string {
 	if c == nil {

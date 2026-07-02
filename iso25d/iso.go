@@ -134,8 +134,18 @@ const defaultIconOnlyScale = 0.72
 // otherwise overflow a small face, so bigger-by-default never causes spill.
 const defaultFontSize = 18
 
+// projQuantum quantizes projected coordinates so sub-ULP arithmetic
+// differences between Go toolchains (FMA contraction of a*b+c is
+// compiler-dependent) can never flip a downstream threshold decision —
+// the source of "same code, same input, different golden" drift across
+// Go patch releases. 1e-6 is ~7 orders of magnitude above 1-ULP noise at
+// scene scale and ~4 below the 0.01 the SVG emitter prints.
+const projQuantum = 1e6
+
+func quant(v float64) float64 { return math.Round(v*projQuantum) / projQuantum }
+
 func project(x, y, z float64) (float64, float64) {
-	return x*cos30 - y*cos30, x*sin30 + y*sin30 - z
+	return quant(x*cos30 - y*cos30), quant(x*sin30 + y*sin30 - z)
 }
 
 // boxGeom holds projected, viewbox-shifted coordinates for the 8 corners of
