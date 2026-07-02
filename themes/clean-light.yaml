@@ -1,0 +1,26 @@
+# Light minimal documentation look: soft grey-blue canvas, white cards with
+# crisp borders and soft shadows, ONE deep-blue accent on the hero. The
+# readability-first choice for docs sites and READMEs on white backgrounds.
+description: "light minimal documentation look — white cards, one deep-blue accent"
+canvas: { background: "#F3F5F9", grid: dots, gridColor: "#DDE3EC", gridStep: 40, padding: 72 }
+theme:
+  text: { family: "Inter, system-ui, sans-serif", size: 12, weight: "600", color: "#334155" }
+  roles:
+    hero:
+      palette: { top: "#2F5FD0", left: "#1E3F94", right: "#2750B4" }
+      stroke: { color: "#1B368C", width: 1.5 }
+      effects: { cornerRadius: 12, dropShadow: { dx: 0, dy: 10, blur: 20, color: "#1B368C33" } }
+      text: { color: "#FFFFFF" }
+    tray:
+      palette: { top: "#FFFFFF", left: "#D8DEE9", right: "#E7EBF2" }
+      stroke: { color: "#B9C4D6", width: 1.4 }
+      effects: { cornerRadius: 14, opacity: 0.85, dropShadow: { dx: 0, dy: 12, blur: 22, color: "#94A3B822" } }
+      text: { color: "#4A5B75" }
+    chip:
+      palette: { top: "#FFFFFF", left: "#D8DEE9", right: "#E7EBF2" }
+      stroke: { color: "#99A7BB", width: 1.2 }
+      effects: { cornerRadius: 8, dropShadow: { dx: 0, dy: 6, blur: 12, color: "#94A3B826" } }
+      text: { color: "#1F2A3A" }
+  roleGeoms:
+    hero: { w: 210, d: 140, h: 34 }
+    chip: { w: 96, d: 80, h: 20 }

@@ -1,0 +1,38 @@
+# Dark frosted-glass on a near-black stage with one yellow accent — distilled
+# from the ClickHouse ecosystem hero. hero = yellow-rimmed glass focal card,
+# tray = frosted category slab, chip = charcoal glass tile.
+description: "near-black stage, frosted dark glass, one glowing yellow accent"
+canvas: { background: "#0B0B0E", padding: 80 }
+theme:
+  text: { family: "Inter, system-ui, sans-serif", size: 12, weight: "600", color: "#AEB9D6" }
+  roles:
+    hero:
+      stroke: { color: "#FBFF81", width: 1.8 }
+      palette: { left: "#0E0E10", right: "#1C1C20" }
+      faces:
+        top:   { fill: { kind: linearGradient, angle: 135, stops: [ { offset: 0.0, color: "#26262C" }, { offset: 1.0, color: "#131316" } ] } }
+        left:  { fill: { kind: linearGradient, angle: 90,  stops: [ { offset: 0.0, color: "#1C1C20" }, { offset: 1.0, color: "#0E0E10" } ] } }
+        right: { fill: { kind: linearGradient, angle: 90,  stops: [ { offset: 0.0, color: "#161618" }, { offset: 1.0, color: "#0A0A0C" } ] } }
+      effects: { cornerRadius: 16, faceSplit: true, opacity: 0.9, dropShadow: { dx: 0, dy: 14, blur: 24, color: "#000000AA" }, backglow: { color: "#FBFF81", radius: 60, opacity: 0.5 } }
+      text: { color: "#FBFF81" }
+    tray:
+      stroke: { color: "#CDD24A", width: 1.2 }
+      palette: { left: "#0B0B0D", right: "#161618" }
+      faces:
+        top:   { fill: { kind: linearGradient, angle: 135, stops: [ { offset: 0.0, color: "#1E1E22" }, { offset: 1.0, color: "#101012" } ] } }
+        left:  { fill: { kind: linearGradient, angle: 90,  stops: [ { offset: 0.0, color: "#161618" }, { offset: 1.0, color: "#0B0B0D" } ] } }
+        right: { fill: { kind: linearGradient, angle: 90,  stops: [ { offset: 0.0, color: "#111113" }, { offset: 1.0, color: "#08080A" } ] } }
+      effects: { cornerRadius: 18, faceSplit: true, opacity: 0.62, dropShadow: { dx: 0, dy: 16, blur: 28, color: "#000000AA" }, grain: { intensity: 0.14, scale: 1.5 } }
+      text: { color: "#C5CB66" }
+    chip:
+      stroke: { color: "#5C5D67", width: 1 }
+      palette: { left: "#1B1C20", right: "#2C2D33" }
+      faces:
+        top:   { fill: { kind: linearGradient, angle: 135, stops: [ { offset: 0.0, color: "#45464C" }, { offset: 0.6, color: "#34353B" }, { offset: 1.0, color: "#25262B" } ] } }
+        left:  { fill: { kind: linearGradient, angle: 90,  stops: [ { offset: 0.0, color: "#2C2D33" }, { offset: 1.0, color: "#1B1C20" } ] } }
+        right: { fill: { kind: linearGradient, angle: 90,  stops: [ { offset: 0.0, color: "#232429" }, { offset: 1.0, color: "#161619" } ] } }
+      effects: { cornerRadius: 12, faceSplit: true, opacity: 0.9, dropShadow: { dx: 0, dy: 8, blur: 16, color: "#00000099" } }
+      text: { color: "#E6E8EC" }
+  roleGeoms:
+    hero: { w: 210, d: 140, h: 34 }
+    chip: { w: 96, d: 80, h: 20 }

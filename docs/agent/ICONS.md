@@ -67,157 +67,157 @@ color. Curate the set in `tools/import-icons/allowlist.txt`.
 
 | | Name | URI | Description |
 |---|---|---|---|
-| <img src="../assets/icons/si-airbyte.svg" width="22"> | `airbyte` | `iso://si/airbyte` | Airbyte logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-alibabacloud.svg" width="22"> | `alibabacloud` | `iso://si/alibabacloud` | Alibaba Cloud logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-alpinelinux.svg" width="22"> | `alpinelinux` | `iso://si/alpinelinux` | Alpine Linux logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-angular.svg" width="22"> | `angular` | `iso://si/angular` | Angular logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-ansible.svg" width="22"> | `ansible` | `iso://si/ansible` | Ansible logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-anthropic.svg" width="22"> | `anthropic` | `iso://si/anthropic` | Anthropic logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-apache.svg" width="22"> | `apache` | `iso://si/apache` | Apache logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-apacheairflow.svg" width="22"> | `apacheairflow` | `iso://si/apacheairflow` | Apache Airflow logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-apachecassandra.svg" width="22"> | `apachecassandra` | `iso://si/apachecassandra` | Apache Cassandra logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-apachecouchdb.svg" width="22"> | `apachecouchdb` | `iso://si/apachecouchdb` | Apache CouchDB logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-apacheflink.svg" width="22"> | `apacheflink` | `iso://si/apacheflink` | Apache Flink logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-apachehadoop.svg" width="22"> | `apachehadoop` | `iso://si/apachehadoop` | Apache Hadoop logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-apachehive.svg" width="22"> | `apachehive` | `iso://si/apachehive` | Apache Hive logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-apachekafka.svg" width="22"> | `apachekafka` | `iso://si/apachekafka` | Apache Kafka logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-apachepulsar.svg" width="22"> | `apachepulsar` | `iso://si/apachepulsar` | Apache Pulsar logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-apachespark.svg" width="22"> | `apachespark` | `iso://si/apachespark` | Apache Spark logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-archlinux.svg" width="22"> | `archlinux` | `iso://si/archlinux` | Arch Linux logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-argo.svg" width="22"> | `argo` | `iso://si/argo` | Argo logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-astro.svg" width="22"> | `astro` | `iso://si/astro` | Astro logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-auth0.svg" width="22"> | `auth0` | `iso://si/auth0` | Auth0 logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-bitbucket.svg" width="22"> | `bitbucket` | `iso://si/bitbucket` | Bitbucket logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-bun.svg" width="22"> | `bun` | `iso://si/bun` | Bun logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-c.svg" width="22"> | `c` | `iso://si/c` | C logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-caddy.svg" width="22"> | `caddy` | `iso://si/caddy` | Caddy logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-circleci.svg" width="22"> | `circleci` | `iso://si/circleci` | CircleCI logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-clickhouse.svg" width="22"> | `clickhouse` | `iso://si/clickhouse` | ClickHouse logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-cloudflare.svg" width="22"> | `cloudflare` | `iso://si/cloudflare` | Cloudflare logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-cockroachlabs.svg" width="22"> | `cockroachlabs` | `iso://si/cockroachlabs` | Cockroach Labs logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-consul.svg" width="22"> | `consul` | `iso://si/consul` | Consul logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-couchbase.svg" width="22"> | `couchbase` | `iso://si/couchbase` | Couchbase logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-cplusplus.svg" width="22"> | `cplusplus` | `iso://si/cplusplus` | C++ logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-databricks.svg" width="22"> | `databricks` | `iso://si/databricks` | Databricks logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-datadog.svg" width="22"> | `datadog` | `iso://si/datadog` | Datadog logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-dbt.svg" width="22"> | `dbt` | `iso://si/dbt` | dbt logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-debian.svg" width="22"> | `debian` | `iso://si/debian` | Debian logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-deno.svg" width="22"> | `deno` | `iso://si/deno` | Deno logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-digitalocean.svg" width="22"> | `digitalocean` | `iso://si/digitalocean` | DigitalOcean logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-discord.svg" width="22"> | `discord` | `iso://si/discord` | Discord logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-django.svg" width="22"> | `django` | `iso://si/django` | Django logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-docker.svg" width="22"> | `docker` | `iso://si/docker` | Docker logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-dotnet.svg" width="22"> | `dotnet` | `iso://si/dotnet` | .NET logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-duckdb.svg" width="22"> | `duckdb` | `iso://si/duckdb` | DuckDB logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-elastic.svg" width="22"> | `elastic` | `iso://si/elastic` | Elastic logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-elasticsearch.svg" width="22"> | `elasticsearch` | `iso://si/elasticsearch` | Elasticsearch logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-envoyproxy.svg" width="22"> | `envoyproxy` | `iso://si/envoyproxy` | Envoy Proxy logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-express.svg" width="22"> | `express` | `iso://si/express` | Express logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-fastapi.svg" width="22"> | `fastapi` | `iso://si/fastapi` | FastAPI logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-firebase.svg" width="22"> | `firebase` | `iso://si/firebase` | Firebase logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-flask.svg" width="22"> | `flask` | `iso://si/flask` | Flask logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-freebsd.svg" width="22"> | `freebsd` | `iso://si/freebsd` | FreeBSD logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-git.svg" width="22"> | `git` | `iso://si/git` | Git logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-gitea.svg" width="22"> | `gitea` | `iso://si/gitea` | Gitea logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-github.svg" width="22"> | `github` | `iso://si/github` | GitHub logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-githubactions.svg" width="22"> | `githubactions` | `iso://si/githubactions` | GitHub Actions logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-gitlab.svg" width="22"> | `gitlab` | `iso://si/gitlab` | GitLab logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-go.svg" width="22"> | `go` | `iso://si/go` | Go logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-googlecloud.svg" width="22"> | `googlecloud` | `iso://si/googlecloud` | Google Cloud logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-grafana.svg" width="22"> | `grafana` | `iso://si/grafana` | Grafana logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-graphql.svg" width="22"> | `graphql` | `iso://si/graphql` | GraphQL logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-helm.svg" width="22"> | `helm` | `iso://si/helm` | Helm logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-heroku.svg" width="22"> | `heroku` | `iso://si/heroku` | Heroku logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-hetzner.svg" width="22"> | `hetzner` | `iso://si/hetzner` | Hetzner logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-huggingface.svg" width="22"> | `huggingface` | `iso://si/huggingface` | Hugging Face logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-influxdb.svg" width="22"> | `influxdb` | `iso://si/influxdb` | InfluxDB logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-istio.svg" width="22"> | `istio` | `iso://si/istio` | Istio logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-javascript.svg" width="22"> | `javascript` | `iso://si/javascript` | JavaScript logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-jenkins.svg" width="22"> | `jenkins` | `iso://si/jenkins` | Jenkins logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-json.svg" width="22"> | `json` | `iso://si/json` | JSON logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-jupyter.svg" width="22"> | `jupyter` | `iso://si/jupyter` | Jupyter logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-keras.svg" width="22"> | `keras` | `iso://si/keras` | Keras logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-kibana.svg" width="22"> | `kibana` | `iso://si/kibana` | Kibana logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-kotlin.svg" width="22"> | `kotlin` | `iso://si/kotlin` | Kotlin logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-kubernetes.svg" width="22"> | `kubernetes` | `iso://si/kubernetes` | Kubernetes logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-langchain.svg" width="22"> | `langchain` | `iso://si/langchain` | LangChain logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-laravel.svg" width="22"> | `laravel` | `iso://si/laravel` | Laravel logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-linux.svg" width="22"> | `linux` | `iso://si/linux` | Linux logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-mariadb.svg" width="22"> | `mariadb` | `iso://si/mariadb` | MariaDB logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-minio.svg" width="22"> | `minio` | `iso://si/minio` | MinIO logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-mlflow.svg" width="22"> | `mlflow` | `iso://si/mlflow` | MLflow logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-modal.svg" width="22"> | `modal` | `iso://si/modal` | Modal logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-mongodb.svg" width="22"> | `mongodb` | `iso://si/mongodb` | MongoDB logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-mysql.svg" width="22"> | `mysql` | `iso://si/mysql` | MySQL logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-neo4j.svg" width="22"> | `neo4j` | `iso://si/neo4j` | Neo4j logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-netlify.svg" width="22"> | `netlify` | `iso://si/netlify` | Netlify logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-newrelic.svg" width="22"> | `newrelic` | `iso://si/newrelic` | New Relic logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-nextdotjs.svg" width="22"> | `nextdotjs` | `iso://si/nextdotjs` | Next.js logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-nginx.svg" width="22"> | `nginx` | `iso://si/nginx` | NGINX logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-nodedotjs.svg" width="22"> | `nodedotjs` | `iso://si/nodedotjs` | Node.js logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-numpy.svg" width="22"> | `numpy` | `iso://si/numpy` | NumPy logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-nuxt.svg" width="22"> | `nuxt` | `iso://si/nuxt` | Nuxt logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-okta.svg" width="22"> | `okta` | `iso://si/okta` | Okta logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-ollama.svg" width="22"> | `ollama` | `iso://si/ollama` | Ollama logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-openai.svg" width="22"> | `openai` | `iso://si/openai` | OpenAI logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-openapiinitiative.svg" width="22"> | `openapiinitiative` | `iso://si/openapiinitiative` | OpenAPI Initiative logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-openjdk.svg" width="22"> | `openjdk` | `iso://si/openjdk` | OpenJDK logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-opensearch.svg" width="22"> | `opensearch` | `iso://si/opensearch` | OpenSearch logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-openstack.svg" width="22"> | `openstack` | `iso://si/openstack` | OpenStack logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-opentelemetry.svg" width="22"> | `opentelemetry` | `iso://si/opentelemetry` | OpenTelemetry logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-oracle.svg" width="22"> | `oracle` | `iso://si/oracle` | Oracle logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-ovh.svg" width="22"> | `ovh` | `iso://si/ovh` | OVH logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-oxc.svg" width="22"> | `oxc` | `iso://si/oxc` | Oxc logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-pagerduty.svg" width="22"> | `pagerduty` | `iso://si/pagerduty` | PagerDuty logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-pandas.svg" width="22"> | `pandas` | `iso://si/pandas` | pandas logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-php.svg" width="22"> | `php` | `iso://si/php` | PHP logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-planetscale.svg" width="22"> | `planetscale` | `iso://si/planetscale` | PlanetScale logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-podman.svg" width="22"> | `podman` | `iso://si/podman` | Podman logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-postgresql.svg" width="22"> | `postgresql` | `iso://si/postgresql` | PostgreSQL logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-postman.svg" width="22"> | `postman` | `iso://si/postman` | Postman logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-prometheus.svg" width="22"> | `prometheus` | `iso://si/prometheus` | Prometheus logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-proxmox.svg" width="22"> | `proxmox` | `iso://si/proxmox` | Proxmox logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-python.svg" width="22"> | `python` | `iso://si/python` | Python logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-pytorch.svg" width="22"> | `pytorch` | `iso://si/pytorch` | PyTorch logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-rabbitmq.svg" width="22"> | `rabbitmq` | `iso://si/rabbitmq` | RabbitMQ logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-railway.svg" width="22"> | `railway` | `iso://si/railway` | Railway logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-react.svg" width="22"> | `react` | `iso://si/react` | React logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-redhat.svg" width="22"> | `redhat` | `iso://si/redhat` | Red Hat logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-redis.svg" width="22"> | `redis` | `iso://si/redis` | Redis logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-remix.svg" width="22"> | `remix` | `iso://si/remix` | Remix logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-replicate.svg" width="22"> | `replicate` | `iso://si/replicate` | Replicate logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-rolldown.svg" width="22"> | `rolldown` | `iso://si/rolldown` | Rolldown logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-ruby.svg" width="22"> | `ruby` | `iso://si/ruby` | Ruby logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-rubyonrails.svg" width="22"> | `rubyonrails` | `iso://si/rubyonrails` | Ruby on Rails logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-rust.svg" width="22"> | `rust` | `iso://si/rust` | Rust logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-scikitlearn.svg" width="22"> | `scikitlearn` | `iso://si/scikitlearn` | scikit-learn logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-sentry.svg" width="22"> | `sentry` | `iso://si/sentry` | Sentry logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-slack.svg" width="22"> | `slack` | `iso://si/slack` | Slack logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-snowflake.svg" width="22"> | `snowflake` | `iso://si/snowflake` | Snowflake logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-splunk.svg" width="22"> | `splunk` | `iso://si/splunk` | Splunk logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-spring.svg" width="22"> | `spring` | `iso://si/spring` | Spring logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-sqlite.svg" width="22"> | `sqlite` | `iso://si/sqlite` | SQLite logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-stripe.svg" width="22"> | `stripe` | `iso://si/stripe` | Stripe logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-supabase.svg" width="22"> | `supabase` | `iso://si/supabase` | Supabase logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-svelte.svg" width="22"> | `svelte` | `iso://si/svelte` | Svelte logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-swagger.svg" width="22"> | `swagger` | `iso://si/swagger` | Swagger logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-swift.svg" width="22"> | `swift` | `iso://si/swift` | Swift logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-telegram.svg" width="22"> | `telegram` | `iso://si/telegram` | Telegram logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-temporal.svg" width="22"> | `temporal` | `iso://si/temporal` | Temporal logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-tensorflow.svg" width="22"> | `tensorflow` | `iso://si/tensorflow` | TensorFlow logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-terraform.svg" width="22"> | `terraform` | `iso://si/terraform` | Terraform logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-traefikproxy.svg" width="22"> | `traefikproxy` | `iso://si/traefikproxy` | Traefik Proxy logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-trino.svg" width="22"> | `trino` | `iso://si/trino` | Trino logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-twilio.svg" width="22"> | `twilio` | `iso://si/twilio` | Twilio logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-typescript.svg" width="22"> | `typescript` | `iso://si/typescript` | TypeScript logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-ubuntu.svg" width="22"> | `ubuntu` | `iso://si/ubuntu` | Ubuntu logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-vagrant.svg" width="22"> | `vagrant` | `iso://si/vagrant` | Vagrant logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-vault.svg" width="22"> | `vault` | `iso://si/vault` | Vault logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-vercel.svg" width="22"> | `vercel` | `iso://si/vercel` | Vercel logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-victoriametrics.svg" width="22"> | `victoriametrics` | `iso://si/victoriametrics` | VictoriaMetrics logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-vite.svg" width="22"> | `vite` | `iso://si/vite` | Vite logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-vuedotjs.svg" width="22"> | `vuedotjs` | `iso://si/vuedotjs` | Vue.js logo (Simple Icons, CC0) |
-| <img src="../assets/icons/si-zig.svg" width="22"> | `zig` | `iso://si/zig` | Zig logo (Simple Icons, CC0) |
+| <img src="../assets/icons/si-airbyte.svg" width="22"> | `airbyte` | `iso://si/airbyte` | Airbyte logo — ETL / data integration (Simple Icons, CC0) |
+| <img src="../assets/icons/si-alibabacloud.svg" width="22"> | `alibabacloud` | `iso://si/alibabacloud` | Alibaba Cloud logo — cloud provider (Simple Icons, CC0) |
+| <img src="../assets/icons/si-alpinelinux.svg" width="22"> | `alpinelinux` | `iso://si/alpinelinux` | Alpine Linux logo — Linux distribution (container-optimized) (Simple Icons, CC0) |
+| <img src="../assets/icons/si-angular.svg" width="22"> | `angular` | `iso://si/angular` | Angular logo — web framework (frontend) (Simple Icons, CC0) |
+| <img src="../assets/icons/si-ansible.svg" width="22"> | `ansible` | `iso://si/ansible` | Ansible logo — infrastructure as code / configuration management (Simple Icons, CC0) |
+| <img src="../assets/icons/si-anthropic.svg" width="22"> | `anthropic` | `iso://si/anthropic` | Anthropic logo — LLM / AI platform (Simple Icons, CC0) |
+| <img src="../assets/icons/si-apache.svg" width="22"> | `apache` | `iso://si/apache` | Apache logo — open-source software foundation (Simple Icons, CC0) |
+| <img src="../assets/icons/si-apacheairflow.svg" width="22"> | `apacheairflow` | `iso://si/apacheairflow` | Apache Airflow logo — workflow orchestration (Simple Icons, CC0) |
+| <img src="../assets/icons/si-apachecassandra.svg" width="22"> | `apachecassandra` | `iso://si/apachecassandra` | Apache Cassandra logo — NoSQL database (Simple Icons, CC0) |
+| <img src="../assets/icons/si-apachecouchdb.svg" width="22"> | `apachecouchdb` | `iso://si/apachecouchdb` | Apache CouchDB logo — NoSQL database (Simple Icons, CC0) |
+| <img src="../assets/icons/si-apacheflink.svg" width="22"> | `apacheflink` | `iso://si/apacheflink` | Apache Flink logo — stream processing / ETL (Simple Icons, CC0) |
+| <img src="../assets/icons/si-apachehadoop.svg" width="22"> | `apachehadoop` | `iso://si/apachehadoop` | Apache Hadoop logo — distributed data processing (Simple Icons, CC0) |
+| <img src="../assets/icons/si-apachehive.svg" width="22"> | `apachehive` | `iso://si/apachehive` | Apache Hive logo — data warehouse / big data SQL (Simple Icons, CC0) |
+| <img src="../assets/icons/si-apachekafka.svg" width="22"> | `apachekafka` | `iso://si/apachekafka` | Apache Kafka logo — message queue / streaming (Simple Icons, CC0) |
+| <img src="../assets/icons/si-apachepulsar.svg" width="22"> | `apachepulsar` | `iso://si/apachepulsar` | Apache Pulsar logo — message queue / streaming (Simple Icons, CC0) |
+| <img src="../assets/icons/si-apachespark.svg" width="22"> | `apachespark` | `iso://si/apachespark` | Apache Spark logo — distributed data processing (Simple Icons, CC0) |
+| <img src="../assets/icons/si-archlinux.svg" width="22"> | `archlinux` | `iso://si/archlinux` | Arch Linux logo — Linux distribution (Simple Icons, CC0) |
+| <img src="../assets/icons/si-argo.svg" width="22"> | `argo` | `iso://si/argo` | Argo logo — GitOps / CI/CD (Simple Icons, CC0) |
+| <img src="../assets/icons/si-astro.svg" width="22"> | `astro` | `iso://si/astro` | Astro logo — web framework (static / SSR) (Simple Icons, CC0) |
+| <img src="../assets/icons/si-auth0.svg" width="22"> | `auth0` | `iso://si/auth0` | Auth0 logo — identity / auth (Simple Icons, CC0) |
+| <img src="../assets/icons/si-bitbucket.svg" width="22"> | `bitbucket` | `iso://si/bitbucket` | Bitbucket logo — version control / CI/CD (Simple Icons, CC0) |
+| <img src="../assets/icons/si-bun.svg" width="22"> | `bun` | `iso://si/bun` | Bun logo — JavaScript runtime / package manager (Simple Icons, CC0) |
+| <img src="../assets/icons/si-c.svg" width="22"> | `c` | `iso://si/c` | C logo — programming language (Simple Icons, CC0) |
+| <img src="../assets/icons/si-caddy.svg" width="22"> | `caddy` | `iso://si/caddy` | Caddy logo — web server / reverse proxy (Simple Icons, CC0) |
+| <img src="../assets/icons/si-circleci.svg" width="22"> | `circleci` | `iso://si/circleci` | CircleCI logo — CI/CD (Simple Icons, CC0) |
+| <img src="../assets/icons/si-clickhouse.svg" width="22"> | `clickhouse` | `iso://si/clickhouse` | ClickHouse logo — relational database / OLAP (Simple Icons, CC0) |
+| <img src="../assets/icons/si-cloudflare.svg" width="22"> | `cloudflare` | `iso://si/cloudflare` | Cloudflare logo — CDN / edge / DDoS protection (Simple Icons, CC0) |
+| <img src="../assets/icons/si-cockroachlabs.svg" width="22"> | `cockroachlabs` | `iso://si/cockroachlabs` | Cockroach Labs logo — relational database (Simple Icons, CC0) |
+| <img src="../assets/icons/si-consul.svg" width="22"> | `consul` | `iso://si/consul` | Consul logo — service mesh / service discovery (Simple Icons, CC0) |
+| <img src="../assets/icons/si-couchbase.svg" width="22"> | `couchbase` | `iso://si/couchbase` | Couchbase logo — NoSQL database (Simple Icons, CC0) |
+| <img src="../assets/icons/si-cplusplus.svg" width="22"> | `cplusplus` | `iso://si/cplusplus` | C++ logo — programming language (Simple Icons, CC0) |
+| <img src="../assets/icons/si-databricks.svg" width="22"> | `databricks` | `iso://si/databricks` | Databricks logo — data lakehouse platform (Simple Icons, CC0) |
+| <img src="../assets/icons/si-datadog.svg" width="22"> | `datadog` | `iso://si/datadog` | Datadog logo — observability / monitoring (Simple Icons, CC0) |
+| <img src="../assets/icons/si-dbt.svg" width="22"> | `dbt` | `iso://si/dbt` | dbt logo — data transformation / analytics engineering (Simple Icons, CC0) |
+| <img src="../assets/icons/si-debian.svg" width="22"> | `debian` | `iso://si/debian` | Debian logo — Linux distribution (Simple Icons, CC0) |
+| <img src="../assets/icons/si-deno.svg" width="22"> | `deno` | `iso://si/deno` | Deno logo — JavaScript / TypeScript runtime (Simple Icons, CC0) |
+| <img src="../assets/icons/si-digitalocean.svg" width="22"> | `digitalocean` | `iso://si/digitalocean` | DigitalOcean logo — cloud provider (Simple Icons, CC0) |
+| <img src="../assets/icons/si-discord.svg" width="22"> | `discord` | `iso://si/discord` | Discord logo — team messaging / community platform (Simple Icons, CC0) |
+| <img src="../assets/icons/si-django.svg" width="22"> | `django` | `iso://si/django` | Django logo — web framework (Python) (Simple Icons, CC0) |
+| <img src="../assets/icons/si-docker.svg" width="22"> | `docker` | `iso://si/docker` | Docker logo — container runtime (Simple Icons, CC0) |
+| <img src="../assets/icons/si-dotnet.svg" width="22"> | `dotnet` | `iso://si/dotnet` | .NET logo — programming language / runtime (Simple Icons, CC0) |
+| <img src="../assets/icons/si-duckdb.svg" width="22"> | `duckdb` | `iso://si/duckdb` | DuckDB logo — analytical database / OLAP (Simple Icons, CC0) |
+| <img src="../assets/icons/si-elastic.svg" width="22"> | `elastic` | `iso://si/elastic` | Elastic logo — search engine (Simple Icons, CC0) |
+| <img src="../assets/icons/si-elasticsearch.svg" width="22"> | `elasticsearch` | `iso://si/elasticsearch` | Elasticsearch logo — search engine (Simple Icons, CC0) |
+| <img src="../assets/icons/si-envoyproxy.svg" width="22"> | `envoyproxy` | `iso://si/envoyproxy` | Envoy Proxy logo — service proxy / service mesh (Simple Icons, CC0) |
+| <img src="../assets/icons/si-express.svg" width="22"> | `express` | `iso://si/express` | Express logo — web framework (Node.js) (Simple Icons, CC0) |
+| <img src="../assets/icons/si-fastapi.svg" width="22"> | `fastapi` | `iso://si/fastapi` | FastAPI logo — web framework (Python) (Simple Icons, CC0) |
+| <img src="../assets/icons/si-firebase.svg" width="22"> | `firebase` | `iso://si/firebase` | Firebase logo — NoSQL database / BaaS (Simple Icons, CC0) |
+| <img src="../assets/icons/si-flask.svg" width="22"> | `flask` | `iso://si/flask` | Flask logo — web framework (Python) (Simple Icons, CC0) |
+| <img src="../assets/icons/si-freebsd.svg" width="22"> | `freebsd` | `iso://si/freebsd` | FreeBSD logo — operating system (Simple Icons, CC0) |
+| <img src="../assets/icons/si-git.svg" width="22"> | `git` | `iso://si/git` | Git logo — version control (Simple Icons, CC0) |
+| <img src="../assets/icons/si-gitea.svg" width="22"> | `gitea` | `iso://si/gitea` | Gitea logo — self-hosted version control (Simple Icons, CC0) |
+| <img src="../assets/icons/si-github.svg" width="22"> | `github` | `iso://si/github` | GitHub logo — version control / code hosting (Simple Icons, CC0) |
+| <img src="../assets/icons/si-githubactions.svg" width="22"> | `githubactions` | `iso://si/githubactions` | GitHub Actions logo — CI/CD (Simple Icons, CC0) |
+| <img src="../assets/icons/si-gitlab.svg" width="22"> | `gitlab` | `iso://si/gitlab` | GitLab logo — DevOps / version control / CI/CD (Simple Icons, CC0) |
+| <img src="../assets/icons/si-go.svg" width="22"> | `go` | `iso://si/go` | Go logo — programming language (Simple Icons, CC0) |
+| <img src="../assets/icons/si-googlecloud.svg" width="22"> | `googlecloud` | `iso://si/googlecloud` | Google Cloud logo — cloud provider (Simple Icons, CC0) |
+| <img src="../assets/icons/si-grafana.svg" width="22"> | `grafana` | `iso://si/grafana` | Grafana logo — observability / dashboards (Simple Icons, CC0) |
+| <img src="../assets/icons/si-graphql.svg" width="22"> | `graphql` | `iso://si/graphql` | GraphQL logo — API query language (Simple Icons, CC0) |
+| <img src="../assets/icons/si-helm.svg" width="22"> | `helm` | `iso://si/helm` | Helm logo — Kubernetes package manager (Simple Icons, CC0) |
+| <img src="../assets/icons/si-heroku.svg" width="22"> | `heroku` | `iso://si/heroku` | Heroku logo — PaaS / cloud hosting (Simple Icons, CC0) |
+| <img src="../assets/icons/si-hetzner.svg" width="22"> | `hetzner` | `iso://si/hetzner` | Hetzner logo — cloud / bare-metal hosting (Simple Icons, CC0) |
+| <img src="../assets/icons/si-huggingface.svg" width="22"> | `huggingface` | `iso://si/huggingface` | Hugging Face logo — ML / LLM platform (Simple Icons, CC0) |
+| <img src="../assets/icons/si-influxdb.svg" width="22"> | `influxdb` | `iso://si/influxdb` | InfluxDB logo — time-series database (Simple Icons, CC0) |
+| <img src="../assets/icons/si-istio.svg" width="22"> | `istio` | `iso://si/istio` | Istio logo — service mesh (Simple Icons, CC0) |
+| <img src="../assets/icons/si-javascript.svg" width="22"> | `javascript` | `iso://si/javascript` | JavaScript logo — programming language (Simple Icons, CC0) |
+| <img src="../assets/icons/si-jenkins.svg" width="22"> | `jenkins` | `iso://si/jenkins` | Jenkins logo — CI/CD (Simple Icons, CC0) |
+| <img src="../assets/icons/si-json.svg" width="22"> | `json` | `iso://si/json` | JSON logo — data format (Simple Icons, CC0) |
+| <img src="../assets/icons/si-jupyter.svg" width="22"> | `jupyter` | `iso://si/jupyter` | Jupyter logo — interactive computing / data science (Simple Icons, CC0) |
+| <img src="../assets/icons/si-keras.svg" width="22"> | `keras` | `iso://si/keras` | Keras logo — ML framework (Simple Icons, CC0) |
+| <img src="../assets/icons/si-kibana.svg" width="22"> | `kibana` | `iso://si/kibana` | Kibana logo — log analytics / observability (Simple Icons, CC0) |
+| <img src="../assets/icons/si-kotlin.svg" width="22"> | `kotlin` | `iso://si/kotlin` | Kotlin logo — programming language (Simple Icons, CC0) |
+| <img src="../assets/icons/si-kubernetes.svg" width="22"> | `kubernetes` | `iso://si/kubernetes` | Kubernetes logo — container orchestration (Simple Icons, CC0) |
+| <img src="../assets/icons/si-langchain.svg" width="22"> | `langchain` | `iso://si/langchain` | LangChain logo — LLM application framework (Simple Icons, CC0) |
+| <img src="../assets/icons/si-laravel.svg" width="22"> | `laravel` | `iso://si/laravel` | Laravel logo — web framework (PHP) (Simple Icons, CC0) |
+| <img src="../assets/icons/si-linux.svg" width="22"> | `linux` | `iso://si/linux` | Linux logo — operating system (Simple Icons, CC0) |
+| <img src="../assets/icons/si-mariadb.svg" width="22"> | `mariadb` | `iso://si/mariadb` | MariaDB logo — relational database (Simple Icons, CC0) |
+| <img src="../assets/icons/si-minio.svg" width="22"> | `minio` | `iso://si/minio` | MinIO logo — object storage (Simple Icons, CC0) |
+| <img src="../assets/icons/si-mlflow.svg" width="22"> | `mlflow` | `iso://si/mlflow` | MLflow logo — ML experiment tracking / model registry (Simple Icons, CC0) |
+| <img src="../assets/icons/si-modal.svg" width="22"> | `modal` | `iso://si/modal` | Modal logo — cloud compute / model serving (Simple Icons, CC0) |
+| <img src="../assets/icons/si-mongodb.svg" width="22"> | `mongodb` | `iso://si/mongodb` | MongoDB logo — NoSQL database (Simple Icons, CC0) |
+| <img src="../assets/icons/si-mysql.svg" width="22"> | `mysql` | `iso://si/mysql` | MySQL logo — relational database (Simple Icons, CC0) |
+| <img src="../assets/icons/si-neo4j.svg" width="22"> | `neo4j` | `iso://si/neo4j` | Neo4j logo — graph database (Simple Icons, CC0) |
+| <img src="../assets/icons/si-netlify.svg" width="22"> | `netlify` | `iso://si/netlify` | Netlify logo — JAMstack / edge hosting (Simple Icons, CC0) |
+| <img src="../assets/icons/si-newrelic.svg" width="22"> | `newrelic` | `iso://si/newrelic` | New Relic logo — observability / APM (Simple Icons, CC0) |
+| <img src="../assets/icons/si-nextdotjs.svg" width="22"> | `nextdotjs` | `iso://si/nextdotjs` | Next.js logo — web framework (React / SSR) (Simple Icons, CC0) |
+| <img src="../assets/icons/si-nginx.svg" width="22"> | `nginx` | `iso://si/nginx` | NGINX logo — web server / reverse proxy / load balancer (Simple Icons, CC0) |
+| <img src="../assets/icons/si-nodedotjs.svg" width="22"> | `nodedotjs` | `iso://si/nodedotjs` | Node.js logo — JavaScript runtime (Simple Icons, CC0) |
+| <img src="../assets/icons/si-numpy.svg" width="22"> | `numpy` | `iso://si/numpy` | NumPy logo — numerical computing library (Simple Icons, CC0) |
+| <img src="../assets/icons/si-nuxt.svg" width="22"> | `nuxt` | `iso://si/nuxt` | Nuxt logo — web framework (Vue / SSR) (Simple Icons, CC0) |
+| <img src="../assets/icons/si-okta.svg" width="22"> | `okta` | `iso://si/okta` | Okta logo — identity / auth (Simple Icons, CC0) |
+| <img src="../assets/icons/si-ollama.svg" width="22"> | `ollama` | `iso://si/ollama` | Ollama logo — local LLM runtime (Simple Icons, CC0) |
+| <img src="../assets/icons/si-openai.svg" width="22"> | `openai` | `iso://si/openai` | OpenAI logo — LLM / AI platform (Simple Icons, CC0) |
+| <img src="../assets/icons/si-openapiinitiative.svg" width="22"> | `openapiinitiative` | `iso://si/openapiinitiative` | OpenAPI Initiative logo — API specification (Simple Icons, CC0) |
+| <img src="../assets/icons/si-openjdk.svg" width="22"> | `openjdk` | `iso://si/openjdk` | OpenJDK logo — programming language / runtime (Simple Icons, CC0) |
+| <img src="../assets/icons/si-opensearch.svg" width="22"> | `opensearch` | `iso://si/opensearch` | OpenSearch logo — search engine (Simple Icons, CC0) |
+| <img src="../assets/icons/si-openstack.svg" width="22"> | `openstack` | `iso://si/openstack` | OpenStack logo — open-source cloud platform (Simple Icons, CC0) |
+| <img src="../assets/icons/si-opentelemetry.svg" width="22"> | `opentelemetry` | `iso://si/opentelemetry` | OpenTelemetry logo — observability / distributed tracing (Simple Icons, CC0) |
+| <img src="../assets/icons/si-oracle.svg" width="22"> | `oracle` | `iso://si/oracle` | Oracle logo — relational database (Simple Icons, CC0) |
+| <img src="../assets/icons/si-ovh.svg" width="22"> | `ovh` | `iso://si/ovh` | OVH logo — cloud provider (Simple Icons, CC0) |
+| <img src="../assets/icons/si-oxc.svg" width="22"> | `oxc` | `iso://si/oxc` | Oxc logo — JavaScript toolchain (Simple Icons, CC0) |
+| <img src="../assets/icons/si-pagerduty.svg" width="22"> | `pagerduty` | `iso://si/pagerduty` | PagerDuty logo — incident management / alerting (Simple Icons, CC0) |
+| <img src="../assets/icons/si-pandas.svg" width="22"> | `pandas` | `iso://si/pandas` | pandas logo — data analysis library (Simple Icons, CC0) |
+| <img src="../assets/icons/si-php.svg" width="22"> | `php` | `iso://si/php` | PHP logo — programming language (Simple Icons, CC0) |
+| <img src="../assets/icons/si-planetscale.svg" width="22"> | `planetscale` | `iso://si/planetscale` | PlanetScale logo — relational database (Simple Icons, CC0) |
+| <img src="../assets/icons/si-podman.svg" width="22"> | `podman` | `iso://si/podman` | Podman logo — container runtime (Simple Icons, CC0) |
+| <img src="../assets/icons/si-postgresql.svg" width="22"> | `postgresql` | `iso://si/postgresql` | PostgreSQL logo — relational database (Simple Icons, CC0) |
+| <img src="../assets/icons/si-postman.svg" width="22"> | `postman` | `iso://si/postman` | Postman logo — API testing / development (Simple Icons, CC0) |
+| <img src="../assets/icons/si-prometheus.svg" width="22"> | `prometheus` | `iso://si/prometheus` | Prometheus logo — metrics / monitoring (Simple Icons, CC0) |
+| <img src="../assets/icons/si-proxmox.svg" width="22"> | `proxmox` | `iso://si/proxmox` | Proxmox logo — hypervisor / virtualization platform (Simple Icons, CC0) |
+| <img src="../assets/icons/si-python.svg" width="22"> | `python` | `iso://si/python` | Python logo — programming language (Simple Icons, CC0) |
+| <img src="../assets/icons/si-pytorch.svg" width="22"> | `pytorch` | `iso://si/pytorch` | PyTorch logo — ML framework (Simple Icons, CC0) |
+| <img src="../assets/icons/si-rabbitmq.svg" width="22"> | `rabbitmq` | `iso://si/rabbitmq` | RabbitMQ logo — message queue (Simple Icons, CC0) |
+| <img src="../assets/icons/si-railway.svg" width="22"> | `railway` | `iso://si/railway` | Railway logo — PaaS / cloud hosting (Simple Icons, CC0) |
+| <img src="../assets/icons/si-react.svg" width="22"> | `react` | `iso://si/react` | React logo — UI library (frontend) (Simple Icons, CC0) |
+| <img src="../assets/icons/si-redhat.svg" width="22"> | `redhat` | `iso://si/redhat` | Red Hat logo — Linux distribution / enterprise OS (Simple Icons, CC0) |
+| <img src="../assets/icons/si-redis.svg" width="22"> | `redis` | `iso://si/redis` | Redis logo — cache / key-value store (Simple Icons, CC0) |
+| <img src="../assets/icons/si-remix.svg" width="22"> | `remix` | `iso://si/remix` | Remix logo — web framework (React / SSR) (Simple Icons, CC0) |
+| <img src="../assets/icons/si-replicate.svg" width="22"> | `replicate` | `iso://si/replicate` | Replicate logo — model serving / ML cloud (Simple Icons, CC0) |
+| <img src="../assets/icons/si-rolldown.svg" width="22"> | `rolldown` | `iso://si/rolldown` | Rolldown logo — JavaScript bundler (Simple Icons, CC0) |
+| <img src="../assets/icons/si-ruby.svg" width="22"> | `ruby` | `iso://si/ruby` | Ruby logo — programming language (Simple Icons, CC0) |
+| <img src="../assets/icons/si-rubyonrails.svg" width="22"> | `rubyonrails` | `iso://si/rubyonrails` | Ruby on Rails logo — web framework (Ruby) (Simple Icons, CC0) |
+| <img src="../assets/icons/si-rust.svg" width="22"> | `rust` | `iso://si/rust` | Rust logo — programming language (Simple Icons, CC0) |
+| <img src="../assets/icons/si-scikitlearn.svg" width="22"> | `scikitlearn` | `iso://si/scikitlearn` | scikit-learn logo — ML library (Simple Icons, CC0) |
+| <img src="../assets/icons/si-sentry.svg" width="22"> | `sentry` | `iso://si/sentry` | Sentry logo — error tracking / application monitoring (Simple Icons, CC0) |
+| <img src="../assets/icons/si-slack.svg" width="22"> | `slack` | `iso://si/slack` | Slack logo — team messaging (Simple Icons, CC0) |
+| <img src="../assets/icons/si-snowflake.svg" width="22"> | `snowflake` | `iso://si/snowflake` | Snowflake logo — data warehouse (Simple Icons, CC0) |
+| <img src="../assets/icons/si-splunk.svg" width="22"> | `splunk` | `iso://si/splunk` | Splunk logo — logging / SIEM / observability (Simple Icons, CC0) |
+| <img src="../assets/icons/si-spring.svg" width="22"> | `spring` | `iso://si/spring` | Spring logo — application framework (Java) (Simple Icons, CC0) |
+| <img src="../assets/icons/si-sqlite.svg" width="22"> | `sqlite` | `iso://si/sqlite` | SQLite logo — relational database (Simple Icons, CC0) |
+| <img src="../assets/icons/si-stripe.svg" width="22"> | `stripe` | `iso://si/stripe` | Stripe logo — payment processing API (Simple Icons, CC0) |
+| <img src="../assets/icons/si-supabase.svg" width="22"> | `supabase` | `iso://si/supabase` | Supabase logo — relational database / BaaS (Simple Icons, CC0) |
+| <img src="../assets/icons/si-svelte.svg" width="22"> | `svelte` | `iso://si/svelte` | Svelte logo — web framework (frontend) (Simple Icons, CC0) |
+| <img src="../assets/icons/si-swagger.svg" width="22"> | `swagger` | `iso://si/swagger` | Swagger logo — API documentation (Simple Icons, CC0) |
+| <img src="../assets/icons/si-swift.svg" width="22"> | `swift` | `iso://si/swift` | Swift logo — programming language (Simple Icons, CC0) |
+| <img src="../assets/icons/si-telegram.svg" width="22"> | `telegram` | `iso://si/telegram` | Telegram logo — messaging platform (Simple Icons, CC0) |
+| <img src="../assets/icons/si-temporal.svg" width="22"> | `temporal` | `iso://si/temporal` | Temporal logo — workflow orchestration (Simple Icons, CC0) |
+| <img src="../assets/icons/si-tensorflow.svg" width="22"> | `tensorflow` | `iso://si/tensorflow` | TensorFlow logo — ML framework (Simple Icons, CC0) |
+| <img src="../assets/icons/si-terraform.svg" width="22"> | `terraform` | `iso://si/terraform` | Terraform logo — infrastructure as code (Simple Icons, CC0) |
+| <img src="../assets/icons/si-traefikproxy.svg" width="22"> | `traefikproxy` | `iso://si/traefikproxy` | Traefik Proxy logo — reverse proxy / load balancer (Simple Icons, CC0) |
+| <img src="../assets/icons/si-trino.svg" width="22"> | `trino` | `iso://si/trino` | Trino logo — distributed SQL query engine (Simple Icons, CC0) |
+| <img src="../assets/icons/si-twilio.svg" width="22"> | `twilio` | `iso://si/twilio` | Twilio logo — communications API (Simple Icons, CC0) |
+| <img src="../assets/icons/si-typescript.svg" width="22"> | `typescript` | `iso://si/typescript` | TypeScript logo — programming language (Simple Icons, CC0) |
+| <img src="../assets/icons/si-ubuntu.svg" width="22"> | `ubuntu` | `iso://si/ubuntu` | Ubuntu logo — Linux distribution (Simple Icons, CC0) |
+| <img src="../assets/icons/si-vagrant.svg" width="22"> | `vagrant` | `iso://si/vagrant` | Vagrant logo — development environment provisioning (Simple Icons, CC0) |
+| <img src="../assets/icons/si-vault.svg" width="22"> | `vault` | `iso://si/vault` | Vault logo — secret management (Simple Icons, CC0) |
+| <img src="../assets/icons/si-vercel.svg" width="22"> | `vercel` | `iso://si/vercel` | Vercel logo — frontend cloud / edge hosting (Simple Icons, CC0) |
+| <img src="../assets/icons/si-victoriametrics.svg" width="22"> | `victoriametrics` | `iso://si/victoriametrics` | VictoriaMetrics logo — time-series database / observability (Simple Icons, CC0) |
+| <img src="../assets/icons/si-vite.svg" width="22"> | `vite` | `iso://si/vite` | Vite logo — frontend build tool (Simple Icons, CC0) |
+| <img src="../assets/icons/si-vuedotjs.svg" width="22"> | `vuedotjs` | `iso://si/vuedotjs` | Vue.js logo — web framework (frontend) (Simple Icons, CC0) |
+| <img src="../assets/icons/si-zig.svg" width="22"> | `zig` | `iso://si/zig` | Zig logo — programming language (Simple Icons, CC0) |
 
 ## Brand letter badges
 

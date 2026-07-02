@@ -221,7 +221,7 @@ func faceSplitIssues(doc *Document) []Issue {
 					continue
 				}
 				pPath := fmt.Sprintf("%s.parts[%s]", path, p.ID)
-				eff := ResolveStyle(doc.Theme, p.Shape, p.Preset, p.Style)
+				eff := ResolveStyleWithRole(doc.Theme, p.Shape, p.Role, p.Preset, p.Style)
 				if eff != nil && eff.Effects != nil && eff.Effects.FaceSplit != nil && *eff.Effects.FaceSplit {
 					cr := 0.0
 					if eff.Effects.CornerRadius != nil {
@@ -288,7 +288,7 @@ func VisualContrastIssues(doc *Document) []Issue {
 				// (theme → per-shape → preset → node overrides) before reading
 				// colours — otherwise preset-/gradient-sourced fills are invisible
 				// here and the check false-flags them against the default box fill.
-				eff := ResolveStyle(doc.Theme, p.Shape, p.Preset, p.Style)
+				eff := ResolveStyleWithRole(doc.Theme, p.Shape, p.Role, p.Preset, p.Style)
 				fill := topFillColor(eff)
 				fillLum, fillOK := lumOf(fill)
 
@@ -385,7 +385,7 @@ func VisualContrastIssues(doc *Document) []Issue {
 						if child == nil {
 							continue
 						}
-						childEff := ResolveStyle(doc.Theme, child.Shape, child.Preset, child.Style)
+						childEff := ResolveStyleWithRole(doc.Theme, child.Shape, child.Role, child.Preset, child.Style)
 						if visuallySeparated(childEff) {
 							continue
 						}
@@ -666,7 +666,7 @@ func styleConsistencyIssues(doc *Document) []Issue {
 					pPath = pathPrefix + ".parts[?]"
 				}
 
-				eff := ResolveStyle(doc.Theme, p.Shape, p.Preset, p.Style)
+				eff := ResolveStyleWithRole(doc.Theme, p.Shape, p.Role, p.Preset, p.Style)
 				fill := topFillColor(eff)
 
 				// Cluster key

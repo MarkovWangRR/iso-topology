@@ -1,0 +1,26 @@
+# Warm paper, ink strokes, film grain, iso pencil grid — distilled from the
+# DuckDB hand-drawn hero. hero = strong paper card with a warm wash, tray =
+# pale blue-washed sketch panel, chip = paper tile with ink border.
+description: "warm paper canvas, ink strokes, film grain — hand-drawn sketch look"
+canvas: { background: "#F4EEE1", grid: iso, gridColor: "#E2D7C0", gridStep: 40, padding: 76 }
+theme:
+  text: { family: "Inter, system-ui, sans-serif", size: 12, weight: "600", color: "#3A352B" }
+  roles:
+    hero:
+      palette: { top: "#F4EFD8", left: "#DED6AE", right: "#E8E2C4" }
+      stroke: { color: "#6B6558", width: 2.6 }
+      effects: { cornerRadius: 4, grain: { intensity: 0.38, scale: 0.85 }, dropShadow: { dx: 2, dy: 4, blur: 0, color: "#C9BFa855" } }
+      text: { color: "#463F1E" }
+    tray:
+      palette: { top: "#E6EEF6", left: "#C6D6E6", right: "#D6E2EE" }
+      stroke: { color: "#5B9BD5", width: 2.2 }
+      effects: { cornerRadius: 4, grain: { intensity: 0.34, scale: 0.9 } }
+      text: { color: "#2A3A4A" }
+    chip:
+      palette: { top: "#FBFAF5", left: "#E2DDCF", right: "#ECE8DD" }
+      stroke: { color: "#8A8478", width: 1.8 }
+      effects: { cornerRadius: 3, grain: { intensity: 0.4, scale: 0.8 } }
+      text: { color: "#3A352B" }
+  roleGeoms:
+    hero: { w: 210, d: 140, h: 34 }
+    chip: { w: 96, d: 80, h: 20 }

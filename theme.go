@@ -6,20 +6,38 @@ package isotopo
 //	theme.Shapes[shape]    (per-shape-type defaults — optional)
 //	theme.Presets[preset]  (named design-system preset — optional, v2.5)
 //	nodeStyle              (per-node overrides — optional)
+//
+// Kept as the role-less form for API compatibility; parts with a semantic
+// role resolve through ResolveStyleWithRole.
 func ResolveStyle(theme *Theme, shape, preset string, nodeStyle *Style) *Style {
+	return ResolveStyleWithRole(theme, shape, "", preset, nodeStyle)
+}
+
+// ResolveStyleWithRole is ResolveStyle plus the semantic-role layer:
+//
+//	theme.Style → theme.Shapes[shape] → theme.Roles[role] → theme.Presets[preset] → nodeStyle
+//
+// The role sits below preset/style so `role:` supplies the theme's design-
+// system look while an explicit `preset:` or `style:` still wins per part.
+func ResolveStyleWithRole(theme *Theme, shape, role, preset string, nodeStyle *Style) *Style {
 	var base *Style
 	var perShape *Style
+	var fromRole *Style
 	var fromPreset *Style
 	if theme != nil {
 		base = &theme.Style
 		if theme.Shapes != nil {
 			perShape = theme.Shapes[shape]
 		}
+		if role != "" && theme.Roles != nil {
+			fromRole = theme.Roles[role]
+		}
 		if preset != "" && theme.Presets != nil {
 			fromPreset = theme.Presets[preset]
 		}
 	}
 	merged := MergeStyle(base, perShape)
+	merged = MergeStyle(merged, fromRole)
 	merged = MergeStyle(merged, fromPreset)
 	merged = MergeStyle(merged, nodeStyle)
 	return merged
@@ -58,11 +76,11 @@ func ResolvePartStyle(doc *Document, id string) *Style {
 		}
 	}
 	if found != nil {
-		return ResolveStyle(doc.Theme, found.Shape, found.Preset, found.Style)
+		return ResolveStyleWithRole(doc.Theme, found.Shape, found.Role, found.Preset, found.Style)
 	}
 	// id may name a top-level (non-composite) node, keyed in the map.
 	if n, ok := doc.Nodes[id]; ok && n != nil {
-		return ResolveStyle(doc.Theme, n.Shape, n.Preset, n.Style)
+		return ResolveStyleWithRole(doc.Theme, n.Shape, n.Role, n.Preset, n.Style)
 	}
 	return nil
 }

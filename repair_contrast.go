@@ -44,7 +44,7 @@ func repairContrast(doc *Document) bool {
 // 3.0 contrast threshold against its worst top-face fill stop. Returns true if it
 // changed the color.
 func retintLabelForContrast(theme *Theme, p *CompositePart) bool {
-	eff := ResolveStyle(theme, p.Shape, p.Preset, p.Style)
+	eff := ResolveStyleWithRole(theme, p.Shape, p.Role, p.Preset, p.Style)
 	txt := textColor(eff)
 	txtLum, ok := lumOf(txt)
 	if !ok {

@@ -72,7 +72,7 @@ func labelOcclusionInFlat(flat []*CompositePart, theme *Theme, nodeID string) []
 		if lb.isSubstrate || isContainerShape(lb.Shape) {
 			continue
 		}
-		if merged := ResolveStyle(theme, lb.Shape, lb.Preset, lb.Style); merged != nil &&
+		if merged := ResolveStyleWithRole(theme, lb.Shape, lb.Role, lb.Preset, lb.Style); merged != nil &&
 			merged.Text != nil && merged.Text.Orient == "screen" {
 			continue
 		}
@@ -289,7 +289,7 @@ func occludingSolid(q *CompositePart) bool {
 // dashed budget-ceiling box) are see-through and hide nothing, so they must not
 // be flagged as occluders.
 func occluderHidesText(theme *Theme, q *CompositePart) bool {
-	merged := ResolveStyle(theme, q.Shape, q.Preset, q.Style)
+	merged := ResolveStyleWithRole(theme, q.Shape, q.Role, q.Preset, q.Style)
 	if merged == nil {
 		return true // default style is an opaque box
 	}

@@ -1,0 +1,37 @@
+theme: { use: clickhouse-dark }
+nodes:
+  scene:
+    shape: composite
+    parts:
+      - { id: core, role: hero, offset: { wx: 260, wy: 140 }, icon: "iso://glyph/bolt", label: "Order Service" }
+      - id: clients
+        role: tray
+        shape: group
+        label: "Clients"
+        offset: { wx: -160, wy: -60 }
+        layout: { mode: row, gap: 0.8, padding: 1.3 }
+        parts:
+          - { id: web,    role: chip, icon: "iso://glyph/browser", label: "Web" }
+          - { id: mobile, role: chip, icon: "iso://glyph/mobile", label: "Mobile" }
+      - id: data
+        role: tray
+        shape: group
+        label: "Data stores"
+        offset: { wx: 560, wy: 320 }
+        layout: { mode: row, gap: 0.8, padding: 1.3 }
+        parts:
+          - { id: pg,    role: chip, icon: "iso://si/postgresql", label: "Postgres" }
+          - { id: redis, role: chip, icon: "iso://si/redis", label: "Redis" }
+      - id: infra
+        role: tray
+        shape: group
+        label: "Messaging"
+        offset: { wx: -160, wy: 380 }
+        layout: { mode: row, gap: 0.8, padding: 1.3 }
+        parts:
+          - { id: kafka,  role: chip, icon: "iso://si/apachekafka", label: "Kafka" }
+          - { id: worker, role: chip, icon: "iso://glyph/gear", label: "Workers" }
+    connectors:
+      - { from: clients, to: core, routing: orthogonal, label: "HTTPS" }
+      - { from: core, to: data, routing: orthogonal }
+      - { from: core, to: infra, routing: orthogonal, label: "events" }
