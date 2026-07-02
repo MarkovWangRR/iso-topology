@@ -237,6 +237,10 @@ func evaluateFile(in, outDir string) error {
 		"readability": readability,
 		"plan":        planReport,
 		"iso":         isoReport,
+		// composition = the POSITIVE aesthetics half (balance / alignment /
+		// rhythm / aspect / hero dominance / color discipline), report-only,
+		// with located findings an agent can act on.
+		"composition": isotopo.EvaluateComposition(doc),
 	}); err != nil {
 		return err
 	}
