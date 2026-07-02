@@ -41,6 +41,7 @@ var (
 	flagRepair     = true  // projection-repair loop runs by default (L1); --no-repair opts out
 	flagReport     = false // L2: emit report.json (R breakdown + located defects + patches)
 	flagReadable   = false // --readable: legibility-first "documentation" profile (#11)
+	flagWrite      = false // repair: persist fixes into the source file
 )
 
 func main() {
@@ -93,6 +94,22 @@ func main() {
 			fmt.Fprintln(os.Stderr, "error:", err)
 			os.Exit(1)
 		}
+	case "repair":
+		// isotopo repair <input.yaml> [--write]
+		//   dry-run: print the fix report as JSON, touch nothing.
+		//   --write: persist the fixes into the source file, comment-preserved.
+		// exit: 0 = nothing to repair, 2 = repairs found (applied with --write).
+		args, err := parseFlags(os.Args[2:])
+		if err != nil || len(args) != 1 {
+			usage()
+			os.Exit(2)
+		}
+		code, err := repairFile(args[0], flagWrite)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "error:", err)
+			os.Exit(1)
+		}
+		os.Exit(code)
 	case "validate":
 		if len(os.Args) != 3 {
 			usage()
@@ -234,6 +251,41 @@ func evaluateFile(in, outDir string) error {
 	return nil
 }
 
+// repairFile runs the projection-repair loop against the file and either
+// reports the fixes (dry-run) or persists them into the source, comment-
+// preserved. Exit codes: 0 = already clean, 2 = repairs found (and applied
+// when write is set) — so an agent can gate on the code alone.
+func repairFile(in string, write bool) (int, error) {
+	data, err := os.ReadFile(in)
+	if err != nil {
+		return 1, err
+	}
+	lang, _ := classifyInput(in)
+	out, fixes, err := isotopo.RepairSource(lang, data)
+	if err != nil {
+		return 1, err
+	}
+	enc := json.NewEncoder(os.Stdout)
+	enc.SetIndent("", "  ")
+	_ = enc.Encode(map[string]any{
+		"fixes":   fixes,
+		"changed": len(fixes) > 0,
+		"written": write && len(fixes) > 0,
+	})
+	if len(fixes) == 0 {
+		return 0, nil
+	}
+	if write {
+		if err := os.WriteFile(in, out, 0o644); err != nil {
+			return 1, err
+		}
+		fmt.Fprintf(os.Stderr, "repair: %d fix(es) written to %s\n", len(fixes), in)
+	} else {
+		fmt.Fprintf(os.Stderr, "repair: %d fix(es) available — re-run with --write to persist\n", len(fixes))
+	}
+	return 2, nil
+}
+
 // validateFile parses the input and runs Validate, emitting structured
 // JSON of any issues. Exit code: 0 = clean, 2 = warnings only, 3 = any
 // errors. Designed for agent CI loops.
@@ -270,6 +322,16 @@ func validateFile(in string) (int, error) {
 	issues := isotopo.Validate(doc)
 	if sourceLang != "d2" {
 		issues = append(issues, isotopo.UnknownKeyIssues(data)...)
+	}
+	// Flag issues the projection-repair loop clears on its own, so an agent can
+	// tell "run `isotopo repair --write`" apart from "edit the source by hand".
+	if repairedDoc, err := loadDocument(sourceLang, data); err == nil {
+		isotopo.RepairAndReport(repairedDoc)
+		after := isotopo.Validate(repairedDoc)
+		if sourceLang != "d2" {
+			after = append(after, isotopo.UnknownKeyIssues(data)...)
+		}
+		issues = isotopo.MarkRepairable(issues, after)
 	}
 	enc := json.NewEncoder(os.Stdout)
 	enc.SetIndent("", "  ")
@@ -327,6 +389,8 @@ func parseFlags(argv []string) ([]string, error) {
 			flagReport = true
 		case a == "--readable":
 			flagReadable = true
+		case a == "--write":
+			flagWrite = true
 		default:
 			positional = append(positional, a)
 		}
@@ -373,8 +437,15 @@ subcommands:
                  layouts, and style keys — intended for agents to read
                  before generating DSL
   validate <in>  parse + structural validate the input file. Emits JSON
-                 of issues with paths and "did you mean" suggestions.
+                 of issues with paths and "did you mean" suggestions;
+                 issues the repair loop can clear carry "repairable": true.
                  exit: 0 = clean, 2 = warnings only, 3 = errors
+  repair <in> [--write]
+                 run the projection-repair loop (occlusions, overlaps,
+                 label contrast) and persist the fixes into the source
+                 file, comment-preserved. Without --write, dry-run: print
+                 the fix report and touch nothing.
+                 exit: 0 = already clean, 2 = repairs found
   evaluate <in> [out-dir]
                  score auto-layout connection quality from the flat plan
                  view (crossings, edges-through-nodes, backward edges,

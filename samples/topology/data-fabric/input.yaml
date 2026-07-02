@@ -32,7 +32,7 @@ nodes:
         shape: group
         label: "Commerce"
         geom: { h: 8 }
-        layout: { mode: row, gap: 0.7, padding: 0.8 }
+        layout: { mode: row, gap: 0.7, padding: 1.3 }
         style:
           palette: { top: "#E5F4F0", left: "#CDE6E0", right: "#D9EDE8" }
           stroke:  { color: "#BBDCD4", width: 1 }
@@ -64,7 +64,7 @@ nodes:
         shape: group
         label: "Logistics"
         geom: { h: 8 }
-        layout: { mode: row, gap: 0.7, padding: 0.8 }
+        layout: { mode: row, gap: 0.7, padding: 1.3 }
         style:
           palette: { top: "#FAF1E0", left: "#EEDFC4", right: "#F4E8D2" }
           stroke:  { color: "#E4D2B0", width: 1 }
@@ -96,7 +96,7 @@ nodes:
         shape: group
         label: "Telemetry"
         geom: { h: 8 }
-        layout: { mode: row, gap: 0.7, padding: 0.8 }
+        layout: { mode: row, gap: 0.7, padding: 1.3 }
         style:
           palette: { top: "#E8F0FA", left: "#D2E0F0", right: "#DDE8F5" }
           stroke:  { color: "#C2D5EC", width: 1 }

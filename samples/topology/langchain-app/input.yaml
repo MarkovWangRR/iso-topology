@@ -80,7 +80,7 @@ nodes:
         preset: tray
         shape: group
         label: "Client"
-        layout: { mode: column, gap: 0.8 }
+        layout: { mode: column, gap: 0.8, padding: 1.3 }
         parts:
           - { id: chatui, preset: chip, shape: rectangle, geom: { w: 104, d: 66, h: 18 }, icon: "iso://glyph/chat/light",  label: "Chat UI" }
           - { id: api,    preset: chip, shape: rectangle, geom: { w: 104, d: 66, h: 18 }, icon: "iso://si/fastapi/light",  label: "API · FastAPI" }
@@ -91,7 +91,7 @@ nodes:
         preset: tray
         shape: group
         label: "Models"
-        layout: { mode: grid, cols: 2, gap: 0.7 }
+        layout: { mode: grid, cols: 2, gap: 0.7, padding: 1.2 }
         parts:
           - { id: openai,  preset: chip, shape: rectangle, geom: { w: 96, d: 64, h: 18 }, icon: "iso://si/openai/light",      label: "OpenAI" }
           - { id: claude,  preset: chip, shape: rectangle, geom: { w: 96, d: 64, h: 18 }, icon: "iso://si/anthropic/light",   label: "Anthropic" }
@@ -104,7 +104,7 @@ nodes:
         preset: tray
         shape: group
         label: "Retrieval · RAG"
-        layout: { mode: grid, cols: 2, gap: 0.7 }
+        layout: { mode: grid, cols: 2, gap: 0.7, padding: 1.2 }
         parts:
           - { id: vstore, preset: chip, shape: rectangle, geom: { w: 100, d: 64, h: 18 }, icon: "iso://glyph/vector/light",     label: "Vector store" }
           - { id: pgv,    preset: chip, shape: rectangle, geom: { w: 100, d: 64, h: 18 }, icon: "iso://si/postgresql/light",    label: "pgvector" }
@@ -117,7 +117,7 @@ nodes:
         preset: tray
         shape: group
         label: "Tools · MCP"
-        layout: { mode: grid, cols: 2, gap: 0.7 }
+        layout: { mode: grid, cols: 2, gap: 0.7, padding: 1.2 }
         parts:
           - { id: tool,   preset: chip, shape: rectangle, geom: { w: 100, d: 64, h: 18 }, icon: "iso://glyph/bolt/light",   label: "Tools" }
           - { id: mcp,    preset: chip, shape: rectangle, geom: { w: 100, d: 64, h: 18 }, icon: "iso://glyph/code/light",   label: "MCP servers" }
