@@ -12,7 +12,7 @@ nodes:
           - id: subnet_a
             shape: boundary
             label: "Private Subnet"
-            layout: { mode: row, gap: 0.8, padding: 0.8 }
+            layout: { mode: row, gap: 0.8, padding: 1.3 }
             style: { stroke: { color: "#9AA9C8", width: 1.1, dash: "4 4" } }
             parts:
               - { id: api, shape: rectangle, geom: {w: 90, d: 90, h: 34}, label: "API", icon: "iso://glyph/bolt", style: { palette: { top: "#FFFFFF", left: "#3B5C9E", right: "#5B7BB4" } } }

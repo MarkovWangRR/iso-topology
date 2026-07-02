@@ -83,7 +83,7 @@ nodes:
     parts:
       # ============ Title ============
       - id: title
-        offset: { wx: -294, wy: 2 }
+        offset: { wx: -294, wy: -38 }
         shape: iso_text
         geom: { w: 560, d: 26, h: 4 }
         label: "ClickHouse — Real-Time Data Warehouse & Database"

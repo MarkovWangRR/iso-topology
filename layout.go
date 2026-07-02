@@ -64,13 +64,37 @@ func applyLayout(n *Node, canvas *Canvas) []Issue {
 				p.Layout = nil
 			}
 		}
-		// Graph-class adaptive: longest-path layering is great for DAG flows but
-		// crams cyclic/mesh graphs so edges tunnel — route those to the
-		// force-directed placer, which spreads them to a near-uniform distance.
-		if graphIsCyclic(n.Parts, n.Connectors) {
-			arrangeForce(n.Parts, n.Connectors, n.Layout, cell)
-		} else {
+		// Graph-class adaptive, in three tiers:
+		//   - pure DAG                    → layered (Sugiyama-lite) as-is;
+		//   - mostly-DAG (back edges are  → break the cycles: reverse just the
+		//     a minority, fraction ≤ 1/3)   feedback arcs FOR RANKING and keep
+		//                                   the layered left-to-right narrative
+		//                                   (a pipeline with one retry edge is
+		//                                   a flow, not a mesh);
+		//   - dense/cyclic (fraction>1/3) → force-directed placer, which spreads
+		//                                   meshes to near-uniform distance so
+		//                                   edges stop tunnelling.
+		back := feedbackEdges(n.Parts, n.Connectors)
+		switch {
+		case len(back) == 0:
 			arrangeAuto(n.Parts, n.Connectors, n.Layout, cell, "nodes.scene", &issues)
+		case hasReciprocalBackEdge(n.Connectors, back):
+			// A<->B pairs are bidirectional traffic (hub-and-spoke), not
+			// pipeline feedback — radial force spread reads best.
+			arrangeForce(n.Parts, n.Connectors, n.Layout, cell)
+		default:
+			// Long-cycle feedback in a flow: break the cycles (reverse the
+			// feedback arcs for RANKING only) and keep the layered
+			// left-to-right narrative. Judge the trial with the router's own
+			// capability — straight line-of-sight for flow edges, straight-or-
+			// elbow for the feedback arcs; if any edge has no clear route the
+			// graph is too dense for ranks, so roll back and spread instead.
+			saved := snapshotOffsets(n.Parts)
+			arrangeAuto(n.Parts, reversedForRanking(n.Connectors, back), n.Layout, cell, "nodes.scene", &issues)
+			if trialTunnels(n.Parts, n.Connectors, back) > 0 {
+				restoreOffsets(n.Parts, saved)
+				arrangeForce(n.Parts, n.Connectors, n.Layout, cell)
+			}
 		}
 		checkSiblingOverlaps(n.Parts, "nodes.scene", &issues)
 		n.Layout = nil

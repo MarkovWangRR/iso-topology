@@ -31,6 +31,11 @@ type Issue struct {
 	Path     string   `json:"path"`
 	Message  string   `json:"message"`
 	Suggest  string   `json:"suggest,omitempty"`
+	// Repairable marks an issue the projection-repair loop clears on its own:
+	// `render` auto-fixes it in memory, and `isotopo repair --write` persists
+	// the fix into the source. Set by MarkRepairable; absent means the issue
+	// needs a hand edit.
+	Repairable bool `json:"repairable,omitempty"`
 }
 
 // Validate runs structural checks over a parsed Document. It catches:

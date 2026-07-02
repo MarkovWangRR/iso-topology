@@ -54,6 +54,281 @@ func graphIsCyclic(parts []*CompositePart, conns []*Connector) bool {
 	return false
 }
 
+// feedbackEdges returns the indices of connectors that form a feedback arc
+// set — the minority of edges that run against the graph's dominant flow. A
+// graph whose feedback arcs are few is a flow with feedback (retry loops,
+// cache writebacks), not a mesh: reversing just those edges for RANKING lets
+// the layered Sugiyama pass keep the left-to-right narrative instead of
+// forfeiting the whole graph to force layout, which is what a wholesale
+// cyclic check did.
+//
+// The set is computed with the Eades–Lin–Smyth GreedyFAS vertex ordering (the
+// standard cycle-breaking pre-pass for layered layout): repeatedly peel sinks
+// to the right and sources to the left, otherwise move the vertex with the
+// largest outdegree−indegree left; edges pointing right-to-left in the final
+// order are the feedback arcs. Unlike raw DFS back edges, this blames the
+// edges that genuinely oppose the flow — DFS blames whichever edge its
+// traversal order happens to close a cycle on (reaching a node THROUGH the
+// feedback arc makes DFS blame a flow edge instead). Ties break by declared
+// part order, so the result is deterministic.
+func feedbackEdges(parts []*CompositePart, conns []*Connector) []int {
+	idx := map[string]bool{}
+	order := []string{}
+	for _, p := range parts {
+		if p != nil && p.ID != "" && !idx[p.ID] {
+			idx[p.ID] = true
+			order = append(order, p.ID)
+		}
+	}
+	type edge struct {
+		u, v string
+		ci   int
+	}
+	var edges []edge
+	for ci, c := range conns {
+		if c == nil {
+			continue
+		}
+		u, v := connectorTarget(c.From), connectorTarget(c.To)
+		if !idx[u] || !idx[v] || u == v {
+			continue
+		}
+		edges = append(edges, edge{u, v, ci})
+	}
+	if len(edges) == 0 {
+		return nil
+	}
+
+	// Live degree bookkeeping over the shrinking vertex set.
+	outdeg := map[string]int{}
+	indeg := map[string]int{}
+	for _, e := range edges {
+		outdeg[e.u]++
+		indeg[e.v]++
+	}
+	alive := map[string]bool{}
+	for _, id := range order {
+		alive[id] = true
+	}
+	remove := func(id string) {
+		alive[id] = false
+		for _, e := range edges {
+			if e.u == id && alive[e.v] {
+				indeg[e.v]--
+			}
+			if e.v == id && alive[e.u] {
+				outdeg[e.u]--
+			}
+		}
+	}
+
+	var left, right []string // right is built back-to-front
+	remaining := len(order)
+	for remaining > 0 {
+		progress := true
+		for progress {
+			progress = false
+			for _, id := range order { // declared order ⇒ deterministic
+				if alive[id] && outdeg[id] == 0 { // sink → right
+					right = append(right, id)
+					remove(id)
+					remaining--
+					progress = true
+				}
+			}
+			for _, id := range order {
+				if alive[id] && indeg[id] == 0 && outdeg[id] > 0 { // source → left
+					left = append(left, id)
+					remove(id)
+					remaining--
+					progress = true
+				}
+			}
+		}
+		if remaining == 0 {
+			break
+		}
+		best, bestDelta := "", 0
+		for _, id := range order { // first max wins ⇒ deterministic
+			if !alive[id] {
+				continue
+			}
+			if d := outdeg[id] - indeg[id]; best == "" || d > bestDelta {
+				best, bestDelta = id, d
+			}
+		}
+		left = append(left, best)
+		remove(best)
+		remaining--
+	}
+
+	pos := map[string]int{}
+	for i, id := range left {
+		pos[id] = i
+	}
+	for i := range right { // reverse the sink pile onto the tail
+		pos[right[len(right)-1-i]] = len(left) + i
+	}
+
+	var back []int
+	for _, e := range edges {
+		if pos[e.u] > pos[e.v] { // points right-to-left → feedback arc
+			back = append(back, e.ci)
+		}
+	}
+	return back
+}
+
+// reversedForRanking returns a connector list with the given edges' endpoints
+// swapped — used ONLY to feed the ranking pass; the real connectors still
+// render in their authored direction (drawn right-to-left as feedback).
+func reversedForRanking(conns []*Connector, back []int) []*Connector {
+	rev := map[int]bool{}
+	for _, ci := range back {
+		rev[ci] = true
+	}
+	out := make([]*Connector, len(conns))
+	for i, c := range conns {
+		if c == nil || !rev[i] {
+			out[i] = c
+			continue
+		}
+		flipped := *c
+		flipped.From, flipped.To = c.To, c.From
+		out[i] = &flipped
+	}
+	return out
+}
+
+// snapshotOffsets / restoreOffsets bracket a trial layout so the dispatcher
+// can attempt the layered arrangement and roll it back if it tunnels.
+func snapshotOffsets(parts []*CompositePart) []*WorldPoint {
+	out := make([]*WorldPoint, len(parts))
+	for i, p := range parts {
+		if p != nil && p.Offset != nil {
+			cp := *p.Offset
+			out[i] = &cp
+		}
+	}
+	return out
+}
+
+func restoreOffsets(parts []*CompositePart, saved []*WorldPoint) {
+	for i, p := range parts {
+		if p == nil || i >= len(saved) {
+			continue
+		}
+		if saved[i] == nil {
+			p.Offset = nil
+			continue
+		}
+		cp := *saved[i]
+		p.Offset = &cp
+	}
+}
+
+// hasReciprocalBackEdge reports whether any DFS back edge is the reverse of a
+// forward edge (a 2-cycle, A<->B). Reciprocal pairs are bidirectional traffic
+// (request/response, hub-and-spoke), not pipeline feedback — a graph carrying
+// them reads best as the force placer's radial spread, so the layered trial is
+// skipped entirely and the bench hub keeps its compact ring.
+func hasReciprocalBackEdge(conns []*Connector, back []int) bool {
+	bk := map[int]bool{}
+	for _, ci := range back {
+		bk[ci] = true
+	}
+	fwd := map[[2]string]bool{}
+	for i, c := range conns {
+		if c == nil || bk[i] {
+			continue
+		}
+		fwd[[2]string{connectorTarget(c.From), connectorTarget(c.To)}] = true
+	}
+	for _, ci := range back {
+		c := conns[ci]
+		if c == nil {
+			continue
+		}
+		if fwd[[2]string{connectorTarget(c.To), connectorTarget(c.From)}] {
+			return true
+		}
+	}
+	return false
+}
+
+// trialTunnels judges a trial layered arrangement at the CURRENT solved
+// offsets. Flow edges are judged by straight center-line line-of-sight (after
+// median alignment they are straight in the render too); back edges — which
+// the router draws as an L — clear if the straight line OR either elbow
+// candidate does, mirroring the router's actual two-candidate capability. Any
+// edge with no clear route means the graph is too dense for ranks and the
+// dispatcher rolls back to the force placer. (A single-file pipeline's
+// feedback edge has no clear elbow either — those scenes honestly render
+// better as a force ring until the router learns detours.)
+func trialTunnels(parts []*CompositePart, conns []*Connector, back []int) int {
+	type box struct {
+		id     string
+		r      planRect
+		cx, cy float64
+		ok     bool
+	}
+	byID := map[string]box{}
+	var boxes []box
+	for _, p := range parts {
+		if p == nil || p.ID == "" {
+			continue
+		}
+		w, d := partFootprint(p)
+		x, y := 0.0, 0.0
+		if p.Offset != nil {
+			x, y = p.Offset.WX, p.Offset.WY
+		}
+		b := box{id: p.ID, r: planRect{x: x, y: y, w: w, d: d}, cx: x + w/2, cy: y + d/2, ok: true}
+		byID[p.ID] = b
+		boxes = append(boxes, b)
+	}
+	hits := func(route [][2]float64, aID, bID string) bool {
+		for _, o := range boxes {
+			if o.id == aID || o.id == bID {
+				continue
+			}
+			if routeHitsRect(route, o.r) {
+				return true
+			}
+		}
+		return false
+	}
+	bk := map[int]bool{}
+	for _, ci := range back {
+		bk[ci] = true
+	}
+	n := 0
+	for i, c := range conns {
+		if c == nil {
+			continue
+		}
+		a, b := byID[connectorTarget(c.From)], byID[connectorTarget(c.To)]
+		if !a.ok || !b.ok || a.id == b.id {
+			continue
+		}
+		straight := [][2]float64{{a.cx, a.cy}, {b.cx, b.cy}}
+		clear := !hits(straight, a.id, b.id)
+		if !clear && bk[i] {
+			// L-shaped candidates, corner at (ax,by) then (bx,ay).
+			for _, corner := range [][2]float64{{a.cx, b.cy}, {b.cx, a.cy}} {
+				if !hits([][2]float64{{a.cx, a.cy}, corner, {b.cx, b.cy}}, a.id, b.id) {
+					clear = true
+					break
+				}
+			}
+		}
+		if !clear {
+			n++
+		}
+	}
+	return n
+}
+
 // arrangeForce positions top-level parts with a deterministic Fruchterman-
 // Reingold force-directed layout: connected nodes attract, all nodes repel, so
 // the graph spreads to a near-uniform-distance arrangement with room for edges
