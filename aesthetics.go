@@ -45,6 +45,7 @@ type CompositionReport struct {
 
 // compRect is a part's solved, absolute plan-space footprint.
 type compRect struct {
+	ord       int // identity for pairwise comparisons (ids may be empty/duplicated)
 	id        string
 	path      string
 	x, y      float64
