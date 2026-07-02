@@ -168,6 +168,12 @@ touched until you hit save. Tour: [docs/guides/studio.md](docs/guides/studio.md)
   visual flair. Switch per-render with `--projection top` or per-scene with
   `canvas: { projection: top }` — same DSL, same layout solver, no rewrite.
   See [`samples/topology/plan-view-2d`](samples/topology/plan-view-2d/input.yaml).
+- **Named themes + semantic roles** — write pure topology (`role: hero | tray | chip`)
+  and pick a look: `--theme clickhouse-dark | navy-glass | handdrawn-paper | clean-light`
+  (or `theme: { use: <name> }` in the DSL). The theme supplies the design system —
+  role styles, sizing rhythm, text, canvas, even icon ink adapted to dark fills — so
+  the same scene re-skins coherently, and a plain `.d2` graph gets the full look from
+  one flag.
 - **One-flag readability** — `isotopo render --readable` layers a legibility-first
   "documentation" profile over any scene: upright screen labels with a canvas-aware
   contrast chip and a padding floor. Opt-in and non-destructive — it only fills gaps

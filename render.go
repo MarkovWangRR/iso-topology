@@ -145,7 +145,7 @@ func renderComposite(n *Node, theme *Theme, canvas *Canvas, anns []*Annotation) 
 		// shape doesn't double-print it on the top face. We must look at
 		// the *merged* style (theme → per-shape → part) so theme-level
 		// `text.orient: screen` propagates to every part.
-		mergedForLabel := ResolveStyle(theme, p.Shape, p.Preset, p.Style)
+		mergedForLabel := ResolveStyleWithRole(theme, p.Shape, p.Role, p.Preset, p.Style)
 		if mergedForLabel != nil && mergedForLabel.Effects != nil && mergedForLabel.Effects.Backglow != nil {
 			// Halo blur extends well past the silhouette; reserve room so
 			// the glow gradient never terminates at the canvas edge.
@@ -177,6 +177,7 @@ func renderComposite(n *Node, theme *Theme, canvas *Canvas, anns []*Annotation) 
 			Geom:    p.Geom,
 			Style:   p.Style,
 			Preset:  p.Preset,
+			Role:    p.Role,
 			Label:   isoLabel,
 			Icon:    p.Icon,
 			Content: p.Content,
@@ -321,6 +322,7 @@ func RenderParts(doc *Document) map[string]string {
 				Geom:    p.Geom,
 				Style:   p.Style,
 				Preset:  p.Preset,
+				Role:    p.Role,
 				Label:   p.Label,
 				Icon:    p.Icon,
 				Content: p.Content,

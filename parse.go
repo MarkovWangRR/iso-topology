@@ -98,6 +98,11 @@ func normalizeDoc(doc *Document) {
 		n.Annotations = cleanAnnotations(n.Annotations)
 	}
 	doc.Annotations = cleanAnnotations(doc.Annotations)
+	// Named-theme resolution + the theme's sizing rhythm happen at parse time
+	// so every consumer (render, validate, evaluate, edit ops) sees the same
+	// resolved document; unknown `use:` names are left for Validate to report.
+	resolveThemeUse(doc)
+	applyRoleDefaults(doc)
 }
 
 func cleanParts(parts []*CompositePart) []*CompositePart {

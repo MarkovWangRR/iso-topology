@@ -69,7 +69,7 @@ func buildPlanModelOpt(n *Node, theme *Theme, canvas *Canvas, optimize bool) (re
 		applyLayout(n, canvas)
 		planCollect(n.Parts, 0, 0, 0, theme, &rects)
 	} else {
-		st := ResolveStyle(theme, n.Shape, n.Preset, n.Style)
+		st := ResolveStyleWithRole(theme, n.Shape, n.Role, n.Preset, n.Style)
 		w, d, h := planDims(n.Shape, n.Geom)
 		rects = append(rects, planRectFor(n.Label, n.Label, 0, 0, 0, w, d, h, n.Shape, st, false))
 	}
@@ -385,7 +385,7 @@ func planCollect(parts []*CompositePart, ox, oy, oz float64, theme *Theme, out *
 		}
 		w, d, h := planDims(p.Shape, p.Geom)
 		container := isContainerShape(p.Shape) || len(p.Parts) > 0
-		st := ResolveStyle(theme, p.Shape, p.Preset, p.Style)
+		st := ResolveStyleWithRole(theme, p.Shape, p.Role, p.Preset, p.Style)
 		*out = append(*out, planRectFor(p.ID, p.Label, x, y, z, w, d, h, p.Shape, st, container))
 		if len(p.Parts) > 0 {
 			planCollect(p.Parts, x, y, z, theme, out)

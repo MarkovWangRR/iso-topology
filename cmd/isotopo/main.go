@@ -42,6 +42,7 @@ var (
 	flagReport     = false // L2: emit report.json (R breakdown + located defects + patches)
 	flagReadable   = false // --readable: legibility-first "documentation" profile (#11)
 	flagWrite      = false // repair: persist fixes into the source file
+	flagTheme      = ""    // --theme <name>: layer a built-in theme under the doc
 )
 
 func main() {
@@ -391,6 +392,14 @@ func parseFlags(argv []string) ([]string, error) {
 			flagReadable = true
 		case a == "--write":
 			flagWrite = true
+		case a == "--theme":
+			if i+1 >= len(argv) {
+				return nil, fmt.Errorf("--theme requires a value")
+			}
+			flagTheme = argv[i+1]
+			i++
+		case strings.HasPrefix(a, "--theme="):
+			flagTheme = strings.TrimPrefix(a, "--theme=")
 		default:
 			positional = append(positional, a)
 		}
@@ -426,6 +435,11 @@ flags:
   --readable          legibility-first "documentation" profile: upright screen
                       labels with a canvas-aware contrast chip + a padding floor
                       (opt-in; only fills gaps the author left blank)
+  --theme <name>      layer a built-in design system under the document: role
+                      styles (hero/tray/chip), text defaults, and the matching
+                      canvas when the doc declares none. Names: run
+                      "isotopo capabilities" (themes). Also available in-DSL
+                      as theme: { use: <name> }
 
 subcommands:
   render         render an input file to <output-dir> (auto-repairs by default;
@@ -533,6 +547,14 @@ func renderFile(in, outDir string) (int, error) {
 	doc, err := loadDocument(sourceLang, data)
 	if err != nil {
 		return 1, err
+	}
+	// --theme: layer a built-in design system (roles + text + canvas when the
+	// doc declares none) under whatever the doc already styles — how a plain
+	// .d2 graph or bare topology gets the full themed look from one flag.
+	if flagTheme != "" {
+		if err := isotopo.ApplyTheme(doc, flagTheme); err != nil {
+			return 1, err
+		}
 	}
 	// --readable: layer the legibility-first documentation profile (screen
 	// labels + contrast chip + padding floor) over the loaded doc before repair

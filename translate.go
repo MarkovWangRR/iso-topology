@@ -196,7 +196,7 @@ func Translate(diagram *d2target.Diagram, opts *RenderOpts) *Document {
 					WX: absX, WY: absY, WZ: 0,
 				},
 				Label: s.Label,
-				Style: containerStyle,
+				Style: containerStyle, styleGenerated: true,
 			}
 			// Sort children deterministically by id so output is stable.
 			ids := append([]string(nil), childIDs[s.ID]...)
@@ -225,7 +225,7 @@ func Translate(diagram *d2target.Diagram, opts *RenderOpts) *Document {
 				WX: absX, WY: absY, WZ: 0,
 			},
 			Label: s.Label,
-			Style: style,
+			Style: style, styleGenerated: true,
 		}
 	}
 
@@ -261,6 +261,7 @@ func Translate(diagram *d2target.Diagram, opts *RenderOpts) *Document {
 				dash = "6 4"
 			}
 			conn.Stroke = &Stroke{Color: sc, Width: &w, Dash: dash}
+			conn.strokeGenerated = true
 		}
 		if string(c.DstArrow) != "" {
 			conn.Arrow = "triangle"

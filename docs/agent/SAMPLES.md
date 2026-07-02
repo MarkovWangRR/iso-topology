@@ -43,7 +43,12 @@ description matches your task, imitate its structure, then check
 | [`lakehouse-agent`](../../samples/topology/lakehouse-agent/input.yaml) | lakehouse-agent — Databricks Lakehouse + LLM agent application architecture. |
 | [`langchain-app`](../../samples/topology/langchain-app/input.yaml) | LangChain — typical agent application architecture, in the LangChain visual language: deep navy-black stage, ONE cool-blue glow accent, hairline-bordered … |
 | [`microservice`](../../samples/topology/microservice/input.d2) | microservice — minimal .d2 auto-layout path: person → services → database. |
+| [`plan-view-2d`](../../samples/topology/plan-view-2d/input.yaml) | 2D top-down (plan) view — projection declared in the scene's own canvas, so `isotopo render` and the golden test both render it flat. |
 | [`platform-board`](../../samples/topology/platform-board/input.yaml) | platform-board — PCB / circuit-board hero shot, landing-page style. |
 | [`rag-pipeline`](../../samples/topology/rag-pipeline/input.yaml) | rag-pipeline — a RAG system, now under connector-driven auto-layout. |
+| [`theme-clean-light`](../../samples/topology/theme-clean-light/input.yaml) | (no header comment) |
+| [`theme-clickhouse-dark`](../../samples/topology/theme-clickhouse-dark/input.yaml) | (no header comment) |
+| [`theme-handdrawn-paper`](../../samples/topology/theme-handdrawn-paper/input.yaml) | (no header comment) |
+| [`theme-navy-glass`](../../samples/topology/theme-navy-glass/input.yaml) | (no header comment) |
 | [`training-compute`](../../samples/topology/training-compute/input.yaml) | training-compute — where the GPU hours of a training run go. |
 | [`vpc-boundary`](../../samples/topology/vpc-boundary/input.yaml) | (no header comment) |

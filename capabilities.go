@@ -36,6 +36,20 @@ type Capabilities struct {
 	// fall back to iso://glyph/<name> for generic concepts. Unknown names are
 	// validation errors — pick from this list, do not invent names.
 	Icons []IconCap `json:"icons"`
+	// Themes are the built-in named design systems a scene opts into with
+	// theme: { use: <name> } or the CLI --theme flag. Each supplies role
+	// styles (see Roles), text defaults, sizing rhythm, and a matching canvas.
+	Themes []ThemeCap `json:"themes"`
+	// Roles are the semantic slots a part can declare (role: <name>) for the
+	// active theme to style: hero = the focal element, tray = a category
+	// container, chip = a compact member tile.
+	Roles []string `json:"roles"`
+}
+
+// ThemeCap describes one built-in theme for discovery.
+type ThemeCap struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
 }
 
 // IconCap is one entry in the agent-facing icon catalog (SVG body excluded —
@@ -107,6 +121,8 @@ func CapabilityReport() Capabilities {
 			{"elk", "ELK; orthogonal right-angle edges with obstacle avoidance", "orthogonal"},
 		},
 		Shapes:     buildShapeCaps(),
+		Themes:     buildThemeCaps(),
+		Roles:      RoleNames,
 		Primitives: buildPrimitiveCaps(),
 		StyleKeys:  buildStyleKeyGroups(),
 		Enums: map[string][]string{
@@ -382,4 +398,13 @@ func buildStyleKeyGroups() []StyleKeyGroup {
 			"faceSplit (bool — rounded boxes only: split the single wrap-around side band into independent left/right faces so a rounded cube shades per-face like a sharp one; needs cornerRadius>0, no-op otherwise)",
 		}},
 	}
+}
+
+func buildThemeCaps() []ThemeCap {
+	names := ThemeNames()
+	out := make([]ThemeCap, 0, len(names))
+	for _, n := range names {
+		out = append(out, ThemeCap{Name: n, Description: ThemeDescription(n)})
+	}
+	return out
 }

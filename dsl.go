@@ -24,6 +24,7 @@ type Node struct {
 	Shape     string     `yaml:"shape" json:"shape"`
 	Geom      *Geom      `yaml:"geom,omitempty" json:"geom,omitempty"`
 	Style     *Style     `yaml:"style,omitempty" json:"style,omitempty"`
+	Role   string `yaml:"role,omitempty" json:"role,omitempty"` // semantic slot: theme.roles lookup
 	Preset    string     `yaml:"preset,omitempty" json:"preset,omitempty"` // v2.5 — theme.presets reference
 	Label     string     `yaml:"label,omitempty" json:"label,omitempty"`
 	Icon      string     `yaml:"icon,omitempty" json:"icon,omitempty"`
@@ -66,6 +67,10 @@ type Node struct {
 // "partID.anchor" — e.g. "central.right-mid" or just "central" (which
 // resolves to the centre of that part).
 type Connector struct {
+	// strokeGenerated marks a Stroke fabricated by a translator (the .d2 path
+	// copies d2's default edge color) rather than authored; theme application
+	// clears it so edges take the engine's neutral default. Never serialised.
+	strokeGenerated bool `yaml:"-" json:"-"`
 	From    string  `yaml:"from" json:"from"`
 	To      string  `yaml:"to" json:"to"`
 	Stroke  *Stroke `yaml:"stroke,omitempty" json:"stroke,omitempty"`
@@ -118,6 +123,11 @@ type CompositePart struct {
 	// (internal; never parsed). The occlusion pass repaints these last so an
 	// upper-layer node can't cover a lane label. Unexported → not serialised.
 	groupLabel bool      `yaml:"-" json:"-"`
+	// styleGenerated marks a Style fabricated by a translator (the .d2 path
+	// synthesises fill/stroke for every shape) rather than authored. Theme
+	// application may displace generated styles so the design system can own
+	// the look; authored styles always win. Unexported → never serialised.
+	styleGenerated bool `yaml:"-" json:"-"`
 	// labelFor is the id of the group this injected label captions. The render
 	// pass emits the label's <g> with data-part-id=labelFor (so clicking the
 	// caption selects/drags the parent group in Studio) WITHOUT registering it
@@ -126,6 +136,12 @@ type CompositePart struct {
 	Geom    *Geom       `yaml:"geom,omitempty" json:"geom,omitempty"`
 	Style   *Style      `yaml:"style,omitempty" json:"style,omitempty"`
 	Preset  string      `yaml:"preset,omitempty" json:"preset,omitempty"` // v2.5 — theme.presets reference
+	// Role is the part's SEMANTIC slot in the diagram — hero | tray | chip —
+	// which a theme maps to a complete look (theme.roles) and, when the part
+	// declares no geom, a sizing rhythm (theme.roleGeoms). Roles let a scene
+	// declare WHAT each part is while the theme decides HOW it looks, so the
+	// same topology re-skins coherently under any named theme.
+	Role string `yaml:"role,omitempty" json:"role,omitempty"`
 	Label   string      `yaml:"label,omitempty" json:"label,omitempty"`
 	Icon    string      `yaml:"icon,omitempty" json:"icon,omitempty"`
 	Content *Content    `yaml:"content,omitempty" json:"content,omitempty"`
@@ -515,6 +531,21 @@ type Theme struct {
 	// through the schema, and one theme can ship a whole design system
 	// (hero / satellite / ghost / …) that parts reference by name.
 	Presets map[string]*Style `yaml:"presets,omitempty" json:"presets,omitempty"`
+
+	// Use names a built-in theme (see ThemeNames) to layer UNDER this theme:
+	// the named theme supplies the design system (roles, presets, text,
+	// canvas when the doc declares none) and any fields set here override it.
+	// Resolved once at parse time; unknown names surface through Validate.
+	Use string `yaml:"use,omitempty" json:"use,omitempty"`
+	// Roles maps a part's semantic role (hero | tray | chip) to a complete
+	// look. Resolved between the per-shape defaults and the named preset, so
+	// `role:` gives the design-system look while `preset:`/`style:` still
+	// override per part.
+	Roles map[string]*Style `yaml:"roles,omitempty" json:"roles,omitempty"`
+	// RoleGeoms supplies a default footprint per role, applied only when the
+	// part declares no geom of its own — the theme's sizing rhythm (heroes
+	// large, chips small) without touching any authored geometry.
+	RoleGeoms map[string]*Geom `yaml:"roleGeoms,omitempty" json:"roleGeoms,omitempty"`
 }
 
 // Canvas is composition-level metadata for a Document. v2 extended:

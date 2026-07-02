@@ -105,6 +105,8 @@ func Validate(doc *Document) []Issue {
 	}
 	var issues []Issue
 
+	issues = append(issues, themeRoleIssues(doc)...)
+
 	// Build the universe of valid ids (every CompositePart in every
 	// scene, including nested-in-groups). Connector and annotation
 	// references must point into this set.
@@ -735,4 +737,64 @@ func min3(a, b, c int) int {
 		m = c
 	}
 	return m
+}
+
+// themeRoleIssues checks the named-theme surface: theme.use must name a
+// built-in theme (a typo would silently render unthemed — the exact class of
+// silent fallback capabilities warns agents about), and role: must be one of
+// the semantic slots themes style (or a custom role the theme itself defines).
+func themeRoleIssues(doc *Document) []Issue {
+	var issues []Issue
+	if doc.Theme != nil && doc.Theme.Use != "" {
+		if _, ok := builtinThemes[doc.Theme.Use]; !ok {
+			issues = append(issues, Issue{
+				Severity: SeverityError,
+				Path:     "theme.use",
+				Message:  fmt.Sprintf("unknown theme %q — the scene would render unthemed", doc.Theme.Use),
+				Suggest:  nearest(doc.Theme.Use, ThemeNames()),
+			})
+		}
+	}
+	validRoles := map[string]bool{}
+	for _, r := range RoleNames {
+		validRoles[r] = true
+	}
+	if doc.Theme != nil {
+		for r := range doc.Theme.Roles { // a theme may define custom roles
+			validRoles[r] = true
+		}
+	}
+	known := make([]string, 0, len(validRoles))
+	for r := range validRoles {
+		known = append(known, r)
+	}
+	sort.Strings(known)
+	for nodeID, n := range doc.Nodes {
+		if n == nil {
+			continue
+		}
+		var walk func(parts []*CompositePart, prefix string)
+		walk = func(parts []*CompositePart, prefix string) {
+			for i, p := range parts {
+				if p == nil {
+					continue
+				}
+				path := fmt.Sprintf("%s.parts[%d]", prefix, i)
+				if p.ID != "" {
+					path = fmt.Sprintf("%s.parts[%s]", prefix, p.ID)
+				}
+				if p.Role != "" && !validRoles[p.Role] {
+					issues = append(issues, Issue{
+						Severity: SeverityWarning,
+						Path:     path + ".role",
+						Message:  fmt.Sprintf("unknown role %q (known: %s) — the part renders unstyled by the theme", p.Role, strings.Join(known, ", ")),
+						Suggest:  nearest(p.Role, known),
+					})
+				}
+				walk(p.Parts, path)
+			}
+		}
+		walk(n.Parts, "nodes."+nodeID)
+	}
+	return issues
 }

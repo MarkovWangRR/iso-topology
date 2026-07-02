@@ -1,0 +1,32 @@
+# Deep-navy stage with one glowing cool-blue accent and monospace labels —
+# distilled from the LangChain agent-app hero. hero = blue-rimmed glowing
+# card, tray = hairline dark panel, chip = hairline dark tile.
+description: "deep navy stage, hairline dark glass, one glowing cool-blue accent"
+canvas: { background: "#070B12", padding: 80 }
+theme:
+  text: { family: "ui-monospace, 'JetBrains Mono', SFMono-Regular, Menlo, monospace", size: 12, weight: "500", color: "#9AA4B4" }
+  roles:
+    hero:
+      stroke: { color: "#6FA8E0", width: 1.6 }
+      palette: { left: "#0C1626", right: "#11203A" }
+      faces:
+        top: { fill: { kind: linearGradient, angle: 135, stops: [ { offset: 0, color: "#1A3550" }, { offset: 1, color: "#0E1C30" } ] } }
+      effects: { cornerRadius: 12, faceSplit: true, opacity: 0.92, dropShadow: { dx: 0, dy: 14, blur: 24, color: "#00000099" }, backglow: { color: "#6BA8E8", radius: 60, opacity: 0.5 } }
+      text: { color: "#E6EEFA" }
+    tray:
+      stroke: { color: "#46587A", width: 1.5 }
+      palette: { left: "#070C14", right: "#0B111B" }
+      faces:
+        top: { fill: { kind: linearGradient, angle: 135, stops: [ { offset: 0, color: "#0D131D" }, { offset: 1, color: "#080D15" } ] } }
+      effects: { cornerRadius: 12, faceSplit: true, opacity: 0.6, dropShadow: { dx: 0, dy: 14, blur: 26, color: "#00000099" } }
+      text: { color: "#7E93B8" }
+    chip:
+      stroke: { color: "#4E6188", width: 1.4 }
+      palette: { left: "#0A0F18", right: "#11161F" }
+      faces:
+        top: { fill: { kind: linearGradient, angle: 135, stops: [ { offset: 0, color: "#121822" }, { offset: 1, color: "#0C121C" } ] } }
+      effects: { cornerRadius: 8, faceSplit: true, opacity: 0.94, dropShadow: { dx: 0, dy: 6, blur: 12, color: "#00000077" } }
+      text: { color: "#C7D0DC" }
+  roleGeoms:
+    hero: { w: 210, d: 140, h: 34 }
+    chip: { w: 96, d: 80, h: 20 }

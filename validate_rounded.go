@@ -45,7 +45,7 @@ func walkRoundedSide(theme *Theme, parts []*CompositePart, path string, issues *
 		if p.ID != "" {
 			ppath = fmt.Sprintf("%s.parts[%s]", path, p.ID)
 		}
-		merged := ResolveStyle(theme, p.Shape, p.Preset, p.Style)
+		merged := ResolveStyleWithRole(theme, p.Shape, p.Role, p.Preset, p.Style)
 		if merged != nil && merged.Palette != nil {
 			pal := merged.Palette
 			// The band's bottom colour comes from left (or top if left is unset).

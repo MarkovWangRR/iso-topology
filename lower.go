@@ -172,8 +172,11 @@ func groupSubstrate(p *CompositePart) *CompositePart {
 	}
 	// v3.1 — a preset on the group must win: the fallback palette/stroke
 	// below used to land in part.Style, which OUTRANKS the preset in the
-	// style cascade and silently clobbered it.
-	if cp.Preset != "" {
+	// style cascade and silently clobbered it. A semantic role is the same
+	// class: theme.roles styles the slab, so injecting defaults here would
+	// shadow the theme (the tray sides rendered default grey under a dark
+	// theme — caught by the theme×density verification matrix).
+	if cp.Preset != "" || cp.Role != "" {
 		return &cp
 	}
 	if cp.Style.Palette == nil {
