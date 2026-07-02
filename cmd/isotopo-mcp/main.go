@@ -1,6 +1,7 @@
 // isotopo-mcp is a Model Context Protocol (MCP) server exposing the
-// iso-topology agent loop as five tools — iso_capabilities,
-// iso_validate, iso_evaluate, iso_render, iso_preview — over the stdio
+// iso-topology agent loop as seven tools — iso_capabilities,
+// iso_validate, iso_evaluate, iso_repair, iso_render, iso_preview,
+// iso_snapshot — over the stdio
 // transport, so MCP clients (Claude Code, Claude Desktop, Cursor, …)
 // can draw and self-correct isometric diagrams without shelling out to
 // the CLI.
@@ -204,6 +205,31 @@ func toolList() []map[string]any {
 			},
 		},
 		{
+			"name":        "iso_repair",
+			"description": "Auto-fix the DSL and return the REPAIRED source: clears label occlusions, node overlaps, and low-contrast labels; with compose=true additionally snaps off-track parts onto their neighbours' alignment tracks (raises evaluate's composition score; bounded moves, never creates overlaps). Comment-preserving and idempotent. Continue the session with the returned dsl.",
+			"inputSchema": map[string]any{
+				"type":     "object",
+				"required": []string{"dsl"},
+				"properties": map[string]any{
+					"dsl":    dslProps["dsl"],
+					"format": dslProps["format"],
+					"compose": map[string]any{
+						"type":        "boolean",
+						"description": "Also run the composition pass (alignment snapping). Default false.",
+					},
+				},
+			},
+		},
+		{
+			"name":        "iso_snapshot",
+			"description": "Render the DSL and rasterize it to a FAITHFUL deterministic PNG (viewport == viewBox, no trim) for visual self-review — generate, then LOOK at the image before delivering. Uses resvg, ImageMagick, or headless Chrome/Chromium, whichever is installed. Returns the png path.",
+			"inputSchema": map[string]any{
+				"type":       "object",
+				"required":   []string{"dsl"},
+				"properties": renderProps,
+			},
+		},
+		{
 			"name":        "iso_preview",
 			"description": "Crop and return the SVG for ONE node, group, or connector of a scene, so an agent can inspect a single element up close instead of the whole diagram. Pass selectors like [\"core\"] or [\"edge:3\"]; set projection 'top' for the flat plan view. Returns the cropped SVG markup.",
 			"inputSchema": map[string]any{
@@ -252,7 +278,65 @@ func callTool(name string, args json.RawMessage) (text string, isError bool) {
 			"readability": readability,
 			"plan":        planReport,
 			"iso":         isoReport,
+			"composition": isotopo.EvaluateComposition(doc),
 		}, "", "  ")
+		return string(enc), false
+
+	case "iso_repair":
+		var a struct {
+			DSL     string `json:"dsl"`
+			Format  string `json:"format"`
+			Compose bool   `json:"compose"`
+		}
+		if err := json.Unmarshal(args, &a); err != nil {
+			return "bad arguments: " + err.Error(), true
+		}
+		lang := a.Format
+		if lang == "" {
+			lang = "yaml"
+		}
+		out, fixes, err := isotopo.RepairSourceWithOptions(lang, []byte(a.DSL), isotopo.RepairOptions{Compose: a.Compose})
+		if err != nil {
+			return "repair: " + err.Error(), true
+		}
+		enc, _ := json.MarshalIndent(map[string]any{
+			"fixes":   fixes,
+			"changed": len(fixes) > 0,
+			"dsl":     string(out),
+		}, "", "  ")
+		return string(enc), false
+
+	case "iso_snapshot":
+		doc, parsedArgs, errText := loadFromArgs(args)
+		if errText != "" {
+			return errText, true
+		}
+		outDir := parsedArgs.OutputDir
+		if outDir == "" {
+			d, err := os.MkdirTemp("", "isotopo-mcp-*")
+			if err != nil {
+				return "snapshot: " + err.Error(), true
+			}
+			outDir = d
+		}
+		paths, err := renderAll(doc, parsedArgs, outDir)
+		if err != nil {
+			return "snapshot: " + err.Error(), true
+		}
+		svg := ""
+		for _, p := range paths {
+			if strings.HasSuffix(p, "topology.svg") {
+				svg = p
+			}
+		}
+		if svg == "" {
+			return "snapshot: render produced no topology.svg", true
+		}
+		png := strings.TrimSuffix(svg, ".svg") + ".png"
+		if err := isotopo.Rasterize(svg, png); err != nil {
+			return "snapshot: " + err.Error(), true
+		}
+		enc, _ := json.MarshalIndent(map[string]any{"png": png, "svg": svg}, "", "  ")
 		return string(enc), false
 
 	case "iso_preview":

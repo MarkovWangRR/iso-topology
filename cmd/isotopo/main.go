@@ -25,7 +25,6 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -43,6 +42,7 @@ var (
 	flagReadable   = false // --readable: legibility-first "documentation" profile (#11)
 	flagWrite      = false // repair: persist fixes into the source file
 	flagTheme      = ""    // --theme <name>: layer a built-in theme under the doc
+	flagCompose    = false // repair: also run the composition pass (alignment snapping)
 )
 
 func main() {
@@ -266,7 +266,7 @@ func repairFile(in string, write bool) (int, error) {
 		return 1, err
 	}
 	lang, _ := classifyInput(in)
-	out, fixes, err := isotopo.RepairSource(lang, data)
+	out, fixes, err := isotopo.RepairSourceWithOptions(lang, data, isotopo.RepairOptions{Compose: flagCompose})
 	if err != nil {
 		return 1, err
 	}
@@ -396,6 +396,8 @@ func parseFlags(argv []string) ([]string, error) {
 			flagReadable = true
 		case a == "--write":
 			flagWrite = true
+		case a == "--compose":
+			flagCompose = true
 		case a == "--theme":
 			if i+1 >= len(argv) {
 				return nil, fmt.Errorf("--theme requires a value")
@@ -458,11 +460,14 @@ subcommands:
                  of issues with paths and "did you mean" suggestions;
                  issues the repair loop can clear carry "repairable": true.
                  exit: 0 = clean, 2 = warnings only, 3 = errors
-  repair <in> [--write]
+  repair <in> [--compose] [--write]
                  run the projection-repair loop (occlusions, overlaps,
                  label contrast) and persist the fixes into the source
-                 file, comment-preserved. Without --write, dry-run: print
-                 the fix report and touch nothing.
+                 file, comment-preserved. --compose additionally runs the
+                 composition pass: bounded alignment snapping of
+                 explicitly-offset parts onto neighbours' tracks (raises
+                 evaluate's composition score; never creates overlaps).
+                 Without --write, dry-run: print the fix report only.
                  exit: 0 = already clean, 2 = repairs found
   evaluate <in> [out-dir]
                  score auto-layout connection quality from the flat plan
@@ -514,18 +519,10 @@ func snapshotFile(in, outDir string) (int, error) {
 	return 0, nil
 }
 
-// rasterize converts an SVG to PNG deterministically with NO trim, preferring
-// resvg (faithful text + gradients). The output keeps the SVG's intrinsic
-// width/height, so screen coordinates are preserved 1:1.
+// rasterize delegates to the library's rasterizer (resvg → magick → headless
+// Chrome/Chromium → $ISOTOPO_RASTERIZER), keeping the SVG's intrinsic size 1:1.
 func rasterize(svg, png string) error {
-	if p, err := exec.LookPath("resvg"); err == nil {
-		return exec.Command(p, svg, png).Run()
-	}
-	if p, err := exec.LookPath("magick"); err == nil {
-		// No -trim: keep the full viewBox so nothing is cropped.
-		return exec.Command(p, "-background", "none", svg, png).Run()
-	}
-	return fmt.Errorf("snapshot needs a rasterizer on PATH: install resvg (recommended) or ImageMagick")
+	return isotopo.Rasterize(svg, png)
 }
 
 func renderFile(in, outDir string) (int, error) {

@@ -25,6 +25,19 @@ import (
 // Returns the new source (== src when nothing needed repair), the fix list
 // from RepairAndReport, and an error only for parse/apply failures.
 func RepairSource(lang string, src []byte) ([]byte, []string, error) {
+	return RepairSourceWithOptions(lang, src, RepairOptions{})
+}
+
+// RepairOptions selects which repair passes run beyond the always-on defect
+// loop. Compose additionally runs the composition pass (ComposeScene):
+// bounded alignment snapping of explicitly-offset parts onto their
+// neighbours' tracks — the acting half of the evaluate `composition` block.
+type RepairOptions struct {
+	Compose bool
+}
+
+// RepairSourceWithOptions is RepairSource with pass selection.
+func RepairSourceWithOptions(lang string, src []byte, opts RepairOptions) ([]byte, []string, error) {
 	if lang != "yaml" {
 		return nil, nil, fmt.Errorf("repair: only yaml sources can be written back (got %q)", lang)
 	}
@@ -37,6 +50,9 @@ func RepairSource(lang string, src []byte) ([]byte, []string, error) {
 		return nil, nil, fmt.Errorf("repair: parse: %w", err)
 	}
 	_, fixes := RepairAndReport(repaired)
+	if opts.Compose {
+		fixes = append(fixes, ComposeScene(repaired)...)
+	}
 	if len(fixes) == 0 {
 		return src, nil, nil
 	}
@@ -49,6 +65,19 @@ func RepairSource(lang string, src []byte) ([]byte, []string, error) {
 			return nil, fixes, fmt.Errorf("repair: persist %s on %q: %w", op.Kind, op.ID, err)
 		}
 		out = next
+	}
+	// Persistence verification: the whole contract is load(persisted) ==
+	// repaired doc. Text surgery can silently miss that contract on exotic
+	// formatting (a part's flow map spanning multiple lines once landed a
+	// style block INSIDE geom) — so re-parse the result and re-diff it
+	// against the repaired doc; any residue means the write did not land
+	// cleanly and the caller gets an error instead of a corrupted file.
+	achieved, err := Parse(out)
+	if err != nil {
+		return nil, fixes, fmt.Errorf("repair: persisted source no longer parses (%w) — the input's formatting defeats text surgery; reformat the affected part onto one line", err)
+	}
+	if residue := diffRepairOps(achieved, repaired); len(residue) > 0 {
+		return nil, fixes, fmt.Errorf("repair: could not persist %d change(s) cleanly (first: %s on %q) — the affected part's formatting (e.g. a multi-line flow map) defeats text surgery; reformat it and re-run", len(residue), residue[0].Kind, residue[0].ID)
 	}
 	return out, fixes, nil
 }
